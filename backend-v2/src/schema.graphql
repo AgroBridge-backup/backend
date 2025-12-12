@@ -1,0 +1,32 @@
+enum Role {
+  SUPERADMIN
+  ADMIN
+  PRODUCER
+  BUYER
+  GUEST
+}
+
+type Query {
+  hello: String
+  me: User
+}
+
+type Mutation {
+  signUp(email: String!, password: String!, name: String): User
+  login(email: String!, password: String!): AuthPayload
+  logout: Boolean
+  generateProductReport(productId: ID!, productName: String!): String
+}
+
+type User {
+  id: ID!
+  email: String!
+  name: String
+  role: Role!
+  createdAt: String!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}

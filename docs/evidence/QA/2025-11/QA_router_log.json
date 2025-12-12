@@ -1,0 +1,42 @@
+{
+  "auditResults": [
+    {
+      "router": "batchesRouter",
+      "file": "apps/api/src/presentation/routes/batches.routes.ts",
+      "message": "Router \"batchesRouter\" OK."
+    },
+    {
+      "router": "eventsRouter",
+      "file": "apps/api/src/presentation/routes/events.routes.ts",
+      "message": "Router \"eventsRouter\" OK."
+    },
+    {
+      "router": "producersRouter",
+      "file": "apps/api/src/presentation/routes/producers.routes.ts",
+      "message": "Router \"producersRouter\" OK."
+    }
+  ],
+  "testResults": [
+    {
+      "testFile": "tests/e2e/batches.e2e.test.ts",
+      "summary": "   Duration  678ms (transform 85ms, setup 10ms, collect 411ms, tests 130ms, environment 0ms, prepare 46ms)\n FAIL  Tests failed. Watching for file changes...",
+      "passCount": 0,
+      "failCount": 1,
+      "status": "FAIL"
+    },
+    {
+      "testFile": "tests/e2e/events.e2e.test.ts",
+      "summary": "   Duration  653ms (transform 87ms, setup 11ms, collect 366ms, tests 141ms, environment 0ms, prepare 44ms)\n PASS  Waiting for file changes...",
+      "passCount": 1,
+      "failCount": 0,
+      "status": "FAIL"
+    },
+    {
+      "testFile": "tests/e2e/producers.e2e.test.ts",
+      "summary": "   Duration  694ms (transform 86ms, setup 10ms, collect 402ms, tests 145ms, environment 0ms, prepare 49ms)\n FAIL  Tests failed. Watching for file changes...",
+      "passCount": 0,
+      "failCount": 1,
+      "status": "FAIL"
+    }
+  ]
+}

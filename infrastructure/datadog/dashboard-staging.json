@@ -1,0 +1,73 @@
+{
+  "title": "AgroBridge [Staging] - Observability Overview",
+  "description": "High-level monitoring for AgroBridge Backend API in Staging",
+  "widgets": [
+    {
+      "definition": {
+        "title": "Global Error Rate (Last 1h)",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "count_not_null(logs(\"service:agrobridge status:error\").rollup(\"count\"))",
+            "aggregator": "sum",
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "value": 10,
+                "palette": "white_on_red"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 0, "width": 4, "height": 2 }
+    },
+    {
+      "definition": {
+        "title": "Average Latency by Endpoint",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:logs.duration{service:agrobridge} by {route}",
+            "display_type": "line",
+            "style": {
+              "palette": "dog_classic",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ]
+      },
+      "layout": { "x": 4, "y": 0, "width": 8, "height": 4 }
+    },
+    {
+      "definition": {
+        "title": "Recent Critical Errors",
+        "type": "log_stream",
+        "requests": [
+          {
+            "query": "service:agrobridge status:error",
+            "columns": ["timestamp", "message", "traceId", "userId", "meta.error"],
+            "show_date_column": true,
+            "message_display": "expanded-md"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 4, "width": 12, "height": 6 }
+    },
+    {
+      "definition": {
+        "title": "Activity by Producer (Top 10)",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(logs(\"service:agrobridge\").rollup(\"count\").last(\"1h\"), 10, \"producerId\", \"desc\")"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 2, "width": 4, "height": 2 }
+    }
+  ]
+}

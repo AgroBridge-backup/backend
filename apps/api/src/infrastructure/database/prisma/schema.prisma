@@ -1,0 +1,457 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PRODUCER
+  CERTIFIER
+  BUYER
+}
+
+enum BatchStatus {
+  REGISTERED
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+  REJECTED
+}
+
+enum EventType {
+  HARVEST
+  PROCESSING
+  QUALITY_INSPECTION
+  PACKAGING
+  TRANSPORT_START
+  TRANSPORT_ARRIVAL
+  CUSTOMS_CLEARANCE
+  DELIVERY
+}
+
+enum CertificationType {
+  GLOBALGAP
+  ORGANIC_USDA
+  ORGANIC_EU
+  RAINFOREST_ALLIANCE
+  FAIR_TRADE
+  SENASICA
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole
+  walletAddress String?  @unique
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+
+  producer      Producer?
+  createdEvents TraceabilityEvent[]
+
+  // Notification system relations
+  notifications           Notification[]
+  deviceTokens            DeviceToken[]
+  notificationPreferences NotificationPreference?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([email])
+  @@index([walletAddress])
+  @@map("users")
+}
+
+model Producer {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  businessName  String
+  rfc           String   @unique
+  state         String
+  municipality  String
+  address       String?
+  latitude      Decimal  @db.Decimal(10, 6)
+  longitude     Decimal  @db.Decimal(10, 6)
+  
+  totalHectares Decimal? @db.Decimal(10, 2)
+  cropTypes     String[]
+  
+  isWhitelisted Boolean  @default(false)
+  whitelistedAt DateTime?
+  whitelistedBy String?
+  
+  batches          Batch[]
+  certifications   Certification[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([rfc])
+  @@index([isWhitelisted])
+  @@index([state, municipality])
+  @@map("producers")
+}
+
+model Certification {
+  id                String            @id @default(uuid())
+  producerId        String
+  producer          Producer          @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  
+  type              CertificationType
+  certifier         String
+  certificateNumber String            @unique
+  ipfsHash          String?
+  
+  issuedAt          DateTime
+  expiresAt         DateTime
+  isActive          Boolean           @default(true)
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([producerId, type])
+  @@index([certificateNumber])
+  @@index([expiresAt])
+  @@map("certifications")
+}
+
+enum Variety {
+  HASS
+  BERRIES
+}
+
+model Batch {
+  id              String      @id @default(uuid())
+  producerId      String
+  producer        Producer    @relation(fields: [producerId], references: [id])
+  
+  variety         Variety
+  origin          String
+  weightKg        Decimal     @db.Decimal(10, 2)
+  harvestDate     DateTime
+  
+  blockchainHash  String
+  
+  status          BatchStatus @default(REGISTERED)
+  
+  events          TraceabilityEvent[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([producerId])
+  @@index([status])
+  @@index([harvestDate])
+  @@map("batches")
+}
+
+model TraceabilityEvent {
+  id                String    @id @default(uuid())
+  batchId           String
+  batch             Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  
+  eventType         EventType
+  timestamp         DateTime  @default(now())
+  
+  latitude          Decimal   @db.Decimal(10, 6)
+  longitude         Decimal   @db.Decimal(10, 6)
+  locationName      String?
+  
+  temperature       Decimal?  @db.Decimal(5, 2)
+  humidity          Decimal?  @db.Decimal(5, 2)
+  notes             String?   @db.Text
+  
+  ipfsHash          String?
+  photos            String[]
+  
+  blockchainTxHash  String?   @unique
+  blockchainEventId String?   @unique
+  isVerified        Boolean   @default(false)
+  verifiedBy        String?
+  verifiedAt        DateTime?
+  
+  signedByBiometric Boolean   @default(false)
+  signatureHash     String?
+  
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([batchId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([blockchainTxHash])
+  @@map("traceability_events")
+}
+
+model RefreshToken {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// NOTIFICATION SYSTEM SCHEMA
+// Enterprise-grade multi-channel notification infrastructure
+// Supports: Push (FCM/APNs), Email (SendGrid), SMS (Twilio)
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Notification type categories for the agricultural platform
+enum NotificationType {
+  BATCH_CREATED
+  BATCH_UPDATED
+  BATCH_VERIFIED
+  BATCH_STATUS_CHANGED
+  CERTIFICATE_READY
+  CERTIFICATE_DOWNLOADED
+  CERTIFICATE_EXPIRING
+  SENSOR_ALERT
+  SENSOR_WARNING
+  ORDER_CREATED
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  PRODUCER_WHITELISTED
+  PRODUCER_SUSPENDED
+  SYSTEM_ANNOUNCEMENT
+  ACCOUNT_VERIFICATION
+  PASSWORD_RESET
+  WELCOME
+  CUSTOM
+}
+
+/// Delivery channels for notifications
+enum NotificationChannel {
+  PUSH      // FCM for Android, APNs for iOS
+  EMAIL     // SendGrid transactional emails
+  SMS       // Twilio SMS messages
+  WHATSAPP  // Twilio WhatsApp Business API
+  IN_APP    // Stored in database for in-app notification center
+  WEBHOOK   // HTTP callback to external systems
+}
+
+/// Notification delivery status tracking
+enum NotificationStatus {
+  PENDING     // Queued, not yet processed
+  QUEUED      // Added to Bull queue for processing
+  SENT        // Sent to provider (FCM/APNs/SendGrid/Twilio)
+  DELIVERED   // Confirmed delivered by provider callback
+  READ        // User opened/read the notification
+  CLICKED     // User clicked/interacted with notification
+  FAILED      // Delivery failed after all retries
+  EXPIRED     // TTL expired before delivery
+  CANCELLED   // Cancelled before sending
+}
+
+/// Notification priority levels
+enum NotificationPriority {
+  LOW       // Marketing, announcements (can be delayed)
+  NORMAL    // Standard notifications (batch updates)
+  HIGH      // Important updates (certificates, orders)
+  CRITICAL  // Urgent alerts (sensor alerts, security)
+}
+
+/// Mobile platform types for device tokens
+enum Platform {
+  IOS
+  ANDROID
+  WEB
+}
+
+/// Delivery attempt status for logs
+enum DeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRY
+}
+
+/// Main notification record - tracks every notification sent through the system
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Content
+  type        NotificationType
+  title       String   @db.VarChar(255)
+  body        String   @db.Text
+  data        Json?    // Custom payload for deep linking, e.g., {"batchId": "xxx", "deepLink": "/batches/xxx"}
+  imageUrl    String?  @db.VarChar(500)
+
+  // Channels - which delivery methods to use
+  channels    NotificationChannel[]
+
+  // Status tracking
+  status      NotificationStatus @default(PENDING)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  clickedAt   DateTime?
+  failedAt    DateTime?
+  errorMessage String? @db.Text
+
+  // Metadata
+  priority    NotificationPriority @default(NORMAL)
+  expiresAt   DateTime?  // TTL - notification expires after this time
+  retryCount  Int        @default(0)
+  maxRetries  Int        @default(3)
+
+  // Delivery logs for each channel
+  deliveryLogs NotificationDeliveryLog[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Performance indexes
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([type, createdAt])
+  @@index([priority, status])
+  @@map("notifications")
+}
+
+/// Device tokens for push notifications (iOS & Android)
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  platform  Platform
+  token     String   @unique @db.VarChar(500)  // FCM token or APNs device token
+
+  // Device metadata for debugging and analytics
+  deviceInfo Json?   // OS version, device model, app version, etc.
+
+  // Status
+  active    Boolean  @default(true)  // Set to false when token becomes invalid
+  lastUsedAt DateTime @default(now())
+
+  // FCM topic subscriptions
+  topics    String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, active])
+  @@index([platform, active])
+  @@index([token])
+  @@map("device_tokens")
+}
+
+/// Notification delivery logs - tracks each delivery attempt per channel
+model NotificationDeliveryLog {
+  id             String   @id @default(uuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  channel        NotificationChannel
+  status         DeliveryStatus
+
+  // Provider response data
+  providerId     String?  @db.VarChar(255)  // FCM message ID, APNs ID, SendGrid ID, Twilio SID
+  providerError  String?  @db.Text
+  providerResponse Json?  // Full provider response for debugging
+
+  // Timing metrics
+  attemptedAt    DateTime @default(now())
+  deliveredAt    DateTime?
+  latencyMs      Int?     // Time from attempt to delivery confirmation
+
+  // Retry tracking
+  attempt        Int      @default(1)
+
+  createdAt      DateTime @default(now())
+
+  @@index([notificationId])
+  @@index([channel, status])
+  @@index([attemptedAt])
+  @@map("notification_delivery_logs")
+}
+
+/// Notification templates - reusable notification content with variable substitution
+model NotificationTemplate {
+  id          String   @id @default(uuid())
+
+  name        String   @unique @db.VarChar(100)  // e.g., "batch-created", "sensor-alert"
+  type        NotificationType
+
+  // Templates support Handlebars-style variables like {{batchId}}, {{producerName}}
+  titleTemplate String  @db.VarChar(255)
+  bodyTemplate  String  @db.Text
+
+  // Email-specific templates (optional)
+  emailSubject  String? @db.VarChar(255)
+  emailHtml     String? @db.Text  // Full HTML email template
+
+  // SMS-specific (optional, should be < 160 chars)
+  smsTemplate   String? @db.VarChar(500)
+
+  // Default channels and priority
+  defaultChannels NotificationChannel[] @default([PUSH, EMAIL])
+  defaultPriority NotificationPriority @default(NORMAL)
+
+  // Template status
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([active])
+  @@map("notification_templates")
+}
+
+/// User notification preferences - controls what notifications users receive
+model NotificationPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Channel preferences
+  pushEnabled   Boolean @default(true)
+  emailEnabled  Boolean @default(true)
+  smsEnabled    Boolean @default(false)  // SMS is opt-in due to cost
+  whatsappEnabled Boolean @default(false)
+
+  // Type-specific preferences (JSON map of NotificationType -> boolean)
+  typePreferences Json @default("{}")
+
+  // Quiet hours (no notifications during these times)
+  quietHoursEnabled Boolean @default(false)
+  quietHoursStart   String? @db.VarChar(5)  // HH:MM format, e.g., "22:00"
+  quietHoursEnd     String? @db.VarChar(5)  // HH:MM format, e.g., "08:00"
+  timezone          String  @default("America/Mexico_City")
+
+  // Contact info for SMS/WhatsApp
+  phoneNumber       String? @db.VarChar(20)  // E.164 format: +521234567890
+  phoneVerified     Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("notification_preferences")
+}

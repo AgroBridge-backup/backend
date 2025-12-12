@@ -1,0 +1,239 @@
+═════════════════════════════════════════════════════════════════════════════════
+🎯 AGROBRIDGE ANDROID - RECOMENDACIONES ESTRATÉGICAS DE MEJORA
+═════════════════════════════════════════════════════════════════════════════════
+
+📊 ESTADO ACTUAL DEL PROYECTO:
+────────────────────────────────────────────────────────────────────────────────
+
+✅ FORTALEZAS (Que mantener):
+  • Arquitectura bien estructurada (Clean Architecture)
+  • Proper dependency injection con Hilt
+  • Offline-first sync implementado
+  • Type-safe navigation con @Serializable
+  • Testing framework instalado (MAD 2025)
+  • Edge-to-edge UI configurado
+  • Modern Compose usage
+
+⚠️ PROBLEMAS CRÍTICOS (Que DEBEN arreglarse antes de production):
+
+  🔴 1. Repository Interface Incompleta
+     └─ createLote(), updateLote(), getPendingLotes() no en interfaz
+     └─ Fix: 30 mins | Impact: Muy Alto
+
+  🔴 2. API Keys Hardcodeadas en build.gradle
+     └─ Riesgo de seguridad: Visible en APK disassembly
+     └─ Fix: 1 hora | Impact: Crítico
+
+  🔴 3. Screens sin ViewModel (LotesListScreen, LoteDetailScreen, DashboardScreen)
+     └─ Datos perdidos en recomposición
+     └─ Fix: 3 horas c/u | Impact: Muy Alto
+
+  🔴 4. ProGuard Rules Faltantes para Release Build
+     └─ APK crasheará cuando Hilt intente inyectar
+     └─ Fix: 1.5 horas | Impact: Crítico
+
+═════════════════════════════════════════════════════════════════════════════════
+🛣️ ROADMAP DE MEJORAS (3 TIERS)
+═════════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🔴 TIER 1: CRÍTICO (2 SEMANAS) - REQUISITO PARA PRODUCCIÓN                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. Repository Interface (30 mins)                                          │
+│     ├─ Agregar: createLote(), updateLote(), getPendingLotes()              │
+│     └─ Archivo: data/repository/LoteRepository.kt                          │
+│                                                                              │
+│  2. API Keys Security (1 hora)                                              │
+│     ├─ Mover de build.gradle a local.properties                            │
+│     ├─ Agregar a .gitignore                                                │
+│     └─ Archivo: app/build.gradle.kts, local.properties                     │
+│                                                                              │
+│  3. ViewModel Integration en Screens (9 horas total = 3 horas × 3 screens) │
+│     ├─ LotesListScreen → LotesViewModel                                     │
+│     ├─ LoteDetailScreen → LoteDetailViewModel                              │
+│     ├─ DashboardScreen → DashboardViewModel                                │
+│     └─ Eliminar mock data, conectar a real flows                           │
+│                                                                              │
+│  4. ProGuard Rules (1.5 horas)                                              │
+│     ├─ Crear: app/proguard-rules.pro                                       │
+│     ├─ Reglas para: Hilt, Room, Retrofit, Coroutines                       │
+│     └─ Test: ./gradlew assembleRelease                                     │
+│                                                                              │
+│  TOTAL ESFUERZO: ~13 horas (1.5 personas × 1 semana)                       │
+│  BLOQUEADOR: SÍ - Sin esto, app no puede ir a producción                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🟠 TIER 2: ALTO (4 SEMANAS) - CALIDAD & PERFORMANCE                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  5. Test Suite Completa (1.5 semanas)                                       │
+│     ├─ Repository tests (para criar, actualizar, sync)                      │
+│     ├─ Database integration tests                                           │
+│     ├─ UI component tests                                                   │
+│     └─ Goal: 60% code coverage (vs 0% actual)                              │
+│                                                                              │
+│  6. Database Optimization (1 semana)                                        │
+│     ├─ Agregar @Index en LoteEntity                                        │
+│     ├─ Crear projection queries (LoteSummary para listas)                   │
+│     ├─ Refactorizar refreshLotes() (DELETE+INSERT → REPLACE)              │
+│     └─ Impacto: 2x más rápido para listas grandes                          │
+│                                                                              │
+│  7. Coil Image Caching (0.5 semanas)                                        │
+│     ├─ Configurar ImageLoader con 100MB disk cache                         │
+│     ├─ Reemplazar Image() con AsyncImage()                                 │
+│     └─ Lazy loading de fotos de lotes                                      │
+│                                                                              │
+│  8. Permissions con Accompanist (0.5 semanas)                               │
+│     ├─ Camera permission handler                                           │
+│     ├─ Location permission handler                                         │
+│     └─ Storage permission handler                                          │
+│                                                                              │
+│  9. Accessibility Fixes (0.5 semanas)                                       │
+│     ├─ Agregar contentDescription en Icon/Image                            │
+│     ├─ Semantics modifiers para layouts                                    │
+│     └─ screenreader compatibility                                          │
+│                                                                              │
+│  10. Resolver TODOs (2 semanas)                                             │
+│      ├─ Dashboard: Notifications, Profile, Scanner buttons                  │
+│      ├─ LotesListScreen: Search, Options, Create                           │
+│      ├─ MapScreen: Create from map, Locate me                              │
+│      └─ 36+ TODOs total                                                    │
+│                                                                              │
+│  11. Query Optimization (1 semana)                                          │
+│      ├─ Índices de búsqueda                                                │
+│      ├─ Projection queries                                                 │
+│      └─ Benchmark: Query time < 50ms                                       │
+│                                                                              │
+│  TOTAL ESFUERZO: ~28 horas (2 personas × 2 semanas)                        │
+│  REQUERIDO ANTES DE: Beta release                                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🟡 TIER 3: MEDIO (6 SEMANAS) - ROBUSTEZ & MANTENIBILIDAD                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  12. Compose Stability (1 semana)                                           │
+│      ├─ UIState: List<T> → ImmutableList<T>                                │
+│      ├─ Beneficio: 30-40% menos recomposiciones                            │
+│      └─ Performance: Smooth 60fps incluso con 1000+ items                  │
+│                                                                              │
+│  13. Responsive Design / Tablet Support (2 semanas)                         │
+│      ├─ WindowSizeClass implementation                                     │
+│      ├─ Single-pane vs Two-pane layouts                                    │
+│      └─ Landscape orientation support                                      │
+│                                                                              │
+│  14. Documentation (1 semana)                                               │
+│      ├─ README.md - Visión general y setup                                 │
+│      ├─ ARCHITECTURE.md - Diagramas y patrones                             │
+│      ├─ API.md - Endpoints documentados                                    │
+│      ├─ SETUP.md - Guía de desarrollo                                      │
+│      ├─ CODE_STYLE.md - Convenciones                                       │
+│      └─ TROUBLESHOOTING.md - Problemas comunes                             │
+│                                                                              │
+│  15. CI/CD Completo (1.5 semanas)                                           │
+│      ├─ GitHub Actions: Build + Test on push                               │
+│      ├─ APK artifact upload                                                │
+│      ├─ Test report generation                                             │
+│      └─ Release workflow with signing                                      │
+│                                                                              │
+│  16-23. Mejoras Menores (1 semana)                                          │
+│      ├─ Centralizar magic numbers                                          │
+│      ├─ Remover dead code (mockLotes)                                      │
+│      ├─ Agregar @Preview composables                                       │
+│      ├─ Dark mode testing                                                  │
+│      ├─ Lint rules personalizadas                                          │
+│      ├─ Analytics integration                                              │
+│      └─ Performance monitoring                                             │
+│                                                                              │
+│  TOTAL ESFUERZO: ~42 horas (2 personas × 3 semanas)                        │
+│  DEADLINE SUGERIDO: Antes de v1.0 production release                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+═════════════════════════════════════════════════════════════════════════════════
+⏱️ TIMELINE ESTIMADO
+═════════════════════════════════════════════════════════════════════════════════
+
+Escenario 1: Equipo de 1 persona
+├─ Tier 1 (Crítico): 2 semanas
+├─ Tier 2 (Alto): 4-5 semanas
+└─ Tier 3 (Medio): 5-6 semanas
+└─ TOTAL: 11-13 semanas
+
+Escenario 2: Equipo de 2 personas (RECOMENDADO)
+├─ Tier 1 (Paralelo): 1.5 semanas
+├─ Tier 2 (Paralelo): 2.5 semanas
+└─ Tier 3 (Paralelo): 3 semanas
+└─ TOTAL: 7-8 semanas
+
+Escenario 3: Equipo de 3 personas (AGRESIVO)
+├─ Todos en paralelo
+└─ TOTAL: 4-5 semanas
+
+═════════════════════════════════════════════════════════════════════════════════
+🎯 RECOMENDACIÓN FINAL
+═════════════════════════════════════════════════════════════════════════════════
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ IMPLEMENTAR INMEDIATAMENTE (Esta Semana):                                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ 1. Repository Interface Fix (Tier 1)              [30 mins]               │
+│    └─ Bloquea: Tests, inyección correcta de dependencias                  │
+│                                                                             │
+│ 2. API Keys Security (Tier 1)                     [1 hora]                │
+│    └─ Bloquea: Launch seguro sin exponer credenciales                     │
+│                                                                             │
+│ 3. ViewModels en Screens (Tier 1) - PRIORIDAD    [3 horas]               │
+│    └─ Bloquea: Datos persistentes, arquitectura correcta                  │
+│                                                                             │
+│ 4. ProGuard Rules (Tier 1)                        [1.5 horas]             │
+│    └─ Bloquea: Release build, crashes en producción                       │
+│                                                                             │
+│ TOTAL: ~6 horas = 1 día de desarrollo                                     │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ DESPUÉS (En orden de prioridad):                                          │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ Semana 2: Tests (Tier 2 - Critical path)                                  │
+│ Semana 3-4: Database + Performance (Tier 2)                               │
+│ Semana 5: Accessibility + TODOs (Tier 2)                                  │
+│ Semana 6-8: Documentación, CI/CD, Polish (Tier 3)                         │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+═════════════════════════════════════════════════════════════════════════════════
+📁 DOCUMENTACIÓN GENERADA
+═════════════════════════════════════════════════════════════════════════════════
+
+Reporte completo en: docs/ROADMAP_MEJORAS_PRIORITARIAS.md
+
+Contiene:
+  ✓ 42 oportunidades de mejora identificadas
+  ✓ Detalles línea por línea de archivos afectados
+  ✓ Código ejemplo para cada fix
+  ✓ Estimaciones de esfuerzo precisas
+  ✓ Métricas de éxito
+  ✓ Plan de implementación por fases
+
+═════════════════════════════════════════════════════════════════════════════════
+
+¿QUIERES QUE COMENCEMOS CON TIER 1?
+
+Puedo implementar los 4 items críticos en la próxima sesión:
+  ✓ Repository interface
+  ✓ API keys security
+  ✓ ViewModels en screens
+  ✓ ProGuard rules
+
+Total: ~6 horas de trabajo
+Resultado: App lista para producción con arquitectura correcta
+
+═════════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,1 @@
+{"version":3,"file":"IProducerRepository.d.ts","sourceRoot":"","sources":["../../../src/domain/repositories/IProducerRepository.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,4BAA4B,CAAC;AAEtD,MAAM,WAAW,mBAAmB;IAClC,QAAQ,CAAC,EAAE,EAAE,MAAM,GAAG,OAAO,CAAC,CAAC,QAAQ,GAAG;QAAE,IAAI,EAAE;YAAE,aAAa,EAAE,MAAM,GAAG,IAAI,CAAA;SAAE,CAAA;KAAE,CAAC,GAAG,IAAI,CAAC,CAAC;CAC/F"}

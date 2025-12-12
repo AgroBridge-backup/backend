@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PRODUCER
+  CERTIFIER
+  BUYER
+}
+
+enum BatchStatus {
+  REGISTERED
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+  REJECTED
+}
+
+enum EventType {
+  HARVEST
+  PROCESSING
+  QUALITY_INSPECTION
+  PACKAGING
+  TRANSPORT_START
+  TRANSPORT_ARRIVAL
+  CUSTOMS_CLEARANCE
+  DELIVERY
+}
+
+enum CertificationType {
+  GLOBALGAP
+  ORGANIC_USDA
+  ORGANIC_EU
+  RAINFOREST_ALLIANCE
+  FAIR_TRADE
+  SENASICA
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole
+  walletAddress String?  @unique
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  
+  producer      Producer?
+  createdEvents TraceabilityEvent[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([email])
+  @@index([walletAddress])
+  @@map("users")
+}
+
+model Producer {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  businessName  String
+  rfc           String   @unique
+  state         String
+  municipality  String
+  address       String?
+  latitude      Decimal  @db.Decimal(10, 6)
+  longitude     Decimal  @db.Decimal(10, 6)
+  
+  totalHectares Decimal? @db.Decimal(10, 2)
+  cropTypes     String[]
+  
+  isWhitelisted Boolean  @default(false)
+  whitelistedAt DateTime?
+  whitelistedBy String?
+  
+  batches          Batch[]
+  certifications   Certification[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([rfc])
+  @@index([isWhitelisted])
+  @@index([state, municipality])
+  @@map("producers")
+}
+
+model Certification {
+  id                String            @id @default(uuid())
+  producerId        String
+  producer          Producer          @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  
+  type              CertificationType
+  certifier         String
+  certificateNumber String            @unique
+  ipfsHash          String?
+  
+  issuedAt          DateTime
+  expiresAt         DateTime
+  isActive          Boolean           @default(true)
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([producerId, type])
+  @@index([certificateNumber])
+  @@index([expiresAt])
+  @@map("certifications")
+}
+
+model Batch {
+  id              String      @id @default(uuid())
+  batchNumber     String      @unique
+  producerId      String
+  producer        Producer    @relation(fields: [producerId], references: [id])
+  
+  cropType        String
+  variety         String
+  quantity        Decimal     @db.Decimal(10, 2)
+  harvestDate     DateTime
+  
+  parcelName      String
+  latitude        Decimal     @db.Decimal(10, 6)
+  longitude       Decimal     @db.Decimal(10, 6)
+  
+  status          BatchStatus @default(REGISTERED)
+  qrCode          String?     @unique
+  
+  nftTokenId      String?     @unique
+  blockchainTxHash String?    @unique
+  
+  events          TraceabilityEvent[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([batchNumber])
+  @@index([producerId])
+  @@index([status])
+  @@index([harvestDate])
+  @@map("batches")
+}
+
+model TraceabilityEvent {
+  id                String    @id @default(uuid())
+  batchId           String
+  batch             Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  
+  eventType         EventType
+  timestamp         DateTime  @default(now())
+  
+  latitude          Decimal   @db.Decimal(10, 6)
+  longitude         Decimal   @db.Decimal(10, 6)
+  locationName      String?
+  
+  temperature       Decimal?  @db.Decimal(5, 2)
+  humidity          Decimal?  @db.Decimal(5, 2)
+  notes             String?   @db.Text
+  
+  ipfsHash          String?
+  photos            String[]
+  
+  blockchainTxHash  String?   @unique
+  blockchainEventId String?   @unique
+  isVerified        Boolean   @default(false)
+  verifiedBy        String?
+  verifiedAt        DateTime?
+  
+  signedByBiometric Boolean   @default(false)
+  signatureHash     String?
+  
+  createdById       String
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([batchId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([blockchainTxHash])
+  @@map("traceability_events")
+}
+
+model RefreshToken {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  
+  createdAt    DateTime @default(now())
+  
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}

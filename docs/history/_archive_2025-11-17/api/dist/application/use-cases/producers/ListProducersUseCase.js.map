@@ -1,0 +1,1 @@
+{"version":3,"file":"ListProducersUseCase.js","sourceRoot":"","sources":["../../../../src/application/use-cases/producers/ListProducersUseCase.ts"],"names":[],"mappings":"AAAA,MAAM,OAAO,oBAAoB;IAC/B,KAAK,CAAC,OAAO,CAAC,IAAS;QACrB,OAAO,CAAC,EAAE,EAAE,EAAE,kBAAkB,EAAE,YAAY,EAAE,eAAe,EAAE,CAAC,CAAC;IACrE,CAAC;CACF"}

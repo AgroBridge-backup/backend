@@ -1,0 +1,1 @@
+{"version":3,"file":"ProducerNotWhitelistedError.js","sourceRoot":"","sources":["ProducerNotWhitelistedError.ts"],"names":[],"mappings":";;;AAAA,yCAAsC;AAEtC,MAAa,2BAA4B,SAAQ,mBAAQ;IAChD,IAAI,CAAS;IACpB,YAAY,OAAe;QACzB,KAAK,CAAC,OAAO,EAAE,GAAG,CAAC,CAAC;QACpB,IAAI,CAAC,IAAI,GAAG,6BAA6B,CAAC;IAC5C,CAAC;CACF;AAND,kEAMC"}

@@ -1,0 +1,427 @@
+/* === SISTEMA DE ACCESIBILIDAD WCAG AAA - JONY IVE EDITION === */
+
+/* Reset de accesibilidad mejorado */
+*:focus {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: 2px;
+    transition: outline-offset 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Skip Link - Diseño minimalista pero funcional */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(
+        135deg,
+        var(--deep-green),
+        var(--primary-green)
+    );
+    color: var(--white);
+    padding: 16px 32px;
+    border-radius: 12px;
+    z-index: 10000;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border: 2px solid var(--gold);
+    box-shadow: var(--shadow-lg);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+}
+
+.skip-link:focus {
+    top: 20px;
+    opacity: 1;
+    transform: translateX(-50%) scale(1.05);
+}
+
+/* Sistema de alto contraste refinado */
+@media (prefers-contrast: high) {
+    :root {
+        --primary-green: #000000;
+        --deep-green: #000000;
+        --gold: #000000;
+        --white: #ffffff;
+        --light-bg: #ffffff;
+        --gray-800: #000000;
+    }
+
+    .nav {
+        background: #000000 !important;
+        border-bottom: 3px solid #ffffff;
+    }
+
+    .hero {
+        background: linear-gradient(135deg, #000000, #333333) !important;
+    }
+
+    .button {
+        border: 3px solid currentColor;
+        background: #000000 !important;
+        color: #ffffff !important;
+    }
+
+    .button--secondary {
+        background: transparent !important;
+        border: 3px solid #000000;
+    }
+
+    .feature-card,
+    .product-item,
+    .validation-card,
+    .timeline-item,
+    .contact-card {
+        border: 3px solid #000000 !important;
+        background: #ffffff !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .validation-card {
+        background: #000000 !important;
+        color: #ffffff !important;
+        border: 3px solid #ffffff !important;
+    }
+
+    /* Textos de alto contraste */
+    .hero__title,
+    .section__title,
+    .feature-card__title,
+    .product-item__title,
+    .timeline-item__title {
+        color: #000000 !important;
+        text-shadow: none !important;
+    }
+
+    .hero__subtitle,
+    .section__subtitle,
+    .feature-card__text,
+    .product-item__description,
+    .timeline-item__text {
+        color: #000000 !important;
+        opacity: 1 !important;
+    }
+
+    .hero__title-accent {
+        background: none !important;
+        -webkit-text-fill-color: #000000 !important;
+        color: #000000 !important;
+    }
+}
+
+/* Sistema de reducción de movimiento - Precisión absoluta */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .hero::before {
+        animation: none !important;
+    }
+
+    .hero__title-accent {
+        animation: none !important;
+        background: var(--gold) !important;
+        -webkit-text-fill-color: initial !important;
+        background-clip: initial !important;
+    }
+
+    .feature-card:hover,
+    .product-item:hover,
+    .button:hover,
+    .timeline-item:hover {
+        transform: none !important;
+    }
+
+    .validation-card::before {
+        animation: none !important;
+        opacity: 0 !important;
+    }
+
+    .button::before {
+        display: none !important;
+    }
+}
+
+/* Sistema de focus visible - Diseño meticuloso */
+:focus-visible {
+    outline: 4px solid var(--gold);
+    outline-offset: 4px;
+    border-radius: 4px;
+    box-shadow: 0 0 0 8px rgba(212, 175, 55, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estados de interacción mejorados */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    transform: scale(1.02);
+    z-index: 10;
+}
+
+/* Sistema de tipografía escalable */
+@media (min-width: 1200px) {
+    html {
+        font-size: 18px;
+    }
+
+    .container {
+        max-width: 1400px;
+    }
+}
+
+@media (min-width: 1600px) {
+    html {
+        font-size: 20px;
+    }
+
+    .container {
+        max-width: 1600px;
+    }
+}
+
+/* Controles de formulario accesibles */
+input,
+select,
+textarea {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    min-height: 56px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder {
+    opacity: 0.7;
+}
+
+/* Mejoras de legibilidad - Precisión tipográfica */
+p,
+li,
+.detail-label,
+.detail-value,
+.contact-card__text {
+    line-height: 1.7;
+    max-width: 70ch;
+    letter-spacing: 0.01em;
+}
+
+.hero__subtitle,
+.section__subtitle {
+    line-height: 1.8;
+    max-width: 60ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Sistema de navegación por teclado mejorado */
+.nav__link:focus {
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 8px;
+    padding: 8px 16px;
+    margin: -8px -16px;
+}
+
+/* Estados de validación de formularios */
+input:invalid {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+input:valid {
+    border-color: #16a34a;
+}
+
+/* Soporte para lectores de pantalla */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Indicadores de estado para tecnologías asistivas */
+[aria-busy='true']::before {
+    content: 'Cargando...';
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Mejoras de contraste para elementos interactivos */
+.button {
+    position: relative;
+}
+
+.button:focus {
+    background: var(--dark-gold);
+    color: var(--deep-green);
+}
+
+.button--secondary:focus {
+    background: var(--gold);
+    color: var(--deep-green);
+}
+
+/* Sistema de landmarks ARIA mejorado */
+[role='banner'],
+[role='main'],
+[role='contentinfo'],
+[role='navigation'] {
+    position: relative;
+}
+
+/* Soporte para modo oscuro del sistema */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --white: #1a1a1a;
+        --light-bg: #2d2d2d;
+        --gray-800: #e5e5e5;
+    }
+
+    .feature-card,
+    .product-item,
+    .timeline-item,
+    .contact-card {
+        background: #2d2d2d;
+        color: #e5e5e5;
+        border-color: #404040;
+    }
+
+    .feature-card__text,
+    .product-item__description,
+    .timeline-item__text,
+    .contact-card__text {
+        color: #cccccc;
+    }
+}
+
+/* Mejoras de performance para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .feature-card:hover,
+    .product-item:hover,
+    .timeline-item:hover {
+        transform: none;
+    }
+
+    .button:hover {
+        transform: none;
+    }
+
+    /* Aumentar áreas táctiles */
+    .nav__link,
+    .button,
+    .validation-card__button {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 24px;
+    }
+}
+
+/* Soporte para orientación landscape */
+@media (orientation: landscape) and (max-height: 500px) {
+    .hero {
+        min-height: 120vh;
+    }
+
+    .nav {
+        position: static;
+    }
+}
+
+/* Sistema de errores y validaciones */
+.validation-card__error-text {
+    display: block;
+    background: rgba(220, 38, 38, 0.1);
+    border: 2px solid #dc2626;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    color: #dc2626;
+    font-weight: 600;
+    text-align: center;
+}
+
+.validation-card__error-text[aria-hidden='true'] {
+    display: none;
+}
+
+/* Estados de carga accesibles */
+[aria-live='polite'] {
+    position: relative;
+}
+
+.loading-indicator::before {
+    content: 'Procesando solicitud...';
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Mejoras de semántica visual */
+.hero__title,
+.section__title {
+    word-spacing: -0.02em;
+    letter-spacing: -0.01em;
+}
+
+/* Sistema de zoom seguro */
+@media (max-width: 768px) {
+    html {
+        -webkit-text-size-adjust: none;
+        text-size-adjust: none;
+    }
+
+    .container {
+        padding-left: max(2rem, env(safe-area-inset-left));
+        padding-right: max(2rem, env(safe-area-inset-right));
+    }
+}
+
+/* Soporte para navegación por voz */
+[nav-speaking] {
+    outline: 4px solid #8b5cf6;
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+/* Estados de foco para grupos de elementos */
+.form-group:focus-within {
+    background: rgba(212, 175, 55, 0.05);
+    border-radius: 12px;
+    padding: 1rem;
+    margin: -1rem;
+}

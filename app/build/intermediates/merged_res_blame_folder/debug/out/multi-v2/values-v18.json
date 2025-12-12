@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.agrobridge.app-mergeDebugResources-81:/values-v18/values-v18.xml",
+            "map": [
+                {
+                    "source": "/Users/mac/.gradle/caches/transforms-3/72b815a490ef844b6b16fbcb94560245/transformed/appcompat-1.6.1/res/values-v18/values-v18.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "48",
+                        "endOffsets": "99"
+                    }
+                }
+            ]
+        }
+    ]
+}

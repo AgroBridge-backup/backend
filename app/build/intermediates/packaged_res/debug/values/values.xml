@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AgroBridge</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_delete">Eliminar</string>
+    <string name="common_edit">Editar</string>
+    <string name="common_error">Error</string>
+    <string name="common_loading">Cargando…</string>
+    <string name="common_ok">Aceptar</string>
+    <string name="common_retry">Reintentar</string>
+    <string name="common_save">Guardar</string>
+    <string name="dashboard_area_total">Área Total</string>
+    <string name="dashboard_lotes_activos">Lotes Activos</string>
+    <string name="dashboard_title">Bienvenido a AgroBridge</string>
+    <string name="dashboard_total_lotes">Total Lotes</string>
+    <string name="lote_area">Área</string>
+    <string name="lote_cultivo">Cultivo</string>
+    <string name="lote_details">Detalles del Lote</string>
+    <string name="lote_estado">Estado</string>
+    <string name="lote_nombre">Nombre</string>
+    <string name="lote_productor">Productor</string>
+    <string name="lotes_title">Mis Lotes</string>
+    <string name="map_location_permission">Permiso de ubicación necesario</string>
+    <string name="map_location_permission_rationale">AgroBridge necesita acceso a tu ubicación para mostrar los lotes en el mapa.</string>
+    <string name="map_title">Mapa de Lotes</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_lotes">Lotes</string>
+    <string name="nav_map">Mapa</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_scanner">Scanner</string>
+    <string name="nav_weather">Clima</string>
+    <string name="scanner_analyzing">Analizando…</string>
+    <string name="scanner_camera_permission">Permiso de cámara necesario</string>
+    <string name="scanner_camera_permission_rationale">AgroBridge necesita acceso a la cámara para analizar la salud de los cultivos.</string>
+    <string name="scanner_result">Resultado del Análisis</string>
+    <string name="scanner_title">Análisis de Cultivos</string>
+    <string name="weather_current">Clima Actual</string>
+    <string name="weather_forecast">Pronóstico 5 Días</string>
+    <string name="weather_humidity">Humedad</string>
+    <string name="weather_temperature">Temperatura</string>
+    <string name="weather_title">Pronóstico del Clima</string>
+    <string name="weather_wind">Viento</string>
+    <style name="Theme.AgroBridge" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

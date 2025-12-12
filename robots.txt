@@ -1,0 +1,28 @@
+# public_html/robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /private/
+Disallow: /src/
+Disallow: /tools/
+
+# Sitemap
+Sitemap: https://agrobridgeint.com/.xml
+
+# AgroBridge ZTD - Enterprise Crawling
+Crawl-delay: 1
+Visit-time: 0600-1800
+
+# Googlebot específico
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+# Bingbot
+User-agent: Bingbot  
+Allow: /
+Crawl-delay: 1
+
+# ¡AGROBRIDGE ACTIVO!
+# Generado: 2025-11-01 | ZTD Protocol

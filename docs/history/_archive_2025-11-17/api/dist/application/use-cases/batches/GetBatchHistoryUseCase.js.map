@@ -1,0 +1,1 @@
+{"version":3,"file":"GetBatchHistoryUseCase.js","sourceRoot":"","sources":["../../../../src/application/use-cases/batches/GetBatchHistoryUseCase.ts"],"names":[],"mappings":"AAAA,MAAM,OAAO,sBAAsB;IACjC,KAAK,CAAC,OAAO,CAAC,GAAQ;QACpB,OAAO,CAAC,GAAG,CAAC,GAAG,CAAC,CAAC;QACjB,OAAO,CAAC,EAAE,SAAS,EAAE,SAAS,EAAE,SAAS,EAAE,IAAI,IAAI,EAAE,EAAE,CAAC,CAAC;IAC3D,CAAC;CACF"}

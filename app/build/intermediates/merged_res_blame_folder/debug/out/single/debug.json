@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.agrobridge.app-merged_res-83:/xml_network_security_config.xml.flat",
+        "source": "com.agrobridge.app-main-85:/xml/network_security_config.xml"
+    },
+    {
+        "merged": "com.agrobridge.app-merged_res-83:/xml_data_extraction_rules.xml.flat",
+        "source": "com.agrobridge.app-main-85:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.agrobridge.app-merged_res-83:/xml_backup_rules.xml.flat",
+        "source": "com.agrobridge.app-main-85:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.agrobridge.app-merged_res-83:/xml_file_paths.xml.flat",
+        "source": "com.agrobridge.app-main-85:/xml/file_paths.xml"
+    }
+]

@@ -1,0 +1,319 @@
+// apps/berry-service/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@agrobridge/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("BERRY_DATABASE_URL")
+}
+
+// ===== CORE MODELS =====
+
+model BerryBatch {
+  id                  String              @id @default(uuid())
+  batchNumber         String              @unique
+  tenantId            String              // Multi-tenant
+  
+  // Metadata
+  berryType           BerryType
+  variety             String?             // "Albion", "San Andreas", etc.
+  
+  // Production Info
+  harvestDate         DateTime
+  harvestLocation     Json                // GPS coordinates
+  farmBlockId         String?
+  estimatedYield      Float?              // kg
+  
+  // Quality Metrics (medidos en campo)
+  brixIndex           Float?              // °Brix (sweetness)
+  phLevel             Float?              // Acidity
+  firmness            Float?              // kg/cm²
+  colorGrade          String?             // A, AA, AAA
+  
+  // AI/ML Predictions
+  freshnessPrediction Float?              // 0-100%
+  shelfLifeDays       Int?                // Días estimados
+  defectRate          Float?              // % defectos detectados por visión
+  
+  // Cold Chain
+  precoolingTemp      Float?              // °C
+  targetStorageTemp   Float?              // °C
+  maxTempDeviation    Float?              // °C permitida
+  
+  // Packaging
+  packagingType       PackagingType
+  packagingDate       DateTime?
+  clamshellsCount     Int?
+  palletsCount        Int?
+  totalWeightKg       Float
+  
+  // Blockchain/IPFS
+  blockchainTxHash    String?
+  ipfsDocumentHash    String?
+  
+  // Status
+  currentStatus       BatchStatus         @default(CREATED)
+  isActive            Boolean             @default(true)
+  
+  // Relations
+  tenant              Tenant              @relation(fields: [tenantId], references: [id])
+  events              BerryBatchEvent[]
+  certifications      BerryBatchCertification[]
+  qualityInspections  QualityInspection[]
+  shipments           Shipment[]
+  
+  // Timestamps
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([tenantId])
+  @@index([batchNumber])
+  @@index([currentStatus])
+  @@index([harvestDate])
+}
+
+// ===== EVENTS (Event Sourcing) =====
+
+model BerryBatchEvent {
+  id                  String              @id @default(uuid())
+  batchId             String
+  batch               BerryBatch          @relation(fields: [batchId], references: [id])
+  
+  eventType           BerryEventType
+  eventData           Json                // Payload específico del evento
+  metadata            Json                // User, device, location
+  
+  blockchainTxHash    String?
+  ipfsHash            String?
+  
+  sequenceNumber      Int                 // Orden garantizado
+  occurredAt          DateTime            @default(now())
+  
+  @@index([batchId])
+  @@index([eventType])
+  @@unique([batchId, sequenceNumber])
+}
+
+enum BerryEventType {
+  BATCH_CREATED
+  HARVESTED
+  QUALITY_INSPECTED
+  PRECOOLED
+  PACKED
+  LABELED
+  COLD_STORAGE_ENTERED
+  CERTIFICATION_REQUESTED
+  CERTIFICATION_APPROVED
+  CERTIFICATION_REJECTED
+  SHIPMENT_PREPARED
+  LOADED_FOR_TRANSPORT
+  IN_TRANSIT
+  TEMPERATURE_ALERT
+  DELIVERED
+  RECEIVED_BY_IMPORTER
+  QUALITY_CLAIM_FILED
+  BATCH_RECALLED
+}
+
+// ===== CERTIFICATIONS =====
+
+model BerryBatchCertification {
+  id                  String              @id @default(uuid())
+  batchId             String
+  batch               BerryBatch          @relation(fields: [batchId], references: [id])
+  
+  certificationType   CertificationType
+  certifierOrgId      String              // Tenant ID del certificador
+  certifierName       String
+  
+  certificationNumber String
+  issuedDate          DateTime
+  expiryDate          DateTime?
+  
+  status              CertificationStatus @default(PENDING)
+  
+  // Documentos
+  documentUrl         String?
+  ipfsHash            String?
+  blockchainTxHash    String?
+  
+  // Auditoría
+  inspectionDate      DateTime?
+  inspectorName       String?
+  inspectionNotes     String?
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([batchId])
+  @@index([certificationType])
+  @@index([status])
+}
+
+enum CertificationType {
+  GLOBALGAP
+  PRIMUS_GFS
+  USDA_ORGANIC
+  EU_ORGANIC
+  MEXICO_ORGANIC
+  FAIR_TRADE
+  RAINFOREST_ALLIANCE
+  GRASP
+  SMETA
+  HACCP
+  FSMA
+  CUSTOM
+}
+
+enum CertificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+  SUSPENDED
+}
+
+// ===== QUALITY INSPECTIONS =====
+
+model QualityInspection {
+  id                  String              @id @default(uuid())
+  batchId             String
+  batch               BerryBatch          @relation(fields: [batchId], references: [id])
+  
+  inspectionType      InspectionType
+  inspectorId         String
+  inspectionDate      DateTime            @default(now())
+  
+  // Métricas medidas
+  sampleSize          Int                 // Cuántas unidades inspeccionadas
+  brixReading         Float?
+  phReading           Float?
+  firmnessReading     Float?
+  
+  // Defectos
+  defectCount         Int                 @default(0)
+  defectTypes         Json?               // Array de tipos de defectos
+  defectPercentage    Float?
+  
+  // AI Vision
+  aiDefectDetection   Boolean             @default(false)
+  aiConfidenceScore   Float?
+  aiImageUrls         String[]
+  
+  // Pass/Fail
+  passed              Boolean
+  grade               String?             // A, AA, AAA, B, C
+  notes               String?
+  
+  // Blockchain
+  blockchainTxHash    String?
+  ipfsHash            String?
+  
+  createdAt           DateTime            @default(now())
+  
+  @@index([batchId])
+  @@index([inspectionDate])
+}
+
+enum InspectionType {
+  HARVEST
+  POST_COOLING
+  PRE_SHIPMENT
+  ARRIVAL
+  RANDOM_AUDIT
+}
+
+// ===== ENUMS =====
+
+enum BerryType {
+  STRAWBERRY
+  BLUEBERRY
+  RASPBERRY
+  BLACKBERRY
+}
+
+enum PackagingType {
+  CLAMSHELL_250G
+  CLAMSHELL_500G
+  BULK_PALLET
+  CARDBOARD_BOX
+  PLASTIC_TRAY
+}
+
+enum BatchStatus {
+  CREATED
+  IN_FIELD
+  HARVESTED
+  IN_COOLING
+  PACKED
+  CERTIFIED
+  IN_STORAGE
+  READY_TO_SHIP
+  IN_TRANSIT
+  DELIVERED
+  COMPLETED
+  RECALLED
+  REJECTED
+}
+
+// ===== MULTI-TENANT =====
+
+model Tenant {
+  id                  String              @id @default(uuid())
+  name                String
+  type                TenantType
+  subscriptionTier    SubscriptionTier    @default(FREE)
+  
+  // Contact
+  contactEmail        String
+  contactPhone        String?
+  address             Json?
+  
+  // Settings
+  settings            Json?
+  webhookUrl          String?
+  apiKey              String?             @unique
+  
+  // Limits (por tier)
+  maxBatchesPerMonth  Int                 @default(100)
+  maxUsers            Int                 @default(5)
+  
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  berryBatches        BerryBatch[]
+}
+
+enum TenantType {
+  PRODUCER
+  CERTIFIER
+  PACKER
+  SHIPPER
+  IMPORTER
+  RETAILER
+}
+
+enum SubscriptionTier {
+  FREE              // 100 batches/mes
+  PRO               // 1000 batches/mes, $99/mes
+  ENTERPRISE        // Ilimitado, custom pricing
+}
+
+// Note: The Shipment model is referenced but not defined.
+// It will need to be defined, likely in its own service (e.g., shipment-service)
+// or within the berry-service if it's tightly coupled.
+// For now, we'll add a placeholder.
+
+model Shipment {
+  id    String @id @default(uuid())
+  // ... other shipment fields
+  batchId String
+  batch   BerryBatch @relation(fields: [batchId], references: [id])
+
+  @@index([batchId])
+}

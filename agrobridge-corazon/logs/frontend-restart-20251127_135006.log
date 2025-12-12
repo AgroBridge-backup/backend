@@ -1,0 +1,24 @@
+
+> agrobridge-corazon@0.1.0 dev
+> next dev
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/mac/SuperAIProject/AgroBridgeInt.com/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /Users/mac/SuperAIProject/AgroBridgeInt.com/agrobridge-corazon/package-lock.json
+
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.1.67:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 337ms
+ GET / 200 in 1972ms (compile: 1804ms, render: 168ms)
+ ⨯ The requested resource "https://placehold.co/100x40/ffffff/000000?text=GlobalGAP" has type "image/svg+xml" but dangerouslyAllowSVG is disabled. Consider adding the "unoptimized" property to the <Image>.
+ ⨯ The requested resource "https://placehold.co/100x40/ffffff/000000?text=SENASICA" has type "image/svg+xml" but dangerouslyAllowSVG is disabled. Consider adding the "unoptimized" property to the <Image>.
+ ⨯ The requested resource "https://placehold.co/100x40/ffffff/000000?text=USDA+Organic" has type "image/svg+xml" but dangerouslyAllowSVG is disabled. Consider adding the "unoptimized" property to the <Image>.
+ ⨯ The requested resource "https://placehold.co/100x40/ffffff/000000?text=FDA" has type "image/svg+xml" but dangerouslyAllowSVG is disabled. Consider adding the "unoptimized" property to the <Image>.
+ ⨯ The requested resource "https://placehold.co/100x40/ffffff/000000?text=Rainforest+Alliance" has type "image/svg+xml" but dangerouslyAllowSVG is disabled. Consider adding the "unoptimized" property to the <Image>.

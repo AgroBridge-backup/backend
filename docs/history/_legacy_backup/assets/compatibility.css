@@ -1,0 +1,497 @@
+/* === SISTEMA DE COMPATIBILIDAD UNIVERSAL - JONY IVE PERFECTION === */
+
+/* Reset de compatibilidad universal */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+/* Garantía de renderizado consistente */
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sistema de fuentes con fallbacks elegantes */
+body {
+    font-family:
+        'Inter',
+        -apple-system,
+        'BlinkMacSystemFont',
+        'Segoe UI',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'Noto Sans',
+        sans-serif,
+        'Apple Color Emoji',
+        'Segoe UI Emoji',
+        'Segoe UI Symbol',
+        'Noto Color Emoji';
+}
+
+/* Compatibilidad con navegadores legacy */
+.nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: rgba(10, 92, 54, 0.95);
+
+    /* Fallback para backdrop-filter */
+    background: rgb(10, 92, 54);
+}
+
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .nav {
+        background: rgba(10, 92, 54, 0.95);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+    }
+}
+
+/* Sistema de gradientes con fallbacks */
+.hero {
+    background: rgb(6, 78, 50); /* Fallback sólido */
+    background: -moz-linear-gradient(
+        135deg,
+        var(--deep-green) 0%,
+        var(--primary-green) 50%,
+        #0f766e 100%
+    );
+    background: -webkit-linear-gradient(
+        135deg,
+        var(--deep-green) 0%,
+        var(--primary-green) 50%,
+        #0f766e 100%
+    );
+    background: linear-gradient(
+        135deg,
+        var(--deep-green) 0%,
+        var(--primary-green) 50%,
+        #0f766e 100%
+    );
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#064e32', endColorstr='#0f766e', GradientType=1);
+}
+
+/* Compatibilidad con CSS Grid + Fallback Flexbox */
+.features-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+@supports (display: grid) {
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 3rem;
+    }
+}
+
+/* Sistema de variables CSS con fallbacks */
+:root {
+    /* Colores base para navegadores sin soporte de variables */
+    --primary-green: #0a5c36;
+    --deep-green: #064e32;
+    --gold: #d4af37;
+}
+
+/* Fallback para navegadores sin CSS Custom Properties */
+.hero {
+    background: #064e32; /* Fallback para var(--deep-green) */
+}
+
+@supports (--css: variables) {
+    .hero {
+        background: var(--deep-green);
+    }
+}
+
+/* Compatibilidad con scroll-behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Sistema de animaciones con prefijos */
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+        -webkit-transform: translateY(0px) rotate(0deg);
+        -ms-transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(1deg);
+        -webkit-transform: translateY(-20px) rotate(1deg);
+        -ms-transform: translateY(-20px) rotate(1deg);
+    }
+}
+
+.hero::before {
+    animation: float 6s ease-in-out infinite;
+    -webkit-animation: float 6s ease-in-out infinite;
+    -moz-animation: float 6s ease-in-out infinite;
+    -o-animation: float 6s ease-in-out infinite;
+}
+
+/* Compatibilidad con transform 3D */
+.feature-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    -webkit-transform: translateY(-12px) scale(1.02);
+    -ms-transform: translateY(-12px) scale(1.02);
+
+    /* Fallback para navegadores sin transform */
+    position: relative;
+    top: -12px;
+}
+
+/* Sistema de gradientes de texto con fallback */
+.hero__title-accent {
+    color: var(--gold); /* Fallback para navegadores sin soporte */
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .hero__title-accent {
+        background: linear-gradient(135deg, var(--gold), #fef3c7, var(--gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+}
+
+/* Compatibilidad con backdrop-filter para validation card */
+.validation-card {
+    background: #1e293b; /* Fallback sólido */
+}
+
+@supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
+    .validation-card__language select {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+}
+
+/* Sistema de gap con fallback para navegadores antiguos */
+.features-grid {
+    margin: -1rem; /* Fallback para gap */
+}
+
+.features-grid > * {
+    margin: 1rem; /* Fallback para gap */
+}
+
+@supports (gap: 1rem) {
+    .features-grid {
+        margin: 0;
+    }
+
+    .features-grid > * {
+        margin: 0;
+    }
+}
+
+/* Compatibilidad con aspect-ratio */
+.product-item__image-placeholder {
+    position: relative;
+    padding-bottom: 75%; /* Fallback para aspect-ratio 4:3 */
+}
+
+@supports (aspect-ratio: 4 / 3) {
+    .product-item__image-placeholder {
+        aspect-ratio: 4 / 3;
+        padding-bottom: 0;
+    }
+}
+
+/* Sistema de sticky con fallback */
+.nav {
+    position: -webkit-sticky; /* Safari */
+    position: sticky;
+    top: 0;
+}
+
+/* Compatibilidad con formularios modernos */
+.validation-card__input {
+    /* Prevenir estilos nativos en iOS */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    border-radius: 16px;
+    -webkit-border-radius: 16px;
+    -moz-border-radius: 16px;
+}
+
+/* Eliminar flechas en inputs number en navegadores específicos */
+.validation-card__input[type='number']::-webkit-outer-spin-button,
+.validation-card__input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.validation-card__input[type='number'] {
+    -moz-appearance: textfield;
+}
+
+/* Sistema de selección de texto consistente */
+::selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--deep-green);
+}
+
+::-moz-selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--deep-green);
+}
+
+/* Compatibilidad con scroll-padding para anclas */
+html {
+    scroll-padding-top: 80px; /* Altura del header */
+}
+
+/* Fallback para :focus-visible */
+.button:focus {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+}
+
+@supports selector(:focus-visible) {
+    .button:focus {
+        outline: none;
+    }
+
+    .button:focus-visible {
+        outline: 3px solid var(--gold);
+        outline-offset: 2px;
+    }
+}
+
+/* Sistema de contenedores con safe areas */
+.container {
+    padding-left: max(2rem, env(safe-area-inset-left));
+    padding-right: max(2rem, env(safe-area-inset-right));
+}
+
+@supports not (padding: max(0px)) {
+    .container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+/* Compatibilidad con CSS Grid para productos */
+.product-item {
+    display: flex;
+    flex-direction: column;
+}
+
+@supports (display: grid) {
+    .product-item {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 4rem;
+    }
+
+    .product-item--reverse {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+/* Sistema de transiciones con prefijos */
+.button {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    -moz-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    -o-transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Compatibilidad con filter en SVG */
+.feature-card__icon {
+    /* Fallback para emojis en navegadores antiguos */
+    font-size: 3.5rem;
+}
+
+/* Sistema de overflow para navegadores móviles */
+body {
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+}
+
+/* Compatibilidad con viewport units en mobile */
+.hero {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    min-height: fill-available;
+}
+
+/* Fallback para backdrop-filter en Firefox */
+@-moz-document url-prefix() {
+    .nav {
+        background: rgba(10, 92, 54, 0.98);
+    }
+
+    .validation-card__language select {
+        background: rgba(30, 41, 59, 0.9);
+    }
+}
+
+/* Compatibilidad con Internet Explorer (limitada) */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    .hero::before {
+        display: none; /* No soporta animaciones complejas */
+    }
+
+    .features-grid {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .feature-card {
+        width: calc(33.333% - 2rem);
+        margin: 1rem;
+    }
+}
+
+/* Sistema de impresión refinado */
+@media print {
+    .nav,
+    .hero__cta-group,
+    .validation-card__button {
+        display: none;
+    }
+
+    .hero {
+        background: white !important;
+        color: black !important;
+        min-height: auto;
+    }
+
+    .hero__title-accent {
+        background: none !important;
+        -webkit-text-fill-color: black !important;
+        color: black !important;
+    }
+
+    .section {
+        padding: 2rem 0;
+        break-inside: avoid;
+    }
+
+    .feature-card,
+    .product-item,
+    .validation-card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}
+
+/* Compatibilidad con navegadores de texto (Lynx, etc) */
+@media speech {
+    .hero::before,
+    .validation-card::before {
+        display: none;
+    }
+
+    .feature-card__icon::before {
+        content: '[' attr(aria-label) '] ';
+    }
+}
+
+/* Sistema de dark mode con detección nativa */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --white: #1a1a1a;
+        --light-bg: #2d2d2d;
+        --gray-800: #e5e5e5;
+    }
+}
+
+/* Detección de capacidades de hover */
+@media (hover: hover) and (pointer: fine) {
+    .feature-card:hover {
+        transform: translateY(-12px) scale(1.02);
+    }
+}
+
+@media (hover: none) {
+    .feature-card:active {
+        transform: scale(0.98);
+    }
+}
+
+/* Sistema de carga progresiva para fuentes */
+@font-face {
+    font-family: 'Inter Fallback';
+    size-adjust: 107%;
+    ascent-override: 90%;
+    descent-override: 22%;
+    line-gap-override: 0%;
+    src: local('Arial');
+}
+
+body {
+    font-family: 'Inter', 'Inter Fallback', sans-serif;
+}
+
+/* Compatibilidad con scroll-snap */
+.hero {
+    scroll-snap-align: start;
+}
+
+html {
+    scroll-snap-type: y proximity;
+}
+
+/* Fallback para navegadores sin scroll-snap */
+@supports not (scroll-snap-type: y proximity) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Sistema de validación de formularios moderna */
+.validation-card__input:invalid {
+    border-color: #dc2626;
+}
+
+.validation-card__input:valid {
+    border-color: #16a34a;
+}
+
+/* Prevenir zoom en iOS en inputs */
+@media screen and (max-width: 768px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px; /* Prevenir zoom en iOS */
+    }
+}
+
+/* Compatibilidad con CSS Masonry */
+@supports (grid-template-rows: masonry) {
+    .features-grid {
+        grid-template-rows: masonry;
+    }
+}
+
+/* Sistema de detección de JavaScript */
+.no-js .nav__menu {
+    display: block; /* Mostrar menú si no hay JS */
+}
+
+.no-js .validation-card__button {
+    opacity: 0.5;
+    pointer-events: none;
+}

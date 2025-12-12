@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  PRODUCER
+  BUYER
+  GUEST
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String?
+  role      Role      @default(GUEST)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  internalNotes String? // Encrypted field
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  batches       Batch[]
+}
+
+model Batch {
+  id          String        @id @default(cuid())
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id])
+  quantity    Float
+  createdAt   DateTime      @default(now())
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String        @id @default(cuid())
+  batchId     String
+  batch       Batch         @relation(fields: [batchId], references: [id])
+  actor       String // e.g., 'FARMER', 'DISTRIBUTOR', 'RETAILER'
+  location    String?
+  timestamp   DateTime      @default(now())
+  block       Block         @relation(fields: [blockHash], references: [hash])
+  blockHash   String
+}
+
+model Block {
+  hash          String        @id
+  previousHash  String?       @unique
+  timestamp     DateTime      @default(now())
+  transactions  Transaction[]
+  nonce         Int
+}

@@ -1,0 +1,410 @@
+# ══════════════════════════════════════════════════════════════════════════
+# AGROBRIDGE - DOCKER COMPOSE ORCHESTRATION
+# ══════════════════════════════════════════════════════════════════════════
+# Version: 3.9 (latest stable, supports all features below)
+# Purpose: Local development + staging environment simulation
+# Services: API (Node.js) + Database (Postgres) + Cache (Redis) + Admin (Prisma Studio)
+# Network: Internal bridge network (service discovery via DNS)
+# Volumes: Persistent data (postgres, redis) + ephemeral (logs, tmp)
+# ══════════════════════════════════════════════════════════════════════════
+# Created: 2025-12-01
+# Last Updated: 2025-12-02
+# Author: Alejandro Navarro Ayala - CEO & Senior Developer
+# ══════════════════════════════════════════════════════════════════════════
+
+version: '3.9'
+
+# ──────────────────────────────────────────────────────────────────────────
+# SERVICE DEFINITIONS (4 services: api, postgres, redis, prisma-studio)
+# ──────────────────────────────────────────────────────────────────────────
+services:
+
+  # ════════════════════════════════════════════════════════════════════════
+  # SERVICE 1: API - AgroBridge Backend (Node.js + Express + Prisma)
+  # ════════════════════════════════════════════════════════════════════════
+  api:
+    # Build configuration
+    build:
+      context: .                        # Build context (current directory)
+      dockerfile: Dockerfile            # Dockerfile to use
+      target: runtime                   # Final stage to build
+      args:
+        VERSION: ${VERSION:-dev}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+
+    # Image tagging
+    image: agrobridge-api:${VERSION:-latest}
+
+    # Container identification
+    container_name: agrobridge-api
+    hostname: api                         # DNS name within network
+
+    # Restart policy (always restart unless explicitly stopped)
+    restart: unless-stopped
+
+    # Port mapping (host:container)
+    # Format: "IP:HOST_PORT:CONTAINER_PORT"
+    # 0.0.0.0 = all interfaces, 127.0.0.1 = localhost only
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+    # Environment variables (priority: .env file → docker-compose env → defaults)
+    environment:
+      # ─────────────────────────────────────────────────────────────────
+      # Core Configuration
+      # ─────────────────────────────────────────────────────────────────
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+
+      # ─────────────────────────────────────────────────────────────────
+      # Database Connection
+      # Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE?OPTIONS
+      # Why 'postgres' hostname: Docker Compose DNS resolution
+      # ─────────────────────────────────────────────────────────────────
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agrobridge}:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/${POSTGRES_DB:-agrobridge_dev}?schema=public&connection_limit=20&pool_timeout=60
+
+      # ─────────────────────────────────────────────────────────────────
+      # Redis Cache Connection
+      # Format: redis://HOST:PORT/DB_NUMBER
+      # ─────────────────────────────────────────────────────────────────
+      REDIS_URL: redis://redis:6379/0
+      REDIS_TTL: ${REDIS_TTL:-300}
+
+      # ─────────────────────────────────────────────────────────────────
+      # Authentication & Security
+      # ─────────────────────────────────────────────────────────────────
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+
+      # ─────────────────────────────────────────────────────────────────
+      # CORS Configuration (comma-separated origins)
+      # ─────────────────────────────────────────────────────────────────
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173,http://localhost:5555}
+
+      # ─────────────────────────────────────────────────────────────────
+      # Logging & Monitoring
+      # ─────────────────────────────────────────────────────────────────
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      # ─────────────────────────────────────────────────────────────────
+      # APM & Observability (Optional - set in .env if using)
+      # ─────────────────────────────────────────────────────────────────
+      DATADOG_API_KEY: ${DATADOG_API_KEY:-}
+      DATADOG_SITE: ${DATADOG_SITE:-datadoghq.com}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+
+      # ─────────────────────────────────────────────────────────────────
+      # Feature Flags
+      # ─────────────────────────────────────────────────────────────────
+      ENABLE_CACHING: ${ENABLE_CACHING:-false}
+      ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-true}
+
+    # Service dependencies (wait for these services to be healthy before starting)
+    depends_on:
+      postgres:
+        condition: service_healthy        # Wait for Postgres health check
+      redis:
+        condition: service_healthy        # Wait for Redis health check
+
+    # Volume mounts (host:container:mode)
+    # Mode: rw (read-write), ro (read-only)
+    volumes:
+      # Persistent logs (survives container restart)
+      - ./logs:/app/logs:rw
+
+      # Temporary files (cleared on restart)
+      - api_tmp:/app/tmp:rw
+
+      # DEVELOPMENT ONLY: Hot reload (uncomment for dev)
+      # - ./src:/app/src:ro
+
+    # Network configuration
+    networks:
+      - agrobridge-network
+
+    # Health check (overrides Dockerfile HEALTHCHECK)
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s                       # Check every 30 seconds
+      timeout: 10s                        # Fail if no response in 10s
+      retries: 3                          # Unhealthy after 3 failures
+      start_period: 20s                   # Grace period (app startup)
+
+    # Resource limits (prevent resource exhaustion)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'                     # Max 2 CPU cores
+          memory: 2G                      # Max 2GB RAM
+        reservations:
+          cpus: '0.5'                     # Reserve 0.5 cores
+          memory: 512M                    # Reserve 512MB RAM
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"                   # Max 10MB per log file
+        max-file: "3"                     # Keep 3 files (30MB total)
+        labels: "service=api,env=dev"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # SERVICE 2: DATABASE - PostgreSQL 16 (Primary Data Store)
+  # ════════════════════════════════════════════════════════════════════════
+  postgres:
+    # Official PostgreSQL image (Alpine = smaller, security patches)
+    image: postgres:16.1-alpine
+
+    container_name: agrobridge-postgres
+    hostname: postgres
+    restart: unless-stopped
+
+    # Port mapping (localhost only for security)
+    # Why 127.0.0.1: Prevents external access, only accessible from host
+    # Changed to 5433 to avoid conflict with local postgres on 5432
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+
+    # PostgreSQL configuration
+    environment:
+      # ─────────────────────────────────────────────────────────────────
+      # Database Credentials
+      # ─────────────────────────────────────────────────────────────────
+      POSTGRES_USER: ${POSTGRES_USER:-agrobridge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-agrobridge_dev}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+
+    # Performance tuning via command-line arguments
+    # These override default postgresql.conf settings
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c max_connections=100
+      -c log_statement=ddl
+      -c log_min_duration_statement=1000
+      -c max_wal_size=1GB
+      -c min_wal_size=80MB
+
+    # Volume mounts
+    volumes:
+      # Persistent database data
+      - postgres_data:/var/lib/postgresql/data:rw
+
+      # Initialization scripts (run on first start only)
+      # - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+    networks:
+      - agrobridge-network
+
+    # Health check (pg_isready = Postgres-specific health check tool)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agrobridge} -d ${POSTGRES_DB:-agrobridge_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Security: Run as postgres user (not root)
+    user: postgres
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # SERVICE 3: CACHE - Redis 7 (In-Memory Data Store)
+  # ════════════════════════════════════════════════════════════════════════
+  redis:
+    image: redis:7.2-alpine
+
+    container_name: agrobridge-redis
+    hostname: redis
+    restart: unless-stopped
+
+    # Changed to 6380 to avoid conflict with local redis on 6379
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+
+    # Environment for Redis (not used by Redis itself, but for documentation)
+    environment:
+      REDIS_MAX_MEMORY: ${REDIS_MAX_MEMORY:-256mb}
+
+    # Custom Redis configuration via command-line args
+    # Note: maxmemory set to 256mb by default, override via REDIS_MAX_MEMORY env var
+    command: >
+      sh -c "redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --loglevel notice
+      --tcp-backlog 511
+      --timeout 300
+      --tcp-keepalive 300
+      --databases 16"
+
+    # Persistent AOF (Append-Only File)
+    volumes:
+      - redis_data:/data:rw
+
+    networks:
+      - agrobridge-network
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # SERVICE 4: ADMIN TOOLS - Prisma Studio (Database GUI)
+  # Optional: Start with docker-compose --profile tools up -d
+  # ════════════════════════════════════════════════════════════════════════
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder                     # Use builder stage (has Prisma CLI)
+
+    container_name: agrobridge-prisma-studio
+    hostname: prisma-studio
+    restart: unless-stopped
+
+    ports:
+      - "${PRISMA_STUDIO_PORT:-5555}:5555"
+
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agrobridge}:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/${POSTGRES_DB:-agrobridge_dev}?schema=public
+
+    # Override default CMD with Prisma Studio
+    command: npx prisma studio --port 5555 --hostname 0.0.0.0 --schema=./src/infrastructure/database/prisma/schema.prisma
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - agrobridge-network
+
+    # Only start when explicitly requested
+    profiles:
+      - tools
+
+# ──────────────────────────────────────────────────────────────────────────
+# NETWORK DEFINITIONS
+# ──────────────────────────────────────────────────────────────────────────
+networks:
+  # Internal bridge network for service-to-service communication
+  # Services can reach each other via hostname (api, postgres, redis)
+  agrobridge-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16           # Private subnet
+
+# ──────────────────────────────────────────────────────────────────────────
+# VOLUME DEFINITIONS
+# ──────────────────────────────────────────────────────────────────────────
+volumes:
+  # PostgreSQL data persistence (survives container deletion)
+  postgres_data:
+    driver: local
+
+  # Redis data persistence
+  redis_data:
+    driver: local
+
+  # API temporary files (ephemeral, cleared on restart)
+  api_tmp:
+    driver: local
+
+# ══════════════════════════════════════════════════════════════════════════
+# USAGE INSTRUCTIONS
+# ══════════════════════════════════════════════════════════════════════════
+#
+# Start all services (detached mode):
+#   docker-compose up -d
+#
+# Start with Prisma Studio:
+#   docker-compose --profile tools up -d
+#
+# View logs (all services):
+#   docker-compose logs -f
+#
+# View logs (specific service):
+#   docker-compose logs -f api
+#   docker-compose logs -f postgres --tail=100
+#
+# Check service status:
+#   docker-compose ps
+#
+# Run migrations:
+#   docker-compose exec api npx prisma migrate deploy --schema=./src/infrastructure/database/prisma/schema.prisma
+#
+# Access Prisma Studio:
+#   Open http://localhost:5555
+#
+# Scale API service (horizontal scaling):
+#   docker-compose up -d --scale api=3
+#
+# Restart specific service:
+#   docker-compose restart api
+#
+# Stop all services:
+#   docker-compose down
+#
+# Stop and remove volumes (⚠️ DATA LOSS):
+#   docker-compose down -v
+#
+# Rebuild images:
+#   docker-compose build --no-cache
+#   docker-compose up -d --build
+#
+# Health check:
+#   curl http://localhost:3000/health
+#
+# Database access:
+#   docker-compose exec postgres psql -U agrobridge -d agrobridge_dev
+#
+# Redis access:
+#   docker-compose exec redis redis-cli
+#
+# ══════════════════════════════════════════════════════════════════════════

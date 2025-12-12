@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for AgroBridge
+
+    Responsabilidades:
+    - Forzar HTTPS para todas las conexiones
+    - Deshabilitar cleartext (HTTP) traffic
+    - Configurar certificados de confianza
+    - Pinning de certificados (complementario a OkHttp)
+
+    Compliance:
+    - OWASP Mobile Top 10 2024 - M3: Insecure Communication
+    - Android Security Best Practices
+    - PCI-DSS (si aplica para pagos)
+
+    Cambios:
+    - usesCleartextTraffic: false (fuerza HTTPS)
+    - domain-config: Configuración específica por dominio
+    - trust-anchors: Certificados de confianza
+    - pin-set: Complementario al CertificatePinner de OkHttp
+-->
+<network-security-config>
+    <!--
+        CONFIGURACIÓN GLOBAL
+        - Deshabilitar cleartext (HTTP)
+        - Certificados de sistema de confianza
+        - Dominios específicos tienen reglas propias
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+
+        <!--
+            DOMINIO: api.agrobridge.com
+            - Forzar HTTPS
+            - Certificados de sistema + custom pins
+        -->
+        <domain includeSubdomains="true">api.agrobridge.com</domain>
+        <trust-anchors>
+            <!-- Sistema de certificados de confianza de Android -->
+            <certificates src="system" />
+
+            <!-- Certificado específico si es necesario (autofirmado en desarrollo) -->
+            <!-- <certificates src="@raw/agrobridge_cert" /> -->
+        </trust-anchors>
+
+        <!-- Pin-set complementario a OkHttp CertificatePinner -->
+        <pin-set>
+            <!--
+                Pins SHA-256 del certificado público
+                En caso de MITM, conexión se rechaza
+            -->
+            <pin digest="SHA-256">X3pGTSOuJeGW1qVoGFnQvnRvydtx6HQyT5K7YkzQTNA=</pin>
+            <pin digest="SHA-256">MK5ZlYvyraKvB4wVjZfHWtaAqP0xghLvrqyQpXHYw5w=</pin>
+
+            <!--
+                Fecha de expiración de pins
+                Después de esta fecha, apps no validarán pins (permite rotación)
+            -->
+            <expiration>2026-12-31</expiration>
+        </pin-set>
+    </domain-config>
+
+    <!-- DOMINIO: cdn.agrobridge.com (CDN para imágenes) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">cdn.agrobridge.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+        <pin-set>
+            <pin digest="SHA-256">a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0=</pin>
+            <expiration>2026-12-31</expiration>
+        </pin-set>
+    </domain-config>
+
+    <!--
+        CONFIGURACIÓN DE CONFIANZA POR DEFECTO
+        - Para cualquier otro dominio no especificado
+        - Usar solo certificados de sistema (seguros)
+    -->
+    <trust-anchors>
+        <certificates src="system" />
+    </trust-anchors>
+
+    <!--
+        DOMINIOS LOCALES (DESARROLLO ÚNICAMENTE)
+        Solo para testing local, NO para producción
+    -->
+    <!--
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">192.168.0.0/16</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    -->
+</network-security-config>

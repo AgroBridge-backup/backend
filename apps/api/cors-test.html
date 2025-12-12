@@ -1,0 +1,1 @@
+<!DOCTYPE html><html> <body> <script> fetch('http://localhost:4000/api/v1/status') .then(r => r.json()) .then(d => { console.log('✅ CORS OK:', d); document.body.innerHTML = '<h1 style="color:green">✅ CORS FUNCIONANDO</h1>'; }) .catch(e => { console.error('❌ CORS BLOQUEADO:', e); document.body.innerHTML = '<h1 style="color:red">❌ CORS BLOQUEADO</h1>'; }); </script> </body> </html>

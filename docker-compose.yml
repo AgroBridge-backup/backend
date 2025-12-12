@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+    app:
+        build: .
+        container_name: agrobridge_app
+        restart: unless-stopped
+        ports:
+            - '3000:3000'
+        environment:
+            - NODE_ENV=production
+            - PORT=3000
+            - DB_HOST=db
+            - DB_USER=agro_user
+            - DB_PASS=supersecretpassword
+            - DB_NAME=agrobridge
+            - DB_PORT=5432
+            - JWT_SECRET=${JWT_SECRET} # Se debe proveer desde un .env o el entorno
+        depends_on:
+            - db
+        networks:
+            - agrobridge-net
+
+    db:
+        image: postgres:15-alpine
+        container_name: agrobridge_db
+        restart: unless-stopped
+        environment:
+            - POSTGRES_USER=agro_user
+            - POSTGRES_PASSWORD=supersecretpassword
+            - POSTGRES_DB=agrobridge
+        networks:
+            - agrobridge-net
+        ports:
+            - "5432:5432"
+
+networks:
+    agrobridge-net:
+        driver: bridge
+
+volumes:
+    postgres_data:
+        driver: local

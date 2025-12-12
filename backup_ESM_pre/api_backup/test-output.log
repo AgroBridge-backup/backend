@@ -1,0 +1,17 @@
+
+> @agrobridge/api@2.0.0 test /Users/mac/SuperAIProject/AgroBridgeInt.com/apps/api
+> vitest tests/unit/producers/ListProducersUseCase.test.ts
+
+
+ DEV  v1.6.1 /Users/mac/SuperAIProject/AgroBridgeInt.com/apps/api
+
+ ✓ tests/unit/producers/ListProducersUseCase.test.ts  (2 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  21:47:37
+   Duration  180ms (transform 23ms, setup 11ms, collect 11ms, tests 2ms, environment 0ms, prepare 52ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
