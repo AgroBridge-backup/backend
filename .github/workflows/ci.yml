@@ -225,22 +225,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/agrobridge-ec2.pem
+          chmod 600 ~/.ssh/agrobridge-ec2.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy to staging
         run: |
-          echo "🚀 Deploying to staging environment..."
-          echo "📦 Image: agrobridge/backend:develop-${{ github.sha }}"
-          # Add your staging deployment commands here
-          # Examples:
-          # - kubectl set image deployment/api api=agrobridge/backend:develop-${{ github.sha }}
-          # - aws ecs update-service --cluster staging --service api --force-new-deployment
-          # - ssh deploy@staging.agrobridge.io "docker pull agrobridge/backend:develop && docker-compose up -d"
+          echo "🚀 Deploying to STAGING environment..."
+          ssh -i ~/.ssh/agrobridge-ec2.pem ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            cd /opt/agrobridge-api
+            git fetch origin
+            git checkout develop
+            git pull origin develop
+            /opt/agrobridge-api/scripts/deploy-staging.sh
+          ENDSSH
 
       - name: Run smoke tests
         run: |
-          echo "🧪 Running smoke tests..."
-          sleep 30  # Wait for deployment
-          curl -f https://api-staging.agrobridge.io/health || exit 1
-          echo "✅ Smoke tests passed"
+          echo "🧪 Running smoke tests on staging..."
+          sleep 30  # Wait for deployment to stabilize
+          ssh -i ~/.ssh/agrobridge-ec2.pem ubuntu@${{ secrets.EC2_HOST }} \
+            "/opt/agrobridge-api/scripts/smoke-tests.sh staging"
 
       - name: Notify team
         run: |
@@ -260,34 +268,57 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/agrobridge-ec2.pem
+          chmod 600 ~/.ssh/agrobridge-ec2.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Backup current version
+        id: backup
+        run: |
+          echo "💾 Creating backup point for rollback..."
+          BACKUP_TAG="backup-$(date +%Y%m%d-%H%M%S)"
+          echo "backup_tag=$BACKUP_TAG" >> $GITHUB_OUTPUT
+          ssh -i ~/.ssh/agrobridge-ec2.pem ubuntu@${{ secrets.EC2_HOST }} << ENDSSH
+            cd /opt/agrobridge-api
+            git tag $BACKUP_TAG
+            docker tag agrobridge-api:production agrobridge-api:$BACKUP_TAG || true
+          ENDSSH
+
       - name: Deploy to production
+        id: deploy
         run: |
           echo "🚀 Deploying to PRODUCTION environment..."
-          echo "📦 Image: agrobridge/backend:latest"
-          echo "⚠️  This requires manual approval in GitHub"
-          # Add your production deployment commands here
-          # Examples:
-          # - kubectl set image deployment/api api=agrobridge/backend:latest
-          # - aws ecs update-service --cluster production --service api --force-new-deployment
-          # - ansible-playbook deploy-production.yml
+          ssh -i ~/.ssh/agrobridge-ec2.pem ubuntu@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            cd /opt/agrobridge-api
+            git fetch origin
+            git checkout main
+            git pull origin main
+            /opt/agrobridge-api/scripts/deploy-production.sh <<< "yes"
+          ENDSSH
 
       - name: Run smoke tests
+        id: smoke_tests
         run: |
           echo "🧪 Running production smoke tests..."
-          sleep 30  # Wait for deployment
-          curl -f https://api.agrobridge.io/health || exit 1
-          echo "✅ Production smoke tests passed"
+          sleep 30  # Wait for deployment to stabilize
+          ssh -i ~/.ssh/agrobridge-ec2.pem ubuntu@${{ secrets.EC2_HOST }} \
+            "/opt/agrobridge-api/scripts/smoke-tests.sh production"
 
-      - name: Verify deployment
+      - name: Rollback on failure
+        if: failure() && (steps.deploy.outcome == 'failure' || steps.smoke_tests.outcome == 'failure')
         run: |
-          echo "🔍 Verifying deployment..."
-          # Check health endpoint
-          HEALTH_STATUS=$(curl -s https://api.agrobridge.io/health | jq -r '.status')
-          if [ "$HEALTH_STATUS" != "healthy" ]; then
-            echo "❌ Health check failed: $HEALTH_STATUS"
-            exit 1
-          fi
-          echo "✅ Deployment verified successfully"
+          echo "❌ Deployment failed! Rolling back to ${{ steps.backup.outputs.backup_tag }}..."
+          ssh -i ~/.ssh/agrobridge-ec2.pem ubuntu@${{ secrets.EC2_HOST }} << ENDSSH
+            cd /opt/agrobridge-api
+            git checkout ${{ steps.backup.outputs.backup_tag }}
+            docker tag agrobridge-api:${{ steps.backup.outputs.backup_tag }} agrobridge-api:production
+            docker compose restart api-production
+          ENDSSH
+          echo "🔄 Rollback completed"
+          exit 1
 
       - name: Create GitHub release
         uses: actions/create-release@v1
