@@ -1,0 +1,62 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-production:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create backup tag
+        run: |
+          git tag "backup-$(date +%Y%m%d-%H%M%S)"
+          git push --tags
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/agrobridge-api
+            git fetch origin
+            git checkout main
+            git pull origin main
+            /opt/agrobridge-api/scripts/deploy-production.sh
+
+      - name: Wait for service
+        run: sleep 30
+
+      - name: Run smoke tests
+        id: smoke_tests
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://api.agrobridge.io/health)
+          if [ $response -eq 200 ]; then
+            echo "✅ Production deployment successful"
+          else
+            echo "❌ Production deployment failed - HTTP $response"
+            exit 1
+          fi
+
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/agrobridge-api
+            git checkout HEAD~1
+            /opt/agrobridge-api/scripts/deploy-production.sh
+            echo "⚠️ Rolled back to previous version"

@@ -1,0 +1,41 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging Server
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/agrobridge-api
+            git fetch origin
+            git checkout develop
+            git pull origin develop
+            /opt/agrobridge-api/scripts/deploy-staging.sh
+
+      - name: Wait for service
+        run: sleep 30
+
+      - name: Run smoke tests
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://api-staging.agrobridge.io/health)
+          if [ $response -eq 200 ]; then
+            echo "✅ Staging deployment successful"
+          else
+            echo "❌ Staging deployment failed - HTTP $response"
+            exit 1
+          fi
