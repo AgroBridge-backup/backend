@@ -116,7 +116,7 @@ app.use(helmet({
 **Verification**:
 
 ```bash
-curl -I https://api.agrobridge.com/health | grep -E "X-Frame-Options|X-Content-Type-Options|Strict-Transport-Security"
+curl -I https://api.agrobridge.io/health | grep -E "X-Frame-Options|X-Content-Type-Options|Strict-Transport-Security"
 ```
 
 ---
@@ -139,8 +139,8 @@ curl -I https://api.agrobridge.com/health | grep -E "X-Frame-Options|X-Content-T
 ```
 
 **Whitelisted Origins** (Production):
-- `https://app.agrobridge.com` - Main web application
-- `https://admin.agrobridge.com` - Admin dashboard
+- `https://app.agrobridge.io` - Main web application
+- `https://admin.agrobridge.io` - Admin dashboard
 - iOS/Android apps (configured separately via deep linking)
 
 **Security Notes**:
@@ -552,7 +552,7 @@ npm outdated
 
 ### Reporting Security Issues
 
-**Email**: security@agrobridge.com  
+**Email**: security@agrobridge.io  
 **PGP Key**: [Request from security team]  
 **Response Time**: < 24 hours for critical issues
 
@@ -560,7 +560,7 @@ npm outdated
 
 We appreciate security researchers reporting vulnerabilities responsibly:
 
-1. **Report** via security@agrobridge.com
+1. **Report** via security@agrobridge.io
 2. **Do not** exploit vulnerabilities
 3. **Allow** 90 days for fix before public disclosure
 4. **Receive** acknowledgment and potential bounty

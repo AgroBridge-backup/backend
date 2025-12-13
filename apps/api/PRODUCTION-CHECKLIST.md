@@ -184,13 +184,13 @@ docker-compose up -d
 ### Phase 6: SSL/TLS Setup ⏱️ 10 mins
 
 1. Install Certbot
-2. Obtain certificate: `certbot --nginx -d api.agrobridge.com`
+2. Obtain certificate: `certbot --nginx -d api.agrobridge.io`
 3. Verify HTTPS working
 4. Test auto-renewal: `certbot renew --dry-run`
 
 ### Phase 7: Verification ⏱️ 15 mins
 
-1. Health check: `curl https://api.agrobridge.com/health`
+1. Health check: `curl https://api.agrobridge.io/health`
 2. Test authentication flow
 3. Test CRUD operations
 4. Verify rate limiting working
@@ -260,7 +260,7 @@ docker-compose up -d
 ### Step 5: Verify Rollback (2 minutes)
 
 ```bash
-curl https://api.agrobridge.com/health
+curl https://api.agrobridge.io/health
 # Expected: {"status":"healthy",...}
 
 # Check logs

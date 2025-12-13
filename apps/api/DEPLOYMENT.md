@@ -61,7 +61,7 @@ JWT_ACCESS_TOKEN_TTL="7d"
 JWT_REFRESH_TOKEN_TTL="30d"
 
 # ─── CORS (whitelist your production domains) ──────────────────────
-CORS_ORIGINS="https://app.agrobridge.com,https://admin.agrobridge.com"
+CORS_ORIGINS="https://app.agrobridge.io,https://admin.agrobridge.io"
 
 # ─── Rate Limiting ─────────────────────────────────────────────────
 RATE_LIMIT_WINDOW_MS=900000
@@ -242,7 +242,7 @@ Paste this configuration:
 ```nginx
 server {
     listen 80;
-    server_name api.agrobridge.com;
+    server_name api.agrobridge.io;
 
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -298,7 +298,7 @@ sudo systemctl restart nginx
 sudo systemctl enable nginx
 
 # Test through Nginx
-curl http://api.agrobridge.com/health
+curl http://api.agrobridge.io/health
 ```
 
 #### Step 6: SSL/TLS with Let's Encrypt
@@ -308,7 +308,7 @@ curl http://api.agrobridge.com/health
 sudo apt install -y certbot python3-certbot-nginx
 
 # Obtain SSL certificate
-sudo certbot --nginx -d api.agrobridge.com
+sudo certbot --nginx -d api.agrobridge.io
 
 # Follow prompts:
 # - Email for urgent notices
@@ -319,7 +319,7 @@ sudo certbot --nginx -d api.agrobridge.com
 sudo certbot renew --dry-run
 
 # Verify HTTPS
-curl https://api.agrobridge.com/health
+curl https://api.agrobridge.io/health
 ```
 
 #### PM2 Management Commands
@@ -409,7 +409,7 @@ POSTGRES_USER=agrobridge
 POSTGRES_PASSWORD=your-secure-password
 POSTGRES_DB=agrobridge
 JWT_SECRET=your-jwt-secret-32-chars
-CORS_ORIGINS=https://app.agrobridge.com
+CORS_ORIGINS=https://app.agrobridge.io
 EOF
 
 # Start services
@@ -542,7 +542,7 @@ aws ecs update-service \
 
 ```bash
 # Basic health check
-curl https://api.agrobridge.com/health
+curl https://api.agrobridge.io/health
 
 # Expected response:
 {
@@ -557,31 +557,31 @@ curl https://api.agrobridge.com/health
 
 ```bash
 # Test authentication
-curl -X POST https://api.agrobridge.com/api/v1/auth/login \
+curl -X POST https://api.agrobridge.io/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test123!"}'
 
 # Test protected endpoint
-curl -X GET https://api.agrobridge.com/api/v1/producers \
+curl -X GET https://api.agrobridge.io/api/v1/producers \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Test rate limiting
-for i in {1..10}; do curl https://api.agrobridge.com/api/v1/producers; done
+for i in {1..10}; do curl https://api.agrobridge.io/api/v1/producers; done
 ```
 
 ### Security Verification
 
 ```bash
 # Check SSL/TLS
-curl -I https://api.agrobridge.com
+curl -I https://api.agrobridge.io
 
 # Test security headers
-curl -I https://api.agrobridge.com | grep -E "X-Frame-Options|X-Content-Type-Options|Strict-Transport-Security"
+curl -I https://api.agrobridge.io | grep -E "X-Frame-Options|X-Content-Type-Options|Strict-Transport-Security"
 
 # Verify CORS
-curl -H "Origin: https://app.agrobridge.com" \
+curl -H "Origin: https://app.agrobridge.io" \
      -H "Access-Control-Request-Method: POST" \
-     -X OPTIONS https://api.agrobridge.com/api/v1/auth/login -v
+     -X OPTIONS https://api.agrobridge.io/api/v1/auth/login -v
 ```
 
 ### Performance Testing
@@ -591,7 +591,7 @@ curl -H "Origin: https://app.agrobridge.com" \
 sudo apt install apache2-utils
 
 # Load test (100 requests, 10 concurrent)
-ab -n 100 -c 10 https://api.agrobridge.com/health
+ab -n 100 -c 10 https://api.agrobridge.io/health
 
 # Expected results:
 # - 99th percentile < 200ms
@@ -869,7 +869,7 @@ jobs:
 **DevOps**: [DevOps contact]  
 **AWS Support**: [Support plan details]  
 **Database Admin**: [DBA contact]  
-**Security Team**: security@agrobridge.com
+**Security Team**: security@agrobridge.io
 
 ---
 
