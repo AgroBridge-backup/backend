@@ -114,10 +114,11 @@ describe('Auth API E2E', () => {
       const response = await request
         .post('/api/v1/auth/login')
         .send({ email: adminEmail, password: password });
-  
+
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('accessToken');
-      expect(response.body).toHaveProperty('refreshToken');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('accessToken');
+      expect(response.body.data).toHaveProperty('refreshToken');
     });
   });
 
@@ -126,13 +127,13 @@ describe('Auth API E2E', () => {
       const loginRes = await request
         .post('/api/v1/auth/login')
         .send({ email: adminEmail, password: password });
-      
-      const { accessToken } = loginRes.body;
+
+      const { accessToken } = loginRes.body.data;
       expect(accessToken).toBeDefined();
 
       const meRes1 = await request.get('/api/v1/auth/me').set('Authorization', `Bearer ${accessToken}`);
       expect(meRes1.status).toBe(200);
-      expect(meRes1.body.email).toBe(adminEmail);
+      expect(meRes1.body.data.email).toBe(adminEmail);
 
       const logoutRes = await request.post('/api/v1/auth/logout').set('Authorization', `Bearer ${accessToken}`);
       expect(logoutRes.status).toBe(204);
@@ -148,20 +149,21 @@ describe('Auth API E2E', () => {
       const loginRes = await request
         .post('/api/v1/auth/login')
         .send({ email: producerEmail, password: password });
-      
-      const { refreshToken: oldRefreshToken } = loginRes.body;
+
+      const { refreshToken: oldRefreshToken } = loginRes.body.data;
       expect(oldRefreshToken).toBeDefined();
 
       const refreshRes1 = await request.post('/api/v1/auth/refresh').send({ refreshToken: oldRefreshToken });
       expect(refreshRes1.status).toBe(200);
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshRes1.body;
+      expect(refreshRes1.body.success).toBe(true);
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshRes1.body.data;
       expect(newAccessToken).toBeDefined();
       expect(newRefreshToken).toBeDefined();
       expect(newRefreshToken).not.toEqual(oldRefreshToken);
 
       const meRes = await request.get('/api/v1/auth/me').set('Authorization', `Bearer ${newAccessToken}`);
       expect(meRes.status).toBe(200);
-      expect(meRes.body.email).toBe(producerEmail);
+      expect(meRes.body.data.email).toBe(producerEmail);
 
       const refreshRes2 = await request.post('/api/v1/auth/refresh').send({ refreshToken: oldRefreshToken });
 

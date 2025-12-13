@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { authenticate, AuthenticatedRequest } from '../middlewares/auth.middleware.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
 import { validateRequest } from '../middlewares/validator.middleware.js';
 import * as Prisma from '@prisma/client';
 import { BatchUseCases } from '../../application/use-cases/batches/index.js';
+import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
 
 export function createBatchesRouter(useCases: BatchUseCases) {
   const router = Router();
@@ -22,8 +23,12 @@ export function createBatchesRouter(useCases: BatchUseCases) {
     }),
   });
 
-  // Route Definitions
-  router.post('/', authenticate([Prisma.UserRole.PRODUCER]), validateRequest(createBatchSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  /**
+   * POST /api/v1/batches
+   * Create a new batch
+   * Rate limited: 50 creations per hour
+   */
+  router.post('/', authenticate([Prisma.UserRole.PRODUCER]), RateLimiterConfig.creation(), validateRequest(createBatchSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const producerId = req.user?.producerId;
       if (!producerId) {

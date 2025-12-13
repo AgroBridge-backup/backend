@@ -94,7 +94,7 @@ vi.mock('../../../src/shared/utils/logger.js', () => ({
 // Mock auth middleware
 vi.mock('../../../src/presentation/middlewares/auth.middleware.js', () => ({
   authenticate: (roles?: string[]) => (req: any, res: any, next: any) => {
-    req.user = { id: 'user-123', role: roles?.[0] || 'PRODUCER' };
+    req.user = { id: 'user-123', userId: 'user-123', role: roles?.[0] || 'PRODUCER' };
     next();
   },
   AuthenticatedRequest: {},

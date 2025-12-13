@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock bull
 const mockQueue = {
-  add: vi.fn(),
+  add: vi.fn().mockResolvedValue({ id: 'job-123' }),
   process: vi.fn(),
   getJobCounts: vi.fn().mockResolvedValue({
     waiting: 0,
@@ -16,10 +16,16 @@ const mockQueue = {
     failed: 0,
     delayed: 0,
   }),
-  pause: vi.fn(),
-  resume: vi.fn(),
-  clean: vi.fn(),
-  close: vi.fn(),
+  // Individual count methods used by Bull 4.x
+  getWaitingCount: vi.fn().mockResolvedValue(5),
+  getActiveCount: vi.fn().mockResolvedValue(2),
+  getCompletedCount: vi.fn().mockResolvedValue(100),
+  getFailedCount: vi.fn().mockResolvedValue(3),
+  getDelayedCount: vi.fn().mockResolvedValue(1),
+  pause: vi.fn().mockResolvedValue(undefined),
+  resume: vi.fn().mockResolvedValue(undefined),
+  clean: vi.fn().mockResolvedValue([]),
+  close: vi.fn().mockResolvedValue(undefined),
   on: vi.fn(),
 };
 
@@ -139,13 +145,12 @@ describe('NotificationQueue', () => {
 
   describe('getStats', () => {
     it('should return queue statistics', async () => {
-      mockQueue.getJobCounts.mockResolvedValue({
-        waiting: 10,
-        active: 5,
-        completed: 100,
-        failed: 2,
-        delayed: 3,
-      });
+      // Mock individual count methods
+      mockQueue.getWaitingCount.mockResolvedValue(10);
+      mockQueue.getActiveCount.mockResolvedValue(5);
+      mockQueue.getCompletedCount.mockResolvedValue(100);
+      mockQueue.getFailedCount.mockResolvedValue(2);
+      mockQueue.getDelayedCount.mockResolvedValue(3);
 
       const { NotificationQueue } = await import(
         '../../../src/infrastructure/notifications/queue/NotificationQueue.js'
@@ -168,6 +173,7 @@ describe('NotificationQueue', () => {
         '../../../src/infrastructure/notifications/queue/NotificationQueue.js'
       );
       const queue = NotificationQueue.getInstance();
+      queue.initialize(); // Ensure queue is initialized
 
       await queue.pause();
 
@@ -179,6 +185,7 @@ describe('NotificationQueue', () => {
         '../../../src/infrastructure/notifications/queue/NotificationQueue.js'
       );
       const queue = NotificationQueue.getInstance();
+      queue.initialize(); // Ensure queue is initialized
 
       await queue.resume();
 
@@ -192,6 +199,7 @@ describe('NotificationQueue', () => {
         '../../../src/infrastructure/notifications/queue/NotificationQueue.js'
       );
       const queue = NotificationQueue.getInstance();
+      queue.initialize(); // Ensure queue is initialized
 
       await queue.clean(24);
 
@@ -205,6 +213,7 @@ describe('NotificationQueue', () => {
         '../../../src/infrastructure/notifications/queue/NotificationQueue.js'
       );
       const queue = NotificationQueue.getInstance();
+      queue.initialize(); // Ensure queue is initialized
 
       await queue.shutdown();
 

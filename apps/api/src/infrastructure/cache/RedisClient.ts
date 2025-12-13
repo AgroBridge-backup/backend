@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import logger from '../../shared/utils/logger.js';
 
 export class RedisClient {
@@ -7,7 +7,7 @@ export class RedisClient {
   constructor() {
     this.client = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
-    this.client.on('error', (err) => logger.error({ message: 'Redis Client Error', meta: { error: err } }));
+    this.client.on('error', (err: Error) => logger.error({ message: 'Redis Client Error', meta: { error: err } }));
     this.client.on('connect', () => logger.info('Redis client connected'));
   }
 

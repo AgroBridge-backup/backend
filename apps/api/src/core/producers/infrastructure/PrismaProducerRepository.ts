@@ -8,7 +8,7 @@ type ProducerWithUser = Prisma.ProducerGetPayload<{
 }>;
 
 export class PrismaProducerRepository implements IProducerRepository {
-  constructor(private prisma: Prisma.PrismaClient) {}
+  constructor(private prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Producer | null> {
     const producer = await this.prisma.producer.findUnique({
@@ -27,7 +27,7 @@ export class PrismaProducerRepository implements IProducerRepository {
 
     const where: Prisma.ProducerWhereInput = {};
     if (isWhitelisted !== undefined) {
-      where.isWhitelisted = isWhitelisted === true || isWhitelisted === 'true';
+      where.isWhitelisted = typeof isWhitelisted === 'string' ? isWhitelisted === 'true' : isWhitelisted;
     }
     if (state) {
       where.state = {

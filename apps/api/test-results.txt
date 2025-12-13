@@ -1,0 +1,671 @@
+
+ RUN  v1.6.1 /Users/mac/Documents/agrobridge-backend/apps/api
+
+ ✓ tests/unit/notifications/MetricsCollector.test.ts  (9 tests) 43ms
+stdout | unknown test
+2025-12-12 15:55:08 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if auth header is missing
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if token is not Bearer
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if token is blacklisted
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: valid-token...
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with CustomTokenExpiredError if jwt.verify throws TokenExpiredError
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: expired-token...
+2025-12-12 15:55:09 [31merror[39m: [AuthMiddleware] Token verification failed: 
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if jwt.verify throws a generic error
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: invalid-signature-to...
+2025-12-12 15:55:09 [31merror[39m: [AuthMiddleware] Token verification failed: Invalid signature
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InsufficientPermissionsError if user role is not in required roles
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: producer-token...
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should attach user to request and call next if token is valid and role is sufficient
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: admin-token...
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should succeed if no roles are required and token is valid
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: any-role-token...
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+ ✓ tests/presentation/middlewares/auth.middleware.test.ts  (8 tests) 14ms
+ ❯ tests/e2e/notifications/notifications.routes.test.ts  (13 tests | 4 failed) 52ms
+   ❯ tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > GET /notifications/:id > should return notification by ID
+     → expected 403 to be 200 // Object.is equality
+   ❯ tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > PUT /notifications/:id/read > should mark notification as read
+     → expected 403 to be 200 // Object.is equality
+   ❯ tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > PUT /notifications/:id/clicked > should mark notification as clicked
+     → expected 403 to be 200 // Object.is equality
+   ❯ tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > DELETE /notifications/:id > should delete notification
+     → expected 403 to be 200 // Object.is equality
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: Redis client connected
+
+ ❯ tests/unit/notifications/NotificationQueue.test.ts  (7 tests | 5 failed) 67ms
+   ❯ tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > getStats > should return queue statistics
+     → this.queue.getWaitingCount is not a function
+   ❯ tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > pause and resume > should pause the queue
+     → expected "spy" to be called at least once
+   ❯ tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > pause and resume > should resume the queue
+     → expected "spy" to be called at least once
+   ❯ tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > clean > should clean old jobs
+     → expected "spy" to be called at least once
+   ❯ tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > shutdown > should close the queue gracefully
+     → expected "spy" to be called at least once
+ ✓ tests/unit/notifications/SMSService.test.ts  (8 tests) 41ms
+ ✓ tests/unit/notifications/EmailService.test.ts  (6 tests) 82ms
+ ✓ tests/unit/domain/Password.test.ts  (17 tests) 7ms
+ ✓ tests/unit/notifications/FCMService.test.ts  (5 tests) 27ms
+ ✓ tests/unit/producers/ListProducersUseCase.test.ts  (2 tests) 2ms
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: [NotificationQueue] Queue initialized successfully
+{
+  "redis": "localhost:6379",
+  "db": 0
+}
+2025-12-12 15:55:09 [32minfo[39m: [BullBoard] Dashboard initialized
+{
+  "basePath": "/admin/queues"
+}
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: [NotificationQueue] Queue initialized successfully
+{
+  "redis": "localhost:6379",
+  "db": 0
+}
+2025-12-12 15:55:09 [32minfo[39m: [BullBoard] Dashboard initialized
+{
+  "basePath": "/admin/queues"
+}
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: [NotificationQueue] Queue initialized successfully
+{
+  "redis": "localhost:6379",
+  "db": 0
+}
+2025-12-12 15:55:09 [32minfo[39m: [BullBoard] Dashboard initialized
+{
+  "basePath": "/admin/queues"
+}
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: [NotificationQueue] Queue initialized successfully
+{
+  "redis": "localhost:6379",
+  "db": 0
+}
+2025-12-12 15:55:09 [32minfo[39m: [BullBoard] Dashboard initialized
+{
+  "basePath": "/admin/queues"
+}
+
+ ❯ tests/e2e/events.e2e.test.ts  (0 test)
+stdout | tests/e2e/batches.e2e.test.ts > Batches API (E2E)
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: producer-batch-1765576509653@test.com
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should fail with wrong credentials
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: wrong@test.com
+
+stdout | tests/e2e/producers.e2e.test.ts > Producers API (E2E)
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: admin-producers-1765576509649@test.com
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should fail with wrong credentials
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": false,
+  "hasProducer": false
+}
+2025-12-12 15:55:09 [31merror[39m: Invalid credentials or user inactive.
+AuthenticationError: Invalid credentials or user inactive.
+    at LoginUseCase.execute (/Users/mac/Documents/agrobridge-backend/apps/api/src/application/use-cases/auth/LoginUseCase.ts:37:13)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/auth.routes.ts:28:24
+{
+  "path": "/api/v1/auth/login",
+  "method": "POST"
+}
+2025-12-12 15:55:09 [33mwarn[39m: [Performance] Client error - POST /api/v1/auth/login returned 401 in 4ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 401 81 - 4.301 ms
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should succeed with correct credentials and return tokens
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: admin-1765576509650@test.com
+
+stdout | unknown test
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-12 15:55:09 [32minfo[39m: [NotificationQueue] Queue initialized successfully
+{
+  "redis": "localhost:6379",
+  "db": 0
+}
+2025-12-12 15:55:09 [32minfo[39m: [BullBoard] Dashboard initialized
+{
+  "basePath": "/admin/queues"
+}
+
+stdout | tests/e2e/event.e2e.test.ts > Event API E2E
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: producer@test.com
+
+stdout | tests/e2e/batches.e2e.test.ts > Batches API (E2E)
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": true,
+  "hasProducer": true,
+  "producerId": "99b8bf31-74a5-47ac-8687-0326a07f476b"
+}
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Password validation result for producer-batch-1765576509653@test.com: true
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Generating tokens for user. [UserID: b212bf29-86a1-4c53-b8cb-255650860ccc]
+{
+  "email": "producer-batch-1765576509653@test.com"
+}
+
+stdout | tests/e2e/producers.e2e.test.ts > Producers API (E2E)
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": true,
+  "hasProducer": false
+}
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Password validation result for admin-producers-1765576509649@test.com: true
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Generating tokens for user. [UserID: 7de8f727-f6ef-4140-b21f-3dbe3ec53b8e]
+{
+  "email": "admin-producers-1765576509649@test.com"
+}
+
+stdout | tests/e2e/batches.e2e.test.ts > Batches API (E2E)
+2025-12-12 15:55:09 [34mdebug[39m: [Performance] POST /login completed in 80ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 1311 - 80.249 ms
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should succeed with correct credentials and return tokens
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": true,
+  "hasProducer": false
+}
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Password validation result for admin-1765576509650@test.com: true
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Generating tokens for user. [UserID: b08e3b61-3d54-484f-990c-7b7fc4a529ba]
+{
+  "email": "admin-1765576509650@test.com"
+}
+
+stdout | tests/e2e/producers.e2e.test.ts > Producers API (E2E)
+2025-12-12 15:55:09 [34mdebug[39m: [Performance] POST /login completed in 79ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 1239 - 79.432 ms
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should succeed with correct credentials and return tokens
+2025-12-12 15:55:09 [34mdebug[39m: [Performance] POST /login completed in 75ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 1226 - 74.629 ms
+
+stdout | tests/e2e/batches.e2e.test.ts > Batches API (E2E) > POST /api/v1/batches should return 201 when creating a new batch with a producer token
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: /
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: undefined...
+2025-12-12 15:55:09 [31merror[39m: [AuthMiddleware] Token verification failed: jwt malformed
+2025-12-12 15:55:09 [31merror[39m: Token verification failed
+InvalidTokenError: Token verification failed
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/middlewares/auth.middleware.ts:57:15
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:119:3)
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:280:10)
+{
+  "path": "/api/v1/batches",
+  "method": "POST"
+}
+2025-12-12 15:55:09 [33mwarn[39m: [Performance] Client error - POST /api/v1/batches returned 401 in 1ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/batches HTTP/1.1 401 67 - 1.368 ms
+
+stdout | tests/e2e/producers.e2e.test.ts > Producers API (E2E) > GET /api/v1/producers > should return the first page of producers
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: /
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: undefined...
+2025-12-12 15:55:09 [31merror[39m: [AuthMiddleware] Token verification failed: jwt malformed
+2025-12-12 15:55:09 [31merror[39m: Token verification failed
+InvalidTokenError: Token verification failed
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/middlewares/auth.middleware.ts:57:15
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:119:3)
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:280:10)
+{
+  "path": "/api/v1/producers",
+  "method": "GET"
+}
+2025-12-12 15:55:09 [33mwarn[39m: [Performance] Client error - GET /api/v1/producers returned 401 in 1ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - GET /api/v1/producers?page=1&limit=10 HTTP/1.1 401 67 - 1.242 ms
+
+stdout | tests/e2e/producers.e2e.test.ts > Producers API (E2E) > GET /api/v1/producers > should filter whitelisted producers
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: /
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Token received: undefined...
+2025-12-12 15:55:09 [31merror[39m: [AuthMiddleware] Token verification failed: jwt malformed
+2025-12-12 15:55:09 [31merror[39m: Token verification failed
+InvalidTokenError: Token verification failed
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/middlewares/auth.middleware.ts:57:15
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:119:3)
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:280:10)
+{
+  "path": "/api/v1/producers",
+  "method": "GET"
+}
+2025-12-12 15:55:09 [33mwarn[39m: [Performance] Client error - GET /api/v1/producers returned 401 in 1ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - GET /api/v1/producers?isWhitelisted=true HTTP/1.1 401 67 - 0.558 ms
+
+ ❯ tests/e2e/batches.e2e.test.ts  (2 tests | 2 failed) 241ms
+   ❯ tests/e2e/batches.e2e.test.ts > Batches API (E2E) > POST /api/v1/batches should return 201 when creating a new batch with a producer token
+     → expected 401 to be 201 // Object.is equality
+   ❯ tests/e2e/batches.e2e.test.ts > Batches API (E2E) > GET /api/v1/batches/:id should retrieve the created batch
+     → expected undefined not to be undefined
+ ❯ tests/e2e/producers.e2e.test.ts  (2 tests | 2 failed) 248ms
+   ❯ tests/e2e/producers.e2e.test.ts > Producers API (E2E) > GET /api/v1/producers > should return the first page of producers
+     → expected 401 to be 200 // Object.is equality
+   ❯ tests/e2e/producers.e2e.test.ts > Producers API (E2E) > GET /api/v1/producers > should filter whitelisted producers
+     → expected 401 to be 200 // Object.is equality
+stdout | tests/e2e/event.e2e.test.ts > Event API E2E
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": true,
+  "hasProducer": true,
+  "producerId": "6046b507-b2dd-4cf3-86e8-75e12d59218a"
+}
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Password validation result for producer@test.com: true
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Generating tokens for user. [UserID: 3ad30bcc-824e-4a76-98db-3fb60a20a16a]
+{
+  "email": "producer@test.com"
+}
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/logout > should blacklist the token, preventing further access
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: admin-1765576509650@test.com
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": true,
+  "hasProducer": false
+}
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Password validation result for admin-1765576509650@test.com: true
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Generating tokens for user. [UserID: b08e3b61-3d54-484f-990c-7b7fc4a529ba]
+{
+  "email": "admin-1765576509650@test.com"
+}
+
+stdout | tests/e2e/event.e2e.test.ts > Event API E2E
+2025-12-12 15:55:09 [34mdebug[39m: [Performance] POST /login completed in 89ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 1285 - 89.606 ms
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/logout > should blacklist the token, preventing further access
+2025-12-12 15:55:09 [34mdebug[39m: [Performance] POST /login completed in 74ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 1226 - 74.450 ms
+
+stdout | tests/e2e/event.e2e.test.ts > Event API E2E > POST /api/v1/events should fail for unauthorized user
+2025-12-12 15:55:09 [34mdebug[39m: [AuthMiddleware] Authenticating request for: /
+2025-12-12 15:55:09 [31merror[39m: Authorization header missing or malformed
+InvalidTokenError: Authorization header missing or malformed
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/middlewares/auth.middleware.ts:38:15
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:119:3)
+    at newFn (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express-async-errors/index.js:16:20)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:280:10)
+{
+  "path": "/api/v1/events",
+  "method": "POST"
+}
+2025-12-12 15:55:09 [33mwarn[39m: [Performance] Client error - POST /api/v1/events returned 401 in 1ms
+2025-12-12 15:55:09 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/events HTTP/1.1 401 83 - 1.240 ms
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/refresh > should return new tokens and revoke the old refresh token
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] Attempting to log in user: producer-1765576509650@test.com
+
+ ✓ tests/e2e/event.e2e.test.ts  (1 test) 126ms
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/refresh > should return new tokens and revoke the old refresh token
+2025-12-12 15:55:09 [34mdebug[39m: [LoginUseCase] User found in database.
+{
+  "userFound": true,
+  "hasProducer": true,
+  "producerId": "49bcf88c-05e4-4e7b-8e13-edfae9f89ffc"
+}
+2025-12-12 15:55:10 [34mdebug[39m: [LoginUseCase] Password validation result for producer-1765576509650@test.com: true
+2025-12-12 15:55:10 [34mdebug[39m: [LoginUseCase] Generating tokens for user. [UserID: 7d3b6efc-7149-44f8-89f8-df475cf03c80]
+{
+  "email": "producer-1765576509650@test.com"
+}
+
+stdout | tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/refresh > should return new tokens and revoke the old refresh token
+2025-12-12 15:55:10 [34mdebug[39m: [Performance] POST /login completed in 72ms
+2025-12-12 15:55:10 [32minfo[39m: ::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 1303 - 71.897 ms
+
+ ❯ tests/e2e/auth.e2e.test.ts  (4 tests | 3 failed) 394ms
+   ❯ tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should succeed with correct credentials and return tokens
+     → expected { success: true, data: { …(2) } } to have property "accessToken"
+   ❯ tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/logout > should blacklist the token, preventing further access
+     → expected undefined not to be undefined
+   ❯ tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/refresh > should return new tokens and revoke the old refresh token
+     → expected undefined not to be undefined
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/e2e/events.e2e.test.ts [ tests/e2e/events.e2e.test.ts ]
+Error: Failed to load url ../../src/infrastructure/database/repositories/PrismaBatchRepository (resolved id: ../../src/infrastructure/database/repositories/PrismaBatchRepository) in /Users/mac/Documents/agrobridge-backend/apps/api/tests/e2e/events.e2e.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/login > should succeed with correct credentials and return tokens
+AssertionError: expected { success: true, data: { …(2) } } to have property "accessToken"
+ ❯ tests/e2e/auth.e2e.test.ts:119:29
+    117|   
+    118|       expect(response.status).toBe(200);
+    119|       expect(response.body).toHaveProperty('accessToken');
+       |                             ^
+    120|       expect(response.body).toHaveProperty('refreshToken');
+    121|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/logout > should blacklist the token, preventing further access
+AssertionError: expected undefined not to be undefined
+ ❯ tests/e2e/auth.e2e.test.ts:131:27
+    129|       
+    130|       const { accessToken } = loginRes.body;
+    131|       expect(accessToken).toBeDefined();
+       |                           ^
+    132| 
+    133|       const meRes1 = await request.get('/api/v1/auth/me').set('Authori…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  tests/e2e/auth.e2e.test.ts > Auth API E2E > POST /api/v1/auth/refresh > should return new tokens and revoke the old refresh token
+AssertionError: expected undefined not to be undefined
+ ❯ tests/e2e/auth.e2e.test.ts:153:31
+    151|       
+    152|       const { refreshToken: oldRefreshToken } = loginRes.body;
+    153|       expect(oldRefreshToken).toBeDefined();
+       |                               ^
+    154| 
+    155|       const refreshRes1 = await request.post('/api/v1/auth/refresh').s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  tests/e2e/batches.e2e.test.ts > Batches API (E2E) > POST /api/v1/batches should return 201 when creating a new batch with a producer token
+AssertionError: expected 401 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 401
+
+ ❯ tests/e2e/batches.e2e.test.ts:127:29
+    125|       });
+    126|     
+    127|     expect(response.status).toBe(201);
+       |                             ^
+    128|     expect(response.body).toHaveProperty('id');
+    129|     createdBatchId = response.body.id;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  tests/e2e/batches.e2e.test.ts > Batches API (E2E) > GET /api/v1/batches/:id should retrieve the created batch
+AssertionError: expected undefined not to be undefined
+ ❯ tests/e2e/batches.e2e.test.ts:133:28
+    131| 
+    132|   it('GET /api/v1/batches/:id should retrieve the created batch', asyn…
+    133|     expect(createdBatchId).toBeDefined(); 
+       |                            ^
+    134|     
+    135|     const response = await request
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  tests/e2e/producers.e2e.test.ts > Producers API (E2E) > GET /api/v1/producers > should return the first page of producers
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/e2e/producers.e2e.test.ts:160:31
+    158|         .set('Authorization', `Bearer ${adminToken}`);
+    159|       
+    160|       expect(response.status).toBe(200);
+       |                               ^
+    161|       // We expect at least our 2 created producers
+    162|       expect(response.body.producers.length).toBeGreaterThanOrEqual(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  tests/e2e/producers.e2e.test.ts > Producers API (E2E) > GET /api/v1/producers > should filter whitelisted producers
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/e2e/producers.e2e.test.ts:175:33
+    173|           .set('Authorization', `Bearer ${adminToken}`);
+    174|         
+    175|         expect(response.status).toBe(200);
+       |                                 ^
+    176|         
+    177|         // Verify results are whitelisted
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > GET /notifications/:id > should return notification by ID
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ tests/e2e/notifications/notifications.routes.test.ts:216:31
+    214|         .get('/notifications/notif-1');
+    215| 
+    216|       expect(response.status).toBe(200);
+       |                               ^
+    217|       expect(response.body.id).toBe('notif-1');
+    218|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+
+ FAIL  tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > PUT /notifications/:id/read > should mark notification as read
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ tests/e2e/notifications/notifications.routes.test.ts:226:31
+    224|         .put('/notifications/notif-1/read');
+    225| 
+    226|       expect(response.status).toBe(200);
+       |                               ^
+    227|       expect(response.body.success).toBe(true);
+    228|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/17]⎯
+
+ FAIL  tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > PUT /notifications/:id/clicked > should mark notification as clicked
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ tests/e2e/notifications/notifications.routes.test.ts:236:31
+    234|         .put('/notifications/notif-1/clicked');
+    235| 
+    236|       expect(response.status).toBe(200);
+       |                               ^
+    237|       expect(response.body.success).toBe(true);
+    238|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/17]⎯
+
+ FAIL  tests/e2e/notifications/notifications.routes.test.ts > Notification Routes > DELETE /notifications/:id > should delete notification
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ tests/e2e/notifications/notifications.routes.test.ts:256:31
+    254|         .delete('/notifications/notif-1');
+    255| 
+    256|       expect(response.status).toBe(200);
+       |                               ^
+    257|       expect(response.body.success).toBe(true);
+    258|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/17]⎯
+
+ FAIL  tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > getStats > should return queue statistics
+TypeError: this.queue.getWaitingCount is not a function
+ ❯ NotificationQueue.getStats src/infrastructure/notifications/queue/NotificationQueue.ts:645:18
+    643| 
+    644|     const [waiting, active, completed, failed, delayed] = await Promis…
+    645|       this.queue.getWaitingCount(),
+       |                  ^
+    646|       this.queue.getActiveCount(),
+    647|       this.queue.getCompletedCount(),
+ ❯ tests/unit/notifications/NotificationQueue.test.ts:155:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/17]⎯
+
+ FAIL  tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > pause and resume > should pause the queue
+AssertionError: expected "spy" to be called at least once
+ ❯ tests/unit/notifications/NotificationQueue.test.ts:174:31
+    172|       await queue.pause();
+    173| 
+    174|       expect(mockQueue.pause).toHaveBeenCalled();
+       |                               ^
+    175|     });
+    176| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/17]⎯
+
+ FAIL  tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > pause and resume > should resume the queue
+AssertionError: expected "spy" to be called at least once
+ ❯ tests/unit/notifications/NotificationQueue.test.ts:185:32
+    183|       await queue.resume();
+    184| 
+    185|       expect(mockQueue.resume).toHaveBeenCalled();
+       |                                ^
+    186|     });
+    187|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/17]⎯
+
+ FAIL  tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > clean > should clean old jobs
+AssertionError: expected "spy" to be called at least once
+ ❯ tests/unit/notifications/NotificationQueue.test.ts:198:31
+    196|       await queue.clean(24);
+    197| 
+    198|       expect(mockQueue.clean).toHaveBeenCalled();
+       |                               ^
+    199|     });
+    200|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/17]⎯
+
+ FAIL  tests/unit/notifications/NotificationQueue.test.ts > NotificationQueue > shutdown > should close the queue gracefully
+AssertionError: expected "spy" to be called at least once
+ ❯ tests/unit/notifications/NotificationQueue.test.ts:211:31
+    209|       await queue.shutdown();
+    210| 
+    211|       expect(mockQueue.close).toHaveBeenCalled();
+       |                               ^
+    212|     });
+    213|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/17]⎯
+
+ Test Files  6 failed | 8 passed (14)
+      Tests  16 failed | 68 passed (84)
+   Start at  15:55:08
+   Duration  1.46s (transform 572ms, setup 188ms, collect 3.42s, tests 1.34s, environment 2ms, prepare 863ms)
+

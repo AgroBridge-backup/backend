@@ -1,8 +1,8 @@
-import { IUseCase } from '../../shared/interfaces/IUseCase.js';
-import { IRefreshTokenRepository } from '../../domain/repositories/IRefreshTokenRepository.js';
-import { IUserRepository } from '../../domain/repositories/IUserRepository.js';
+import { IUseCase } from '../../../shared/interfaces/IUseCase.js';
+import { IRefreshTokenRepository } from '../../../domain/repositories/IRefreshTokenRepository.js';
+import { IUserRepository } from '../../../domain/repositories/IUserRepository.js';
 import { RefreshTokenRequestDto, RefreshTokenResponseDto } from '../../dtos/auth.dtos.js';
-import { InvalidTokenError } from '../../shared/errors/InvalidTokenError.js';
+import { InvalidTokenError } from '../../../shared/errors/InvalidTokenError.js';
 import { add } from 'date-fns';
 import * as jwt from 'jsonwebtoken';
 import * as fs from 'node:fs';

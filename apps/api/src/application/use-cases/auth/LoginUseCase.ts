@@ -1,6 +1,6 @@
 import { IUserRepository } from '../../../domain/repositories/IUserRepository.js';
 import { IRefreshTokenRepository } from '../../../domain/repositories/IRefreshTokenRepository.js';
-import { LoginRequestDto, LoginResponseDto } from '../dtos/auth.dtos.js';
+import { LoginRequestDto, LoginResponseDto } from '../../dtos/auth.dtos.js';
 import { AuthenticationError } from '../../../shared/errors/AuthenticationError.js';
 import logger from '../../../shared/utils/logger.js'; // <-- FIX: IMPORT LOGGER
 import bcrypt from 'bcryptjs';
@@ -31,7 +31,7 @@ export class LoginUseCase {
 
     // 1. Find user by email, including producer info
     const user = await this.userRepository.findByEmail(email, { producer: true });
-    logger.debug({ userFound: user, hasProducer: !!user?.producer, producerId: user?.producer?.id }, '[LoginUseCase] User found in database.');
+    logger.debug('[LoginUseCase] User found in database.', { userFound: !!user, hasProducer: !!user?.producer, producerId: user?.producer?.id });
 
     if (!user || !user.isActive) {
       throw new AuthenticationError('Invalid credentials or user inactive.');
@@ -46,7 +46,7 @@ export class LoginUseCase {
     }
 
     // 3. Generate Tokens
-    logger.debug({ userForToken: user }, '[LoginUseCase] Generating tokens for user.');
+    logger.debug('[LoginUseCase] Generating tokens for user.', { userId: user.id, email: user.email });
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
 

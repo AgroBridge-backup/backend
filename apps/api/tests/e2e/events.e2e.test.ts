@@ -12,7 +12,7 @@ import { redisClient } from '../../src/infrastructure/cache/RedisClient';
 import { PrismaUserRepository } from '../../src/infrastructure/database/prisma/repositories/PrismaUserRepository';
 import { PrismaRefreshTokenRepository } from '../../src/infrastructure/database/prisma/repositories/PrismaRefreshTokenRepository';
 import { PrismaProducerRepository } from '../../src/core/producers/infrastructure/PrismaProducerRepository';
-import { PrismaBatchRepository } from '../../src/infrastructure/database/repositories/PrismaBatchRepository';
+import { PrismaBatchRepository } from '../../src/core/batches/infrastructure/PrismaBatchRepository';
 import { PrismaEventRepository } from '../../src/infrastructure/database/prisma/repositories/PrismaEventRepository';
 import { LoginUseCase } from '../../src/application/use-cases/auth/LoginUseCase';
 import { RefreshTokenUseCase } from '../../src/application/use-cases/auth/RefreshTokenUseCase';
@@ -77,7 +77,7 @@ describe('Events API (E2E)', () => {
       email: 'admin@test.com',
       password: 'test123',
     });
-    adminToken = adminLoginRes.body.accessToken;
+    adminToken = adminLoginRes.body.data.accessToken;
 
     // Create a batch to associate events with - ensure producer exists
     const producer = await prisma.producer.findFirst({ where: { user: { email: 'producer@test.com' } } });

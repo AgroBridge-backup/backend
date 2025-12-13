@@ -6,14 +6,14 @@ export class PrismaEventRepository implements IEventRepository {
   constructor(private readonly prisma: Prisma.PrismaClient) {}
 
   async create(data: Partial<TraceabilityEvent>): Promise<TraceabilityEvent> {
-    const savedEvent = await this.prisma.event.create({
+    const savedEvent = await this.prisma.traceabilityEvent.create({
       data: data as any,
     });
     return this.toDomain(savedEvent);
   }
 
   async findById(id: string): Promise<TraceabilityEvent | null> {
-    const event = await this.prisma.event.findUnique({
+    const event = await this.prisma.traceabilityEvent.findUnique({
       where: { id },
     });
     if (!event) return null;
@@ -21,7 +21,7 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async findByBatchId(batchId: string): Promise<TraceabilityEvent[]> {
-    const events = await this.prisma.event.findMany({
+    const events = await this.prisma.traceabilityEvent.findMany({
       where: { batchId },
       orderBy: { timestamp: 'asc' },
     });
@@ -29,7 +29,7 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async save(event: TraceabilityEvent): Promise<TraceabilityEvent> {
-    const savedEvent = await this.prisma.event.upsert({
+    const savedEvent = await this.prisma.traceabilityEvent.upsert({
       where: { id: event.id || 'new-event' }, // Use a dummy ID for new events
       update: {
         batchId: event.batchId,

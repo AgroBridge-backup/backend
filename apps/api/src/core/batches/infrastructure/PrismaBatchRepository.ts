@@ -16,7 +16,7 @@ export class PrismaBatchRepository implements IBatchRepository {
     const newBatch = await prisma.batch.create({
       data: data as any, // Using 'as any' to bridge domain and prisma types
     });
-    return newBatch as Batch;
+    return newBatch as unknown as Batch;
   }
 
   async update(id: string, data: Partial<Batch>): Promise<Batch> {
@@ -24,7 +24,7 @@ export class PrismaBatchRepository implements IBatchRepository {
       where: { id },
       data: data as any, // Using 'as any' to bridge domain and prisma types
     });
-    return updatedBatch as Batch;
+    return updatedBatch as unknown as Batch;
   }
 
   async countByProducer(producerId: string): Promise<number> {

@@ -26,8 +26,6 @@ interface JwtPayload {
   producerId?: string;
 }
 
-import { AppError } from '../../shared/errors/AppError.js';
-
 // Interface AuthenticatedRequest removed in favor of global Express.Request augmentation
 // see src/types/express/index.d.ts
 
@@ -41,7 +39,7 @@ export const authenticate = (requiredRoles?: UserRole[]) => {
       }
 
       const token = authHeader.split(' ')[1];
-      logger.debug({ tokenReceived: token }, '[AuthMiddleware] Token received.');
+      logger.debug(`[AuthMiddleware] Token received: ${token ? token.substring(0, 20) + '...' : 'none'}`);
       if (!token) {
         throw new InvalidTokenError('Token not found');
       }
@@ -50,9 +48,9 @@ export const authenticate = (requiredRoles?: UserRole[]) => {
       let payload: JwtPayload;
       try {
         payload = jwt.verify(token, JWT_PUBLIC_KEY, { algorithms: ['RS256'] }) as JwtPayload;
-        logger.debug({ decodedPayload: payload }, '[AuthMiddleware] Token verified successfully.');
+        logger.debug(`[AuthMiddleware] Token verified successfully for user: ${payload.sub}`);
       } catch (error: any) {
-        logger.error({ err: error }, '[AuthMiddleware] Token verification failed.');
+        logger.error(`[AuthMiddleware] Token verification failed: ${error.message}`);
         if (error instanceof jwt.TokenExpiredError) {
           throw new TokenExpiredError();
         }

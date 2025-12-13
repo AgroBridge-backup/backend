@@ -22,7 +22,7 @@ interface RegisterEventParams {
 }
 
 export class BlockchainService {
-    private provider!: ethers.JsonRpcProvider;
+    private provider!: ethers.providers.JsonRpcProvider;
     private wallet!: ethers.Wallet;
     private traceabilityContract!: ethers.Contract;
     private producerCertContract!: ethers.Contract;
@@ -41,14 +41,9 @@ export class BlockchainService {
 
     private initializeProvider(): void {
         try {
-            this.provider = new ethers.JsonRpcProvider(
+            this.provider = new ethers.providers.JsonRpcProvider(
                 this.config.rpcUrl,
-                this.config.chainId,
-                {
-                    staticNetwork: true,
-                    batchMaxCount: 100,
-                    polling: false, // Disable polling, use events
-                }
+                this.config.chainId
             );
             logger.info('Blockchain provider initialized', {
                 chainId: this.config.chainId,

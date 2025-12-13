@@ -1,16 +1,30 @@
 // FIX: ARCHITECTURAL REFACTOR TO ALIGN WITH FACTORY PATTERN & DI
 import express, { Request, Response, NextFunction } from 'express';
 import 'express-async-errors';
-import cors from 'cors';
-import helmet from 'helmet';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
 import { AppError } from './shared/errors/AppError.js';
 import { errorHandler } from './presentation/middlewares/errorHandler.middleware.js';
 import { contextMiddleware } from './presentation/middlewares/context.middleware.js';
 import logger from './shared/utils/logger.js';
 import { createApiRouter } from './presentation/routes/index.js';
 import { bullBoardSetup } from './infrastructure/notifications/monitoring/BullBoardSetup.js';
+
+// Security Middleware
+import { securityHeadersMiddleware, additionalSecurityHeaders } from './infrastructure/http/middleware/security.middleware.js';
+import { corsMiddleware } from './infrastructure/http/middleware/cors.middleware.js';
+import { RateLimiterConfig } from './infrastructure/http/middleware/rate-limiter.middleware.js';
+import { auditMiddleware } from './infrastructure/http/middleware/audit.middleware.js';
+
+// Observability Middleware
+import { correlationIdMiddleware } from './infrastructure/http/middleware/correlation-id.middleware.js';
+import { performanceMiddleware } from './infrastructure/http/middleware/performance.middleware.js';
+import { errorTrackingMiddleware, setupUncaughtExceptionHandler } from './infrastructure/http/middleware/error-tracking.middleware.js';
+
+// Health Routes
+import healthRoutes from './presentation/routes/health.routes.js';
+
+// Setup global error handlers
+setupUncaughtExceptionHandler();
 
 // --- DEPENDENCY INJECTION WIRING (Centralized) ---
 import { prisma } from './infrastructure/database/prisma/client.js';
@@ -54,7 +68,7 @@ export function createApp(injectedRouter?: Router): express.Express {
         const userRepository = new PrismaUserRepository(prisma);
         const refreshTokenRepository = new PrismaRefreshTokenRepository(prisma);
         const producerRepository = new PrismaProducerRepository(prisma);
-        const batchRepository = new PrismaBatchRepository(prisma);
+        const batchRepository = new PrismaBatchRepository();
         const eventRepository = new PrismaEventRepository(prisma);
 
         const useCases: AllUseCases = {
@@ -85,31 +99,49 @@ export function createApp(injectedRouter?: Router): express.Express {
         apiRouter = createApiRouter(useCases);
     }
 
-    // --- CORE MIDDLEWARES ---
-    app.use(helmet());
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // MIDDLEWARE PIPELINE (Order is critical for security and observability)
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    // 1. HEALTH ROUTES (No middleware - must be accessible for probes)
+    app.use('/health', healthRoutes);
+
+    // 2. SECURITY: Headers (Helmet.js + CSP) - Applied first for max protection
+    app.use(securityHeadersMiddleware);
+    app.use(additionalSecurityHeaders);
+
+    // 3. OBSERVABILITY: Correlation ID - Generate/propagate request tracking ID
+    app.use(correlationIdMiddleware);
+
+    // 4. Request Context (legacy - generates requestId for tracking)
     app.use(contextMiddleware);
-    app.use(cors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        credentials: true,
-        optionsSuccessStatus: 200
-    }));
+
+    // 5. SECURITY: CORS with Whitelist
+    app.use(corsMiddleware);
+
+    // 6. Body Parsers
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
 
+    // 7. OBSERVABILITY: Request Logging (Morgan)
     if (process.env.NODE_ENV === 'development') {
         app.use(morgan('dev'));
     } else {
         app.use(morgan('short', { stream: { write: (message) => logger.info(message.trim()) } }));
     }
 
-    app.use(rateLimit({
-        windowMs: 15 * 60 * 1000,
-        max: 100,
-        standardHeaders: true,
-        legacyHeaders: false,
-    }));
+    // 8. OBSERVABILITY: Performance Monitoring
+    app.use(performanceMiddleware);
 
-    // --- API ROUTES ---
+    // 9. SECURITY: Global API Rate Limiting
+    app.use('/api', RateLimiterConfig.api());
+
+    // 10. COMPLIANCE: Audit Logging (after rate limiting, before routes)
+    app.use(auditMiddleware);
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // API ROUTES
+    // ═══════════════════════════════════════════════════════════════════════════════
     app.use('/api/v1', apiRouter);
 
     // --- ADMIN ROUTES ---

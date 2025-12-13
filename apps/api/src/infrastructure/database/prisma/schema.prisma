@@ -455,3 +455,82 @@ model NotificationPreference {
 
   @@map("notification_preferences")
 }
+
+// ════════════════════════════════════════════════════════════════════════════════
+// AUDIT LOGGING SYSTEM
+// Enterprise-grade audit trail for compliance (FSMA, SENASICA, EU Regulations)
+// 7-year retention policy for traceability requirements
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Audit action types for tracking all system operations
+enum AuditAction {
+  // Authentication
+  LOGIN
+  LOGOUT
+  REGISTER
+  PASSWORD_RESET
+  PASSWORD_CHANGE
+  TOKEN_REFRESH
+
+  // CRUD Operations
+  CREATE
+  READ
+  UPDATE
+  DELETE
+
+  // Business Actions
+  VERIFY_PRODUCER
+  WHITELIST_PRODUCER
+  SUSPEND_PRODUCER
+  GENERATE_QR
+  UPDATE_BATCH_STATUS
+  REGISTER_EVENT
+  VERIFY_EVENT
+  ADD_CERTIFICATION
+
+  // Admin Actions
+  ADMIN_ACTION
+  EXPORT_DATA
+  BULK_OPERATION
+
+  // Security Events
+  ACCESS_DENIED
+  RATE_LIMIT_EXCEEDED
+  INVALID_TOKEN
+  SUSPICIOUS_ACTIVITY
+}
+
+/// Audit log entry - immutable record of all system actions
+model AuditLog {
+  id            String      @id @default(uuid())
+  userId        String?     // Can be null for system actions or unauthenticated requests
+  action        AuditAction
+  resource      String      // Resource type: User, Producer, Batch, Event, etc.
+  resourceId    String?     // ID of the affected resource
+  details       Json?       // Additional context (changes made, before/after values)
+  ipAddress     String?     @db.VarChar(45) // IPv6 compatible
+  userAgent     String?     @db.VarChar(500)
+  correlationId String?     @db.VarChar(100) // For request tracking across services
+  requestId     String?     @db.VarChar(100) // Unique request identifier
+
+  // Result tracking
+  success       Boolean     @default(true)
+  errorMessage  String?     @db.Text
+
+  // Performance metrics
+  durationMs    Int?        // Request duration in milliseconds
+
+  timestamp     DateTime    @default(now())
+
+  // Indexes for efficient querying
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([timestamp])
+  @@index([correlationId])
+  @@index([success])
+  @@index([userId, timestamp])
+  @@index([resource, action, timestamp])
+  @@map("audit_logs")
+}

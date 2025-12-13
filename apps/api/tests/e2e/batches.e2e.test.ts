@@ -93,8 +93,8 @@ describe('Batches API (E2E)', () => {
     const loginRes = await request
       .post('/api/v1/auth/login')
       .send({ email: producerEmail, password: password });
-    
-    producerToken = loginRes.body.accessToken;
+
+    producerToken = loginRes.body.data.accessToken;
   });
 
   afterAll(async () => {

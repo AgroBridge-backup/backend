@@ -1,4 +1,4 @@
-import { IProducerRepository, ProducerList } from '../../../../domain/repositories/IProducerRepository.js';
+import { IProducerRepository, ProducerList } from '../../../domain/repositories/IProducerRepository.js';
 
 export type ListProducersRequestDto = {
   page: number;

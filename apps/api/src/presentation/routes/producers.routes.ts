@@ -1,10 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { authenticate, AuthenticatedRequest } from '../middlewares/auth.middleware.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
 import { validateRequest } from '../middlewares/validator.middleware.js';
 import * as Prisma from '@prisma/client';
 import { InsufficientPermissionsError } from '../../shared/errors/InsufficientPermissionsError.js';
 import { ProducerUseCases } from '../../application/use-cases/producers/index.js';
+import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
 
 export function createProducersRouter(useCases: ProducerUseCases) {
   const router = Router();
@@ -30,14 +31,14 @@ export function createProducersRouter(useCases: ProducerUseCases) {
     '/',
     authenticate([Prisma.UserRole.ADMIN]),
     validateRequest(listProducersSchema),
-    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const result = await useCases.listProducersUseCase.execute(req.query);
+        const result = await useCases.listProducersUseCase.execute(req.query as any);
 
         if (!result || result.producers.length === 0) {
           return res.status(200).json({ producers: [], total: 0 });
         }
-        
+
         res.status(200).json(result);
       } catch (error) {
         next(error);
@@ -49,7 +50,7 @@ export function createProducersRouter(useCases: ProducerUseCases) {
     '/:producerId',
     authenticate([Prisma.UserRole.ADMIN, Prisma.UserRole.PRODUCER]),
     validateRequest(producerIdSchema),
-    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { producerId } = req.params;
         if (req.user!.role === Prisma.UserRole.PRODUCER && req.user!.producerId !== producerId) {
@@ -63,11 +64,17 @@ export function createProducersRouter(useCases: ProducerUseCases) {
     }
   );
 
+  /**
+   * POST /api/v1/producers/:producerId/whitelist
+   * Whitelist a producer (Admin only)
+   * Rate limited: 20 sensitive operations per hour
+   */
   router.post(
     '/:producerId/whitelist',
     authenticate([Prisma.UserRole.ADMIN]),
+    RateLimiterConfig.sensitive(),
     validateRequest(producerIdSchema),
-    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
       try {
         const result = await useCases.whitelistProducerUseCase.execute({ producerId: req.params.producerId });
         res.json(result);
@@ -81,11 +88,11 @@ export function createProducersRouter(useCases: ProducerUseCases) {
     '/:producerId/certifications',
     authenticate([Prisma.UserRole.ADMIN, Prisma.UserRole.CERTIFIER]),
     // TODO: Add validation schema for certification body
-    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const result = await useCases.addCertificationUseCase.execute({ 
-          producerId: req.params.producerId, 
-          ...req.body 
+        const result = await useCases.addCertificationUseCase.execute({
+          producerId: req.params.producerId,
+          ...req.body
         });
         res.status(201).json(result);
       } catch (error) {

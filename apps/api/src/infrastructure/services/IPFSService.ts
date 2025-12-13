@@ -1,10 +1,7 @@
-
-import { injectable } from 'tsyringe';
 import logger from '../../shared/utils/logger.js';
 
-@injectable()
 export class IPFSService {
-  async uploadFiles(files: Express.Multer.File[]): Promise<string[]> {
+  async uploadFiles(files: any[]): Promise<string[]> {
     logger.info({ message: 'Uploading files to IPFS (dummy)', meta: { files: files.map(f => f.filename) } });
     return files.map((f, i) => `QmHash${i}`);
   }

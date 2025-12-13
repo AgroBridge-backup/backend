@@ -8,4 +8,10 @@ export interface User {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  walletAddress?: string | null;
+  producer?: {
+    id: string;
+    businessName: string;
+    rfc: string;
+  } | null;
 }

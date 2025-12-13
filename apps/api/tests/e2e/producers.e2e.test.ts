@@ -131,7 +131,7 @@ describe('Producers API (E2E)', () => {
       email: adminEmail,
       password: password,
     });
-    adminToken = adminLoginRes.body.accessToken;
+    adminToken = adminLoginRes.body.data.accessToken;
   });
 
   afterAll(async () => {
