@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import logger from '../../shared/utils/logger.js';
+import { redisCacheService, type CacheHealth, type CacheStats } from '../../infrastructure/cache/index.js';
 
 interface HealthCheckResult {
-  status: 'healthy' | 'unhealthy';
+  status: 'healthy' | 'unhealthy' | 'degraded';
   latency?: number;
   error?: string;
 }
@@ -46,8 +47,8 @@ export class HealthController {
     // Check database
     checks.database = await this.checkDatabase();
 
-    // Check Redis (via environment check - actual connection done elsewhere)
-    checks.redis = await this.checkRedisEnv();
+    // Check Redis connection with actual health check
+    checks.redis = await this.checkRedis();
 
     // Determine overall status
     const isReady = Object.values(checks).every((check) => check.status === 'healthy');
@@ -144,18 +145,58 @@ export class HealthController {
   }
 
   /**
-   * Check Redis environment configuration
+   * Check Redis connectivity with actual ping and latency measurement
    */
-  private async checkRedisEnv(): Promise<HealthCheckResult> {
-    const redisUrl = process.env.REDIS_URL || process.env.REDIS_HOST;
-    if (redisUrl) {
+  private async checkRedis(): Promise<HealthCheckResult> {
+    try {
+      const health: CacheHealth = await redisCacheService.healthCheck();
       return {
-        status: 'healthy',
+        status: health.status === 'healthy' ? 'healthy' : health.status === 'degraded' ? 'degraded' : 'unhealthy',
+        latency: health.latencyMs,
+        error: health.errorMessage,
+      };
+    } catch (error) {
+      logger.error(`[HealthCheck] Redis check failed: ${error}`);
+      return {
+        status: 'unhealthy',
+        error: 'Redis connection failed',
       };
     }
-    return {
-      status: 'unhealthy',
-      error: 'Redis not configured',
-    };
+  }
+
+  /**
+   * GET /health/cache
+   * Cache-specific health endpoint with detailed statistics
+   */
+  async cacheStats(_req: Request, res: Response): Promise<void> {
+    try {
+      const health: CacheHealth = await redisCacheService.healthCheck();
+      const stats: CacheStats = await redisCacheService.getStats();
+
+      res.status(health.status === 'healthy' ? 200 : 503).json({
+        status: health.status,
+        connected: health.connected,
+        latencyMs: health.latencyMs,
+        statistics: {
+          hits: stats.hits,
+          misses: stats.misses,
+          errors: stats.errors,
+          hitRate: stats.hits + stats.misses > 0
+            ? ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(2) + '%'
+            : '0%',
+          keys: stats.keys,
+          memoryUsage: stats.memoryUsage,
+          uptime: stats.uptime,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`[HealthCheck] Cache stats failed: ${error}`);
+      res.status(503).json({
+        status: 'unhealthy',
+        error: 'Failed to retrieve cache statistics',
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 }

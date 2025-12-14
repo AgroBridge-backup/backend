@@ -4,6 +4,7 @@ import { createBatchesRouter } from './batches.routes.js';
 import { createEventsRouter } from './events.routes.js';
 import { createProducersRouter } from './producers.routes.js';
 import { createNotificationsRouter } from './notifications.routes.js';
+import { createUploadRouter } from './upload.routes.js';
 import { AllUseCases } from '../../application/use-cases/index.js';
 
 export function createApiRouter(useCases: AllUseCases): Router {
@@ -14,6 +15,7 @@ export function createApiRouter(useCases: AllUseCases): Router {
   router.use('/events', createEventsRouter(useCases.events));
   router.use('/producers', createProducersRouter(useCases.producers));
   router.use('/notifications', createNotificationsRouter());
+  router.use('/uploads', createUploadRouter());
 
   return router;
 }

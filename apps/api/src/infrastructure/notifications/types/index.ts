@@ -222,8 +222,12 @@ export interface EmailAttachment {
  * Email send result
  */
 export interface EmailSendResult extends BaseSendResult {
-  /** HTTP status code from SendGrid */
+  /** HTTP status code from provider */
   statusCode?: number;
+  /** Email provider used (ses, sendgrid) */
+  provider?: 'ses' | 'sendgrid';
+  /** Number of retry attempts (for resilient service) */
+  attempt?: number;
 }
 
 /**

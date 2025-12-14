@@ -50,6 +50,16 @@ export { FCMService, fcmService } from './services/FCMService.js';
 export { APNsService, apnsService } from './services/APNsService.js';
 export { EmailService, emailService } from './services/EmailService.js';
 export { SMSService, smsService } from './services/SMSService.js';
+export {
+  ResilientEmailService,
+  resilientEmailService,
+  type EmailServiceHealth,
+} from './services/ResilientEmailService.js';
+
+// ════════════════════════════════════════════════════════════════════════════════
+// PROVIDERS
+// ════════════════════════════════════════════════════════════════════════════════
+export { SESProvider, sesProvider, type SESHealth } from './providers/SESProvider.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // MONITORING
