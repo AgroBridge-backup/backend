@@ -1,1 +1,0 @@
-{"version":3,"file":"InsufficientPermissionsError.js","sourceRoot":"","sources":["InsufficientPermissionsError.ts"],"names":[],"mappings":";;;AAAA,yCAAsC;AAEtC,MAAa,4BAA6B,SAAQ,mBAAQ;IACjD,IAAI,CAAS;IACpB,YAAY,OAAO,GAAG,0BAA0B;QAC9C,KAAK,CAAC,OAAO,EAAE,GAAG,CAAC,CAAC;QACpB,IAAI,CAAC,IAAI,GAAG,8BAA8B,CAAC;IAC7C,CAAC;CACF;AAND,oEAMC"}

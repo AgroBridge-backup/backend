@@ -1,1 +1,0 @@
-{"version":3,"file":"GetProducerByIdUseCase.js","sourceRoot":"","sources":["../../../../src/application/use-cases/producers/GetProducerByIdUseCase.ts"],"names":[],"mappings":"AAAA,MAAM,OAAO,sBAAsB;IACjC,KAAK,CAAC,OAAO,CAAC,GAAQ;QACpB,OAAO,CAAC,GAAG,CAAC,GAAG,CAAC,CAAC;QACjB,OAAO,EAAE,EAAE,EAAE,GAAG,CAAC,UAAU,EAAE,YAAY,EAAE,eAAe,EAAE,CAAC;IAC/D,CAAC;CACF"}

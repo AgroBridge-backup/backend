@@ -4,7 +4,6 @@ import logger from '../../shared/utils/logger.js';
 const prisma = new Prisma.PrismaClient();
 export async function runSeed() {
     logger.info('Start seeding...');
-    // --- Seed Admin User ---
     const adminPassword = await bcrypt.hash('test123', 10);
     const admin = await prisma.user.upsert({
         where: { email: 'admin@test.com' },
@@ -19,7 +18,6 @@ export async function runSeed() {
         },
     });
     logger.info(`Upserted admin user: ${admin.email}`);
-    // --- Seed Producer User ---
     const producerPassword = await bcrypt.hash('prodpass', 10);
     const producer = await prisma.user.upsert({
         where: { email: 'producer@test.com' },
@@ -48,7 +46,6 @@ export async function runSeed() {
         },
     });
     logger.info(`Upserted producer user: ${producer.email}`);
-    // --- Seed Second Producer User ---
     const producer2Password = await bcrypt.hash('prodpass2', 10);
     await prisma.user.upsert({
         where: { email: 'producer2@test.com' },
@@ -76,7 +73,6 @@ export async function runSeed() {
     logger.info(`Upserted second producer user: producer2@test.com`);
     logger.info('Seeding finished.');
 }
-// Allow the script to be run directly
 if (require.main === module) {
     runSeed()
         .catch((e) => {

@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import logger from '../../shared/utils/logger.js';
 export class RedisClient {
     client;
@@ -28,7 +28,6 @@ export class RedisClient {
         }
         catch (error) {
             logger.error({ message: 'Redis Rate Limit Error', meta: { error } });
-            // Fail open: allow request if redis fails
             return true;
         }
     }

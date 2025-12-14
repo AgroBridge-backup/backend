@@ -10,9 +10,8 @@ export class BlockchainService {
     batchTokenContract;
     MAX_RETRIES = 3;
     RETRY_DELAY_MS = 2000;
-    GAS_LIMIT_BUFFER = 1.2; // 20% buffer
-    // FIXED: L-019 - Extract magic number to constant for network confirmation requirement
-    REQUIRED_CONFIRMATIONS = 1; // Minimum confirmations before tx is considered final
+    GAS_LIMIT_BUFFER = 1.2;
+    REQUIRED_CONFIRMATIONS = 1;
     constructor(config) {
         this.config = config;
         this.initializeProvider();
@@ -21,11 +20,7 @@ export class BlockchainService {
     }
     initializeProvider() {
         try {
-            this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl, this.config.chainId, {
-                staticNetwork: true,
-                batchMaxCount: 100,
-                polling: false, // Disable polling, use events
-            });
+            this.provider = new ethers.providers.JsonRpcProvider(this.config.rpcUrl, this.config.chainId);
             logger.info('Blockchain provider initialized', {
                 chainId: this.config.chainId,
                 rpcUrl: this.config.rpcUrl.substring(0, 30) + '...',
@@ -73,19 +68,13 @@ export class BlockchainService {
             batchToken: this.config.contracts.batchToken,
         });
     }
-    /**
-     * Register event on blockchain with retry mechanism
-     */
     async registerEventOnChain(params) {
         return this.executeWithRetry(async () => {
             try {
-                // Convert coordinates to blockchain format (multiply by 1e6)
                 const latitudeScaled = Math.round(params.latitude * 1_000_000);
                 const longitudeScaled = Math.round(params.longitude * 1_000_000);
-                // Estimate gas with buffer
                 const estimatedGas = await this.traceabilityContract.registerEvent.estimateGas(params.eventType, params.batchId, latitudeScaled, longitudeScaled, params.ipfsHash);
                 const gasLimit = Math.ceil(Number(estimatedGas) * this.GAS_LIMIT_BUFFER);
-                // Get optimal gas price (EIP-1559)
                 const feeData = await this.provider.getFeeData();
                 logger.info('Registering event on blockchain', {
                     batchId: params.batchId,
@@ -93,7 +82,6 @@ export class BlockchainService {
                     gasLimit,
                     maxFeePerGas: feeData.maxFeePerGas?.toString(),
                 });
-                // Send transaction
                 const tx = await this.traceabilityContract.registerEvent(params.eventType, params.batchId, latitudeScaled, longitudeScaled, params.ipfsHash, {
                     gasLimit,
                     maxFeePerGas: feeData.maxFeePerGas,
@@ -103,12 +91,10 @@ export class BlockchainService {
                     txHash: tx.hash,
                     batchId: params.batchId,
                 });
-                // Wait for confirmation
                 const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
                 if (!receipt || receipt.status !== 1) {
                     throw new AppError('Transaction failed', 500);
                 }
-                // Parse event to get eventId
                 const eventLog = receipt.logs.find((log) => {
                     try {
                         const parsedLog = this.traceabilityContract.interface.parseLog(log);
@@ -121,7 +107,7 @@ export class BlockchainService {
                 let eventId = '';
                 if (eventLog) {
                     const parsed = this.traceabilityContract.interface.parseLog(eventLog);
-                    eventId = parsed?.args[0]; // First argument is eventId
+                    eventId = parsed?.args[0];
                 }
                 logger.info('Event registered successfully', {
                     txHash: receipt.hash,
@@ -140,7 +126,6 @@ export class BlockchainService {
                     error: error.message,
                     batchId: params.batchId,
                 });
-                // Handle specific errors
                 if (error.code === 'INSUFFICIENT_FUNDS') {
                     throw new AppError('Insufficient MATIC for gas fees', 500);
                 }
@@ -154,9 +139,6 @@ export class BlockchainService {
             }
         });
     }
-    /**
-     * Get batch history from blockchain (with fallback to cache)
-     */
     async getBatchHistoryFromChain(batchId) {
         try {
             logger.info('Fetching batch history from blockchain', { batchId });
@@ -182,9 +164,6 @@ export class BlockchainService {
             throw new AppError('Failed to fetch blockchain data', 500);
         }
     }
-    /**
-     * Whitelist producer on blockchain
-     */
     async whitelistProducerOnChain(params) {
         return this.executeWithRetry(async () => {
             try {
@@ -207,16 +186,12 @@ export class BlockchainService {
             }
         });
     }
-    /**
-     * Mint NFT for batch
-     */
     async mintBatchNFT(params) {
         return this.executeWithRetry(async () => {
             try {
                 const tokenURI = `ipfs://${params.ipfsMetadataHash}`;
                 const tx = await this.batchTokenContract.mintBatch(params.producerAddress, params.batchNumber, tokenURI);
                 const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
-                // Get tokenId from event
                 const mintEvent = receipt.logs.find((log) => {
                     try {
                         const parsedLog = this.batchTokenContract.interface.parseLog(log);
@@ -247,9 +222,6 @@ export class BlockchainService {
             }
         });
     }
-    /**
-     * Execute function with retry mechanism (exponential backoff)
-     */
     async executeWithRetry(fn, attempt = 1) {
         try {
             return await fn();
@@ -269,9 +241,6 @@ export class BlockchainService {
             return this.executeWithRetry(fn, attempt + 1);
         }
     }
-    /**
-     * Listen to blockchain events and sync to database
-     */
     startEventListener(callback) {
         this.traceabilityContract.on('EventRegistered', async (eventId, batchId, producer, eventType, timestamp, ipfsHash, event) => {
             try {
@@ -300,9 +269,6 @@ export class BlockchainService {
         });
         logger.info('Blockchain event listener started');
     }
-    /**
-     * Health check
-     */
     async isHealthy() {
         try {
             const blockNumber = await this.provider.getBlockNumber();

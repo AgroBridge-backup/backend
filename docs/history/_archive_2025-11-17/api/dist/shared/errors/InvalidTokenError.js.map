@@ -1,1 +1,0 @@
-{"version":3,"file":"InvalidTokenError.js","sourceRoot":"","sources":["../../../src/shared/errors/InvalidTokenError.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,YAAY,CAAC;AAEtC,MAAM,OAAO,iBAAkB,SAAQ,QAAQ;IAC7C,YAAY,OAAO,GAAG,eAAe;QACnC,KAAK,CAAC,OAAO,EAAE,GAAG,CAAC,CAAC;QACpB,IAAI,CAAC,IAAI,GAAG,mBAAmB,CAAC;IAClC,CAAC;CACF"}

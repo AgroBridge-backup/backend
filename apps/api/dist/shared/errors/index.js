@@ -1,6 +1,6 @@
 /**
  * Central export for all custom error classes
- * Import errors like: import { ValidationError, NotFoundError } from '@/shared/errors';
+ * Import errors like: import { ValidationError, NotFoundError } from '../../shared/errors';
  */
 export { AppError } from './AppError.js';
 export { ValidationError } from './ValidationError.js';

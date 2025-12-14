@@ -69,7 +69,6 @@ export class IPFSService {
         }
         catch (error) {
             logger.error('Failed to pin file on Pinata', { error: error.message });
-            // Non-critical, just log it
         }
     }
 }

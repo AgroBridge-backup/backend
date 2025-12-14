@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isStaging = process.env.NODE_ENV === 'staging';
@@ -20,17 +19,7 @@ export function initSentry(): void {
     dsn,
     environment: process.env.NODE_ENV,
     release: process.env.API_VERSION || '2.0.0',
-
-    // Performance Monitoring
     tracesSampleRate: isProduction ? 0.1 : 1.0,
-
-    // Profiling
-    profilesSampleRate: isProduction ? 0.1 : 1.0,
-    integrations: [
-      nodeProfilingIntegration(),
-    ],
-
-    // Filter out known/expected errors
     beforeSend(event, hint) {
       const error = hint?.originalException;
 
@@ -46,8 +35,6 @@ export function initSentry(): void {
 
       return event;
     },
-
-    // Ignore common noise
     ignoreErrors: [
       'Non-Error exception captured',
       'Request aborted',
@@ -56,21 +43,17 @@ export function initSentry(): void {
       'ETIMEDOUT',
       'socket hang up',
     ],
-
-    // Add context
-    initialScope: {
-      tags: {
-        service: 'agrobridge-api',
-        version: process.env.API_VERSION || '2.0.0',
-      },
-    },
   });
+
+  // Set default tags
+  Sentry.setTag('service', 'agrobridge-api');
+  Sentry.setTag('version', process.env.API_VERSION || '2.0.0');
 
   console.log('[Sentry] Initialized successfully');
 }
 
 // Helper to capture exceptions with context
-export function captureException(error: Error, context?: Record<string, any>): void {
+export function captureException(error: Error, context?: Record<string, unknown>): void {
   if (!isProduction && !isStaging) {
     console.error('[Sentry] Would capture exception:', error.message);
     return;
@@ -87,13 +70,13 @@ export function captureException(error: Error, context?: Record<string, any>): v
 }
 
 // Helper to capture messages
-export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
+export function captureMessage(message: string): void {
   if (!isProduction && !isStaging) {
-    console.log(`[Sentry] Would capture message (${level}):`, message);
+    console.log(`[Sentry] Would capture message:`, message);
     return;
   }
 
-  Sentry.captureMessage(message, level);
+  Sentry.captureMessage(message);
 }
 
 // Helper to set user context
@@ -104,11 +87,6 @@ export function setUser(user: { id: string; email?: string; role?: string }): vo
 // Helper to clear user context
 export function clearUser(): void {
   Sentry.setUser(null);
-}
-
-// Helper for transaction/span tracking
-export function startTransaction(name: string, op: string): Sentry.Span | undefined {
-  return Sentry.startInactiveSpan({ name, op });
 }
 
 export { Sentry };

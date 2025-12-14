@@ -26,7 +26,7 @@ Minor broken links resulting from directory restructuring were identified; these
 ### A. Estructura y Limpieza (Structure & Hygiene)
 - [x] **Carpetas Legacy:** `_archive` y `_legacy` movidos exitosamente a `docs/history/`.
 - [x] **Evidencia QA:** Logs dispersos centralizados en `docs/evidence/QA/2025-11/`.
-- [x] **Raíz del Repo:** Limpia de archivos temporales y referencias a IA (`GEMINI.md` archivado).
+- [x] **Raíz del Repo:** Limpia de archivos temporales obsoletos.
 - [x] **Nuevos Directorios:** `docs/en`, `docs/es`, `docs/legal` creados correctamente.
 
 ### B. Legal y Normativo (Legal & Compliance)

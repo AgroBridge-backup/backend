@@ -1,1 +1,0 @@
-//# sourceMappingURL=GPSCoordinates.d.ts.map

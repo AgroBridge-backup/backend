@@ -16,7 +16,6 @@ export const errorHandler = (err, req, res, _next) => {
         requestId: req.id,
         timestamp: new Date().toISOString()
     });
-    // Explicit checks for specific errors just in case instanceof AppError fails due to prototype issues
     if (err instanceof InvalidTokenError ||
         err instanceof AuthenticationError ||
         err.name === 'InvalidTokenError' ||
@@ -43,7 +42,6 @@ export const errorHandler = (err, req, res, _next) => {
             requestId: req.id
         });
     }
-    // Specific error mapping from prompt
     if (err instanceof BatchNotFoundError) {
         return res.status(404).json({
             error: 'BATCH_NOT_FOUND',
@@ -66,7 +64,6 @@ export const errorHandler = (err, req, res, _next) => {
             requestId: req.id
         });
     }
-    // Default 500
     return res.status(500).json({
         error: 'INTERNAL_SERVER_ERROR',
         message: 'An unexpected error occurred',

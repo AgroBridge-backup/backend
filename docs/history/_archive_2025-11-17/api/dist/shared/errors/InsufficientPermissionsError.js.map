@@ -1,1 +1,0 @@
-{"version":3,"file":"InsufficientPermissionsError.js","sourceRoot":"","sources":["../../../src/shared/errors/InsufficientPermissionsError.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,YAAY,CAAC;AAEtC,MAAM,OAAO,4BAA6B,SAAQ,QAAQ;IACxD,YAAY,OAAO,GAAG,0BAA0B;QAC9C,KAAK,CAAC,OAAO,EAAE,GAAG,CAAC,CAAC;QACpB,IAAI,CAAC,IAAI,GAAG,8BAA8B,CAAC;IAC7C,CAAC;CACF"}

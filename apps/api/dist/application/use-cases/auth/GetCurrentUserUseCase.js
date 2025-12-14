@@ -9,7 +9,6 @@ export class GetCurrentUserUseCase {
         if (!user) {
             throw new NotFoundError('User not found.');
         }
-        // FIXED: L-002 - Use underscore prefix pattern instead of eslint-disable
         const { passwordHash: _, ...userWithoutPassword } = user;
         return userWithoutPassword;
     }

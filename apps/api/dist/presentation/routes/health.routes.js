@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { HealthController } from '../controllers/health.controller.js';
+import { prisma } from '../../infrastructure/database/prisma/client.js';
+const router = Router();
+const healthController = new HealthController(prisma);
+router.get('/', healthController.liveness.bind(healthController));
+router.get('/ready', healthController.readiness.bind(healthController));
+router.get('/startup', healthController.startup.bind(healthController));
+router.get('/metrics', healthController.metrics.bind(healthController));
+export default router;
