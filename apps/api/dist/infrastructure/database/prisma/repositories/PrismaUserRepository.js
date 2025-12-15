@@ -27,6 +27,10 @@ export class PrismaUserRepository {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
             walletAddress: user.walletAddress,
+            twoFactorEnabled: user.twoFactorEnabled,
+            twoFactorSecret: user.twoFactorSecret,
+            backupCodes: user.backupCodes,
+            twoFactorEnabledAt: user.twoFactorEnabledAt,
         };
         if (user.producer) {
             domainUser.producer = {

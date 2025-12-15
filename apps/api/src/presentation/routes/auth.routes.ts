@@ -87,7 +87,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    */
   router.post('/logout', authenticate(), async (req: Request, res: Response, next) => {
     try {
-      if (req.user) {
+      if (req.user?.jti && req.user?.exp) {
         await useCases.logoutUseCase.execute({ jti: req.user.jti, exp: req.user.exp });
       }
       res.status(204).send();
@@ -336,6 +336,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
   /**
    * GET /api/v1/auth/oauth/google/callback
    * Handle Google OAuth callback
+   * SECURITY: Uses one-time code exchange instead of exposing tokens in URL
    */
   router.get(
     '/oauth/google/callback',
@@ -345,7 +346,6 @@ export function createAuthRouter(useCases: AuthUseCases) {
         const { code, state } = req.query as { code: string; state: string };
         const result = await oAuthService.handleCallback(code, state);
 
-        // Redirect to frontend with tokens (or error)
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         if (!result.success) {
           res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(result.error || 'Authentication failed')}`);
@@ -353,17 +353,24 @@ export function createAuthRouter(useCases: AuthUseCases) {
         }
 
         // Check if this is an auth result (has tokens) or link result
-        if ('accessToken' in result && result.accessToken) {
-          if (result.isNewUser) {
-            res.redirect(
-              `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&newUser=true`
-            );
-          } else if (result.requires2FA) {
-            res.redirect(`${frontendUrl}/auth/callback?requires2FA=true&tempToken=${result.tempToken}`);
+        if ('accessToken' in result && result.accessToken && result.refreshToken) {
+          // SECURITY: Store tokens in Redis and return a one-time code
+          // Tokens are never exposed in the URL
+          const exchangeCode = await oAuthService.storeTokensForExchange(
+            result.accessToken,
+            result.refreshToken,
+            {
+              isNewUser: result.isNewUser,
+              requires2FA: result.requires2FA,
+              tempToken: result.tempToken,
+            }
+          );
+
+          if (result.requires2FA) {
+            // 2FA required - include tempToken for verification flow
+            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}&requires2FA=true`);
           } else {
-            res.redirect(
-              `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`
-            );
+            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}${result.isNewUser ? '&newUser=true' : ''}`);
           }
         } else {
           // Link result - redirect with success message
@@ -393,6 +400,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
   /**
    * GET /api/v1/auth/oauth/github/callback
    * Handle GitHub OAuth callback
+   * SECURITY: Uses one-time code exchange instead of exposing tokens in URL
    */
   router.get(
     '/oauth/github/callback',
@@ -402,7 +410,6 @@ export function createAuthRouter(useCases: AuthUseCases) {
         const { code, state } = req.query as { code: string; state: string };
         const result = await oAuthService.handleCallback(code, state);
 
-        // Redirect to frontend with tokens (or error)
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
         if (!result.success) {
           res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(result.error || 'Authentication failed')}`);
@@ -410,17 +417,24 @@ export function createAuthRouter(useCases: AuthUseCases) {
         }
 
         // Check if this is an auth result (has tokens) or link result
-        if ('accessToken' in result && result.accessToken) {
-          if (result.isNewUser) {
-            res.redirect(
-              `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}&newUser=true`
-            );
-          } else if (result.requires2FA) {
-            res.redirect(`${frontendUrl}/auth/callback?requires2FA=true&tempToken=${result.tempToken}`);
+        if ('accessToken' in result && result.accessToken && result.refreshToken) {
+          // SECURITY: Store tokens in Redis and return a one-time code
+          // Tokens are never exposed in the URL
+          const exchangeCode = await oAuthService.storeTokensForExchange(
+            result.accessToken,
+            result.refreshToken,
+            {
+              isNewUser: result.isNewUser,
+              requires2FA: result.requires2FA,
+              tempToken: result.tempToken,
+            }
+          );
+
+          if (result.requires2FA) {
+            // 2FA required - include tempToken for verification flow
+            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}&requires2FA=true`);
           } else {
-            res.redirect(
-              `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`
-            );
+            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}${result.isNewUser ? '&newUser=true' : ''}`);
           }
         } else {
           // Link result - redirect with success message
@@ -541,6 +555,55 @@ export function createAuthRouter(useCases: AuthUseCases) {
       next(error);
     }
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECURE TOKEN EXCHANGE ENDPOINT
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/v1/auth/oauth/exchange
+   * Exchange one-time authorization code for tokens
+   * SECURITY: Code is single-use and expires in 60 seconds
+   *
+   * This endpoint should be called by the frontend after receiving the
+   * authorization code from the OAuth callback redirect.
+   */
+  router.post(
+    '/oauth/exchange',
+    RateLimiterConfig.auth(),
+    async (req: Request, res: Response, next) => {
+      try {
+        const { code } = req.body;
+
+        if (!code || typeof code !== 'string') {
+          return res.status(400).json({
+            success: false,
+            error: { code: 'INVALID_REQUEST', message: 'Authorization code is required' },
+          });
+        }
+
+        const result = await oAuthService.exchangeCodeForTokens(code);
+
+        if (!result) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: 'INVALID_CODE',
+              message: 'Invalid or expired authorization code. Please try logging in again.',
+            },
+          });
+        }
+
+        // Return tokens securely via POST response body
+        res.json({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
 
   return router;
 }

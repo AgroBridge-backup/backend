@@ -73,3 +73,41 @@ export const passwordStrengthSchema = z.object({
         password: z.string().min(1, 'Contraseña requerida'),
     }),
 });
+export const twoFactorTokenSchema = z
+    .string()
+    .min(6, 'Token must be at least 6 characters')
+    .max(10, 'Token cannot exceed 10 characters')
+    .transform((val) => val.replace(/[\s-]/g, ''));
+export const verify2FASchema = z.object({
+    body: z.object({
+        tempToken: z.string().uuid('Invalid session token'),
+        token: twoFactorTokenSchema,
+    }),
+});
+export const enable2FASchema = z.object({
+    body: z.object({
+        token: twoFactorTokenSchema,
+    }),
+});
+export const disable2FASchema = z.object({
+    body: z.object({
+        token: twoFactorTokenSchema,
+    }),
+});
+export const regenerateBackupCodesSchema = z.object({
+    body: z.object({
+        token: twoFactorTokenSchema,
+    }),
+});
+export const oauthProviderSchema = z.enum(['google', 'github']);
+export const oauthCallbackSchema = z.object({
+    query: z.object({
+        code: z.string().min(1, 'Authorization code required'),
+        state: z.string().min(1, 'State parameter required'),
+    }),
+});
+export const oauthUnlinkSchema = z.object({
+    params: z.object({
+        provider: oauthProviderSchema,
+    }),
+});

@@ -44,7 +44,7 @@ interface N1DetectionState {
 // Global state for N+1 detection
 const n1State: N1DetectionState = {
   queries: new Map(),
-  threshold: 10, // Alert if same pattern appears 10+ times
+  threshold: 5, // Alert if same pattern appears 5+ times (reduced from 10 for earlier detection)
   windowMs: 1000, // Within 1 second
   lastReset: Date.now(),
 };

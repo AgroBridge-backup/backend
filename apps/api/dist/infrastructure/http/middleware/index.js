@@ -2,6 +2,10 @@ export { securityHeadersMiddleware, additionalSecurityHeaders, securityMiddlewar
 export { corsMiddleware, healthCheckCors, } from './cors.middleware.js';
 export { RateLimiterConfig } from './rate-limiter.middleware.js';
 export { auditMiddleware, auditLogger } from './audit.middleware.js';
+export { csrfProtection, csrfTokenEndpoint, clearCSRFToken, generateCSRFToken, } from './csrf.middleware.js';
 export { correlationIdMiddleware, getCorrelationId, } from './correlation-id.middleware.js';
+export { requestContextMiddleware, getRequestContext, getCorrelationId as getContextCorrelationId, getRequestId, getUserId, setUserId, setUserRole, runWithContext, runWithContextAsync, getLogContext, getRequestDuration, } from '../../context/request-context.js';
 export { performanceMiddleware, requestSizeMiddleware, } from './performance.middleware.js';
 export { errorTrackingMiddleware, setupUncaughtExceptionHandler, } from './error-tracking.middleware.js';
+export { virusScanner, virusScanMiddleware, VirusScanner, } from '../../security/virus-scanner.js';
+export { uploadImage, uploadAvatar, uploadDocument, uploadCertificate, uploadGeneral, } from './upload.middleware.js';

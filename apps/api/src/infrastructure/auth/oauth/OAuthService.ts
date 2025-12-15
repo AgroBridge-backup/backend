@@ -16,14 +16,12 @@ import * as crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { PrismaClient, OAuthProviderType, UserRole } from '@prisma/client';
+import { OAuthProviderType, UserRole } from '@prisma/client';
 import { googleOAuthProvider, type GoogleUserProfile } from './GoogleOAuthProvider.js';
 import { gitHubOAuthProvider, type GitHubUserProfile } from './GitHubOAuthProvider.js';
 import { redisClient } from '../../cache/RedisClient.js';
+import { prisma } from '../../database/prisma/client.js';
 import logger from '../../../shared/utils/logger.js';
-
-// Prisma client instance
-const prisma = new PrismaClient();
 
 // Load JWT private key
 const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || './jwtRS256.key';
@@ -698,28 +696,26 @@ export class OAuthService {
       ...(user.producer && { producerId: user.producer.id }),
     };
 
-    const options: jwt.SignOptions = {
-      algorithm: 'RS256' as jwt.Algorithm,
-      // @ts-ignore - Bypassing a defective type definition in @types/jsonwebtoken
-      expiresIn: ACCESS_TOKEN_TTL,
+    // Type assertion needed due to strict typing in @types/jsonwebtoken
+    // ACCESS_TOKEN_TTL is guaranteed to be a valid string format (e.g., '15m')
+    return jwt.sign(payload, JWT_PRIVATE_KEY, {
+      algorithm: 'RS256',
+      expiresIn: ACCESS_TOKEN_TTL as jwt.SignOptions['expiresIn'],
       jwtid: crypto.randomUUID(),
-    };
-
-    return jwt.sign(payload, JWT_PRIVATE_KEY, options);
+    } as jwt.SignOptions);
   }
 
   /**
    * Generate refresh token
    */
   private generateRefreshToken(user: { id: string }): string {
-    const options: jwt.SignOptions = {
-      algorithm: 'RS256' as jwt.Algorithm,
-      // @ts-ignore - Bypassing a defective type definition in @types/jsonwebtoken
-      expiresIn: REFRESH_TOKEN_TTL,
+    // Type assertion needed due to strict typing in @types/jsonwebtoken
+    // REFRESH_TOKEN_TTL is guaranteed to be a valid string format (e.g., '7d')
+    return jwt.sign({ sub: user.id }, JWT_PRIVATE_KEY, {
+      algorithm: 'RS256',
+      expiresIn: REFRESH_TOKEN_TTL as jwt.SignOptions['expiresIn'],
       jwtid: crypto.randomUUID(),
-    };
-
-    return jwt.sign({ sub: user.id }, JWT_PRIVATE_KEY, options);
+    } as jwt.SignOptions);
   }
 
   /**
@@ -749,6 +745,95 @@ export class OAuthService {
     // Delete token (single use)
     await redisClient.client.del(key);
     return userId;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECURE TOKEN EXCHANGE (prevents token exposure in URLs)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Store tokens with a one-time authorization code
+   * SECURITY: Tokens are never exposed in URLs, only a short-lived code
+   *
+   * @param accessToken - JWT access token
+   * @param refreshToken - JWT refresh token
+   * @param metadata - Additional metadata (isNewUser, etc.)
+   * @returns One-time authorization code
+   */
+  async storeTokensForExchange(
+    accessToken: string,
+    refreshToken: string,
+    metadata: { isNewUser?: boolean; requires2FA?: boolean; tempToken?: string } = {}
+  ): Promise<string> {
+    const code = crypto.randomBytes(32).toString('hex');
+    const key = `oauth:exchange:${code}`;
+
+    const data = JSON.stringify({
+      accessToken,
+      refreshToken,
+      ...metadata,
+      createdAt: Date.now(),
+    });
+
+    // Store for 60 seconds only - code must be exchanged quickly
+    await redisClient.client.setex(key, 60, data);
+
+    logger.debug('[OAuthService] Token exchange code created', {
+      codePrefix: code.substring(0, 8),
+    });
+
+    return code;
+  }
+
+  /**
+   * Exchange authorization code for tokens
+   * SECURITY: Code is single-use and expires quickly
+   *
+   * @param code - One-time authorization code
+   * @returns Tokens and metadata, or null if invalid/expired
+   */
+  async exchangeCodeForTokens(code: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    isNewUser?: boolean;
+    requires2FA?: boolean;
+    tempToken?: string;
+  } | null> {
+    // Validate code format (must be 64 hex chars)
+    if (!/^[a-f0-9]{64}$/i.test(code)) {
+      logger.warn('[OAuthService] Invalid code format in token exchange');
+      return null;
+    }
+
+    const key = `oauth:exchange:${code}`;
+    const data = await redisClient.client.get(key);
+
+    if (!data) {
+      logger.warn('[OAuthService] Token exchange code not found or expired', {
+        codePrefix: code.substring(0, 8),
+      });
+      return null;
+    }
+
+    // Delete code immediately (single-use)
+    await redisClient.client.del(key);
+
+    try {
+      const parsed = JSON.parse(data);
+      logger.debug('[OAuthService] Token exchange successful', {
+        codePrefix: code.substring(0, 8),
+      });
+      return {
+        accessToken: parsed.accessToken,
+        refreshToken: parsed.refreshToken,
+        isNewUser: parsed.isNewUser,
+        requires2FA: parsed.requires2FA,
+        tempToken: parsed.tempToken,
+      };
+    } catch (error) {
+      logger.error('[OAuthService] Failed to parse token exchange data', { error });
+      return null;
+    }
   }
 }
 

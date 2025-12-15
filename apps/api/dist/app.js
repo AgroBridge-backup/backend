@@ -15,6 +15,11 @@ import { correlationIdMiddleware } from './infrastructure/http/middleware/correl
 import { performanceMiddleware } from './infrastructure/http/middleware/performance.middleware.js';
 import { setupUncaughtExceptionHandler } from './infrastructure/http/middleware/error-tracking.middleware.js';
 import healthRoutes from './presentation/routes/health.routes.js';
+import { docsRouter } from './presentation/routes/docs.routes.js';
+import { createGraphQLMiddleware, getGraphQLInfo } from './infrastructure/graphql/index.js';
+import { createV2Router } from './presentation/routes/v2/index.js';
+import { apiVersioning } from './infrastructure/http/middleware/apiVersioning.middleware.js';
+import { basicAuthMiddleware } from './infrastructure/http/middleware/admin-auth.middleware.js';
 setupUncaughtExceptionHandler();
 import { prisma } from './infrastructure/database/prisma/client.js';
 import { redisClient } from './infrastructure/cache/RedisClient.js';
@@ -27,6 +32,12 @@ import { GetCurrentUserUseCase } from './application/use-cases/auth/GetCurrentUs
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
+import { Setup2FAUseCase } from './application/use-cases/auth/Setup2FAUseCase.js';
+import { Enable2FAUseCase } from './application/use-cases/auth/Enable2FAUseCase.js';
+import { Disable2FAUseCase } from './application/use-cases/auth/Disable2FAUseCase.js';
+import { Verify2FAUseCase } from './application/use-cases/auth/Verify2FAUseCase.js';
+import { Get2FAStatusUseCase } from './application/use-cases/auth/Get2FAStatusUseCase.js';
+import { RegenerateBackupCodesUseCase } from './application/use-cases/auth/RegenerateBackupCodesUseCase.js';
 import { AddCertificationUseCase } from './application/use-cases/producers/AddCertificationUseCase.js';
 import { GetProducerByIdUseCase } from './application/use-cases/producers/GetProducerByIdUseCase.js';
 import { ListProducersUseCase } from './application/use-cases/producers/ListProducersUseCase.js';
@@ -52,6 +63,12 @@ export function createApp(injectedRouter) {
                 refreshTokenUseCase: new RefreshTokenUseCase(refreshTokenRepository, userRepository),
                 logoutUseCase: new LogoutUseCase(redisClient),
                 getCurrentUserUseCase: new GetCurrentUserUseCase(userRepository),
+                setup2FAUseCase: new Setup2FAUseCase(userRepository),
+                enable2FAUseCase: new Enable2FAUseCase(userRepository),
+                disable2FAUseCase: new Disable2FAUseCase(userRepository),
+                verify2FAUseCase: new Verify2FAUseCase(userRepository, refreshTokenRepository),
+                get2FAStatusUseCase: new Get2FAStatusUseCase(userRepository),
+                regenerateBackupCodesUseCase: new RegenerateBackupCodesUseCase(userRepository),
             },
             producers: {
                 listProducersUseCase: new ListProducersUseCase(producerRepository),
@@ -70,9 +87,11 @@ export function createApp(injectedRouter) {
                 getEventByIdUseCase: new GetEventByIdUseCase(eventRepository),
             }
         };
-        apiRouter = createApiRouter(useCases);
+        apiRouter = createApiRouter(useCases, prisma);
     }
     app.use('/health', healthRoutes);
+    app.use('/', docsRouter);
+    logger.info('Documentation available at /api-docs');
     app.use(securityHeadersMiddleware);
     app.use(additionalSecurityHeaders);
     app.use(correlationIdMiddleware);
@@ -89,8 +108,21 @@ export function createApp(injectedRouter) {
     app.use(performanceMiddleware);
     app.use('/api', RateLimiterConfig.api());
     app.use(auditMiddleware);
+    app.use('/api', apiVersioning);
     app.use('/api/v1', apiRouter);
-    app.use('/admin/queues', bullBoardSetup.getRouter());
+    const v2Router = createV2Router(prisma, redisClient);
+    app.use('/api/v2', v2Router);
+    const graphqlMiddleware = createGraphQLMiddleware({
+        prisma,
+        isDevelopment: process.env.NODE_ENV !== 'production',
+        enableIntrospection: process.env.NODE_ENV !== 'production',
+    });
+    app.all('/graphql', graphqlMiddleware);
+    app.all('/graphql/*', graphqlMiddleware);
+    app.get('/api/graphql-info', (req, res) => {
+        res.json(getGraphQLInfo());
+    });
+    app.use('/admin/queues', basicAuthMiddleware, bullBoardSetup.getRouter());
     app.get('/api/v1/status', (req, res) => {
         res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
     });

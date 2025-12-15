@@ -77,6 +77,10 @@ export class PrismaProducerRepository {
             createdAt: prismaProducer.user.createdAt,
             updatedAt: prismaProducer.user.updatedAt,
             walletAddress: prismaProducer.user.walletAddress,
+            twoFactorEnabled: prismaProducer.user.twoFactorEnabled,
+            twoFactorSecret: prismaProducer.user.twoFactorSecret,
+            backupCodes: prismaProducer.user.backupCodes,
+            twoFactorEnabledAt: prismaProducer.user.twoFactorEnabledAt,
         };
         return {
             id: prismaProducer.id,

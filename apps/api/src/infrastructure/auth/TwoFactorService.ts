@@ -21,11 +21,8 @@
 import { authenticator } from 'otplib';
 import * as crypto from 'crypto';
 import QRCode from 'qrcode';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../database/prisma/client.js';
 import logger from '../../shared/utils/logger.js';
-
-// Prisma client instance
-const prisma = new PrismaClient();
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS

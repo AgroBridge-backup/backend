@@ -3,7 +3,7 @@
  * @description Socket.IO server for real-time updates
  *
  * Features:
- * - JWT authentication
+ * - JWT authentication (RS256, consistent with REST API)
  * - Room-based subscriptions (batches, producers, users)
  * - Reconnection handling
  * - Event broadcasting
@@ -15,7 +15,38 @@
 import { Server as HTTPServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import logger from '../../shared/utils/logger.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// JWT PUBLIC KEY LOADING (Consistent with REST API auth.middleware.ts)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let JWT_PUBLIC_KEY: string | null = null;
+
+function getJwtPublicKey(): string {
+  if (JWT_PUBLIC_KEY) {
+    return JWT_PUBLIC_KEY;
+  }
+
+  const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || './jwtRS256.key.pub';
+  const resolvedPath = path.resolve(process.cwd(), publicKeyPath);
+
+  try {
+    JWT_PUBLIC_KEY = fs.readFileSync(resolvedPath, 'utf-8');
+    logger.info('[WebSocket] JWT public key loaded successfully');
+    return JWT_PUBLIC_KEY;
+  } catch (error) {
+    logger.error('[WebSocket] Failed to load JWT public key', {
+      path: resolvedPath,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw new Error(
+      `JWT public key not found at ${resolvedPath}. WebSocket authentication will not work.`
+    );
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -26,11 +57,17 @@ export interface AuthenticatedSocket extends Socket {
   userRole?: string;
 }
 
+/**
+ * JWT Payload structure (consistent with REST API)
+ * Uses 'sub' for user ID per JWT standard (RFC 7519)
+ */
 export interface JWTPayload {
-  userId: string;
+  sub: string;      // User ID (subject claim)
   role: string;
+  email?: string;
   jti: string;
   exp: number;
+  producerId?: string;
 }
 
 export interface WebSocketMetrics {
@@ -279,6 +316,7 @@ export class WebSocketServer {
 
   /**
    * Authentication middleware
+   * Uses RS256 asymmetric verification (consistent with REST API)
    */
   private authMiddleware(socket: AuthenticatedSocket, next: (err?: Error) => void): void {
     const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
@@ -290,15 +328,19 @@ export class WebSocketServer {
     }
 
     try {
-      const secret = process.env.JWT_SECRET || 'fallback-secret';
-      const decoded = jwt.verify(token, secret) as JWTPayload;
+      // Use RS256 with public key (same as REST API)
+      const publicKey = getJwtPublicKey();
+      const decoded = jwt.verify(token, publicKey, {
+        algorithms: ['RS256']
+      }) as JWTPayload;
 
-      socket.userId = decoded.userId;
+      // Use 'sub' claim for user ID (JWT standard)
+      socket.userId = decoded.sub;
       socket.userRole = decoded.role;
 
       logger.debug('[WebSocket] Authenticated connection', {
         socketId: socket.id,
-        userId: decoded.userId,
+        userId: decoded.sub,
         role: decoded.role,
       });
 
@@ -309,7 +351,16 @@ export class WebSocketServer {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      // Allow connection but mark as unauthenticated
+      // Reject invalid tokens instead of allowing unauthenticated access
+      // This prevents attackers from using invalid tokens to bypass authentication
+      if (error instanceof jwt.TokenExpiredError) {
+        return next(new Error('Token expired'));
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        return next(new Error('Invalid token'));
+      }
+
+      // For unknown errors, allow connection as anonymous
       next();
     }
   }

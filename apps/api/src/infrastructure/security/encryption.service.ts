@@ -25,18 +25,57 @@ function getEncryptionKey(): Buffer {
     throw new Error('ENCRYPTION_KEY environment variable is required');
   }
 
-  // If key is base64 encoded
+  // If key is base64 encoded (44 chars = 32 bytes in base64)
   if (key.length === 44) {
     return Buffer.from(key, 'base64');
   }
 
-  // If key is hex encoded
+  // If key is hex encoded (64 chars = 32 bytes in hex)
   if (key.length === 64) {
     return Buffer.from(key, 'hex');
   }
 
-  // Otherwise derive key from password
-  return crypto.pbkdf2Sync(key, 'agrobridge-salt', PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+  // Otherwise derive key from password using configurable salt
+  const salt = getEncryptionSalt();
+  return crypto.pbkdf2Sync(key, salt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+}
+
+/**
+ * Get encryption salt from environment
+ * SECURITY: Salt must be unique per deployment and stored securely
+ */
+function getEncryptionSalt(): Buffer {
+  const salt = process.env.ENCRYPTION_SALT;
+
+  if (salt) {
+    // If salt is base64 encoded (44 chars = 32 bytes)
+    if (salt.length === 44) {
+      return Buffer.from(salt, 'base64');
+    }
+    // If salt is hex encoded (64 chars = 32 bytes)
+    if (salt.length === 64) {
+      return Buffer.from(salt, 'hex');
+    }
+    // Use raw string as salt (not recommended but supported)
+    if (salt.length >= 16) {
+      return Buffer.from(salt, 'utf8');
+    }
+  }
+
+  // In production, salt is required
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'ENCRYPTION_SALT environment variable is required in production. ' +
+      'Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"'
+    );
+  }
+
+  // Development/test fallback with warning
+  logger.warn(
+    'ENCRYPTION_SALT not configured - using development fallback. ' +
+    'This is NOT secure for production!'
+  );
+  return crypto.createHash('sha256').update('agrobridge-dev-salt-v1').digest();
 }
 
 /**

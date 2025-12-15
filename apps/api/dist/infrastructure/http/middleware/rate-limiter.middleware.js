@@ -168,4 +168,57 @@ export class RateLimiterConfig {
             },
         });
     }
+    static twoFactor() {
+        return rateLimit({
+            windowMs: 5 * 60 * 1000,
+            max: 5,
+            message: {
+                success: false,
+                error: {
+                    code: 'RATE_LIMIT_2FA_EXCEEDED',
+                    message: 'Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.',
+                },
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
+            skipSuccessfulRequests: true,
+            keyGenerator: (req) => {
+                const tempToken = req.body?.tempToken;
+                const userId = req.user?.userId;
+                if (tempToken) {
+                    return `2fa:temp:${tempToken}`;
+                }
+                return userId ? `2fa:user:${userId}` : `2fa:ip:${req.ip}`;
+            },
+            handler: (req, res) => {
+                logger.warn(`[RateLimiter] 2FA rate limit exceeded - IP: ${req.ip}, path: ${req.path}`);
+                res.status(429).json({
+                    success: false,
+                    error: {
+                        code: 'RATE_LIMIT_2FA_EXCEEDED',
+                        message: 'Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.',
+                    },
+                });
+            },
+        });
+    }
+    static oauth() {
+        return rateLimit({
+            windowMs: 15 * 60 * 1000,
+            max: 10,
+            message: {
+                success: false,
+                error: {
+                    code: 'RATE_LIMIT_OAUTH_EXCEEDED',
+                    message: 'Demasiadas solicitudes de autenticación OAuth. Intenta más tarde.',
+                },
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
+            keyGenerator: (req) => {
+                const userId = req.user?.userId;
+                return userId ? `oauth:user:${userId}` : `oauth:ip:${req.ip}`;
+            },
+        });
+    }
 }

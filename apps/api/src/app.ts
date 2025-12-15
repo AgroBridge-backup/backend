@@ -35,6 +35,9 @@ import { createV2Router } from './presentation/routes/v2/index.js';
 // API Versioning Middleware
 import { apiVersioning } from './infrastructure/http/middleware/apiVersioning.middleware.js';
 
+// Admin Auth Middleware
+import { basicAuthMiddleware } from './infrastructure/http/middleware/admin-auth.middleware.js';
+
 // Setup global error handlers
 setupUncaughtExceptionHandler();
 
@@ -203,8 +206,8 @@ export function createApp(injectedRouter?: Router): express.Express {
     });
 
     // --- ADMIN ROUTES ---
-    // Bull Board queue monitoring dashboard (protected by admin auth in production)
-    app.use('/admin/queues', bullBoardSetup.getRouter());
+    // Bull Board queue monitoring dashboard (protected by basic auth)
+    app.use('/admin/queues', basicAuthMiddleware, bullBoardSetup.getRouter());
 
     app.get('/api/v1/status', (req: Request, res: Response) => {
         res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });

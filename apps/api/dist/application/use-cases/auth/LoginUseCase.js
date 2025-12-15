@@ -1,4 +1,5 @@
 import { AuthenticationError } from '../../../shared/errors/AuthenticationError.js';
+import { redisClient } from '../../../infrastructure/cache/RedisClient.js';
 import logger from '../../../shared/utils/logger.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -13,6 +14,7 @@ const JWT_PRIVATE_KEY = fs.readFileSync(resolvedPath, 'utf-8');
 const ACCESS_TOKEN_TTL = process.env.JWT_ACCESS_TOKEN_TTL || '15m';
 const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_TOKEN_TTL || '7d';
 const REFRESH_TOKEN_TTL_DAYS = 7;
+const TEMP_TOKEN_TTL = 300;
 export class LoginUseCase {
     userRepository;
     refreshTokenRepository;
@@ -28,10 +30,22 @@ export class LoginUseCase {
         if (!user || !user.isActive) {
             throw new AuthenticationError('Invalid credentials or user inactive.');
         }
+        if (!user.passwordHash) {
+            throw new AuthenticationError('Please use OAuth to login. This account has no password.');
+        }
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
         logger.debug(`[LoginUseCase] Password validation result for ${email}: ${isPasswordValid}`);
         if (!isPasswordValid) {
             throw new AuthenticationError('Invalid credentials or user inactive.');
+        }
+        if (user.twoFactorEnabled) {
+            logger.debug('[LoginUseCase] User has 2FA enabled, generating temp token.', { userId: user.id });
+            const tempToken = randomUUID();
+            await redisClient.client.setex(`2fa:temp:${tempToken}`, TEMP_TOKEN_TTL, JSON.stringify({ userId: user.id, email: user.email }));
+            return {
+                requires2FA: true,
+                tempToken,
+            };
         }
         logger.debug('[LoginUseCase] Generating tokens for user.', { userId: user.id, email: user.email });
         const accessToken = this.generateAccessToken(user);
