@@ -23,6 +23,18 @@ import { errorTrackingMiddleware, setupUncaughtExceptionHandler } from './infras
 // Health Routes
 import healthRoutes from './presentation/routes/health.routes.js';
 
+// Documentation Routes
+import { docsRouter } from './presentation/routes/docs.routes.js';
+
+// GraphQL Server
+import { createGraphQLMiddleware, getGraphQLInfo } from './infrastructure/graphql/index.js';
+
+// API v2 Routes
+import { createV2Router } from './presentation/routes/v2/index.js';
+
+// API Versioning Middleware
+import { apiVersioning } from './infrastructure/http/middleware/apiVersioning.middleware.js';
+
 // Setup global error handlers
 setupUncaughtExceptionHandler();
 
@@ -44,6 +56,14 @@ import { GetCurrentUserUseCase } from './application/use-cases/auth/GetCurrentUs
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
+// Two-Factor Authentication Use Cases
+import { Setup2FAUseCase } from './application/use-cases/auth/Setup2FAUseCase.js';
+import { Enable2FAUseCase } from './application/use-cases/auth/Enable2FAUseCase.js';
+import { Disable2FAUseCase } from './application/use-cases/auth/Disable2FAUseCase.js';
+import { Verify2FAUseCase } from './application/use-cases/auth/Verify2FAUseCase.js';
+import { Get2FAStatusUseCase } from './application/use-cases/auth/Get2FAStatusUseCase.js';
+import { RegenerateBackupCodesUseCase } from './application/use-cases/auth/RegenerateBackupCodesUseCase.js';
+
 import { AddCertificationUseCase } from './application/use-cases/producers/AddCertificationUseCase.js';
 import { GetProducerByIdUseCase } from './application/use-cases/producers/GetProducerByIdUseCase.js';
 import { ListProducersUseCase } from './application/use-cases/producers/ListProducersUseCase.js';
@@ -77,6 +97,13 @@ export function createApp(injectedRouter?: Router): express.Express {
                 refreshTokenUseCase: new RefreshTokenUseCase(refreshTokenRepository, userRepository),
                 logoutUseCase: new LogoutUseCase(redisClient),
                 getCurrentUserUseCase: new GetCurrentUserUseCase(userRepository),
+                // Two-Factor Authentication
+                setup2FAUseCase: new Setup2FAUseCase(userRepository),
+                enable2FAUseCase: new Enable2FAUseCase(userRepository),
+                disable2FAUseCase: new Disable2FAUseCase(userRepository),
+                verify2FAUseCase: new Verify2FAUseCase(userRepository, refreshTokenRepository),
+                get2FAStatusUseCase: new Get2FAStatusUseCase(userRepository),
+                regenerateBackupCodesUseCase: new RegenerateBackupCodesUseCase(userRepository),
             },
             producers: {
                 listProducersUseCase: new ListProducersUseCase(producerRepository),
@@ -96,7 +123,7 @@ export function createApp(injectedRouter?: Router): express.Express {
             }
         };
         
-        apiRouter = createApiRouter(useCases);
+        apiRouter = createApiRouter(useCases, prisma);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -105,6 +132,10 @@ export function createApp(injectedRouter?: Router): express.Express {
 
     // 1. HEALTH ROUTES (No middleware - must be accessible for probes)
     app.use('/health', healthRoutes);
+
+    // 1.5. DOCUMENTATION ROUTES (No auth required - public documentation)
+    app.use('/', docsRouter);
+    logger.info('Documentation available at /api-docs');
 
     // 2. SECURITY: Headers (Helmet.js + CSP) - Applied first for max protection
     app.use(securityHeadersMiddleware);
@@ -142,7 +173,34 @@ export function createApp(injectedRouter?: Router): express.Express {
     // ═══════════════════════════════════════════════════════════════════════════════
     // API ROUTES
     // ═══════════════════════════════════════════════════════════════════════════════
+
+    // API Versioning Middleware
+    app.use('/api', apiVersioning);
+
+    // API v1 Routes (legacy)
     app.use('/api/v1', apiRouter);
+
+    // API v2 Routes (enhanced with field selection, filtering, etc.)
+    const v2Router = createV2Router(prisma, redisClient);
+    app.use('/api/v2', v2Router);
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // GRAPHQL API
+    // ═══════════════════════════════════════════════════════════════════════════════
+    const graphqlMiddleware = createGraphQLMiddleware({
+        prisma,
+        isDevelopment: process.env.NODE_ENV !== 'production',
+        enableIntrospection: process.env.NODE_ENV !== 'production',
+    });
+
+    // GraphQL endpoint (supports both GET and POST)
+    app.all('/graphql', graphqlMiddleware);
+    app.all('/graphql/*', graphqlMiddleware);
+
+    // GraphQL API info endpoint
+    app.get('/api/graphql-info', (req: Request, res: Response) => {
+        res.json(getGraphQLInfo());
+    });
 
     // --- ADMIN ROUTES ---
     // Bull Board queue monitoring dashboard (protected by admin auth in production)

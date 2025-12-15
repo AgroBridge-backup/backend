@@ -1,0 +1,212 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# AUTHENTICATION SCHEMAS
+# ══════════════════════════════════════════════════════════════════════════════
+
+components:
+  schemas:
+    # ──────────────────────────────────────────────────────────────────────────
+    # REQUEST SCHEMAS
+    # ──────────────────────────────────────────────────────────────────────────
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.producer@example.com
+          description: User's email address
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: SecurePassword123!
+          description: Password (min 8 characters, must include uppercase, lowercase, number, special char)
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: John
+          description: User's first name
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: Doe
+          description: User's last name
+        role:
+          type: string
+          enum: [PRODUCER, BUYER, AGGREGATOR]
+          example: PRODUCER
+          description: User role (ADMIN role can only be assigned by existing admins)
+        phoneNumber:
+          type: string
+          pattern: '^\+[1-9]\d{1,14}$'
+          example: '+2348012345678'
+          description: Phone number in E.164 format
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.producer@example.com
+          description: User's email address
+        password:
+          type: string
+          format: password
+          example: SecurePassword123!
+          description: User's password
+        rememberMe:
+          type: boolean
+          default: false
+          description: Extend token expiration to 30 days
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: Refresh token received during login
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.producer@example.com
+          description: User's email address
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          example: abc123def456
+          description: Password reset token received via email
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: NewSecurePassword123!
+          description: New password
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          example: CurrentPassword123!
+          description: Current password
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: NewSecurePassword123!
+          description: New password
+
+    VerifyEmailRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          example: abc123def456
+          description: Email verification token
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # RESPONSE SCHEMAS
+    # ──────────────────────────────────────────────────────────────────────────
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJyb2xlIjoiUFJPRFVDRVIiLCJpYXQiOjE3MDUzMjAwMDAsImV4cCI6MTcwNTMyMzYwMH0.xyz
+          description: JWT access token (valid for 1 hour)
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTcwNTMyMDAwMCwiZXhwIjoxNzA3OTEyMDAwfQ.abc
+          description: Refresh token (valid for 30 days)
+        expiresIn:
+          type: integer
+          example: 3600
+          description: Access token expiration time in seconds
+
+    RegisterResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            tokens:
+              $ref: '#/components/schemas/AuthTokens'
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            tokens:
+              $ref: '#/components/schemas/AuthTokens'
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            tokens:
+              $ref: '#/components/schemas/AuthTokens'
+
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Operation completed successfully

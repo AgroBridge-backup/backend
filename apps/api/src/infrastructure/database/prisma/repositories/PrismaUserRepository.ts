@@ -52,6 +52,11 @@ export class PrismaUserRepository implements IUserRepository {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       walletAddress: user.walletAddress,
+      // Two-Factor Authentication fields
+      twoFactorEnabled: user.twoFactorEnabled,
+      twoFactorSecret: user.twoFactorSecret,
+      backupCodes: user.backupCodes,
+      twoFactorEnabledAt: user.twoFactorEnabledAt,
     };
 
     if (user.producer) {

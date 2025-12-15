@@ -46,13 +46,22 @@ enum CertificationType {
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
-  passwordHash  String
+  passwordHash  String?  // Nullable for OAuth-only users
   firstName     String
   lastName      String
   role          UserRole
   walletAddress String?  @unique
   isActive      Boolean  @default(true)
   lastLoginAt   DateTime?
+
+  // Two-Factor Authentication (2FA)
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorSecret    String?  // Encrypted TOTP secret
+  backupCodes        String[] @default([]) // Hashed backup codes
+  twoFactorEnabledAt DateTime?
+
+  // OAuth providers linked to this account
+  oauthProviders OAuthProvider[]
 
   producer      Producer?
   createdEvents TraceabilityEvent[]
@@ -61,6 +70,12 @@ model User {
   notifications           Notification[]
   deviceTokens            DeviceToken[]
   notificationPreferences NotificationPreference?
+
+  // Payment and subscription
+  subscription Subscription?
+
+  // Export reports
+  reports Report[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -208,6 +223,44 @@ model RefreshToken {
   @@index([userId])
   @@index([token])
   @@map("refresh_tokens")
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// OAUTH PROVIDER SCHEMA
+// Stores linked OAuth providers (Google, GitHub) for each user
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// OAuth provider types
+enum OAuthProviderType {
+  GOOGLE
+  GITHUB
+}
+
+/// OAuth provider linked to a user account
+model OAuthProvider {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider    OAuthProviderType
+  providerId  String            // Provider's unique user ID
+  email       String?           // Email from OAuth provider (may differ from user email)
+
+  // Provider-specific data
+  accessToken  String?          // Encrypted OAuth access token (for API calls)
+  refreshToken String?          // Encrypted OAuth refresh token
+  expiresAt    DateTime?        // Token expiration
+
+  // Profile data from provider
+  displayName  String?
+  avatarUrl    String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("oauth_providers")
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -533,4 +586,174 @@ model AuditLog {
   @@index([userId, timestamp])
   @@index([resource, action, timestamp])
   @@map("audit_logs")
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// STRIPE PAYMENT INTEGRATION
+// Subscription billing, one-time payments, and usage-based billing
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Subscription tier levels for the platform
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+/// Subscription status tracking
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+  PAUSED
+}
+
+/// User subscription record
+model Subscription {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Stripe identifiers
+  stripeCustomerId     String  @unique
+  stripeSubscriptionId String? @unique
+  stripePriceId        String?
+
+  // Subscription details
+  tier        SubscriptionTier   @default(FREE)
+  status      SubscriptionStatus @default(ACTIVE)
+
+  // Billing cycle
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
+  trialEnd           DateTime?
+
+  // Usage tracking for current period
+  batchesUsed     Int @default(0)
+  batchesLimit    Int @default(10)
+  apiCallsUsed    Int @default(0)
+  apiCallsLimit   Int @default(100)
+  storageUsedMb   Int @default(0)
+  storageLimitMb  Int @default(100)
+
+  // Payment history
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+/// Payment record for invoices and one-time payments
+model Payment {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Stripe identifiers
+  stripePaymentIntentId String  @unique
+  stripeInvoiceId       String?
+
+  // Payment details
+  amount      Int    // Amount in cents
+  currency    String @default("usd")
+  status      String // succeeded, failed, pending, processing, canceled
+
+  // Metadata
+  description String?
+  receiptUrl  String? @db.VarChar(500)
+  invoicePdf  String? @db.VarChar(500)
+
+  // Failure tracking
+  failureCode    String?
+  failureMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([stripePaymentIntentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// EXPORT REPORTS SYSTEM
+// PDF, CSV, and Excel report generation with async processing
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Report type categories
+enum ReportType {
+  BATCH_TRACEABILITY
+  PRODUCER_SUMMARY
+  AUDIT_LOG
+  INVENTORY
+  ANALYTICS
+  COMPLIANCE
+  EVENTS_TIMELINE
+}
+
+/// Report output formats
+enum ReportFormat {
+  PDF
+  CSV
+  XLSX
+}
+
+/// Report generation status
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+/// Generated report record
+model Report {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Report details
+  type      ReportType
+  format    ReportFormat
+  status    ReportStatus @default(PENDING)
+  name      String?   @db.VarChar(255)
+
+  // Storage
+  fileUrl   String?   @db.VarChar(500)
+  fileKey   String?   @db.VarChar(255)
+  fileSize  Int?      // Size in bytes
+
+  // Generation parameters
+  filters   Json?     // Filters applied (date range, producer, status, etc.)
+
+  // Processing info
+  error       String?   @db.Text
+  jobId       String?   @db.VarChar(100)
+  processingTime Int?   // Duration in milliseconds
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+  expiresAt   DateTime? // Auto-delete after expiration (30 days default)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("reports")
 }

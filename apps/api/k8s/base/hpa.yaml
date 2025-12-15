@@ -1,0 +1,89 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# HORIZONTAL POD AUTOSCALER
+# ══════════════════════════════════════════════════════════════════════════════
+# Automatically scales the AgroBridge API based on CPU and memory utilization
+# Scaling behavior:
+#   - Scale up: Fast (30 seconds stabilization)
+#   - Scale down: Slow (5 minutes stabilization) to prevent flapping
+# ══════════════════════════════════════════════════════════════════════════════
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agrobridge-api-hpa
+  namespace: agrobridge
+  labels:
+    app: agrobridge-api
+    app.kubernetes.io/name: agrobridge-api
+    app.kubernetes.io/component: autoscaler
+spec:
+  # ──────────────────────────────────────────────────────────────────────────────
+  # TARGET REFERENCE
+  # ──────────────────────────────────────────────────────────────────────────────
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agrobridge-api
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # REPLICA LIMITS
+  # ──────────────────────────────────────────────────────────────────────────────
+  minReplicas: 3
+  maxReplicas: 20
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # SCALING METRICS
+  # ──────────────────────────────────────────────────────────────────────────────
+  metrics:
+    # CPU Utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # Memory Utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # SCALING BEHAVIOR
+  # ──────────────────────────────────────────────────────────────────────────────
+  behavior:
+    # ────────────────────────────────────────────────────────────────────────────
+    # Scale Down Behavior (conservative)
+    # ────────────────────────────────────────────────────────────────────────────
+    scaleDown:
+      # Wait 5 minutes before scaling down
+      stabilizationWindowSeconds: 300
+      policies:
+        # Scale down at most 50% of pods per minute
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        # Scale down at most 2 pods per minute
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Min  # Use the most conservative policy
+
+    # ────────────────────────────────────────────────────────────────────────────
+    # Scale Up Behavior (aggressive)
+    # ────────────────────────────────────────────────────────────────────────────
+    scaleUp:
+      # No stabilization window - scale up quickly
+      stabilizationWindowSeconds: 0
+      policies:
+        # Double the pods every 30 seconds
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        # Add at most 4 pods every 30 seconds
+        - type: Pods
+          value: 4
+          periodSeconds: 30
+      selectPolicy: Max  # Use the most aggressive policy

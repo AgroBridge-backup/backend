@@ -213,4 +213,69 @@ export class RateLimiterConfig {
       },
     });
   }
+
+  /**
+   * Rate limiter for 2FA verification attempts
+   * Very strict to prevent brute force attacks on TOTP codes
+   */
+  static twoFactor(): RateLimitRequestHandler {
+    return rateLimit({
+      windowMs: 5 * 60 * 1000, // 5 minutes
+      max: 5, // 5 attempts per 5 minutes
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_2FA_EXCEEDED',
+          message: 'Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.',
+        },
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      skipSuccessfulRequests: true, // Don't count successful verifications
+      keyGenerator: (req: Request): string => {
+        // Rate limit by tempToken for login 2FA, or by IP for setup
+        const tempToken = req.body?.tempToken;
+        const userId = (req as any).user?.userId;
+        if (tempToken) {
+          return `2fa:temp:${tempToken}`;
+        }
+        return userId ? `2fa:user:${userId}` : `2fa:ip:${req.ip}`;
+      },
+      handler: (req: Request, res: Response) => {
+        logger.warn(`[RateLimiter] 2FA rate limit exceeded - IP: ${req.ip}, path: ${req.path}`);
+
+        res.status(429).json({
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_2FA_EXCEEDED',
+            message: 'Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.',
+          },
+        });
+      },
+    });
+  }
+
+  /**
+   * Rate limiter for OAuth operations
+   * Prevents rapid OAuth request spam
+   */
+  static oauth(): RateLimitRequestHandler {
+    return rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 10, // 10 OAuth operations per 15 minutes
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_OAUTH_EXCEEDED',
+          message: 'Demasiadas solicitudes de autenticación OAuth. Intenta más tarde.',
+        },
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req: Request): string => {
+        const userId = (req as any).user?.userId;
+        return userId ? `oauth:user:${userId}` : `oauth:ip:${req.ip}`;
+      },
+    });
+  }
 }

@@ -89,6 +89,11 @@ export class PrismaProducerRepository implements IProducerRepository {
         createdAt: prismaProducer.user.createdAt,
         updatedAt: prismaProducer.user.updatedAt,
         walletAddress: prismaProducer.user.walletAddress,
+        // Two-Factor Authentication fields
+        twoFactorEnabled: prismaProducer.user.twoFactorEnabled,
+        twoFactorSecret: prismaProducer.user.twoFactorSecret,
+        backupCodes: prismaProducer.user.backupCodes,
+        twoFactorEnabledAt: prismaProducer.user.twoFactorEnabledAt,
     };
     
     return {

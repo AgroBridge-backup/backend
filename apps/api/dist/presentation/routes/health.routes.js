@@ -7,4 +7,6 @@ router.get('/', healthController.liveness.bind(healthController));
 router.get('/ready', healthController.readiness.bind(healthController));
 router.get('/startup', healthController.startup.bind(healthController));
 router.get('/metrics', healthController.metrics.bind(healthController));
+router.get('/cache', healthController.cacheStats.bind(healthController));
+router.get('/queues', healthController.queueStats.bind(healthController));
 export default router;

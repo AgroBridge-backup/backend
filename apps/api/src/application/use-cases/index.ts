@@ -4,6 +4,14 @@ import { LoginUseCase } from './auth/LoginUseCase.js';
 import { RefreshTokenUseCase } from './auth/RefreshTokenUseCase.js';
 import { LogoutUseCase } from './auth/LogoutUseCase.js';
 import { GetCurrentUserUseCase } from './auth/GetCurrentUserUseCase.js';
+// Two-Factor Authentication Use Cases
+import { Setup2FAUseCase } from './auth/Setup2FAUseCase.js';
+import { Enable2FAUseCase } from './auth/Enable2FAUseCase.js';
+import { Disable2FAUseCase } from './auth/Disable2FAUseCase.js';
+import { Verify2FAUseCase } from './auth/Verify2FAUseCase.js';
+import { Get2FAStatusUseCase } from './auth/Get2FAStatusUseCase.js';
+import { RegenerateBackupCodesUseCase } from './auth/RegenerateBackupCodesUseCase.js';
+
 import { CreateBatchUseCase } from './batches/CreateBatchUseCase.js';
 import { GetBatchByNumberUseCase } from './batches/GetBatchByNumberUseCase.js';
 import { GetBatchHistoryUseCase } from './batches/GetBatchHistoryUseCase.js';
@@ -22,6 +30,13 @@ export interface AllUseCases {
     refreshTokenUseCase: RefreshTokenUseCase;
     logoutUseCase: LogoutUseCase;
     getCurrentUserUseCase: GetCurrentUserUseCase;
+    // Two-Factor Authentication
+    setup2FAUseCase: Setup2FAUseCase;
+    enable2FAUseCase: Enable2FAUseCase;
+    disable2FAUseCase: Disable2FAUseCase;
+    verify2FAUseCase: Verify2FAUseCase;
+    get2FAStatusUseCase: Get2FAStatusUseCase;
+    regenerateBackupCodesUseCase: RegenerateBackupCodesUseCase;
   };
   batches: {
     createBatchUseCase: CreateBatchUseCase;

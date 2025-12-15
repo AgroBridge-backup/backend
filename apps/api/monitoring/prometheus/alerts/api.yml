@@ -1,0 +1,196 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# PROMETHEUS ALERTING RULES - AGROBRIDGE API
+# ══════════════════════════════════════════════════════════════════════════════
+groups:
+  # ────────────────────────────────────────────────────────────────────────────
+  # API AVAILABILITY ALERTS
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: agrobridge-api-availability
+    rules:
+      # API is down
+      - alert: APIDown
+        expr: up{job="agrobridge-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "AgroBridge API is down"
+          description: "API instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m]))
+          / sum(rate(http_request_duration_seconds_count[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for the last 5 minutes."
+
+      # Critical error rate
+      - alert: CriticalErrorRate
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m]))
+          / sum(rate(http_request_duration_seconds_count[5m])) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical error rate detected"
+          description: "Error rate is above 10% for the last 2 minutes."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # LATENCY ALERTS
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: agrobridge-api-latency
+    rules:
+      # High P95 latency
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High P95 latency detected"
+          description: "P95 latency is above 500ms for the last 5 minutes."
+
+      # Critical latency
+      - alert: CriticalLatency
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical P99 latency detected"
+          description: "P99 latency is above 2 seconds for the last 5 minutes."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # RESOURCE ALERTS
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: agrobridge-api-resources
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="agrobridge-api"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for the last 10 minutes."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="agrobridge-api"} / 1024 / 1024 > 800
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 800MB for the last 10 minutes."
+
+      # Critical memory usage
+      - alert: CriticalMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="agrobridge-api"} / 1024 / 1024 > 950
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is above 950MB. Pod may be OOM killed soon."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # DATABASE ALERTS
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: agrobridge-database
+    rules:
+      # PostgreSQL down
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance has been down for more than 1 minute."
+
+      # High connection usage
+      - alert: HighDBConnections
+        expr: |
+          pg_stat_activity_count / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is above 80%."
+
+      # Slow queries
+      - alert: SlowQueries
+        expr: |
+          rate(pg_stat_database_xact_rollback[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "High rollback rate detected"
+          description: "Database rollback rate is high, possible slow or failing queries."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # REDIS ALERTS
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: agrobridge-redis
+    rules:
+      # Redis down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance has been down for more than 1 minute."
+
+      # High memory usage
+      - alert: RedisHighMemory
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is above 80%."
+
+      # High hit rate drop
+      - alert: RedisCacheMissRateHigh
+        expr: |
+          rate(redis_keyspace_misses_total[5m]) /
+          (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis cache miss rate is high"
+          description: "Cache miss rate is above 50% for the last 10 minutes."

@@ -1,0 +1,28 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# GRAFANA DATASOURCES PROVISIONING
+# ══════════════════════════════════════════════════════════════════════════════
+# Auto-configure Prometheus as the default datasource
+# ══════════════════════════════════════════════════════════════════════════════
+apiVersion: 1
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DATASOURCES
+# ──────────────────────────────────────────────────────────────────────────────
+datasources:
+  # Prometheus
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: '15s'
+      queryTimeout: '60s'
+      httpMethod: 'POST'
+    version: 1
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DELETE DATASOURCES (optional - for cleanup)
+# ──────────────────────────────────────────────────────────────────────────────
+deleteDatasources: []

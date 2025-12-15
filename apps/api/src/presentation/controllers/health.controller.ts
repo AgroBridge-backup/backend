@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import logger from '../../shared/utils/logger.js';
 import { redisCacheService, type CacheHealth, type CacheStats } from '../../infrastructure/cache/index.js';
+import { queueService, type QueueHealthStatus } from '../../infrastructure/queue/index.js';
 
 interface HealthCheckResult {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -195,6 +196,70 @@ export class HealthController {
       res.status(503).json({
         status: 'unhealthy',
         error: 'Failed to retrieve cache statistics',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  /**
+   * GET /health/queues
+   * Queue-specific health endpoint with detailed statistics
+   */
+  async queueStats(_req: Request, res: Response): Promise<void> {
+    try {
+      const health: QueueHealthStatus = await queueService.healthCheck();
+
+      const isHealthy = health.connected && health.redis.status === 'connected';
+
+      res.status(isHealthy ? 200 : 503).json({
+        status: isHealthy ? 'healthy' : 'unhealthy',
+        connected: health.connected,
+        redis: health.redis,
+        queues: {
+          qrGeneration: {
+            name: health.queues.qrGeneration.name,
+            waiting: health.queues.qrGeneration.waiting,
+            active: health.queues.qrGeneration.active,
+            completed: health.queues.qrGeneration.completed,
+            failed: health.queues.qrGeneration.failed,
+            delayed: health.queues.qrGeneration.delayed,
+            paused: health.queues.qrGeneration.paused,
+          },
+          blockchain: {
+            name: health.queues.blockchain.name,
+            waiting: health.queues.blockchain.waiting,
+            active: health.queues.blockchain.active,
+            completed: health.queues.blockchain.completed,
+            failed: health.queues.blockchain.failed,
+            delayed: health.queues.blockchain.delayed,
+            paused: health.queues.blockchain.paused,
+          },
+          email: {
+            name: health.queues.email.name,
+            waiting: health.queues.email.waiting,
+            active: health.queues.email.active,
+            completed: health.queues.email.completed,
+            failed: health.queues.email.failed,
+            delayed: health.queues.email.delayed,
+            paused: health.queues.email.paused,
+          },
+          reports: {
+            name: health.queues.reports.name,
+            waiting: health.queues.reports.waiting,
+            active: health.queues.reports.active,
+            completed: health.queues.reports.completed,
+            failed: health.queues.reports.failed,
+            delayed: health.queues.reports.delayed,
+            paused: health.queues.reports.paused,
+          },
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`[HealthCheck] Queue stats failed: ${error}`);
+      res.status(503).json({
+        status: 'unhealthy',
+        error: 'Failed to retrieve queue statistics',
         timestamp: new Date().toISOString(),
       });
     }

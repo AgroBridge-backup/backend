@@ -1,0 +1,106 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# KUBERNETES INGRESS
+# ══════════════════════════════════════════════════════════════════════════════
+# External access to AgroBridge API with TLS termination
+# Requires:
+#   - nginx-ingress-controller or AWS ALB Ingress Controller
+#   - cert-manager for automatic TLS certificates
+# ══════════════════════════════════════════════════════════════════════════════
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agrobridge-ingress
+  namespace: agrobridge
+  labels:
+    app: agrobridge-api
+    app.kubernetes.io/name: agrobridge-api
+    app.kubernetes.io/component: ingress
+  annotations:
+    # ──────────────────────────────────────────────────────────────────────────
+    # NGINX Ingress Controller Configuration
+    # ──────────────────────────────────────────────────────────────────────────
+    kubernetes.io/ingress.class: "nginx"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # TLS/SSL Configuration
+    # ──────────────────────────────────────────────────────────────────────────
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Security Headers
+    # ──────────────────────────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=()";
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Rate Limiting
+    # ──────────────────────────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Proxy Configuration
+    # ──────────────────────────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # CORS Configuration
+    # ──────────────────────────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://agrobridge.io,https://www.agrobridge.io,https://app.agrobridge.io"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/cors-max-age: "1728000"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Backend Protocol
+    # ──────────────────────────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+
+spec:
+  # ──────────────────────────────────────────────────────────────────────────────
+  # TLS CONFIGURATION
+  # ──────────────────────────────────────────────────────────────────────────────
+  tls:
+    - hosts:
+        - api.agrobridge.io
+        - api-staging.agrobridge.io
+      secretName: agrobridge-tls
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # ROUTING RULES
+  # ──────────────────────────────────────────────────────────────────────────────
+  rules:
+    # Production API
+    - host: api.agrobridge.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: agrobridge-api
+                port:
+                  number: 80
+
+    # Staging API
+    - host: api-staging.agrobridge.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: agrobridge-api
+                port:
+                  number: 80

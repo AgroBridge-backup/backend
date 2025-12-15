@@ -1,0 +1,128 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# PROMETHEUS CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════════
+# Metrics collection configuration for AgroBridge Backend
+# Scrapes: API, PostgreSQL, Redis, Node metrics
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GLOBAL CONFIGURATION
+# ──────────────────────────────────────────────────────────────────────────────
+global:
+  scrape_interval: 15s        # How frequently to scrape targets
+  evaluation_interval: 15s    # How frequently to evaluate rules
+  scrape_timeout: 10s         # Timeout for scraping
+
+  # External labels to add to all time series
+  external_labels:
+    cluster: 'agrobridge-production'
+    environment: 'production'
+    region: 'us-east-1'
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ALERTMANAGER CONFIGURATION
+# ──────────────────────────────────────────────────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+      scheme: http
+      timeout: 10s
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RULE FILES
+# ──────────────────────────────────────────────────────────────────────────────
+rule_files:
+  - /etc/prometheus/alerts/*.yml
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SCRAPE CONFIGURATIONS
+# ──────────────────────────────────────────────────────────────────────────────
+scrape_configs:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Prometheus Self-Monitoring
+  # ────────────────────────────────────────────────────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # AgroBridge API
+  # ────────────────────────────────────────────────────────────────────────────
+  - job_name: 'agrobridge-api'
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api:3000']
+        labels:
+          service: 'api'
+          environment: 'production'
+          app: 'agrobridge'
+
+    # Relabel configurations
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+        action: replace
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # PostgreSQL Exporter
+  # ────────────────────────────────────────────────────────────────────────────
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgres'
+          environment: 'production'
+          database: 'agrobridge_prod'
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Redis Exporter
+  # ────────────────────────────────────────────────────────────────────────────
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          environment: 'production'
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Node Exporter (System Metrics)
+  # ────────────────────────────────────────────────────────────────────────────
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node'
+          environment: 'production'
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # cAdvisor (Container Metrics)
+  # ────────────────────────────────────────────────────────────────────────────
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+
+# ──────────────────────────────────────────────────────────────────────────────
+# REMOTE WRITE (Optional - for long-term storage)
+# ──────────────────────────────────────────────────────────────────────────────
+# remote_write:
+#   - url: "https://prometheus-remote-write.example.com/write"
+#     basic_auth:
+#       username: prometheus
+#       password_file: /etc/prometheus/secrets/remote-write-password
+
+# ──────────────────────────────────────────────────────────────────────────────
+# STORAGE CONFIGURATION
+# ──────────────────────────────────────────────────────────────────────────────
+# storage:
+#   tsdb:
+#     retention.time: 15d
+#     retention.size: 10GB

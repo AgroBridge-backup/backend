@@ -1,6 +1,6 @@
 /**
  * @file Bull Board Setup
- * @description Queue monitoring dashboard for notification system
+ * @description Queue monitoring dashboard for all background job queues
  *
  * Bull Board provides:
  * 1. Real-time queue visualization
@@ -8,6 +8,13 @@
  * 3. Manual job retry/removal
  * 4. Queue pausing/resuming
  * 5. Performance metrics
+ *
+ * Monitored Queues:
+ * - notifications: Push/Email/SMS notifications
+ * - qr-generation: QR code generation for batches
+ * - blockchain-tx: Blockchain transactions
+ * - email: Queue-based email sending
+ * - reports: Report generation (PDF/CSV/XLSX)
  *
  * Access: /admin/queues (protected by admin auth)
  *
@@ -18,13 +25,16 @@
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter.js';
 import { ExpressAdapter } from '@bull-board/express';
+import { Queue } from 'bull';
 import { notificationQueue } from '../queue/NotificationQueue.js';
+import { queueService } from '../../queue/index.js';
 import logger from '../../../shared/utils/logger.js';
 
 /**
  * Bull Board Setup
  *
  * Creates and configures the Bull Board monitoring dashboard
+ * Aggregates all application queues into a single dashboard
  */
 export class BullBoardSetup {
   private static instance: BullBoardSetup | null = null;
@@ -47,7 +57,7 @@ export class BullBoardSetup {
   }
 
   /**
-   * Initialize Bull Board with queue
+   * Initialize Bull Board with all queues
    */
   public initialize(): ExpressAdapter {
     if (this.initialized) {
@@ -55,19 +65,29 @@ export class BullBoardSetup {
     }
 
     try {
-      const queue = notificationQueue.getQueue();
+      const queues: Queue[] = [];
 
-      if (!queue) {
-        logger.warn('[BullBoard] Queue not available, dashboard will be limited');
+      // Add notification queue
+      const notifQueue = notificationQueue.getQueue();
+      if (notifQueue) {
+        queues.push(notifQueue);
+      }
+
+      // Add background job queues from QueueService
+      const backgroundQueues = queueService.getAllQueues();
+      queues.push(...backgroundQueues);
+
+      if (queues.length === 0) {
+        logger.warn('[BullBoard] No queues available, dashboard will be empty');
         return this.serverAdapter;
       }
 
       createBullBoard({
-        queues: [new BullAdapter(queue)],
+        queues: queues.map(q => new BullAdapter(q)),
         serverAdapter: this.serverAdapter,
         options: {
           uiConfig: {
-            boardTitle: 'AgroBridge Notifications',
+            boardTitle: 'AgroBridge Job Queues',
             boardLogo: {
               path: 'https://app.agrobridge.io/logo.png',
               width: '100px',
@@ -85,6 +105,8 @@ export class BullBoardSetup {
 
       logger.info('[BullBoard] Dashboard initialized', {
         basePath: '/admin/queues',
+        queueCount: queues.length,
+        queues: queues.map(q => q.name),
       });
 
       return this.serverAdapter;
@@ -104,6 +126,15 @@ export class BullBoardSetup {
   public getRouter() {
     this.initialize();
     return this.serverAdapter.getRouter();
+  }
+
+  /**
+   * Re-initialize with updated queues
+   * Call this after QueueService.initialize() if needed
+   */
+  public reinitialize(): ExpressAdapter {
+    this.initialized = false;
+    return this.initialize();
   }
 }
 

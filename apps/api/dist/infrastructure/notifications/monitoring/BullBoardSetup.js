@@ -2,6 +2,7 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter.js';
 import { ExpressAdapter } from '@bull-board/express';
 import { notificationQueue } from '../queue/NotificationQueue.js';
+import { queueService } from '../../queue/index.js';
 import logger from '../../../shared/utils/logger.js';
 export class BullBoardSetup {
     static instance = null;
@@ -22,17 +23,23 @@ export class BullBoardSetup {
             return this.serverAdapter;
         }
         try {
-            const queue = notificationQueue.getQueue();
-            if (!queue) {
-                logger.warn('[BullBoard] Queue not available, dashboard will be limited');
+            const queues = [];
+            const notifQueue = notificationQueue.getQueue();
+            if (notifQueue) {
+                queues.push(notifQueue);
+            }
+            const backgroundQueues = queueService.getAllQueues();
+            queues.push(...backgroundQueues);
+            if (queues.length === 0) {
+                logger.warn('[BullBoard] No queues available, dashboard will be empty');
                 return this.serverAdapter;
             }
             createBullBoard({
-                queues: [new BullAdapter(queue)],
+                queues: queues.map(q => new BullAdapter(q)),
                 serverAdapter: this.serverAdapter,
                 options: {
                     uiConfig: {
-                        boardTitle: 'AgroBridge Notifications',
+                        boardTitle: 'AgroBridge Job Queues',
                         boardLogo: {
                             path: 'https://app.agrobridge.io/logo.png',
                             width: '100px',
@@ -48,6 +55,8 @@ export class BullBoardSetup {
             this.initialized = true;
             logger.info('[BullBoard] Dashboard initialized', {
                 basePath: '/admin/queues',
+                queueCount: queues.length,
+                queues: queues.map(q => q.name),
             });
             return this.serverAdapter;
         }
@@ -62,6 +71,10 @@ export class BullBoardSetup {
     getRouter() {
         this.initialize();
         return this.serverAdapter.getRouter();
+    }
+    reinitialize() {
+        this.initialized = false;
+        return this.initialize();
     }
 }
 export const bullBoardSetup = BullBoardSetup.getInstance();

@@ -4,5 +4,7 @@ export { FCMService, fcmService } from './services/FCMService.js';
 export { APNsService, apnsService } from './services/APNsService.js';
 export { EmailService, emailService } from './services/EmailService.js';
 export { SMSService, smsService } from './services/SMSService.js';
+export { ResilientEmailService, resilientEmailService, } from './services/ResilientEmailService.js';
+export { SESProvider, sesProvider } from './providers/SESProvider.js';
 export { MetricsCollector, metricsCollector } from './monitoring/MetricsCollector.js';
 export { BullBoardSetup, bullBoardSetup } from './monitoring/BullBoardSetup.js';

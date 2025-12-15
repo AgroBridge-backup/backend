@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2024-12-14
+
+### Added
+
+#### Documentation (Phase 7)
+- **Swagger/OpenAPI:** Interactive REST API documentation at `/api-docs`
+- **OpenAPI Spec:** Downloadable specification in JSON (`/openapi.json`) and YAML (`/openapi.yaml`) formats
+- **API Landing Page:** Developer portal at `/docs/api` with links to all documentation resources
+- **Postman Collection:** Complete API collection with 50+ requests and environment variables
+- **Developer Guides:**
+  - Getting Started Guide - Quick start for new developers
+  - Deployment Guide - Production deployment instructions
+  - API Reference - Complete endpoint documentation
+
+#### Core Features
+- **REST API v2** with field selection, filtering, and sorting
+- **GraphQL API** with complete schema and DataLoader optimization
+- **WebSocket** real-time updates via Socket.IO
+- **Multi-channel Notifications** (Push, SMS, Email, In-App)
+- **Payment Integration** with Stripe subscriptions
+- **Report Generation** (PDF, CSV, XLSX)
+- **Analytics Dashboard** with statistics and insights
+
+#### Infrastructure
+- **Docker** multi-stage builds for production
+- **Kubernetes** deployment manifests with auto-scaling
+- **CI/CD Pipeline** via GitHub Actions
+- **Monitoring** with Prometheus and Grafana
+- **Load Testing** with k6
+
+#### Authentication
+- **Two-Factor Authentication** (TOTP-based)
+- **OAuth2 integration** (Google, GitHub)
+- **JWT refresh token rotation**
+
+### Changed
+- Enhanced error handling across all endpoints
+- Improved API documentation with OpenAPI 3.0
+
+### Security
+- Implemented rate limiting per endpoint
+- Added Helmet.js security headers
+- Encrypted sensitive data with AES-256-GCM
+
 ## [1.2.1] - 2025-11-25
 ### Changed
 - **Logging:** Removidos todos los logs de debug y console.* tras validación E2E y QA. El sistema solo expone logs por logger único: listo para Fase 2.

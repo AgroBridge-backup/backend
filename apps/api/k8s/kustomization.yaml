@@ -1,0 +1,47 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# KUSTOMIZE CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════════
+# Usage:
+#   kubectl apply -k k8s/
+#   kubectl kustomize k8s/ | kubectl apply -f -
+# ══════════════════════════════════════════════════════════════════════════════
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ──────────────────────────────────────────────────────────────────────────────
+# NAMESPACE
+# ──────────────────────────────────────────────────────────────────────────────
+namespace: agrobridge
+
+# ──────────────────────────────────────────────────────────────────────────────
+# COMMON LABELS
+# ──────────────────────────────────────────────────────────────────────────────
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: agrobridge
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RESOURCES
+# ──────────────────────────────────────────────────────────────────────────────
+resources:
+  - base/namespace.yaml
+  - base/configmap.yaml
+  - base/serviceaccount.yaml
+  - base/deployment.yaml
+  - base/service.yaml
+  - base/ingress.yaml
+  - base/hpa.yaml
+  - base/pdb.yaml
+
+# ──────────────────────────────────────────────────────────────────────────────
+# IMAGE CONFIGURATION
+# ──────────────────────────────────────────────────────────────────────────────
+images:
+  - name: ghcr.io/agrobridge/agrobridge-api
+    newTag: latest
+
+# ──────────────────────────────────────────────────────────────────────────────
+# COMMON ANNOTATIONS
+# ──────────────────────────────────────────────────────────────────────────────
+commonAnnotations:
+  app.kubernetes.io/version: "2.0.0"

@@ -1,0 +1,284 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# BATCH SCHEMAS
+# ══════════════════════════════════════════════════════════════════════════════
+
+components:
+  schemas:
+    # ──────────────────────────────────────────────────────────────────────────
+    # REQUEST SCHEMAS
+    # ──────────────────────────────────────────────────────────────────────────
+
+    CreateBatchRequest:
+      type: object
+      required:
+        - productType
+        - quantity
+        - unit
+        - pricePerUnit
+        - harvestDate
+      properties:
+        productType:
+          type: string
+          example: MAIZE
+          description: Type of agricultural product
+        variety:
+          type: string
+          example: Yellow Maize
+          description: Product variety or cultivar
+        quantity:
+          type: number
+          minimum: 0.01
+          example: 1000
+          description: Quantity available
+        unit:
+          type: string
+          enum: [KG, TONS, BAGS, CRATES, BUNCHES]
+          example: KG
+          description: Unit of measurement
+        pricePerUnit:
+          type: number
+          minimum: 0.01
+          example: 50.5
+          description: Price per unit
+        currency:
+          type: string
+          default: NGN
+          example: NGN
+          description: Currency code (ISO 4217)
+        harvestDate:
+          type: string
+          format: date
+          example: '2024-01-10'
+          description: Date of harvest
+        expiryDate:
+          type: string
+          format: date
+          example: '2024-06-10'
+          description: Product expiry date
+        location:
+          type: object
+          required:
+            - state
+          properties:
+            state:
+              type: string
+              example: Lagos
+            lga:
+              type: string
+              example: Ikeja
+            address:
+              type: string
+              example: 123 Farm Road, Ikeja
+            coordinates:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                  example: 6.5244
+                longitude:
+                  type: number
+                  example: 3.3792
+        qualityGrade:
+          type: string
+          enum: [A, B, C]
+          example: A
+          description: Quality grade (A=Premium, B=Standard, C=Economy)
+        moistureContent:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 12.5
+          description: Moisture content percentage
+        certifications:
+          type: array
+          items:
+            type: string
+          example: [ORGANIC, HALAL, NAFDAC]
+          description: Product certifications
+        description:
+          type: string
+          maxLength: 1000
+          example: High-quality yellow maize, suitable for animal feed and processing
+          description: Product description
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          example:
+            - https://cdn.agrobridge.io/batches/image1.jpg
+            - https://cdn.agrobridge.io/batches/image2.jpg
+          description: Product image URLs
+        minimumOrderQuantity:
+          type: number
+          minimum: 0
+          example: 50
+          description: Minimum order quantity
+        availableForSample:
+          type: boolean
+          default: true
+          description: Whether samples can be requested
+
+    UpdateBatchRequest:
+      type: object
+      properties:
+        quantity:
+          type: number
+          minimum: 0.01
+          example: 800
+        pricePerUnit:
+          type: number
+          minimum: 0.01
+          example: 55.0
+        status:
+          type: string
+          enum: [DRAFT, AVAILABLE, RESERVED, SOLD, EXPIRED]
+          example: AVAILABLE
+        expiryDate:
+          type: string
+          format: date
+          example: '2024-07-10'
+        description:
+          type: string
+          maxLength: 1000
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        availableForSample:
+          type: boolean
+
+    SearchBatchesRequest:
+      type: object
+      properties:
+        productType:
+          type: string
+          example: MAIZE
+          description: Filter by product type
+        state:
+          type: string
+          example: Lagos
+          description: Filter by location state
+        lga:
+          type: string
+          example: Ikeja
+          description: Filter by LGA
+        minPrice:
+          type: number
+          example: 40
+          description: Minimum price per unit
+        maxPrice:
+          type: number
+          example: 60
+          description: Maximum price per unit
+        qualityGrade:
+          type: string
+          enum: [A, B, C]
+          description: Filter by quality grade
+        certifications:
+          type: array
+          items:
+            type: string
+          example: [ORGANIC]
+          description: Required certifications
+        minQuantity:
+          type: number
+          example: 500
+          description: Minimum available quantity
+        radius:
+          type: number
+          example: 50
+          description: Search radius in kilometers (requires coordinates)
+        latitude:
+          type: number
+          example: 6.5244
+        longitude:
+          type: number
+          example: 3.3792
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        sortBy:
+          type: string
+          enum: [price, quantity, harvestDate, createdAt]
+          default: createdAt
+        sortOrder:
+          type: string
+          enum: [asc, desc]
+          default: desc
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # RESPONSE SCHEMAS
+    # ──────────────────────────────────────────────────────────────────────────
+
+    BatchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Batch'
+
+    BatchListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Batch'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    BatchStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalBatches:
+              type: integer
+              example: 45
+            totalQuantity:
+              type: number
+              example: 45000
+            totalValue:
+              type: number
+              example: 2275000
+            averagePrice:
+              type: number
+              example: 50.55
+            byStatus:
+              type: object
+              properties:
+                DRAFT:
+                  type: integer
+                  example: 5
+                AVAILABLE:
+                  type: integer
+                  example: 30
+                RESERVED:
+                  type: integer
+                  example: 7
+                SOLD:
+                  type: integer
+                  example: 3
+            byProductType:
+              type: object
+              example:
+                MAIZE: 20
+                RICE: 15
+                CASSAVA: 10

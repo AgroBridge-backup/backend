@@ -1,0 +1,29 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# POD DISRUPTION BUDGET
+# ══════════════════════════════════════════════════════════════════════════════
+# Ensures high availability during voluntary disruptions:
+#   - Node maintenance
+#   - Cluster upgrades
+#   - Manual pod deletions
+#
+# This PDB guarantees that at least 2 pods are always available
+# ══════════════════════════════════════════════════════════════════════════════
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: agrobridge-api-pdb
+  namespace: agrobridge
+  labels:
+    app: agrobridge-api
+    app.kubernetes.io/name: agrobridge-api
+    app.kubernetes.io/component: pdb
+spec:
+  # Minimum number of pods that must be available
+  minAvailable: 2
+
+  # Alternative: Maximum number of pods that can be unavailable
+  # maxUnavailable: 1
+
+  selector:
+    matchLabels:
+      app: agrobridge-api

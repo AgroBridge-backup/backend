@@ -25,4 +25,7 @@ router.get('/metrics', healthController.metrics.bind(healthController));
 // Cache statistics endpoint
 router.get('/cache', healthController.cacheStats.bind(healthController));
 
+// Queue statistics endpoint
+router.get('/queues', healthController.queueStats.bind(healthController));
+
 export default router;

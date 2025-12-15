@@ -4,6 +4,7 @@ import { createBatchesRouter } from './batches.routes.js';
 import { createEventsRouter } from './events.routes.js';
 import { createProducersRouter } from './producers.routes.js';
 import { createNotificationsRouter } from './notifications.routes.js';
+import { createUploadRouter } from './upload.routes.js';
 export function createApiRouter(useCases) {
     const router = Router();
     router.use('/auth', createAuthRouter(useCases.auth));
@@ -11,5 +12,6 @@ export function createApiRouter(useCases) {
     router.use('/events', createEventsRouter(useCases.events));
     router.use('/producers', createProducersRouter(useCases.producers));
     router.use('/notifications', createNotificationsRouter());
+    router.use('/uploads', createUploadRouter());
     return router;
 }

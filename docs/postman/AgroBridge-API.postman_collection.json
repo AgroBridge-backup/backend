@@ -1,0 +1,944 @@
+{
+  "info": {
+    "name": "AgroBridge API",
+    "description": "Complete API collection for AgroBridge agricultural traceability platform.\n\n## Features\n- Authentication with JWT\n- Batch traceability management\n- Producer management\n- Event tracking\n- Reports generation\n- Notifications\n\n## Getting Started\n1. Import this collection into Postman\n2. Import the environment file\n3. Run the 'Login' request to get access token\n4. Start exploring the API!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "batchId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "producerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and authorization endpoints",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "        pm.collectionVariables.set('userId', response.data.user.id);",
+                  "    }",
+                  "    pm.test('Registration successful', () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"SecurePassword123!\",\n    \"name\": \"Test User\",\n    \"role\": \"PRODUCER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "        pm.collectionVariables.set('userId', response.data.user.id);",
+                  "    }",
+                  "    pm.test('Login successful', () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('accessToken');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Authenticate and get JWT tokens"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Get current authenticated user information"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Logout and invalidate refresh token"
+          }
+        },
+        {
+          "name": "Setup 2FA",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/2fa/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "2fa", "setup"]
+            },
+            "description": "Initialize two-factor authentication setup"
+          }
+        },
+        {
+          "name": "Enable 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/2fa/enable",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "2fa", "enable"]
+            },
+            "description": "Enable 2FA with TOTP token"
+          }
+        },
+        {
+          "name": "Verify 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/2fa/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "2fa", "verify"]
+            },
+            "description": "Verify 2FA token during login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batches",
+      "description": "Batch management and traceability endpoints",
+      "item": [
+        {
+          "name": "List Batches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "REGISTERED",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "organic",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of batches"
+          }
+        },
+        {
+          "name": "Create Batch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data) {",
+                  "        pm.collectionVariables.set('batchId', response.data.id);",
+                  "    }",
+                  "    pm.test('Batch created', () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"origin\": \"Organic Tomatoes\",\n    \"variety\": \"Roma\",\n    \"weightKg\": 500.5,\n    \"harvestDate\": \"2024-03-15T08:00:00Z\",\n    \"certifications\": [\"ORGANIC\"],\n    \"metadata\": {\n        \"field\": \"A-12\",\n        \"temperature\": 22\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches"]
+            },
+            "description": "Create a new batch"
+          }
+        },
+        {
+          "name": "Get Batch by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches/{{batchId}}?include=producer,events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches", "{{batchId}}"],
+              "query": [
+                {
+                  "key": "include",
+                  "value": "producer,events"
+                }
+              ]
+            },
+            "description": "Get batch details by ID"
+          }
+        },
+        {
+          "name": "Get Batch by Number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches/number/BATCH-2024-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches", "number", "BATCH-2024-001"]
+            },
+            "description": "Get batch by batch number"
+          }
+        },
+        {
+          "name": "Get Batch History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches/{{batchId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches", "{{batchId}}", "history"]
+            },
+            "description": "Get complete batch history with events"
+          }
+        },
+        {
+          "name": "Update Batch",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"IN_TRANSIT\",\n    \"weightKg\": 485.2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches/{{batchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches", "{{batchId}}"]
+            },
+            "description": "Update batch information"
+          }
+        },
+        {
+          "name": "Delete Batch",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batches/{{batchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "batches", "{{batchId}}"]
+            },
+            "description": "Soft delete a batch (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "description": "Traceability event tracking endpoints",
+      "item": [
+        {
+          "name": "Register Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data) {",
+                  "        pm.collectionVariables.set('eventId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"batchId\": \"{{batchId}}\",\n    \"title\": \"Quality Check Passed\",\n    \"eventType\": \"QUALITY_CHECK\",\n    \"description\": \"All quality standards met\",\n    \"timestamp\": \"2024-03-15T10:00:00Z\",\n    \"location\": \"Warehouse A\",\n    \"temperature\": 22,\n    \"humidity\": 65,\n    \"gpsCoordinates\": {\n        \"latitude\": 17.0542,\n        \"longitude\": -96.7061\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events"]
+            },
+            "description": "Register a new traceability event"
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "{{eventId}}"]
+            },
+            "description": "Get event details by ID"
+          }
+        },
+        {
+          "name": "Verify Event",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/{{eventId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "{{eventId}}", "verify"]
+            },
+            "description": "Verify event on blockchain"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Producers",
+      "description": "Producer management endpoints",
+      "item": [
+        {
+          "name": "List Producers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/producers?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "producers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get a paginated list of producers"
+          }
+        },
+        {
+          "name": "Get Producer by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data) {",
+                  "        pm.collectionVariables.set('producerId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/producers/{{producerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "producers", "{{producerId}}"]
+            },
+            "description": "Get producer details by ID"
+          }
+        },
+        {
+          "name": "Whitelist Producer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/producers/{{producerId}}/whitelist",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "producers", "{{producerId}}", "whitelist"]
+            },
+            "description": "Whitelist a producer (Admin only)"
+          }
+        },
+        {
+          "name": "Add Certification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"certification\": \"ORGANIC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/producers/{{producerId}}/certifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "producers", "{{producerId}}", "certifications"]
+            },
+            "description": "Add a certification to a producer"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "Report generation endpoints",
+      "item": [
+        {
+          "name": "Generate Batch Report (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/batch/{{batchId}}?format=pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "batch", "{{batchId}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "pdf"
+                }
+              ]
+            },
+            "description": "Generate a batch report in PDF format"
+          }
+        },
+        {
+          "name": "Generate Batch Report (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/batch/{{batchId}}?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "batch", "{{batchId}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            },
+            "description": "Generate a batch report in CSV format"
+          }
+        },
+        {
+          "name": "Export Batches",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"format\": \"xlsx\",\n    \"filters\": {\n        \"status\": \"REGISTERED\",\n        \"dateFrom\": \"2024-01-01\",\n        \"dateTo\": \"2024-12-31\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/exports/batches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "exports", "batches"]
+            },
+            "description": "Export batches in various formats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "Notification management endpoints",
+      "item": [
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "preferences"]
+            },
+            "description": "Get user notification preferences"
+          }
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": true,\n    \"push\": true,\n    \"sms\": false,\n    \"channels\": {\n        \"batchUpdates\": true,\n        \"eventAlerts\": true,\n        \"marketing\": false\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "preferences"]
+            },
+            "description": "Update notification preferences"
+          }
+        },
+        {
+          "name": "Register Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"fcm_device_token_here\",\n    \"platform\": \"android\",\n    \"deviceId\": \"unique-device-id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "devices"]
+            },
+            "description": "Register a device for push notifications"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "description": "Stripe payment and subscription endpoints",
+      "item": [
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "subscription"]
+            },
+            "description": "Get current subscription status"
+          }
+        },
+        {
+          "name": "Create Checkout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"priceId\": \"price_xxxxx\",\n    \"successUrl\": \"https://app.agrobridge.io/success\",\n    \"cancelUrl\": \"https://app.agrobridge.io/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/checkout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "checkout"]
+            },
+            "description": "Create a Stripe checkout session"
+          }
+        },
+        {
+          "name": "Customer Portal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/portal",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "portal"]
+            },
+            "description": "Get Stripe customer portal URL"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blockchain",
+      "description": "Blockchain integration endpoints",
+      "item": [
+        {
+          "name": "Register Batch on Blockchain",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/blockchain/batches/{{batchId}}/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "blockchain", "batches", "{{batchId}}", "register"]
+            },
+            "description": "Register batch on blockchain"
+          }
+        },
+        {
+          "name": "Verify Batch on Blockchain",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/blockchain/batches/{{batchId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "blockchain", "batches", "{{batchId}}", "verify"]
+            },
+            "description": "Verify batch data on blockchain"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "description": "System health and monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Basic health check"
+          }
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "ready"]
+            },
+            "description": "Kubernetes readiness probe"
+          }
+        },
+        {
+          "name": "Liveness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "live"]
+            },
+            "description": "Kubernetes liveness probe"
+          }
+        },
+        {
+          "name": "API Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "status"]
+            },
+            "description": "API status with uptime"
+          }
+        }
+      ]
+    },
+    {
+      "name": "API v2 (Enhanced)",
+      "description": "Enhanced API v2 with field selection and advanced filtering",
+      "item": [
+        {
+          "name": "List Batches (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/batches?fields=id,origin,status&filter[status]=REGISTERED&sort=-createdAt&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "batches"],
+              "query": [
+                {
+                  "key": "fields",
+                  "value": "id,origin,status",
+                  "description": "Field selection"
+                },
+                {
+                  "key": "filter[status]",
+                  "value": "REGISTERED",
+                  "description": "Filter by status"
+                },
+                {
+                  "key": "sort",
+                  "value": "-createdAt",
+                  "description": "Sort descending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List batches with field selection and advanced filtering"
+          }
+        },
+        {
+          "name": "Get Batch (v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/batches/{{batchId}}?fields=id,origin,status,producer,events&include=producer,events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "batches", "{{batchId}}"],
+              "query": [
+                {
+                  "key": "fields",
+                  "value": "id,origin,status,producer,events"
+                },
+                {
+                  "key": "include",
+                  "value": "producer,events"
+                }
+              ]
+            },
+            "description": "Get batch with includes and field selection"
+          }
+        }
+      ]
+    }
+  ]
+}

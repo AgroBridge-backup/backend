@@ -133,6 +133,84 @@ export const passwordStrengthSchema = z.object({
   }),
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TWO-FACTOR AUTHENTICATION VALIDATORS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * 2FA token validation (6-digit TOTP or 8-character backup code)
+ */
+export const twoFactorTokenSchema = z
+  .string()
+  .min(6, 'Token must be at least 6 characters')
+  .max(10, 'Token cannot exceed 10 characters')
+  .transform((val) => val.replace(/[\s-]/g, '')); // Remove spaces and dashes
+
+/**
+ * Verify 2FA during login schema
+ */
+export const verify2FASchema = z.object({
+  body: z.object({
+    tempToken: z.string().uuid('Invalid session token'),
+    token: twoFactorTokenSchema,
+  }),
+});
+
+/**
+ * Enable 2FA schema (verify setup token)
+ */
+export const enable2FASchema = z.object({
+  body: z.object({
+    token: twoFactorTokenSchema,
+  }),
+});
+
+/**
+ * Disable 2FA schema
+ */
+export const disable2FASchema = z.object({
+  body: z.object({
+    token: twoFactorTokenSchema,
+  }),
+});
+
+/**
+ * Regenerate backup codes schema
+ */
+export const regenerateBackupCodesSchema = z.object({
+  body: z.object({
+    token: twoFactorTokenSchema,
+  }),
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OAUTH VALIDATORS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * OAuth provider enum
+ */
+export const oauthProviderSchema = z.enum(['google', 'github']);
+
+/**
+ * OAuth callback schema
+ */
+export const oauthCallbackSchema = z.object({
+  query: z.object({
+    code: z.string().min(1, 'Authorization code required'),
+    state: z.string().min(1, 'State parameter required'),
+  }),
+});
+
+/**
+ * OAuth unlink schema
+ */
+export const oauthUnlinkSchema = z.object({
+  params: z.object({
+    provider: oauthProviderSchema,
+  }),
+});
+
 /**
  * Type exports for controller usage
  */
@@ -143,3 +221,9 @@ export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchem
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type PasswordStrengthInput = z.infer<typeof passwordStrengthSchema>;
+export type Verify2FAInput = z.infer<typeof verify2FASchema>;
+export type Enable2FAInput = z.infer<typeof enable2FASchema>;
+export type Disable2FAInput = z.infer<typeof disable2FASchema>;
+export type RegenerateBackupCodesInput = z.infer<typeof regenerateBackupCodesSchema>;
+export type OAuthCallbackInput = z.infer<typeof oauthCallbackSchema>;
+export type OAuthUnlinkInput = z.infer<typeof oauthUnlinkSchema>;
