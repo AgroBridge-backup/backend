@@ -15,9 +15,6 @@ export {
 // Context
 export {
   createContext,
-  GraphQLContext,
-  AuthenticatedContext,
-  ContextUser,
   requireAuth,
   requireRole,
   hasRole,
@@ -26,6 +23,7 @@ export {
   isOwner,
   canAccess,
 } from './context.js';
+export type { GraphQLContext, AuthenticatedContext, ContextUser } from './context.js';
 
 // Schema
 export { typeDefs } from './schema/index.js';
@@ -36,7 +34,6 @@ export { resolvers } from './resolvers/index.js';
 // DataLoaders
 export {
   createDataLoaders,
-  DataLoaders,
   createBatchLoader,
   createBatchesByProducerLoader,
   createProducerLoader,
@@ -50,6 +47,7 @@ export {
   createUserLoader,
   createUserByEmailLoader,
 } from './dataloaders/index.js';
+export type { DataLoaders } from './dataloaders/index.js';
 
 // Errors
 export {

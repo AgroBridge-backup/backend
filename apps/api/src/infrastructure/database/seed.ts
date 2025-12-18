@@ -1,5 +1,6 @@
 import * as Prisma from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { fileURLToPath } from 'url';
 import logger from '../../shared/utils/logger.js';
 
 const prisma = new Prisma.PrismaClient();
@@ -79,12 +80,89 @@ export async function runSeed() {
     },
   });
   logger.info(`Upserted second producer user: producer2@test.com`);
-  
+
+  // --- Seed Integration Test Users (for critical-flows.test.ts) ---
+  const testPassword = await bcrypt.hash('TestPassword123!', 10);
+
+  // Test Admin
+  const testAdmin = await prisma.user.upsert({
+    where: { email: 'admin@test.agrobridge.io' },
+    update: { passwordHash: testPassword },
+    create: {
+      email: 'admin@test.agrobridge.io',
+      passwordHash: testPassword,
+      role: Prisma.UserRole.ADMIN,
+      firstName: 'Test',
+      lastName: 'Admin',
+      isActive: true,
+    },
+  });
+  logger.info(`Upserted test admin: ${testAdmin.email}`);
+
+  // Test Producer
+  const testProducer = await prisma.user.upsert({
+    where: { email: 'producer@test.agrobridge.io' },
+    update: { passwordHash: testPassword },
+    create: {
+      email: 'producer@test.agrobridge.io',
+      passwordHash: testPassword,
+      role: Prisma.UserRole.PRODUCER,
+      firstName: 'Test',
+      lastName: 'Producer',
+      isActive: true,
+      producer: {
+        create: {
+          businessName: 'Test Agrobridge Producer',
+          rfc: 'TESTPROD789',
+          state: 'Michoacán',
+          municipality: 'Uruapan',
+          latitude: 19.4136,
+          longitude: -102.062,
+          isWhitelisted: true,
+          whitelistedAt: new Date(),
+        },
+      },
+    },
+  });
+  logger.info(`Upserted test producer: ${testProducer.email}`);
+
+  // Test Certifier
+  const testCertifier = await prisma.user.upsert({
+    where: { email: 'certifier@test.agrobridge.io' },
+    update: { passwordHash: testPassword },
+    create: {
+      email: 'certifier@test.agrobridge.io',
+      passwordHash: testPassword,
+      role: Prisma.UserRole.CERTIFIER,
+      firstName: 'Test',
+      lastName: 'Certifier',
+      isActive: true,
+    },
+  });
+  logger.info(`Upserted test certifier: ${testCertifier.email}`);
+
+  // Test Buyer
+  const testBuyer = await prisma.user.upsert({
+    where: { email: 'buyer@test.agrobridge.io' },
+    update: { passwordHash: testPassword },
+    create: {
+      email: 'buyer@test.agrobridge.io',
+      passwordHash: testPassword,
+      role: Prisma.UserRole.BUYER,
+      firstName: 'Test',
+      lastName: 'Buyer',
+      isActive: true,
+    },
+  });
+  logger.info(`Upserted test buyer: ${testBuyer.email}`);
+
   logger.info('Seeding finished.');
 }
 
-// Allow the script to be run directly
-if (require.main === module) {
+// Allow the script to be run directly (ES module compatible)
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMainModule) {
   runSeed()
     .catch((e) => {
       logger.error('Error during seeding:', e);
