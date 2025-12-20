@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Security Headers -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <!-- SEO & Description -->
+    <meta name="description" content="AgroBridge Admin Dashboard - Premium command center for managing farmer cash flow advances">
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>AgroBridge Admin - Command Center</title>
+
+    <!-- Favicon (prevents 404) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌾</text></svg>">
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="light-mode">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-left">
+                <div class="login-brand">
+                    <div class="brand-logo" role="img" aria-label="AgroBridge Logo">🌾</div>
+                    <h1>AgroBridge</h1>
+                    <p>Financiando el futuro del campo</p>
+                </div>
+                <div class="login-image">
+                    <div class="image-placeholder"></div>
+                </div>
+            </div>
+            <div class="login-right">
+                <div class="login-form-container">
+                    <div class="language-toggle-login">
+                        <button type="button" id="langBtnLogin" class="lang-btn" aria-label="Toggle language">
+                            <span id="langIconLogin" aria-hidden="true">🇲🇽</span>
+                            <span id="langTextLogin">ES</span>
+                        </button>
+                    </div>
+
+                    <div class="login-header">
+                        <h2 data-i18n="loginTitle">Iniciar Sesión</h2>
+                        <p data-i18n="loginSubtitle">Accede al centro de comando</p>
+                    </div>
+
+                    <form id="loginForm" class="login-form" novalidate>
+                        <div class="form-group">
+                            <label for="email" data-i18n="email">Correo Electrónico</label>
+                            <div class="input-group">
+                                <span class="input-icon" aria-hidden="true">📧</span>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    placeholder="admin@agrobridge.io"
+                                    required
+                                    autocomplete="email"
+                                    aria-required="true"
+                                    aria-invalid="false"
+                                >
+                                <span class="validation-icon" aria-hidden="true">✓</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" data-i18n="password">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-icon" aria-hidden="true">🔒</span>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="••••••••"
+                                    required
+                                    autocomplete="current-password"
+                                    aria-required="true"
+                                    aria-invalid="false"
+                                >
+                                <button type="button" id="passwordToggle" class="password-toggle" aria-label="Toggle password visibility">
+                                    <span id="passwordToggleIcon" aria-hidden="true">👁️</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="rememberMe" name="rememberMe">
+                                <span data-i18n="rememberMe">Recordarme</span>
+                            </label>
+                            <a href="#forgot" class="forgot-password" data-i18n="forgotPassword">¿Olvidaste tu contraseña?</a>
+                        </div>
+
+                        <button type="submit" class="btn-primary btn-login" id="loginBtn">
+                            <span data-i18n="login">Iniciar Sesión</span>
+                            <span class="btn-spinner" id="loginSpinner" aria-hidden="true"></span>
+                        </button>
+
+                        <div class="demo-credentials">
+                            <p class="demo-title" data-i18n="demoCredentials">Credenciales de demostración:</p>
+                            <code>admin@test.agrobridge.io / Test1234!</code>
+                        </div>
+
+                        <div id="loginError" class="login-error" role="alert" aria-live="polite"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardScreen" class="dashboard-screen" style="display: none;">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <div class="brand">
+                    <span class="brand-icon" role="img" aria-label="AgroBridge">🌾</span>
+                    <span class="brand-name">AgroBridge</span>
+                    <span class="brand-badge" data-i18n="admin">Admin</span>
+                </div>
+            </div>
+
+            <div class="header-center">
+                <div class="search-bar">
+                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <input
+                        type="search"
+                        id="globalSearch"
+                        placeholder="Buscar... (Cmd/Ctrl + K)"
+                        data-i18n-placeholder="globalSearch"
+                        aria-label="Global search"
+                        autocomplete="off"
+                    >
+                    <kbd aria-hidden="true">⌘K</kbd>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="header-actions">
+                    <button type="button" class="header-btn" id="refreshBtn" title="Actualizar datos" aria-label="Refresh data">
+                        <span class="refresh-icon" aria-hidden="true">🔄</span>
+                    </button>
+
+                    <div class="language-toggle">
+                        <button type="button" id="langToggle" class="header-btn lang-toggle" aria-label="Toggle language">
+                            <span id="langIcon" aria-hidden="true">🇲🇽</span>
+                            <span id="langText">ES</span>
+                        </button>
+                    </div>
+
+                    <div class="theme-toggle">
+                        <button type="button" id="themeToggle" class="header-btn theme-btn" aria-label="Toggle theme">
+                            <span id="themeIcon" aria-hidden="true">🌙</span>
+                        </button>
+                    </div>
+
+                    <div class="user-menu">
+                        <button type="button" id="userMenuBtn" class="header-btn user-btn" aria-haspopup="true" aria-expanded="false">
+                            <span class="user-avatar" aria-hidden="true">👤</span>
+                            <span class="user-name" id="userName">Admin</span>
+                            <span class="dropdown-arrow" aria-hidden="true">▼</span>
+                        </button>
+                        <div id="userDropdown" class="user-dropdown" role="menu" style="display: none;" aria-labelledby="userMenuBtn">
+                            <a href="#settings" role="menuitem" id="settingsLink" data-i18n="settings">⚙️ Configuración</a>
+                            <a href="#logout" role="menuitem" id="logoutLink" class="logout-btn" data-i18n="logout">🚪 Cerrar Sesión</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs" role="tablist" aria-label="Main navigation">
+            <button type="button" class="nav-tab active" data-view="overview" role="tab" aria-selected="true" aria-controls="overviewView">
+                <span class="tab-icon" aria-hidden="true">📊</span>
+                <span data-i18n="dashboard">Dashboard</span>
+            </button>
+            <button type="button" class="nav-tab" data-view="pending" role="tab" aria-selected="false" aria-controls="pendingView">
+                <span class="tab-icon" aria-hidden="true">⏳</span>
+                <span data-i18n="pending">Pendientes</span>
+                <span class="badge" id="pendingBadge" aria-label="pending count">0</span>
+            </button>
+            <button type="button" class="nav-tab" data-view="approved" role="tab" aria-selected="false" aria-controls="approvedView">
+                <span class="tab-icon" aria-hidden="true">✅</span>
+                <span data-i18n="approved">Aprobados</span>
+                <span class="badge" id="approvedBadge" aria-label="approved count">0</span>
+            </button>
+            <button type="button" class="nav-tab" data-view="active" role="tab" aria-selected="false" aria-controls="activeView">
+                <span class="tab-icon" aria-hidden="true">💰</span>
+                <span data-i18n="active">Activos</span>
+                <span class="badge" id="activeBadge" aria-label="active count">0</span>
+            </button>
+            <button type="button" class="nav-tab" data-view="completed" role="tab" aria-selected="false" aria-controls="completedView">
+                <span class="tab-icon" aria-hidden="true">✔️</span>
+                <span data-i18n="completed">Completados</span>
+            </button>
+            <button type="button" class="nav-tab" data-view="analytics" role="tab" aria-selected="false" aria-controls="analyticsView">
+                <span class="tab-icon" aria-hidden="true">📈</span>
+                <span data-i18n="analytics">Analytics</span>
+            </button>
+            <button type="button" class="nav-tab" data-view="farmers" role="tab" aria-selected="false" aria-controls="farmersView">
+                <span class="tab-icon" aria-hidden="true">👨‍🌾</span>
+                <span data-i18n="farmers">Productores</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Overview Dashboard View -->
+            <div id="overviewView" class="view active" role="tabpanel" aria-labelledby="overview-tab">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-card-primary">
+                        <div class="stat-header">
+                            <span class="stat-icon" aria-hidden="true">💰</span>
+                            <span class="stat-trend positive">+23%</span>
+                        </div>
+                        <div class="stat-body">
+                            <h3 class="stat-value" id="totalVolume">$0</h3>
+                            <p class="stat-label" data-i18n="totalVolume">Volumen Total</p>
+                            <p class="stat-sublabel" data-i18n="vsLastWeek">vs. semana pasada</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-card-info">
+                        <div class="stat-header">
+                            <span class="stat-icon" aria-hidden="true">📋</span>
+                            <span class="stat-meta" id="pendingCount">0</span>
+                        </div>
+                        <div class="stat-body">
+                            <h3 class="stat-value" id="totalAdvances">0</h3>
+                            <p class="stat-label" data-i18n="totalAdvances">Anticipos Totales</p>
+                            <p class="stat-sublabel"><span id="pendingCountText">0</span> <span data-i18n="pendingLower">pendientes</span></p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-card-success">
+                        <div class="stat-header">
+                            <span class="stat-icon" aria-hidden="true">📊</span>
+                            <span class="stat-indicator success" aria-hidden="true">🟢</span>
+                        </div>
+                        <div class="stat-body">
+                            <h3 class="stat-value" id="defaultRate">0%</h3>
+                            <p class="stat-label" data-i18n="defaultRate">Tasa de Mora</p>
+                            <p class="stat-sublabel" data-i18n="target">Objetivo: &lt;2%</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-card-warning">
+                        <div class="stat-header">
+                            <span class="stat-icon" aria-hidden="true">💵</span>
+                            <span class="stat-meta">2K-10K</span>
+                        </div>
+                        <div class="stat-body">
+                            <h3 class="stat-value" id="avgAdvance">$0</h3>
+                            <p class="stat-label" data-i18n="avgAdvance">Anticipo Promedio</p>
+                            <p class="stat-sublabel" data-i18n="range">Rango típico</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h2 data-i18n="quickActions">Acciones Rápidas</h2>
+                    <div class="actions-grid">
+                        <button type="button" class="action-btn action-btn-primary" id="approveAllBtn">
+                            <span class="action-icon" aria-hidden="true">🟢</span>
+                            <div class="action-text">
+                                <span data-i18n="approveAll">Aprobar Todo Pendiente</span>
+                                <small id="approveAllCount">0 anticipos</small>
+                            </div>
+                        </button>
+                        <button type="button" class="action-btn action-btn-secondary" id="exportExcelBtn">
+                            <span class="action-icon" aria-hidden="true">📤</span>
+                            <div class="action-text">
+                                <span data-i18n="exportExcel">Exportar a Excel</span>
+                                <small data-i18n="last30Days">Últimos 30 días</small>
+                            </div>
+                        </button>
+                        <button type="button" class="action-btn action-btn-accent" id="generateReportBtn">
+                            <span class="action-icon" aria-hidden="true">📊</span>
+                            <div class="action-text">
+                                <span data-i18n="generateReport">Generar Reporte</span>
+                                <small data-i18n="forInvestors">Para inversionistas</small>
+                            </div>
+                        </button>
+                        <button type="button" class="action-btn action-btn-info" id="requestTestimonialsBtn">
+                            <span class="action-icon" aria-hidden="true">💬</span>
+                            <div class="action-text">
+                                <span data-i18n="requestTestimonials">Solicitar Testimonios</span>
+                                <small data-i18n="fromCompleted">De completados</small>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-activity">
+                    <div class="section-header">
+                        <h2 data-i18n="recentActivity">Actividad Reciente</h2>
+                        <button type="button" class="btn-text" id="refreshActivityBtn">
+                            <span data-i18n="refresh">Actualizar</span>
+                        </button>
+                    </div>
+                    <div id="activityFeed" class="activity-feed" role="feed" aria-label="Recent activity">
+                        <!-- Activity items will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3 data-i18n="volumeByDay">Volumen por Día (Últimos 30 días)</h3>
+                        <div class="chart-container">
+                            <canvas id="volumeChart" role="img" aria-label="Volume trend chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3 data-i18n="advancesByStatus">Anticipos por Estado</h3>
+                        <div class="chart-container">
+                            <canvas id="statusChart" role="img" aria-label="Status distribution chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Advances View -->
+            <div id="pendingView" class="view" role="tabpanel" aria-labelledby="pending-tab">
+                <div class="view-header">
+                    <h1 data-i18n="pendingAdvances">Anticipos Pendientes</h1>
+                    <div class="view-actions">
+                        <button type="button" class="btn-primary" id="approveSelectedBtn">
+                            <span data-i18n="approveSelected">Aprobar Seleccionados</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <div class="search-box">
+                            <span class="search-icon" aria-hidden="true">🔍</span>
+                            <input
+                                type="search"
+                                id="pendingSearch"
+                                placeholder="Buscar por contrato o productor..."
+                                data-i18n-placeholder="searchAdvance"
+                                aria-label="Search advances"
+                                autocomplete="off"
+                            >
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <select id="pendingFilter" class="filter-select" aria-label="Filter advances">
+                            <option value="all" data-i18n="all">Todos</option>
+                            <option value="high-risk" data-i18n="highRisk">Alto Riesgo</option>
+                            <option value="low-risk" data-i18n="lowRisk">Bajo Riesgo</option>
+                            <option value="large" data-i18n="largeAmount">Monto Alto</option>
+                        </select>
+                        <select id="pendingSort" class="filter-select" aria-label="Sort advances">
+                            <option value="newest" data-i18n="newest">Más Reciente</option>
+                            <option value="amount-desc" data-i18n="amountDesc">Monto ↓</option>
+                            <option value="amount-asc" data-i18n="amountAsc">Monto ↑</option>
+                        </select>
+                        <label class="auto-refresh-toggle">
+                            <input type="checkbox" id="autoRefresh" checked>
+                            <span data-i18n="autoRefresh">Auto-actualizar</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="pendingTable">
+                        <thead>
+                            <tr>
+                                <th scope="col"><input type="checkbox" id="selectAll" aria-label="Select all"></th>
+                                <th scope="col" data-i18n="contractNumber">Contrato #</th>
+                                <th scope="col" data-i18n="producer">Productor</th>
+                                <th scope="col" data-i18n="amount">Monto</th>
+                                <th scope="col" data-i18n="fee">Comisión</th>
+                                <th scope="col" data-i18n="risk">Riesgo</th>
+                                <th scope="col" data-i18n="actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingTableBody">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                    <div id="pendingEmpty" class="empty-state" style="display: none;">
+                        <span class="empty-icon" aria-hidden="true">✨</span>
+                        <h3 data-i18n="noPending">No hay anticipos pendientes</h3>
+                        <p data-i18n="allCaughtUp">¡Todo al día!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Advances View -->
+            <div id="approvedView" class="view" role="tabpanel" aria-labelledby="approved-tab">
+                <div class="view-header">
+                    <h1 data-i18n="approvedAdvances">Anticipos Aprobados</h1>
+                    <div class="view-actions">
+                        <button type="button" class="btn-primary" id="disburseSelectedBtn">
+                            <span data-i18n="disburseSelected">Desembolsar Seleccionados</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="approvedTable">
+                        <thead>
+                            <tr>
+                                <th scope="col"><input type="checkbox" id="selectAllApproved" aria-label="Select all approved"></th>
+                                <th scope="col" data-i18n="contractNumber">Contrato #</th>
+                                <th scope="col" data-i18n="farmer">Agricultor</th>
+                                <th scope="col" data-i18n="amountToDisburse">Monto a Desembolsar</th>
+                                <th scope="col" data-i18n="approvedBy">Aprobado Por</th>
+                                <th scope="col" data-i18n="approvedDate">Fecha Aprobación</th>
+                                <th scope="col" data-i18n="actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvedTableBody">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                    <div id="approvedEmpty" class="empty-state" style="display: none;">
+                        <span class="empty-icon" aria-hidden="true">✨</span>
+                        <h3 data-i18n="noApproved">No hay anticipos listos para desembolsar</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Advances View -->
+            <div id="activeView" class="view" role="tabpanel" aria-labelledby="active-tab">
+                <div class="view-header">
+                    <h1 data-i18n="activeAdvances">Anticipos Activos</h1>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="activeTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" data-i18n="contractNumber">Contrato #</th>
+                                <th scope="col" data-i18n="farmer">Agricultor</th>
+                                <th scope="col" data-i18n="disbursedAmount">Monto Desembolsado</th>
+                                <th scope="col" data-i18n="dueDate">Fecha Vencimiento</th>
+                                <th scope="col" data-i18n="daysActive">Días Activo</th>
+                                <th scope="col" data-i18n="status">Estado</th>
+                                <th scope="col" data-i18n="actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeTableBody">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                    <div id="activeEmpty" class="empty-state" style="display: none;">
+                        <span class="empty-icon" aria-hidden="true">✨</span>
+                        <h3 data-i18n="noActive">No hay anticipos activos</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Advances View -->
+            <div id="completedView" class="view" role="tabpanel" aria-labelledby="completed-tab">
+                <div class="view-header">
+                    <h1 data-i18n="completedAdvances">Anticipos Completados</h1>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="completedTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" data-i18n="contractNumber">Contrato #</th>
+                                <th scope="col" data-i18n="farmer">Agricultor</th>
+                                <th scope="col" data-i18n="amount">Monto</th>
+                                <th scope="col" data-i18n="completedDate">Fecha Completado</th>
+                                <th scope="col" data-i18n="duration">Duración</th>
+                                <th scope="col" data-i18n="actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedTableBody">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics View -->
+            <div id="analyticsView" class="view" role="tabpanel" aria-labelledby="analytics-tab">
+                <div class="view-header">
+                    <h1 data-i18n="analyticsTitle">Analytics & Métricas</h1>
+                    <div class="view-actions">
+                        <button type="button" class="btn-secondary" id="exportPDFBtn">
+                            <span aria-hidden="true">📊</span> <span data-i18n="exportPDF">Exportar PDF</span>
+                        </button>
+                        <button type="button" class="btn-secondary" id="exportExcelReportBtn">
+                            <span aria-hidden="true">📈</span> <span data-i18n="exportExcel">Exportar Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Financial Overview -->
+                <div class="analytics-section">
+                    <h2 data-i18n="financialOverview">Resumen Financiero</h2>
+                    <div class="stats-grid analytics-stats">
+                        <div class="stat-card">
+                            <p class="stat-label" data-i18n="totalVolumeProcessed">Volumen Total Procesado</p>
+                            <h3 class="stat-value" id="analyticsVolume">$0</h3>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-label" data-i18n="revenueGenerated">Ingresos Generados</p>
+                            <h3 class="stat-value" id="analyticsRevenue">$0</h3>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-label" data-i18n="avgFeePerAdvance">Comisión Promedio</p>
+                            <h3 class="stat-value" id="analyticsAvgFee">$0</h3>
+                        </div>
+                        <div class="stat-card">
+                            <p class="stat-label" data-i18n="projectedMonthly">Proyección Mensual</p>
+                            <h3 class="stat-value" id="analyticsProjected">$0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="analytics-section">
+                    <h2 data-i18n="performanceMetrics">Métricas de Desempeño</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-icon" aria-hidden="true">✅</span>
+                            <div class="metric-body">
+                                <h4 data-i18n="approvalRate">Tasa de Aprobación</h4>
+                                <p class="metric-value" id="approvalRate">0%</p>
+                                <small id="approvalRateDetails">0 de 0 solicitudes</small>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-icon" aria-hidden="true">⚡</span>
+                            <div class="metric-body">
+                                <h4 data-i18n="avgProcessingTime">Tiempo Promedio</h4>
+                                <p class="metric-value" id="avgProcessingTime">0 min</p>
+                                <small data-i18n="processingTimeDesc">De solicitud a aprobación</small>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-icon" aria-hidden="true">⭐</span>
+                            <div class="metric-body">
+                                <h4 data-i18n="farmerSatisfaction">Satisfacción</h4>
+                                <p class="metric-value" id="farmerSatisfaction">0.0/5.0</p>
+                                <small data-i18n="basedOnReviews">Basado en reseñas</small>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-icon" aria-hidden="true">🔄</span>
+                            <div class="metric-body">
+                                <h4 data-i18n="repeatRate">Tasa de Repetición</h4>
+                                <p class="metric-value" id="repeatRate">0%</p>
+                                <small data-i18n="repeatCustomers">Clientes recurrentes</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Farmers View -->
+            <div id="farmersView" class="view" role="tabpanel" aria-labelledby="farmers-tab">
+                <div class="view-header">
+                    <h1 data-i18n="farmerDirectory">Directorio de Productores</h1>
+                    <div class="view-actions">
+                        <button type="button" class="btn-primary" id="addFarmerBtn">
+                            <span aria-hidden="true">➕</span> <span data-i18n="addFarmer">Agregar Productor</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="search-box">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
+                        <input
+                            type="search"
+                            id="farmerSearch"
+                            placeholder="Buscar productor..."
+                            data-i18n-placeholder="searchFarmer"
+                            aria-label="Search farmers"
+                            autocomplete="off"
+                        >
+                    </div>
+                    <select id="farmerSort" class="filter-select" aria-label="Sort farmers">
+                        <option value="rating" data-i18n="byRating">Por Calificación</option>
+                        <option value="advances" data-i18n="byAdvances">Por # Anticipos</option>
+                        <option value="volume" data-i18n="byVolume">Por Volumen</option>
+                    </select>
+                </div>
+
+                <div id="farmersGrid" class="farmers-grid">
+                    <!-- Farmer cards will be injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="modal-overlay" role="presentation"></div>
+
+    <!-- Advance Detail Modal -->
+    <div id="advanceDetailModal" class="modal" role="dialog" aria-labelledby="advanceDetailTitle" aria-modal="true">
+        <div class="modal-header">
+            <h2 id="advanceDetailTitle" data-i18n="advanceDetails">Detalles del Anticipo</h2>
+            <button type="button" class="modal-close" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body" id="advanceDetailContent">
+            <!-- Content will be injected -->
+        </div>
+    </div>
+
+    <!-- Disbursement Modal -->
+    <div id="disbursementModal" class="modal" role="dialog" aria-labelledby="disbursementTitle" aria-modal="true">
+        <div class="modal-header">
+            <h2 id="disbursementTitle" data-i18n="disbursement">Desembolso</h2>
+            <button type="button" class="modal-close" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body" id="disbursementContent">
+            <!-- Content will be injected -->
+        </div>
+    </div>
+
+    <!-- Farmer Profile Modal -->
+    <div id="farmerProfileModal" class="modal modal-large" role="dialog" aria-labelledby="farmerProfileTitle" aria-modal="true">
+        <div class="modal-header">
+            <h2 id="farmerProfileTitle" data-i18n="farmerProfile">Perfil del Productor</h2>
+            <button type="button" class="modal-close" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body" id="farmerProfileContent">
+            <!-- Content will be injected -->
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container" role="region" aria-live="polite" aria-label="Notifications"></div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></canvas>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" integrity="sha384-vWbrRf1aJzXd+pRDdTNiLGI3I7HGUUJuVvHiZHJp4LqwOOCjhGiVLF3s0qClVSA6"></script>
+    <script src="app.js"></script>
+</body>
+</html>

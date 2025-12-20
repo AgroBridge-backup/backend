@@ -8,7 +8,15 @@ import { createNotificationsRouter } from './notifications.routes.js';
 import { createUploadRouter } from './upload.routes.js';
 import { createPaymentRouter } from './payment.routes.js';
 import { createReportRouter } from './report.routes.js';
+import { createCashFlowBridgeRouter } from './cash-flow-bridge.routes.js';
 import { AllUseCases } from '../../application/use-cases/index.js';
+
+// FinTech Module Routes
+import whatsappRoutes from '../../modules/whatsapp-bot/whatsapp.routes.js';
+import collectionsRoutes from '../../modules/collections/routes/index.js';
+import creditScoringRoutes from '../../modules/credit-scoring/routes/index.js';
+import repaymentsRoutes from '../../modules/repayments/routes/index.js';
+import logger from '../../shared/utils/logger.js';
 
 export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Router {
   const router = Router();
@@ -21,6 +29,66 @@ export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Ro
   router.use('/uploads', createUploadRouter());
   router.use('/payments', createPaymentRouter(prisma));
   router.use('/reports', createReportRouter(prisma));
+
+  // Cash Flow Bridge Routes (Credit Scoring, Advances, Liquidity Pools, Orders)
+  router.use('/', createCashFlowBridgeRouter(prisma));
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // FINTECH MODULE ROUTES
+  // Integrated: 2025-12-19
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  // WhatsApp Bot (Meta Cloud API webhooks)
+  router.use('/', whatsappRoutes);
+
+  // Collections (Automated payment reminders)
+  router.use('/collections', collectionsRoutes);
+
+  // Credit Scoring (Alternative credit assessment)
+  router.use('/credit', creditScoringRoutes);
+
+  // Repayments (Payment processing and tracking)
+  router.use('/repayments', repaymentsRoutes);
+
+  // FinTech Health Check (consolidated status)
+  router.get('/fintech/health', (req, res) => {
+    res.json({
+      status: 'operational',
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      modules: {
+        whatsapp: {
+          status: process.env.META_WHATSAPP_TOKEN ? 'configured' : 'not_configured',
+          webhookPath: '/api/v1/webhook/whatsapp',
+        },
+        collections: {
+          status: 'operational',
+          cronEnabled: process.env.COLLECTIONS_ENABLED === 'true',
+        },
+        creditScoring: {
+          status: 'operational',
+          modelVersion: 'v1.0-rules',
+        },
+        repayments: {
+          status: 'operational',
+          webhooks: {
+            stripe: '/api/v1/repayments/webhook/stripe',
+            mercadopago: '/api/v1/repayments/webhook/mercadopago',
+          },
+        },
+      },
+    });
+  });
+
+  logger.info('✅ FinTech routes mounted', {
+    routes: [
+      'GET/POST /api/v1/webhook/whatsapp',
+      'GET /api/v1/collections/*',
+      'GET /api/v1/credit/*',
+      'GET/POST /api/v1/repayments/*',
+      'GET /api/v1/fintech/health',
+    ],
+  });
 
   return router;
 }

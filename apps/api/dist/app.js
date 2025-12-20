@@ -1,6 +1,7 @@
 import express from 'express';
 import 'express-async-errors';
 import morgan from 'morgan';
+import path from 'path';
 import { AppError } from './shared/errors/AppError.js';
 import { errorHandler } from './presentation/middlewares/errorHandler.middleware.js';
 import { contextMiddleware } from './presentation/middlewares/context.middleware.js';
@@ -105,6 +106,12 @@ export function createApp(injectedRouter) {
     else {
         app.use(morgan('short', { stream: { write: (message) => logger.info(message.trim()) } }));
     }
+    const adminPublicPath = path.join(process.cwd(), 'public', 'admin');
+    app.use('/admin', express.static(adminPublicPath));
+    app.get('/admin', (req, res) => {
+        res.sendFile(path.join(adminPublicPath, 'index.html'));
+    });
+    logger.info(`Admin Dashboard available at /admin (${adminPublicPath})`);
     app.use(performanceMiddleware);
     app.use('/api', RateLimiterConfig.api());
     app.use(auditMiddleware);
