@@ -1,0 +1,426 @@
+{
+  "info": {
+    "name": "AgroBridge FinTech API v2.0",
+    "description": "Complete FinTech API collection with WhatsApp Bot, Collections, Credit Scoring, and Repayments modules",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "advance_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "verify_token",
+      "value": "your_verify_token_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health Checks",
+      "item": [
+        {
+          "name": "Main Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/../health",
+              "host": ["{{base_url}}"],
+              "path": ["..", "health"]
+            }
+          }
+        },
+        {
+          "name": "FinTech Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fintech/health",
+              "host": ["{{base_url}}"],
+              "path": ["fintech", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. WhatsApp Bot",
+      "item": [
+        {
+          "name": "Webhook Verification",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/webhook/whatsapp?hub.mode=subscribe&hub.verify_token={{verify_token}}&hub.challenge=test_challenge",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "whatsapp"],
+              "query": [
+                {"key": "hub.mode", "value": "subscribe"},
+                {"key": "hub.verify_token", "value": "{{verify_token}}"},
+                {"key": "hub.challenge", "value": "test_challenge"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bot Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/webhook/whatsapp/health",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "whatsapp", "health"]
+            }
+          }
+        },
+        {
+          "name": "Send Test Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+5212345678901\",\n  \"message\": \"Test message from AgroBridge\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhook/whatsapp/test",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "whatsapp", "test"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Credit Scoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/credit/health",
+              "host": ["{{base_url}}"],
+              "path": ["credit", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get Score Factors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/credit/factors",
+              "host": ["{{base_url}}"],
+              "path": ["credit", "factors"]
+            }
+          }
+        },
+        {
+          "name": "Calculate Score",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/credit/score/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["credit", "score", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Check Eligibility",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/credit/eligibility/{{user_id}}?amount=5000",
+              "host": ["{{base_url}}"],
+              "path": ["credit", "eligibility", "{{user_id}}"],
+              "query": [
+                {"key": "amount", "value": "5000"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Force Recalculation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/credit/calculate/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["credit", "calculate", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Repayments",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/repayments/health",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "health"]
+            }
+          }
+        },
+        {
+          "name": "Record Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 2000.00,\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"referenceNumber\": \"REF-2025-001\",\n  \"notes\": \"Pago parcial\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/repayments/{{advance_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "{{advance_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/repayments/{{advance_id}}/balance",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "{{advance_id}}", "balance"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/repayments/{{advance_id}}/history",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "{{advance_id}}", "history"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/repayments/{{advance_id}}/schedule",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "{{advance_id}}", "schedule"]
+            }
+          }
+        },
+        {
+          "name": "Extend Due Date",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newDueDate\": \"2025-02-15T00:00:00.000Z\",\n  \"reason\": \"Customer requested extension\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/repayments/{{advance_id}}/extend",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "{{advance_id}}", "extend"]
+            }
+          }
+        },
+        {
+          "name": "Aging Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/repayments/aging-report",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "aging-report"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Collections",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/collections/health",
+              "host": ["{{base_url}}"],
+              "path": ["collections", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get Collection Rules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/collections/rules",
+              "host": ["{{base_url}}"],
+              "path": ["collections", "rules"]
+            }
+          }
+        },
+        {
+          "name": "Get Collection Targets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/collections/targets",
+              "host": ["{{base_url}}"],
+              "path": ["collections", "targets"]
+            }
+          }
+        },
+        {
+          "name": "Manual Collection Run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/collections/run",
+              "host": ["{{base_url}}"],
+              "path": ["collections", "run"]
+            }
+          }
+        },
+        {
+          "name": "Calculate Late Fee",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/collections/late-fee/{{advance_id}}?amount=10000&daysOverdue=7",
+              "host": ["{{base_url}}"],
+              "path": ["collections", "late-fee", "{{advance_id}}"],
+              "query": [
+                {"key": "amount", "value": "10000"},
+                {"key": "daysOverdue", "value": "7"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Trigger Collection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channels\": [\"WHATSAPP\", \"SMS\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/collections/trigger/{{advance_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["collections", "trigger", "{{advance_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Webhooks",
+      "item": [
+        {
+          "name": "Stripe Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Stripe-Signature", "value": "test_signature"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_test_123\",\n      \"amount\": 500000,\n      \"metadata\": {\n        \"advanceId\": \"{{advance_id}}\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/repayments/webhook/stripe",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "webhook", "stripe"]
+            }
+          }
+        },
+        {
+          "name": "MercadoPago Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"payment.created\",\n  \"data\": {\n    \"id\": \"mp_test_123\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/repayments/webhook/mercadopago",
+              "host": ["{{base_url}}"],
+              "path": ["repayments", "webhook", "mercadopago"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
