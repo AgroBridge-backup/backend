@@ -278,4 +278,38 @@ export class RateLimiterConfig {
       },
     });
   }
+
+  /**
+   * Rate limiter for public API endpoints (no auth required)
+   * P1-2 FIX: Prevents DDoS, scraping, and API abuse on /verify/* routes
+   */
+  static publicApi(): RateLimitRequestHandler {
+    return rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 50, // 50 requests per 15 minutes per IP
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_PUBLIC_API_EXCEEDED',
+          message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
+        },
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req: Request): string => {
+        return `public:ip:${req.ip}`;
+      },
+      handler: (req: Request, res: Response) => {
+        logger.warn(`[RateLimiter] Public API rate limit exceeded - IP: ${req.ip}, path: ${req.path}`);
+
+        res.status(429).json({
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_PUBLIC_API_EXCEEDED',
+            message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
+          },
+        });
+      },
+    });
+  }
 }

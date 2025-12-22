@@ -2,17 +2,24 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { app } from './app.js';
 import { redisClient } from './infrastructure/cache/RedisClient.js';
-import { prisma } from './infrastructure/database/prisma/client.js';
+import { prisma, disconnectPrisma } from './infrastructure/database/prisma/client.js';
 import { queueService } from './infrastructure/queue/index.js';
 import { bullBoardSetup } from './infrastructure/notifications/monitoring/BullBoardSetup.js';
 import { webSocketServer } from './infrastructure/websocket/index.js';
 import logger from './shared/utils/logger.js';
+// P1-6 FIX: Validate environment variables on startup
+import { validateEnv, getEnv } from './config/env.js';
 
-const PORT = process.env.PORT || 4000;
+// Validate env vars FIRST (exits process if invalid)
+const env = validateEnv();
+logger.info('✅ Environment variables validated');
+
+const PORT = env.PORT || 4000;
 
 async function startServer() {
   try {
     logger.info('[BOOTSTRAP] Starting server...');
+    logger.info(`[BOOTSTRAP] Environment: ${env.NODE_ENV}`);
 
     // Connect to PostgreSQL
     await prisma.$connect();
@@ -59,8 +66,8 @@ async function startServer() {
           await queueService.shutdown();
           logger.info('[SHUTDOWN] Queue service stopped.');
 
-          // Disconnect from database
-          await prisma.$disconnect();
+          // Disconnect from database (using singleton cleanup)
+          await disconnectPrisma();
           logger.info('[SHUTDOWN] PostgreSQL disconnected.');
 
           // Disconnect from Redis

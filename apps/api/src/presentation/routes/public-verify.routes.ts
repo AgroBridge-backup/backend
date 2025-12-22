@@ -12,16 +12,23 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { logger } from '../../infrastructure/logging/logger.js';
+// P1-1 FIX: Use centralized PrismaClient singleton
+import { prisma } from '../../infrastructure/database/prisma/client.js';
 // P1 FIX: Import use cases and repositories for clean architecture
 import { PrismaInvoiceRepository } from '../../infrastructure/database/prisma/repositories/PrismaInvoiceRepository.js';
 import { PrismaReferralRepository } from '../../infrastructure/database/prisma/repositories/PrismaReferralRepository.js';
 import { VerifyInvoiceUseCase } from '../../application/use-cases/public-verify/VerifyInvoiceUseCase.js';
 import { VerifyReferralUseCase } from '../../application/use-cases/public-verify/VerifyReferralUseCase.js';
+// P1-2 FIX: Import rate limiter
+import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
+// P1-3/P1-4 FIX: Import privacy utilities for name masking
+import { PrivacyUtils } from '../../shared/utils/privacy.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
+// P1-2 FIX: Apply rate limiting to all public verify routes
+router.use(RateLimiterConfig.publicApi());
 
 // P1 FIX: Initialize repositories and use cases
 const invoiceRepository = new PrismaInvoiceRepository(prisma);
@@ -319,7 +326,8 @@ router.get('/event/:id', async (req: Request, res: Response) => {
         },
         notes: event.notes,
         photoCount: event.photos?.length || 0,
-        recordedBy: `${event.createdBy.firstName} ${event.createdBy.lastName}`,
+        // P1-3 FIX: Mask full names for privacy
+        recordedBy: PrivacyUtils.getSafeDisplayName(event.createdBy),
         signedByBiometric: event.signedByBiometric,
       },
       batch: event.batch,
@@ -494,9 +502,10 @@ router.get('/leaderboard/:month/:year', async (req: Request, res: Response) => {
     });
 
     // If no cached leaderboard, calculate from referral codes
+    // P1-4 FIX: Mask names in leaderboard for privacy
     let entries = leaderboard.map((entry) => ({
       rank: entry.rank,
-      name: entry.userName,
+      name: PrivacyUtils.maskName(entry.userName?.split(' ')[0], entry.userName?.split(' ')[1]),
       avatar: entry.userAvatar,
       activeReferrals: entry.activeReferrals,
       completedReferrals: entry.completedReferrals,
@@ -525,7 +534,8 @@ router.get('/leaderboard/:month/:year', async (req: Request, res: Response) => {
 
           return {
             rank: index + 1,
-            name: user ? `${user.firstName} ${user.lastName.charAt(0)}.` : 'Anonymous',
+            // P1-4 FIX: Use privacy utility for consistent name masking
+            name: PrivacyUtils.getSafeDisplayName(user),
             avatar: null,
             activeReferrals: code.activeReferrals,
             completedReferrals: code.completedReferrals,

@@ -13,11 +13,13 @@ export interface ReferralBlockchainData {
 
 export interface ReferralRegistrationResult {
   success: boolean;
-  txHash: string;
+  txHash: string | null; // P1-7 FIX: Nullable when blockchain unavailable
   eventId: string;
   network: string;
   timestamp: Date;
-  gasUsed?: string;
+  gasUsed?: string | null;
+  status?: string; // P1-7 FIX: BLOCKCHAIN_UNAVAILABLE when fallback
+  error?: string;  // P1-7 FIX: Error message when fallback
 }
 
 export interface ReferralRewardData {
@@ -30,10 +32,12 @@ export interface ReferralRewardData {
 
 export interface ReferralRewardResult {
   success: boolean;
-  txHash: string;
+  txHash: string | null; // P1-7 FIX: Nullable when blockchain unavailable
   eventId: string;
   network: string;
   timestamp: Date;
+  status?: string; // P1-7 FIX: BLOCKCHAIN_UNAVAILABLE when fallback
+  error?: string;  // P1-7 FIX: Error message when fallback
 }
 
 export interface ReferralVerificationResult {
