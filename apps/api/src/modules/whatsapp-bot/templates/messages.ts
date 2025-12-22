@@ -319,6 +319,209 @@ Describe your issue and an agent will contact you soon.`,
     es: '¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?',
     en: 'You\'re welcome! 😊 Is there anything else I can help you with?',
   },
+
+  // ==========================================================================
+  // BLOCKCHAIN VERIFICATION TEMPLATES (Phase 1 - Revenue Sprint)
+  // ==========================================================================
+
+  batchVerified: {
+    es: (data: BatchVerifiedData) => `
+✅ *Tu lote #${data.batchId} fue verificado*
+
+📦 *Producto:* ${data.product}
+⚖️ *Cantidad:* ${data.quantity} kg
+🌿 *Origen:* ${data.origin}
+
+🔐 *Verificado en blockchain*
+Este registro es inmutable y puede ser verificado por cualquier comprador.
+
+📱 Ver detalles: ${data.detailsUrl}
+🔗 Verificar autenticidad: ${data.blockchainUrl}
+
+_Comparte este link con tu comprador para prueba de origen_`,
+    en: (data: BatchVerifiedData) => `
+✅ *Your batch #${data.batchId} has been verified*
+
+📦 *Product:* ${data.product}
+⚖️ *Quantity:* ${data.quantity} kg
+🌿 *Origin:* ${data.origin}
+
+🔐 *Verified on blockchain*
+This record is immutable and can be verified by any buyer.
+
+📱 View details: ${data.detailsUrl}
+🔗 Verify authenticity: ${data.blockchainUrl}
+
+_Share this link with your buyer for proof of origin_`,
+  },
+
+  certificateIssued: {
+    es: (data: CertificateIssuedData) => `
+📜 *Certificado emitido*
+
+📋 *Tipo:* ${data.certType}
+📦 *Lote:* #${data.batchId}
+🏢 *Emisor:* ${data.issuer}
+
+🔐 *Registrado en blockchain*
+Hash: ${data.txHash.substring(0, 16)}...
+
+📥 Descargar PDF: ${data.pdfUrl}
+🔗 Verificar on-chain: ${data.blockchainUrl}
+
+_Este certificado NO puede ser falsificado_`,
+    en: (data: CertificateIssuedData) => `
+📜 *Certificate issued*
+
+📋 *Type:* ${data.certType}
+📦 *Batch:* #${data.batchId}
+🏢 *Issuer:* ${data.issuer}
+
+🔐 *Registered on blockchain*
+Hash: ${data.txHash.substring(0, 16)}...
+
+📥 Download PDF: ${data.pdfUrl}
+🔗 Verify on-chain: ${data.blockchainUrl}
+
+_This certificate CANNOT be forged_`,
+  },
+
+  invoiceWithBlockchain: {
+    es: (data: InvoiceBlockchainData) => `
+💰 *Factura generada*
+
+📄 *Folio:* ${data.folio}
+🔑 *UUID:* ${data.uuid}
+💵 *Total:* ${data.total.toLocaleString('es-MX')} MXN
+
+✅ *CFDI 4.0 válido (SAT)*
+🔐 *Hash en blockchain:* ${data.blockchainHash.substring(0, 16)}...
+
+📥 PDF: ${data.pdfUrl}
+🔗 Verificar integridad: ${data.verifyUrl}
+
+_Comprobante fiscalmente válido + prueba blockchain_`,
+    en: (data: InvoiceBlockchainData) => `
+💰 *Invoice generated*
+
+📄 *Folio:* ${data.folio}
+🔑 *UUID:* ${data.uuid}
+💵 *Total:* ${data.total.toLocaleString('en-US')} MXN
+
+✅ *CFDI 4.0 valid (SAT)*
+🔐 *Blockchain hash:* ${data.blockchainHash.substring(0, 16)}...
+
+📥 PDF: ${data.pdfUrl}
+🔗 Verify integrity: ${data.verifyUrl}
+
+_Fiscally valid invoice + blockchain proof_`,
+  },
+
+  exportReadyBlockchain: {
+    es: (data: ExportReadyData) => `
+📋 *Documentos de exportación listos*
+
+📦 *Lote:* #${data.batchId}
+🌍 *Destino:* ${data.destination}
+📁 *Documentos:* ${data.docCount} archivos
+
+🔐 *Todos los docs verificados on-chain*
+
+📥 Descargar ZIP: ${data.downloadUrl}
+🔗 Verificar documentos: ${data.blockchainUrl}
+
+_Tu comprador puede verificar autenticidad sin contactarte_`,
+    en: (data: ExportReadyData) => `
+📋 *Export documents ready*
+
+📦 *Batch:* #${data.batchId}
+🌍 *Destination:* ${data.destination}
+📁 *Documents:* ${data.docCount} files
+
+🔐 *All docs verified on-chain*
+
+📥 Download ZIP: ${data.downloadUrl}
+🔗 Verify documents: ${data.blockchainUrl}
+
+_Your buyer can verify authenticity without contacting you_`,
+  },
+
+  qualityInspectionComplete: {
+    es: (data: QualityInspectionData) => `
+✅ *Inspección de calidad completada*
+
+📦 *Lote:* #${data.batchId}
+🏆 *Calificación:* ${data.grade} (${data.score}/100)
+👤 *Inspector:* ${data.inspectorName}
+
+🔐 *Reporte registrado en blockchain*
+No puede ser alterado después de emisión
+
+📥 Ver reporte: ${data.reportUrl}
+🔗 Verificar on-chain: ${data.blockchainUrl}`,
+    en: (data: QualityInspectionData) => `
+✅ *Quality inspection completed*
+
+📦 *Batch:* #${data.batchId}
+🏆 *Grade:* ${data.grade} (${data.score}/100)
+👤 *Inspector:* ${data.inspectorName}
+
+🔐 *Report registered on blockchain*
+Cannot be altered after issuance
+
+📥 View report: ${data.reportUrl}
+🔗 Verify on-chain: ${data.blockchainUrl}`,
+  },
+
+  referralSuccessBlockchain: {
+    es: (data: ReferralSuccessData) => `
+🎉 *¡Referido exitoso!*
+
+👤 *Nuevo agricultor:* ${data.referredName}
+🎁 *Tu recompensa:* ${data.reward}
+
+🔐 *Verificado en blockchain*
+Tu referido está registrado de forma inmutable.
+
+🔗 Ver prueba: ${data.blockchainProof}
+
+_Sigue refiriendo para ganar más recompensas_`,
+    en: (data: ReferralSuccessData) => `
+🎉 *Successful referral!*
+
+👤 *New farmer:* ${data.referredName}
+🎁 *Your reward:* ${data.reward}
+
+🔐 *Verified on blockchain*
+Your referral is immutably registered.
+
+🔗 View proof: ${data.blockchainProof}
+
+_Keep referring to earn more rewards_`,
+  },
+
+  referralActivated: {
+    es: (data: ReferralActivatedData) => `
+✅ *Referido activado*
+
+👤 *Agricultor:* ${data.referredName} completó 30 días activos
+
+📊 *Tus estadísticas:*
+• Referidos activos: ${data.totalActive}
+• Tu posición: #${data.leaderboardRank}
+
+🏆 ¡Sigue así para ganar el bonus mensual!`,
+    en: (data: ReferralActivatedData) => `
+✅ *Referral activated*
+
+👤 *Farmer:* ${data.referredName} completed 30 active days
+
+📊 *Your stats:*
+• Active referrals: ${data.totalActive}
+• Your rank: #${data.leaderboardRank}
+
+🏆 Keep it up to win the monthly bonus!`,
+  },
 };
 
 // ============================================================================
@@ -368,6 +571,74 @@ interface AdvanceDetails {
   netAmount: string;
   dueDate: string;
 }
+
+// Blockchain verification template data types
+interface BatchVerifiedData {
+  batchId: string;
+  product: string;
+  quantity: number;
+  origin: string;
+  detailsUrl: string;
+  blockchainUrl: string;
+}
+
+interface CertificateIssuedData {
+  certType: string;
+  batchId: string;
+  issuer: string;
+  txHash: string;
+  pdfUrl: string;
+  blockchainUrl: string;
+}
+
+interface InvoiceBlockchainData {
+  folio: string;
+  uuid: string;
+  total: number;
+  blockchainHash: string;
+  pdfUrl: string;
+  verifyUrl: string;
+}
+
+interface ExportReadyData {
+  batchId: string;
+  destination: string;
+  docCount: number;
+  downloadUrl: string;
+  blockchainUrl: string;
+}
+
+interface QualityInspectionData {
+  batchId: string;
+  grade: string;
+  score: number;
+  inspectorName: string;
+  reportUrl: string;
+  blockchainUrl: string;
+}
+
+interface ReferralSuccessData {
+  referredName: string;
+  reward: string;
+  blockchainProof: string;
+}
+
+interface ReferralActivatedData {
+  referredName: string;
+  totalActive: number;
+  leaderboardRank: number;
+}
+
+// Export types for use in other modules
+export type {
+  BatchVerifiedData,
+  CertificateIssuedData,
+  InvoiceBlockchainData,
+  ExportReadyData,
+  QualityInspectionData,
+  ReferralSuccessData,
+  ReferralActivatedData,
+};
 
 interface BalanceData {
   activeAdvances: number;

@@ -13,6 +13,7 @@ import { Password } from '../../domain/value-objects/Password.js';
 import { oAuthService } from '../../infrastructure/auth/oauth/OAuthService.js';
 import {
   loginSchema,
+  registerSchema,
   refreshTokenSchema,
   passwordStrengthSchema,
   verify2FASchema,
@@ -50,6 +51,28 @@ export function createAuthRouter(useCases: AuthUseCases) {
       try {
         const result = await useCases.loginUseCase.execute(req.body);
         res.json({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  /**
+   * POST /api/v1/auth/register
+   * Register a new user account
+   * Rate limited: 3 attempts per 15 minutes
+   */
+  router.post(
+    '/register',
+    RateLimiterConfig.auth(),
+    validateRequest(registerSchema),
+    async (req: Request, res: Response, next) => {
+      try {
+        const result = await useCases.registerUseCase.execute(req.body);
+        res.status(201).json({
           success: true,
           data: result,
         });

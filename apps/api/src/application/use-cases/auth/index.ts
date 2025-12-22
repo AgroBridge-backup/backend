@@ -4,6 +4,7 @@ export * from './GetCurrentUserUseCase.js';
 export * from './LoginUseCase.js';
 export * from './LogoutUseCase.js';
 export * from './RefreshTokenUseCase.js';
+export * from './RegisterUseCase.js';
 
 // Two-Factor Authentication Use Cases
 export * from './Setup2FAUseCase.js';
@@ -18,6 +19,7 @@ import { GetCurrentUserUseCase } from './GetCurrentUserUseCase.js';
 import { LoginUseCase } from './LoginUseCase.js';
 import { LogoutUseCase } from './LogoutUseCase.js';
 import { RefreshTokenUseCase } from './RefreshTokenUseCase.js';
+import { RegisterUseCase } from './RegisterUseCase.js';
 import { Setup2FAUseCase } from './Setup2FAUseCase.js';
 import { Enable2FAUseCase } from './Enable2FAUseCase.js';
 import { Disable2FAUseCase } from './Disable2FAUseCase.js';
@@ -30,6 +32,7 @@ export type AuthUseCases = {
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
   refreshTokenUseCase: RefreshTokenUseCase;
+  registerUseCase: RegisterUseCase;
 };
 
 export type TwoFactorUseCases = {

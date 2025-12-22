@@ -28,6 +28,9 @@ import healthRoutes from './presentation/routes/health.routes.js';
 // Documentation Routes
 import { docsRouter } from './presentation/routes/docs.routes.js';
 
+// Public Verification Routes (No auth required - Phase 1 Revenue Sprint)
+import publicVerifyRoutes from './presentation/routes/public-verify.routes.js';
+
 // GraphQL Server
 import { createGraphQLMiddleware, getGraphQLInfo } from './infrastructure/graphql/index.js';
 
@@ -61,6 +64,7 @@ import { GetCurrentUserUseCase } from './application/use-cases/auth/GetCurrentUs
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
+import { RegisterUseCase } from './application/use-cases/auth/RegisterUseCase.js';
 // Two-Factor Authentication Use Cases
 import { Setup2FAUseCase } from './application/use-cases/auth/Setup2FAUseCase.js';
 import { Enable2FAUseCase } from './application/use-cases/auth/Enable2FAUseCase.js';
@@ -102,6 +106,7 @@ export function createApp(injectedRouter?: Router): express.Express {
                 refreshTokenUseCase: new RefreshTokenUseCase(refreshTokenRepository, userRepository),
                 logoutUseCase: new LogoutUseCase(redisClient),
                 getCurrentUserUseCase: new GetCurrentUserUseCase(userRepository),
+                registerUseCase: new RegisterUseCase(userRepository),
                 // Two-Factor Authentication
                 setup2FAUseCase: new Setup2FAUseCase(userRepository),
                 enable2FAUseCase: new Enable2FAUseCase(userRepository),
@@ -141,6 +146,11 @@ export function createApp(injectedRouter?: Router): express.Express {
     // 1.5. DOCUMENTATION ROUTES (No auth required - public documentation)
     app.use('/', docsRouter);
     logger.info('Documentation available at /api-docs');
+
+    // 1.6. PUBLIC VERIFICATION ROUTES (No auth required - blockchain verification)
+    // Phase 1 Revenue Sprint: Allow buyers/customs/auditors to verify blockchain records
+    app.use('/verify', publicVerifyRoutes);
+    logger.info('Public verification routes available at /verify/*');
 
     // 2. SECURITY: Headers (Helmet.js + CSP) - Applied first for max protection
     app.use(securityHeadersMiddleware);

@@ -1,5 +1,5 @@
 import * as Prisma from '@prisma/client';
-import { IUserRepository } from '../../../../domain/repositories/IUserRepository.js';
+import { IUserRepository, CreateUserInput } from '../../../../domain/repositories/IUserRepository.js';
 import { User } from '../../../../domain/entities/User.js';
 
 /**
@@ -69,5 +69,41 @@ export class PrismaUserRepository implements IUserRepository {
     }
 
     return domainUser;
+  }
+
+  /**
+   * Creates a new user in the database.
+   * @param input The user data to create.
+   * @returns A Promise resolving to the created User entity.
+   */
+  async create(input: CreateUserInput): Promise<User> {
+    const user = await this.prisma.user.create({
+      data: {
+        id: input.id,
+        email: input.email,
+        passwordHash: input.passwordHash,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role as Prisma.UserRole,
+        isActive: input.isActive,
+        createdAt: input.createdAt,
+        updatedAt: input.updatedAt,
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      walletAddress: user.walletAddress,
+      twoFactorEnabled: user.twoFactorEnabled,
+      twoFactorSecret: user.twoFactorSecret,
+      backupCodes: user.backupCodes,
+      twoFactorEnabledAt: user.twoFactorEnabledAt,
+    };
   }
 }

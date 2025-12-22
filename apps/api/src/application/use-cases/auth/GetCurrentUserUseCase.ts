@@ -17,7 +17,7 @@ export class GetCurrentUserUseCase implements IUseCase<IGetCurrentUserDTO, Curre
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
-      throw new NotFoundError('User not found.');
+      throw new NotFoundError('User not found');
     }
 
     // FIXED: L-002 - Use underscore prefix pattern instead of eslint-disable

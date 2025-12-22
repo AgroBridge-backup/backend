@@ -4,6 +4,7 @@ import { LoginUseCase } from './auth/LoginUseCase.js';
 import { RefreshTokenUseCase } from './auth/RefreshTokenUseCase.js';
 import { LogoutUseCase } from './auth/LogoutUseCase.js';
 import { GetCurrentUserUseCase } from './auth/GetCurrentUserUseCase.js';
+import { RegisterUseCase } from './auth/RegisterUseCase.js';
 // Two-Factor Authentication Use Cases
 import { Setup2FAUseCase } from './auth/Setup2FAUseCase.js';
 import { Enable2FAUseCase } from './auth/Enable2FAUseCase.js';
@@ -30,6 +31,7 @@ export interface AllUseCases {
     refreshTokenUseCase: RefreshTokenUseCase;
     logoutUseCase: LogoutUseCase;
     getCurrentUserUseCase: GetCurrentUserUseCase;
+    registerUseCase: RegisterUseCase;
     // Two-Factor Authentication
     setup2FAUseCase: Setup2FAUseCase;
     enable2FAUseCase: Enable2FAUseCase;

@@ -18,6 +18,10 @@ import creditScoringRoutes from '../../modules/credit-scoring/routes/index.js';
 import repaymentsRoutes from '../../modules/repayments/routes/index.js';
 import logger from '../../shared/utils/logger.js';
 
+// Invoicing & Referrals Module Routes
+import createInvoicingRouter from './invoicing.routes.js';
+import createReferralsRouter from './referrals.routes.js';
+
 export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Router {
   const router = Router();
 
@@ -32,6 +36,29 @@ export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Ro
 
   // Cash Flow Bridge Routes (Credit Scoring, Advances, Liquidity Pools, Orders)
   router.use('/', createCashFlowBridgeRouter(prisma));
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // INVOICING & REFERRALS MODULE ROUTES
+  // Integrated: 2025-12-21
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  // Invoicing (Invoice management with blockchain verification)
+  router.use('/invoices', createInvoicingRouter(prisma));
+
+  // Referrals (Referral program with leaderboard)
+  router.use('/referrals', createReferralsRouter(prisma));
+
+  logger.info('✅ Invoicing & Referrals routes mounted', {
+    routes: [
+      'POST /api/v1/invoices',
+      'GET /api/v1/invoices/:id',
+      'GET /api/v1/invoices',
+      'PATCH /api/v1/invoices/:id/paid',
+      'POST /api/v1/referrals/register',
+      'GET /api/v1/referrals/stats',
+      'GET /api/v1/referrals/leaderboard',
+    ],
+  });
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // FINTECH MODULE ROUTES

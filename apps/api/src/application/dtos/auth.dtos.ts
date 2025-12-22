@@ -80,3 +80,24 @@ export interface RegenerateBackupCodesRequestDto {
 export interface RegenerateBackupCodesResponseDto {
   backupCodes: string[];
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REGISTRATION DTOs
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface RegisterRequestDto {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  businessName?: string;
+  rfc?: string;
+  state?: string;
+  municipality?: string;
+}
+
+export interface RegisterResponseDto {
+  userId: string;
+  email: string;
+  message: string;
+}
