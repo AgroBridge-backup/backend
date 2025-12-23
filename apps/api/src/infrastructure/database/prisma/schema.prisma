@@ -1703,3 +1703,72 @@ model ReferralLeaderboard {
   @@index([userId])
   @@map("referral_leaderboard")
 }
+
+// ════════════════════════════════════════════════════════════════════════════════
+// API KEY MANAGEMENT
+// Enterprise-grade API key system for programmatic access
+// Supports machine-to-machine authentication for integrations
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// API Key status
+enum ApiKeyStatus {
+  ACTIVE      // Key is active and can be used
+  REVOKED     // Key has been manually revoked
+  EXPIRED     // Key has passed its expiration date
+  SUSPENDED   // Key is temporarily suspended
+}
+
+/// API Key scope/permission levels
+enum ApiKeyScope {
+  READ        // Read-only access
+  WRITE       // Read and write access
+  ADMIN       // Full administrative access
+}
+
+/// API Key model for programmatic access
+model ApiKey {
+  id            String       @id @default(uuid())
+
+  // Owner
+  userId        String
+
+  // Key identification (only prefix stored, hash for validation)
+  keyPrefix     String       @db.VarChar(12) // First 12 chars for identification (e.g., "ab_live_xxxx")
+  keyHash       String       @unique         // SHA-256 hash of full key for validation
+
+  // Metadata
+  label         String       @db.VarChar(100) // User-friendly name (e.g., "Production Integration")
+  description   String?      @db.Text
+
+  // Permissions
+  scopes        ApiKeyScope[] @default([READ])
+
+  // Status & Lifecycle
+  status        ApiKeyStatus @default(ACTIVE)
+  expiresAt     DateTime?    // Optional expiration (null = never expires)
+  revokedAt     DateTime?
+  revokedBy     String?
+  revokedReason String?      @db.VarChar(500)
+
+  // Usage tracking
+  lastUsedAt    DateTime?
+  lastUsedIp    String?      @db.VarChar(45)
+  usageCount    Int          @default(0)
+
+  // Rate limiting (per-key limits)
+  rateLimitRpm  Int          @default(100)  // Requests per minute
+
+  // Security
+  allowedIps    String[]     // IP whitelist (empty = allow all)
+  allowedOrigins String[]    // Origin whitelist for CORS
+
+  // Audit
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([keyHash])
+  @@index([status])
+  @@index([keyPrefix])
+  @@map("api_keys")
+}

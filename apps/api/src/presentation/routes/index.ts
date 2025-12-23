@@ -22,6 +22,9 @@ import logger from '../../shared/utils/logger.js';
 import createInvoicingRouter from './invoicing.routes.js';
 import createReferralsRouter from './referrals.routes.js';
 
+// API Key Management Routes
+import { createApiKeysRouter } from './api-keys.routes.js';
+
 export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Router {
   const router = Router();
 
@@ -47,6 +50,22 @@ export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Ro
 
   // Referrals (Referral program with leaderboard)
   router.use('/referrals', createReferralsRouter(prisma));
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // API KEY MANAGEMENT ROUTES
+  // Enterprise-grade programmatic access for integrations
+  // ═══════════════════════════════════════════════════════════════════════════════
+  router.use('/api-keys', createApiKeysRouter(prisma));
+
+  logger.info('✅ API Key Management routes mounted', {
+    routes: [
+      'POST /api/v1/api-keys',
+      'GET /api/v1/api-keys',
+      'GET /api/v1/api-keys/:id',
+      'PATCH /api/v1/api-keys/:id',
+      'DELETE /api/v1/api-keys/:id',
+    ],
+  });
 
   logger.info('✅ Invoicing & Referrals routes mounted', {
     routes: [

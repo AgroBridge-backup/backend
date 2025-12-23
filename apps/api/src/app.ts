@@ -1,6 +1,7 @@
 // FIX: ARCHITECTURAL REFACTOR TO ALIGN WITH FACTORY PATTERN & DI
 import express, { Request, Response, NextFunction } from 'express';
 import 'express-async-errors';
+import compression from 'compression';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -165,11 +166,26 @@ export function createApp(injectedRouter?: Router): express.Express {
     // 5. SECURITY: CORS with Whitelist
     app.use(corsMiddleware);
 
-    // 6. Body Parsers
+    // 6. PERFORMANCE: Response Compression
+    // Compresses responses > 1KB using gzip/deflate
+    app.use(compression({
+      threshold: 1024, // Only compress responses > 1KB
+      level: 6, // Balanced compression level
+      filter: (req, res) => {
+        // Don't compress if client doesn't accept it
+        if (req.headers['x-no-compression']) {
+          return false;
+        }
+        // Use default filter (compresses text/json types)
+        return compression.filter(req, res);
+      },
+    }));
+
+    // 7. Body Parsers
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
 
-    // 7. OBSERVABILITY: Request Logging (Morgan)
+    // 8. OBSERVABILITY: Request Logging (Morgan)
     if (process.env.NODE_ENV === 'development') {
         app.use(morgan('dev'));
     } else {
