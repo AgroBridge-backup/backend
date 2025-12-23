@@ -16,7 +16,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient, ApiKeyScope } from '@prisma/client';
 import { z } from 'zod';
 import { ApiKeyService, getApiKeyService } from '../../infrastructure/auth/ApiKeyService.js';
-import { authMiddleware } from '../../presentation/middlewares/auth.middleware.js';
+import { authenticate } from '../../presentation/middlewares/auth.middleware.js';
 import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
 import { AuditLogger, AuditAction } from '../../infrastructure/logging/audit.logger.js';
 import { AppError } from '../../shared/errors/AppError.js';
@@ -57,7 +57,7 @@ export function createApiKeysRouter(prisma: PrismaClient): Router {
   const auditLogger = new AuditLogger(prisma);
 
   // Apply auth middleware to all routes
-  router.use(authMiddleware);
+  router.use(authenticate());
 
   // Apply stricter rate limiting for key creation
   router.use('/', RateLimiterConfig.sensitive());
