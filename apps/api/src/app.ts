@@ -23,6 +23,14 @@ import { correlationIdMiddleware } from './infrastructure/http/middleware/correl
 import { performanceMiddleware } from './infrastructure/http/middleware/performance.middleware.js';
 import { errorTrackingMiddleware, setupUncaughtExceptionHandler } from './infrastructure/http/middleware/error-tracking.middleware.js';
 
+// Sentry APM
+import {
+  initSentry,
+  sentryRequestHandler,
+  sentryTracingHandler,
+  sentryErrorHandler,
+} from './infrastructure/monitoring/sentry.js';
+
 // Health Routes
 import healthRoutes from './presentation/routes/health.routes.js';
 
@@ -46,6 +54,9 @@ import { basicAuthMiddleware } from './infrastructure/http/middleware/admin-auth
 
 // Setup global error handlers
 setupUncaughtExceptionHandler();
+
+// Initialize Sentry APM (must be before app creation)
+initSentry();
 
 // --- DEPENDENCY INJECTION WIRING (Centralized) ---
 import { prisma } from './infrastructure/database/prisma/client.js';
@@ -213,6 +224,13 @@ export function createApp(injectedRouter?: Router): express.Express {
     // 1. HEALTH ROUTES (No middleware - must be accessible for probes)
     app.use('/health', healthRoutes);
 
+    // 1.1. SENTRY REQUEST HANDLER (Must be first middleware after health)
+    // Captures request data for error tracking and performance monitoring
+    app.use(sentryRequestHandler());
+
+    // 1.2. SENTRY TRACING HANDLER (Before routes for transaction tracking)
+    app.use(sentryTracingHandler());
+
     // 1.5. DOCUMENTATION ROUTES (No auth required - public documentation)
     app.use('/', docsRouter);
     logger.info('Documentation available at /api-docs');
@@ -325,6 +343,10 @@ export function createApp(injectedRouter?: Router): express.Express {
     app.use('/api', (req: Request, res: Response, next: NextFunction) => {
         next(new AppError(`The route ${req.method} ${req.originalUrl} does not exist.`, 404));
     });
+
+    // SENTRY ERROR HANDLER (Must be before custom error handler)
+    // Captures 5xx errors and sends to Sentry with full context
+    app.use(sentryErrorHandler());
 
     app.use(errorHandler);
 
