@@ -38,8 +38,17 @@ Error: Migration failed to apply cleanly to the shadow database
 ```
 
 **Solutions:**
+
+> **WARNING: DATA LOSS** - The reset command below **permanently deletes ALL data**.
+> Only run in development. **NEVER run in production.**
+>
+> Pre-flight check:
+> ```bash
+> echo $NODE_ENV  # Must show "development"
+> ```
+
 ```bash
-# Reset development database
+# Reset development database (DESTROYS ALL DATA)
 npm run prisma:migrate reset
 
 # If shadow database issue
@@ -94,12 +103,20 @@ redis-cli ping
 **Problem:** Stale data after updates
 
 **Solution:**
+
+> **WARNING: SESSION LOSS** - `FLUSHALL` deletes ALL Redis data including:
+> - User sessions (users will be logged out)
+> - Rate limit counters
+> - Queue job data
+>
+> **In production**: Use the pattern-specific command instead.
+
 ```bash
-# Clear all Redis cache
+# Clear all Redis cache (LOGS OUT ALL USERS)
 redis-cli FLUSHALL
 
-# Clear specific key pattern
-redis-cli --scan --pattern "agrobridge:*" | xargs redis-cli DEL
+# SAFER: Clear specific key pattern only
+redis-cli --scan --pattern "agrobridge:cache:*" | xargs redis-cli DEL
 ```
 
 ---
@@ -153,14 +170,18 @@ error TS2304: Cannot find name 'X'
 ```
 
 **Solutions:**
+
+> **Note**: These commands are safe in development. In production, the `rm -rf dist` command
+> will cause brief downtime - use zero-downtime deployment instead.
+
 ```bash
-# Clear TypeScript cache
+# Clear TypeScript cache (safe)
 rm -rf node_modules/.cache
 
 # Regenerate Prisma types
 npm run prisma:generate
 
-# Full rebuild
+# Full rebuild (causes downtime if running from dist/)
 rm -rf dist && npm run build
 ```
 
@@ -425,14 +446,21 @@ npm run dev
 
 ## Quick Fixes
 
-| Problem | Quick Fix |
-|---------|-----------|
-| Everything broken | `rm -rf node_modules && npm install` |
-| Database issues | `npm run prisma:migrate reset` |
-| Type errors | `npm run prisma:generate` |
-| Cache stale | `redis-cli FLUSHALL` |
-| Port in use | `lsof -ti:4000 | xargs kill -9` |
-| Tests failing | `npm run test:ci` |
+> **Development only** - Some commands below cause data loss or downtime.
+> Verify `echo $NODE_ENV` shows `development` before running.
+
+| Problem | Quick Fix | Risk |
+|---------|-----------|------|
+| Everything broken | `rm -rf node_modules && npm install` | Safe |
+| Database issues | `npm run prisma:migrate reset` | **DATA LOSS** |
+| Type errors | `npm run prisma:generate` | Safe |
+| Cache stale | `redis-cli FLUSHALL` | **Logs out users** |
+| Port in use | `lsof -ti:4000 \| xargs kill -9` | May kill wrong process |
+| Tests failing | `npm run test:ci` | Safe |
+
+**Safer alternatives**:
+- Instead of `FLUSHALL`: `redis-cli --scan --pattern "agrobridge:cache:*" | xargs redis-cli DEL`
+- Instead of `kill -9`: `kill $(lsof -ti:4000)` (allows graceful shutdown)
 
 ---
 

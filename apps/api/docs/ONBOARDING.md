@@ -265,8 +265,14 @@ npm run prisma:generate
 
 ### "Migration failed"
 
+> **WARNING: DATA LOSS** - This destroys ALL database data.
+> Only use in development when you don't need existing data.
+
 ```bash
-# Reset database (destroys data!)
+# First, verify you're in development
+echo $NODE_ENV  # Must show "development"
+
+# Reset database (DESTROYS ALL DATA!)
 npm run prisma:migrate reset
 ```
 

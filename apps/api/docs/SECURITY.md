@@ -238,7 +238,20 @@ npm update
 ### If Critical Vulnerability Found
 
 1. Check if exploitable: `npm audit --json | jq '.vulnerabilities | to_entries[] | select(.value.severity == "critical")'`
-2. Fix immediately: `npm audit fix --force` (test afterward)
+
+> **WARNING**: `--force` can break dependencies by updating to major versions.
+> Always test thoroughly after running.
+
+2. Fix (test afterward!):
+   ```bash
+   # Safe: Only compatible updates
+   npm audit fix
+
+   # Risky: Forces major version updates (may break things)
+   npm audit fix --force
+   npm test  # MUST pass before deploying
+   ```
+
 3. Redeploy
 
 ---

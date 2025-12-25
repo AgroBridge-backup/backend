@@ -17,9 +17,26 @@ Quick links to everything you need.
 
 | Doc | Description |
 |-----|-------------|
-| [API Documentation](../API-DOCUMENTATION.md) | Complete endpoint reference |
-| [Environment Variables](./ENVIRONMENT.md) | All configuration options |
+| [API Endpoints](./API-ENDPOINTS.md) | Complete reference for all 309 endpoints |
+| [API Documentation](../API-DOCUMENTATION.md) | OpenAPI/Swagger specification |
+| [Environment Variables](./ENVIRONMENT.md) | All 128 configuration options |
+| [Error Codes](./ERROR-CODES.md) | All 54 error codes with solutions |
 | [Security](./SECURITY.md) | Authentication, authorization, compliance |
+
+---
+
+## Module Deep-Dives
+
+Comprehensive documentation for core platform modules:
+
+| Module | Description |
+|--------|-------------|
+| [Organic Certification](./modules/ORGANIC-CERTIFICATION.md) | Certificate generation, blockchain anchoring, PDF generation |
+| [Field Inspections](./modules/FIELD-INSPECTIONS.md) | GPS verification, photo evidence, organic input tracking |
+| [Export Company Dashboard](./modules/EXPORT-COMPANY-DASHBOARD.md) | B2B admin portal, farmer management, billing |
+| [Public Traceability](./modules/PUBLIC-TRACEABILITY.md) | QR code scanning, consumer-facing portal |
+| [Payment Processing](./modules/PAYMENT-PROCESSING.md) | Stripe subscriptions, usage tracking, invoices |
+| [Notifications](./modules/NOTIFICATIONS.md) | Push, email, SMS, WhatsApp delivery |
 
 ---
 
@@ -59,6 +76,7 @@ Technical analysis of the codebase:
 | [File Inventory](./audit/FILE-INVENTORY.md) | Complete file listing |
 | [Architecture Review](./audit/ARCHITECTURE-REVIEW.md) | Code quality analysis |
 | [Documentation Assessment](./audit/DOCUMENTATION-ASSESSMENT.md) | Doc quality review |
+| [Documentation Critical Review](./audit/DOCUMENTATION-CRITICAL-REVIEW.md) | **47 issues, severity-rated** |
 | [Dependency Audit](./audit/DEPENDENCY-AUDIT.md) | Package analysis |
 
 ---
