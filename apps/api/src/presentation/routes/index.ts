@@ -47,6 +47,10 @@ import { createPublicVerifyRouter } from './public-verify.routes.js';
 // B2B Admin Portal - Export Company Dashboard
 import { createExportCompanyDashboardRouter } from './export-company-dashboard.routes.js';
 
+// Smart-Cold Chain Protocol
+import { createColdChainRouter, createColdChainWebhookRouter } from './cold-chain.routes.js';
+import { createQualityMetricsRouter } from './quality-metrics.routes.js';
+
 export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Router {
   const router = Router();
 
@@ -277,6 +281,51 @@ export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Ro
       'POST /api/v1/referrals/register',
       'GET /api/v1/referrals/stats',
       'GET /api/v1/referrals/leaderboard',
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SMART-COLD CHAIN PROTOCOL
+  // IoT-enabled cold chain monitoring + Brix/pH quality verification
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  // Cold Chain (IoT sensors, sessions, readings)
+  router.use('/cold-chain', createColdChainRouter(prisma));
+
+  // Quality Metrics (Brix/pH verification)
+  router.use('/quality-metrics', createQualityMetricsRouter(prisma));
+
+  // Cold Chain Webhooks (for IoT device callbacks)
+  router.use('/webhooks/cold-chain', createColdChainWebhookRouter(prisma));
+
+  logger.info('✅ Smart-Cold Chain Protocol routes mounted', {
+    routes: [
+      // Sensors
+      'POST /api/v1/cold-chain/sensors',
+      'GET /api/v1/cold-chain/sensors',
+      'GET /api/v1/cold-chain/sensors/:id',
+      'PATCH /api/v1/cold-chain/sensors/:id/assign',
+      // Sessions
+      'POST /api/v1/cold-chain/sessions',
+      'GET /api/v1/cold-chain/sessions',
+      'GET /api/v1/cold-chain/sessions/:id',
+      'POST /api/v1/cold-chain/sessions/:id/end',
+      'GET /api/v1/cold-chain/sessions/:id/readings',
+      'GET /api/v1/cold-chain/sessions/:id/report',
+      // Readings
+      'POST /api/v1/cold-chain/readings',
+      'POST /api/v1/cold-chain/readings/bulk',
+      // Dashboard
+      'GET /api/v1/cold-chain/dashboard',
+      // Quality Metrics
+      'POST /api/v1/quality-metrics',
+      'GET /api/v1/quality-metrics',
+      'GET /api/v1/quality-metrics/stats',
+      'GET /api/v1/quality-metrics/thresholds',
+      'GET /api/v1/quality-metrics/:id',
+      'POST /api/v1/quality-metrics/:id/verify',
+      // Webhook
+      'POST /api/v1/webhooks/cold-chain/readings',
     ],
   });
 

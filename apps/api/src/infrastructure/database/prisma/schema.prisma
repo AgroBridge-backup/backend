@@ -2203,6 +2203,11 @@ model ExportCompany {
   // Billing invoices
   invoices          ExportCompanyInvoice[]
 
+  // Smart-Cold Chain Protocol
+  iotSensors        IoTSensor[]           @relation("CompanySensors")
+  coldChainSessions ColdChainSession[]    @relation("CompanyColdChainSessions")
+  qualityMetrics    HarvestQualityMetrics[] @relation("CompanyQualityMetrics")
+
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -2814,4 +2819,385 @@ model FieldImagery {
   @@index([capturedAt])
   @@index([anomalyDetected])
   @@map("field_imagery")
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// SMART-COLD CHAIN PROTOCOL
+// IoT-enabled cold chain monitoring and agronomic quality verification
+// for US/EU export compliance. Real-time temperature/humidity + Brix/pH metrics.
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// IoT Sensor status
+enum IoTSensorStatus {
+  ACTIVE
+  OFFLINE
+  LOW_BATTERY
+  MAINTENANCE
+  DECOMMISSIONED
+}
+
+/// Cold chain session type
+enum ColdChainSessionType {
+  FIELD_MONITORING
+  HARVEST_COOLING
+  COLD_STORAGE
+  TRANSPORT
+}
+
+/// Cold chain session status
+enum ColdChainSessionStatus {
+  ACTIVE
+  COMPLETED
+  BREACHED
+  NEEDS_REVIEW
+  EXPIRED
+}
+
+/// Quality grade for export eligibility
+enum ColdChainQualityGrade {
+  PREMIUM      // A++ Export quality (top 10%)
+  EXPORT       // A/B Export standard
+  DOMESTIC     // B/C Domestic market only
+  REJECT       // Below standard
+}
+
+/// Breach type classification
+enum ColdChainBreachType {
+  OVER_TEMP
+  UNDER_TEMP
+  HUMIDITY_HIGH
+  HUMIDITY_LOW
+}
+
+/// Breach severity levels
+enum ColdChainBreachSeverity {
+  LOW          // <1°C deviation, <10 min
+  MEDIUM       // 1-3°C deviation, 10-30 min
+  HIGH         // 3-5°C deviation, 30-60 min
+  CRITICAL     // >5°C deviation or >60 min
+}
+
+/// Alert types for notification system
+enum ColdChainAlertType {
+  TEMPERATURE_BREACH
+  HUMIDITY_BREACH
+  SENSOR_OFFLINE
+  QUALITY_DECLINE
+  BATTERY_LOW
+}
+
+/// Alert severity levels
+enum ColdChainAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+/// Crop type for cold chain requirements
+enum ColdChainCropType {
+  AVOCADO
+  BLUEBERRY
+  STRAWBERRY
+  RASPBERRY
+  COFFEE
+  CACAO
+}
+
+/// IoT Sensor device for cold chain monitoring
+model IoTSensor {
+  id                String          @id @default(uuid())
+
+  // Device identification
+  deviceId          String          @unique // MAC address or serial number
+  deviceType        String          // TEMP_HUMIDITY, BRIX_METER, MULTIFUNCTION
+  manufacturer      String?
+  firmwareVersion   String?
+  name              String?         // Friendly name for the sensor
+
+  // Ownership
+  exportCompanyId   String
+  exportCompany     ExportCompany   @relation("CompanySensors", fields: [exportCompanyId], references: [id], onDelete: Cascade)
+
+  // Current assignment
+  assignedTo        String?         // fieldId, batchId, or shipmentId
+  assignedType      String?         // FIELD, BATCH, SHIPMENT, STORAGE
+
+  // Status
+  status            IoTSensorStatus @default(ACTIVE)
+  lastReadingAt     DateTime?
+  batteryLevel      Int?            // 0-100
+
+  // Calibration
+  calibratedAt      DateTime?
+  calibratedBy      String?
+  calibrationDueAt  DateTime?
+
+  // Readings
+  readings          ColdChainReading[]
+
+  // Sessions this sensor is part of
+  sessions          ColdChainSession[] @relation("SessionSensors")
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([exportCompanyId])
+  @@index([deviceId])
+  @@index([status])
+  @@index([assignedTo])
+  @@map("iot_sensors")
+}
+
+/// Sensor reading from IoT device
+model ColdChainReading {
+  id                String            @id @default(uuid())
+
+  // Source sensor
+  sensorId          String
+  sensor            IoTSensor         @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  // Context
+  sessionId         String?
+  session           ColdChainSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  fieldId           String?
+  batchId           String?
+  shipmentId        String?
+
+  // Environmental data
+  temperature       Decimal           @db.Decimal(5, 2) // Celsius (-40.00 to 100.00)
+  humidity          Decimal?          @db.Decimal(5, 2) // Percentage 0.00 to 100.00
+  batteryLevel      Int?              // 0-100
+
+  // Quality metrics (if sensor supports)
+  brixLevel         Decimal?          @db.Decimal(4, 2) // Sugar content °Brix (0.00 to 30.00)
+  phLevel           Decimal?          @db.Decimal(3, 2) // Acidity 0.00 to 14.00
+  firmness          Decimal?          @db.Decimal(6, 2) // Newton
+
+  // Location
+  gpsLat            Decimal?          @db.Decimal(10, 8)
+  gpsLon            Decimal?          @db.Decimal(11, 8)
+
+  // Compliance flags (computed at ingestion time)
+  temperatureInRange Boolean          @default(true)
+  humidityInRange   Boolean           @default(true)
+  qualityGrade      ColdChainQualityGrade?
+
+  // Timestamp
+  readingTime       DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+
+  @@index([sensorId, readingTime])
+  @@index([sessionId])
+  @@index([fieldId])
+  @@index([batchId])
+  @@index([readingTime])
+  @@index([temperatureInRange])
+  @@map("cold_chain_readings")
+}
+
+/// Cold chain monitoring session
+model ColdChainSession {
+  id                String                  @id @default(uuid())
+
+  sessionType       ColdChainSessionType
+
+  // Ownership
+  exportCompanyId   String
+  exportCompany     ExportCompany           @relation("CompanyColdChainSessions", fields: [exportCompanyId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  fieldId           String?
+  batchId           String?
+  shipmentId        String?
+  certificateId     String?                 // Link to organic certificate
+
+  // Sensors assigned to this session
+  sensors           IoTSensor[]             @relation("SessionSensors")
+
+  // Readings for this session
+  readings          ColdChainReading[]
+
+  // Time bounds
+  startTime         DateTime
+  endTime           DateTime?
+  durationMinutes   Int?
+
+  // Crop-specific thresholds
+  cropType          ColdChainCropType
+  minTemperature    Decimal                 @db.Decimal(5, 2)
+  maxTemperature    Decimal                 @db.Decimal(5, 2)
+  targetHumidity    Decimal                 @db.Decimal(5, 2)
+
+  // Computed metrics (updated on each reading)
+  totalReadings     Int                     @default(0)
+  compliantReadings Int                     @default(0)
+  complianceScore   Decimal                 @db.Decimal(5, 2) @default(0) // 0.00 to 100.00
+  breachCount       Int                     @default(0)
+  maxTemperatureBreach Decimal?             @db.Decimal(5, 2) // Highest over-temp deviation
+  breachDurationMinutes Int?
+
+  // Quality scores
+  avgTemperature    Decimal?                @db.Decimal(5, 2)
+  minTemperatureRecorded Decimal?           @db.Decimal(5, 2)
+  maxTemperatureRecorded Decimal?           @db.Decimal(5, 2)
+  avgHumidity       Decimal?                @db.Decimal(5, 2)
+  avgBrixLevel      Decimal?                @db.Decimal(4, 2)
+  avgPhLevel        Decimal?                @db.Decimal(3, 2)
+  qualityGrade      ColdChainQualityGrade?
+
+  // Report artifacts
+  complianceReportUrl String?               @db.VarChar(500)
+  chartImageUrl     String?                 @db.VarChar(500)
+  rawDataCsvUrl     String?                 @db.VarChar(500)
+
+  status            ColdChainSessionStatus  @default(ACTIVE)
+
+  // Breaches detected
+  breaches          ColdChainBreach[]
+
+  // Alerts generated
+  alerts            ColdChainAlert[]
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@index([exportCompanyId])
+  @@index([fieldId])
+  @@index([batchId])
+  @@index([status])
+  @@index([startTime])
+  @@index([cropType])
+  @@map("cold_chain_sessions")
+}
+
+/// Temperature/humidity breach event
+model ColdChainBreach {
+  id                String                  @id @default(uuid())
+
+  sessionId         String
+  session           ColdChainSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  sensorId          String?                 // Which sensor detected the breach
+
+  breachType        ColdChainBreachType
+  severity          ColdChainBreachSeverity
+
+  startTime         DateTime
+  endTime           DateTime?
+  durationMinutes   Int                     @default(0)
+
+  threshold         Decimal                 @db.Decimal(5, 2)
+  peakValue         Decimal                 @db.Decimal(5, 2) // Worst reading during breach
+  avgValue          Decimal                 @db.Decimal(5, 2)
+
+  // Actions taken
+  alertSent         Boolean                 @default(false)
+  alertedUsers      String[]                // Array of user IDs notified
+  resolution        String?                 @db.Text // "Moved to cold room", "Discarded batch"
+  resolvedBy        String?
+  resolvedAt        DateTime?
+
+  createdAt         DateTime                @default(now())
+
+  @@index([sessionId])
+  @@index([startTime])
+  @@index([severity])
+  @@index([alertSent])
+  @@map("cold_chain_breaches")
+}
+
+/// Smart cold chain alert
+model ColdChainAlert {
+  id                String                  @id @default(uuid())
+
+  alertType         ColdChainAlertType
+  severity          ColdChainAlertSeverity
+
+  sessionId         String
+  session           ColdChainSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sensorId          String
+
+  message           String                  @db.Text
+  messageLang       String                  @default("es") @db.VarChar(5)
+
+  currentValue      Decimal                 @db.Decimal(8, 2)
+  threshold         Decimal                 @db.Decimal(8, 2)
+
+  sent              Boolean                 @default(false)
+  sentVia           String[]                // ["EMAIL", "SMS", "PUSH", "WEBHOOK"]
+  sentAt            DateTime?
+  acknowledgedBy    String?
+  acknowledgedAt    DateTime?
+
+  timestamp         DateTime                @default(now())
+
+  @@index([sessionId])
+  @@index([sent])
+  @@index([timestamp])
+  @@index([severity])
+  @@map("cold_chain_alerts")
+}
+
+/// Quality metrics for harvest batches
+model HarvestQualityMetrics {
+  id                String                  @id @default(uuid())
+
+  // Relationships
+  fieldId           String?
+  batchId           String?
+  exportCompanyId   String
+  exportCompany     ExportCompany           @relation("CompanyQualityMetrics", fields: [exportCompanyId], references: [id], onDelete: Cascade)
+
+  harvestDate       DateTime
+  cropType          ColdChainCropType
+  sampleSize        Int?                    // Number of fruits sampled
+
+  // Brix (sugar content)
+  brixLevel         Decimal                 @db.Decimal(4, 2)
+  brixGrade         String                  // EXCELLENT, GOOD, ACCEPTABLE, POOR
+  brixCompliant     Boolean
+
+  // pH (acidity)
+  phLevel           Decimal                 @db.Decimal(3, 2)
+  phGrade           String
+  phCompliant       Boolean
+
+  // Physical attributes
+  firmness          Decimal?                @db.Decimal(6, 2) // Newton
+  color             String?                 @db.VarChar(50)
+  diameter          Decimal?                @db.Decimal(6, 2) // mm
+  weight            Decimal?                @db.Decimal(8, 2) // grams (average)
+
+  // Defects
+  defectCount       Int                     @default(0)
+  defectTypes       String[]                // ["bruising", "pest_damage", "rot"]
+  defectPercentage  Decimal?                @db.Decimal(5, 2) // % of sample with defects
+
+  // Final grade
+  overallQuality    ColdChainQualityGrade
+  exportEligible    Boolean
+  marketPrice       Decimal?                @db.Decimal(8, 2) // USD/kg estimated
+
+  // Lab verification
+  labVerified       Boolean                 @default(false)
+  labReportUrl      String?                 @db.VarChar(500)
+  verifiedBy        String?
+  verifiedAt        DateTime?
+
+  // Measurement device info
+  measurementDevice String?                 // Refractometer model, pH meter
+  measurementMethod String?                 // Digital, analog, lab
+
+  notes             String?                 @db.Text
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@index([fieldId])
+  @@index([batchId])
+  @@index([exportCompanyId])
+  @@index([harvestDate])
+  @@index([exportEligible])
+  @@index([overallQuality])
+  @@map("harvest_quality_metrics")
 }
