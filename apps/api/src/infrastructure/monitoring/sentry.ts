@@ -333,6 +333,11 @@ export async function instrumentDbQuery<T>(
 }
 
 /**
+ * Alias for instrumentDbQuery for backward compatibility
+ */
+export const instrumentDatabase = instrumentDbQuery;
+
+/**
  * Instrument external HTTP request
  */
 export async function instrumentHttpRequest<T>(

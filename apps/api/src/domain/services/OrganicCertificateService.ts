@@ -34,7 +34,7 @@ import {
   IPFS_GATEWAYS,
 } from '../entities/OrganicCertificate.js';
 import { PdfGenerator } from '../../infrastructure/pdf/PdfGenerator.js';
-import { IpfsService } from '../../infrastructure/ipfs/IpfsService.js';
+import { IpfsService } from '../../infrastructure/ipfs/IPFSService.js';
 import { BlockchainService } from './BlockchainService.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import logger from '../../shared/utils/logger.js';

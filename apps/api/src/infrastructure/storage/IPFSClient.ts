@@ -228,7 +228,7 @@ export class IPFSClient {
     // Handle different content types
     let blob: Blob;
     if (Buffer.isBuffer(content)) {
-      blob = new Blob([content]);
+      blob = new Blob([new Uint8Array(content)]);
     } else if (typeof content === 'string') {
       blob = new Blob([content], { type: 'text/plain' });
     } else {

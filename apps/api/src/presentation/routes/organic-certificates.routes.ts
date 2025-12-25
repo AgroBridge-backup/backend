@@ -12,7 +12,7 @@ import { PrismaOrganicFieldRepository } from '../../infrastructure/database/pris
 import { PrismaFieldInspectionRepository } from '../../infrastructure/database/prisma/repositories/PrismaFieldInspectionRepository.js';
 import { OrganicCertificateService } from '../../domain/services/OrganicCertificateService.js';
 import { PdfGenerator } from '../../infrastructure/pdf/PdfGenerator.js';
-import { createIpfsService } from '../../infrastructure/ipfs/IpfsService.js';
+import { createIpfsService } from '../../infrastructure/ipfs/IPFSService.js';
 import {
   CreateCertificateUseCase,
   GetCertificateUseCase,
