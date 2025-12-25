@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PGBOUNCER USER LIST
+# Format: "username" "password/hash"
+#
+# IMPORTANT: This is a template. Generate actual userlist.txt with hashed passwords:
+#   psql -h localhost -U postgres -c "SELECT usename, passwd FROM pg_shadow"
+#
+# For SCRAM-SHA-256 (recommended):
+#   echo -n "password_here" | openssl dgst -sha256 -binary | base64
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Application user (main connection)
+"agrobridge_app" "SCRAM-SHA-256$<iterations>:<salt>$<stored_key>:<server_key>"
+
+# Read-only user for reporting queries (optional)
+"agrobridge_readonly" "SCRAM-SHA-256$<iterations>:<salt>$<stored_key>:<server_key>"
+
+# Admin users for PgBouncer management
+"pgbouncer_admin" "SCRAM-SHA-256$<iterations>:<salt>$<stored_key>:<server_key>"
+"pgbouncer_stats" "SCRAM-SHA-256$<iterations>:<salt>$<stored_key>:<server_key>"

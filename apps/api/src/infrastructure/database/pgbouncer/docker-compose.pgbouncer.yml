@@ -1,0 +1,65 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PGBOUNCER - Production Connection Pooling
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer:1.21.0
+    container_name: agrobridge-pgbouncer
+    restart: unless-stopped
+
+    environment:
+      # Database connection
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-agrobridge}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+      # PgBouncer settings
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=200
+      - DEFAULT_POOL_SIZE=20
+      - MIN_POOL_SIZE=5
+      - RESERVE_POOL_SIZE=5
+      - SERVER_RESET_QUERY=DISCARD ALL
+
+      # Admin settings
+      - ADMIN_USERS=pgbouncer_admin
+      - STATS_USERS=pgbouncer_stats
+
+    ports:
+      - "6432:6432"
+
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./userlist.txt:/etc/pgbouncer/userlist.txt:ro
+      - pgbouncer-logs:/var/log/pgbouncer
+
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "6432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - agrobridge-network
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+volumes:
+  pgbouncer-logs:
+
+networks:
+  agrobridge-network:
+    external: true
