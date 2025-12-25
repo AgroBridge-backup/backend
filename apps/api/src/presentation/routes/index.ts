@@ -16,7 +16,8 @@ import { createVerificationStagesRouter } from './verification-stages.routes.js'
 import { createCertificatesRouter, CertificatesUseCases } from './certificates.routes.js';
 import { createTransitRouter } from './transit.routes.js';
 import { createTemperatureRoutes } from './temperature.routes.js';
-// Note: NFC Seals and Satellite Imagery are POST-MVP features - see docs/POST_MVP_FEATURES.md
+// Satellite Compliance Analysis (NDVI-based organic verification)
+import { createSatelliteAnalysisRouter, createSatelliteAnalysisDirectRouter } from './satellite-analysis.routes.js';
 
 // FinTech Module Routes
 import whatsappRoutes from '../../modules/whatsapp-bot/whatsapp.routes.js';
@@ -171,6 +172,25 @@ export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Ro
       'POST /api/v1/inspections/organic-inputs/:inputId/verify',
       'POST /api/v1/inspections/:id/activities',
       'GET /api/v1/inspections/config/options',
+    ],
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SATELLITE COMPLIANCE ANALYSIS (AI-Powered)
+  // NDVI-based organic compliance verification using Sentinel-2 satellite data
+  // Replaces $200-500 soil tests with instant satellite verification
+  // ═══════════════════════════════════════════════════════════════════════════════
+  router.use('/organic-fields', createSatelliteAnalysisRouter(prisma));
+  router.use('/satellite-analyses', createSatelliteAnalysisDirectRouter(prisma));
+
+  logger.info('✅ Satellite Compliance Analysis routes mounted', {
+    routes: [
+      'POST /api/v1/organic-fields/:fieldId/satellite-compliance',
+      'GET /api/v1/organic-fields/:fieldId/satellite-analyses',
+      'GET /api/v1/organic-fields/:fieldId/satellite-analyses/latest',
+      'GET /api/v1/satellite-analyses/:id',
+      'GET /api/v1/satellite-analyses/stats',
+      'GET /api/v1/satellite-analyses/health',
     ],
   });
 
