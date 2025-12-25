@@ -109,6 +109,62 @@ API requests are rate limited:
       description: 'Traceability event tracking',
     },
     {
+      name: 'Verification Stages',
+      description: 'Traceability 2.0 - Multi-stage verification workflow',
+    },
+    {
+      name: 'Certificates',
+      description: 'Traceability 2.0 - Blockchain quality certificates',
+    },
+    {
+      name: 'Transit',
+      description: 'Traceability 2.0 - Real-time GPS transit tracking',
+    },
+    {
+      name: 'Temperature',
+      description: 'Traceability 2.0 - Cold chain temperature monitoring',
+    },
+    {
+      name: 'NFC Seals',
+      description: 'Traceability 2.0 - Tamper-evident NFC seal verification',
+    },
+    {
+      name: 'Export Companies',
+      description: 'B2B organic certification export company management',
+    },
+    {
+      name: 'Organic Fields',
+      description: 'Organic field registration and compliance tracking',
+    },
+    {
+      name: 'Organic Certificates',
+      description: 'Revenue-critical organic certificate issuance ($5-20/cert)',
+    },
+    {
+      name: 'Satellite Analysis',
+      description: 'AI-powered NDVI satellite compliance verification',
+    },
+    {
+      name: 'Cold Chain',
+      description: 'Smart-Cold Chain Protocol for IoT sensor monitoring',
+    },
+    {
+      name: 'Quality Metrics',
+      description: 'Brix/pH quality verification for produce',
+    },
+    {
+      name: 'Invoicing',
+      description: 'Blockchain-anchored invoice management',
+    },
+    {
+      name: 'Referrals',
+      description: 'Referral program with leaderboard',
+    },
+    {
+      name: 'API Keys',
+      description: 'Enterprise API key management for integrations',
+    },
+    {
       name: 'Payments',
       description: 'Stripe payment and subscription management',
     },
@@ -123,6 +179,10 @@ API requests are rate limited:
     {
       name: 'Analytics',
       description: 'Statistics and insights',
+    },
+    {
+      name: 'Public',
+      description: 'Public traceability endpoints (no auth required)',
     },
     {
       name: 'Health',

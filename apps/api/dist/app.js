@@ -1,5 +1,6 @@
 import express from 'express';
 import 'express-async-errors';
+import compression from 'compression';
 import morgan from 'morgan';
 import path from 'path';
 import { AppError } from './shared/errors/AppError.js';
@@ -17,6 +18,7 @@ import { performanceMiddleware } from './infrastructure/http/middleware/performa
 import { setupUncaughtExceptionHandler } from './infrastructure/http/middleware/error-tracking.middleware.js';
 import healthRoutes from './presentation/routes/health.routes.js';
 import { docsRouter } from './presentation/routes/docs.routes.js';
+import publicVerifyRoutes from './presentation/routes/public-verify.routes.js';
 import { createGraphQLMiddleware, getGraphQLInfo } from './infrastructure/graphql/index.js';
 import { createV2Router } from './presentation/routes/v2/index.js';
 import { apiVersioning } from './infrastructure/http/middleware/apiVersioning.middleware.js';
@@ -33,6 +35,7 @@ import { GetCurrentUserUseCase } from './application/use-cases/auth/GetCurrentUs
 import { LoginUseCase } from './application/use-cases/auth/LoginUseCase.js';
 import { LogoutUseCase } from './application/use-cases/auth/LogoutUseCase.js';
 import { RefreshTokenUseCase } from './application/use-cases/auth/RefreshTokenUseCase.js';
+import { RegisterUseCase } from './application/use-cases/auth/RegisterUseCase.js';
 import { Setup2FAUseCase } from './application/use-cases/auth/Setup2FAUseCase.js';
 import { Enable2FAUseCase } from './application/use-cases/auth/Enable2FAUseCase.js';
 import { Disable2FAUseCase } from './application/use-cases/auth/Disable2FAUseCase.js';
@@ -49,6 +52,27 @@ import { GetBatchByNumberUseCase } from './application/use-cases/batches/GetBatc
 import { GetBatchHistoryUseCase } from './application/use-cases/batches/GetBatchHistoryUseCase.js';
 import { GetEventByIdUseCase } from './application/use-cases/events/GetEventByIdUseCase.js';
 import { RegisterEventUseCase } from './application/use-cases/events/RegisterEventUseCase.js';
+import { GetBatchStagesUseCase } from './application/use-cases/verification-stages/GetBatchStagesUseCase.js';
+import { CreateBatchStageUseCase } from './application/use-cases/verification-stages/CreateBatchStageUseCase.js';
+import { UpdateBatchStageUseCase } from './application/use-cases/verification-stages/UpdateBatchStageUseCase.js';
+import { FinalizeBatchStagesUseCase } from './application/use-cases/verification-stages/FinalizeBatchStagesUseCase.js';
+import { PrismaVerificationStageRepository } from './infrastructure/database/prisma/repositories/PrismaVerificationStageRepository.js';
+import { VerificationStageService } from './domain/services/VerificationStageService.js';
+import { StageFinalizationService } from './domain/services/StageFinalizationService.js';
+import { IssueCertificateUseCase } from './application/use-cases/certificates/IssueCertificateUseCase.js';
+import { GetCertificateUseCase } from './application/use-cases/certificates/GetCertificateUseCase.js';
+import { ListBatchCertificatesUseCase } from './application/use-cases/certificates/ListBatchCertificatesUseCase.js';
+import { VerifyCertificateUseCase } from './application/use-cases/certificates/VerifyCertificateUseCase.js';
+import { CheckCertificateEligibilityUseCase } from './application/use-cases/certificates/CheckCertificateEligibilityUseCase.js';
+import { PrismaQualityCertificateRepository } from './infrastructure/database/prisma/repositories/PrismaQualityCertificateRepository.js';
+import { QualityCertificateService } from './domain/services/QualityCertificateService.js';
+import { CreateTransitSessionUseCase } from './application/use-cases/transit/CreateTransitSessionUseCase.js';
+import { GetTransitSessionUseCase } from './application/use-cases/transit/GetTransitSessionUseCase.js';
+import { UpdateTransitStatusUseCase } from './application/use-cases/transit/UpdateTransitStatusUseCase.js';
+import { AddLocationUpdateUseCase } from './application/use-cases/transit/AddLocationUpdateUseCase.js';
+import { GetLocationHistoryUseCase } from './application/use-cases/transit/GetLocationHistoryUseCase.js';
+import { PrismaTransitSessionRepository } from './infrastructure/database/prisma/repositories/PrismaTransitSessionRepository.js';
+import { TransitTrackingService } from './domain/services/TransitTrackingService.js';
 export function createApp(injectedRouter) {
     const app = express();
     let apiRouter = injectedRouter;
@@ -58,12 +82,20 @@ export function createApp(injectedRouter) {
         const producerRepository = new PrismaProducerRepository(prisma);
         const batchRepository = new PrismaBatchRepository();
         const eventRepository = new PrismaEventRepository(prisma);
+        const verificationStageRepository = new PrismaVerificationStageRepository(prisma);
+        const verificationStageService = new VerificationStageService(verificationStageRepository);
+        const stageFinalizationService = new StageFinalizationService(prisma, verificationStageService);
+        const certificateRepository = new PrismaQualityCertificateRepository(prisma);
+        const certificateService = new QualityCertificateService(prisma, certificateRepository, verificationStageRepository);
+        const transitSessionRepository = new PrismaTransitSessionRepository(prisma);
+        const transitTrackingService = new TransitTrackingService(prisma, transitSessionRepository);
         const useCases = {
             auth: {
                 loginUseCase: new LoginUseCase(userRepository, refreshTokenRepository),
                 refreshTokenUseCase: new RefreshTokenUseCase(refreshTokenRepository, userRepository),
                 logoutUseCase: new LogoutUseCase(redisClient),
                 getCurrentUserUseCase: new GetCurrentUserUseCase(userRepository),
+                registerUseCase: new RegisterUseCase(userRepository),
                 setup2FAUseCase: new Setup2FAUseCase(userRepository),
                 enable2FAUseCase: new Enable2FAUseCase(userRepository),
                 disable2FAUseCase: new Disable2FAUseCase(userRepository),
@@ -86,18 +118,51 @@ export function createApp(injectedRouter) {
             events: {
                 registerEventUseCase: new RegisterEventUseCase(eventRepository),
                 getEventByIdUseCase: new GetEventByIdUseCase(eventRepository),
-            }
+            },
+            verificationStages: {
+                getBatchStagesUseCase: new GetBatchStagesUseCase(verificationStageService),
+                createBatchStageUseCase: new CreateBatchStageUseCase(verificationStageService),
+                updateBatchStageUseCase: new UpdateBatchStageUseCase(verificationStageService),
+                finalizeBatchStagesUseCase: new FinalizeBatchStagesUseCase(stageFinalizationService),
+            },
+            certificates: {
+                issueCertificateUseCase: new IssueCertificateUseCase(certificateService),
+                getCertificateUseCase: new GetCertificateUseCase(certificateService),
+                listBatchCertificatesUseCase: new ListBatchCertificatesUseCase(certificateService),
+                verifyCertificateUseCase: new VerifyCertificateUseCase(certificateService),
+                checkCertificateEligibilityUseCase: new CheckCertificateEligibilityUseCase(certificateService),
+            },
+            transit: {
+                createTransitSessionUseCase: new CreateTransitSessionUseCase(transitTrackingService),
+                getTransitSessionUseCase: new GetTransitSessionUseCase(transitTrackingService),
+                updateTransitStatusUseCase: new UpdateTransitStatusUseCase(transitTrackingService),
+                addLocationUpdateUseCase: new AddLocationUpdateUseCase(transitTrackingService),
+                getLocationHistoryUseCase: new GetLocationHistoryUseCase(transitTrackingService),
+                transitService: transitTrackingService,
+            },
         };
         apiRouter = createApiRouter(useCases, prisma);
     }
     app.use('/health', healthRoutes);
     app.use('/', docsRouter);
     logger.info('Documentation available at /api-docs');
+    app.use('/verify', publicVerifyRoutes);
+    logger.info('Public verification routes available at /verify/*');
     app.use(securityHeadersMiddleware);
     app.use(additionalSecurityHeaders);
     app.use(correlationIdMiddleware);
     app.use(contextMiddleware);
     app.use(corsMiddleware);
+    app.use(compression({
+        threshold: 1024,
+        level: 6,
+        filter: (req, res) => {
+            if (req.headers['x-no-compression']) {
+                return false;
+            }
+            return compression.filter(req, res);
+        },
+    }));
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
     if (process.env.NODE_ENV === 'development') {

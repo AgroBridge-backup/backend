@@ -7,7 +7,7 @@ export class GetCurrentUserUseCase {
     async execute({ userId }) {
         const user = await this.userRepository.findById(userId);
         if (!user) {
-            throw new NotFoundError('User not found.');
+            throw new NotFoundError('User not found');
         }
         const { passwordHash: _, ...userWithoutPassword } = user;
         return userWithoutPassword;

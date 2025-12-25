@@ -2,15 +2,19 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { app } from './app.js';
 import { redisClient } from './infrastructure/cache/RedisClient.js';
-import { prisma } from './infrastructure/database/prisma/client.js';
+import { prisma, disconnectPrisma } from './infrastructure/database/prisma/client.js';
 import { queueService } from './infrastructure/queue/index.js';
 import { bullBoardSetup } from './infrastructure/notifications/monitoring/BullBoardSetup.js';
 import { webSocketServer } from './infrastructure/websocket/index.js';
 import logger from './shared/utils/logger.js';
-const PORT = process.env.PORT || 4000;
+import { validateEnv } from './config/env.js';
+const env = validateEnv();
+logger.info('✅ Environment variables validated');
+const PORT = env.PORT || 4000;
 async function startServer() {
     try {
         logger.info('[BOOTSTRAP] Starting server...');
+        logger.info(`[BOOTSTRAP] Environment: ${env.NODE_ENV}`);
         await prisma.$connect();
         logger.info('[BOOTSTRAP] PostgreSQL connected.');
         await redisClient.client.ping();
@@ -35,7 +39,7 @@ async function startServer() {
                     logger.info('[SHUTDOWN] WebSocket server stopped.');
                     await queueService.shutdown();
                     logger.info('[SHUTDOWN] Queue service stopped.');
-                    await prisma.$disconnect();
+                    await disconnectPrisma();
                     logger.info('[SHUTDOWN] PostgreSQL disconnected.');
                     await redisClient.client.quit();
                     logger.info('[SHUTDOWN] Redis disconnected.');

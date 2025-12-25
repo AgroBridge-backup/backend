@@ -21,6 +21,13 @@ import {
   BlockchainMetrics,
   RiskTier,
   ScoreTrend,
+  SCORE_WEIGHTS,
+  getRiskTierFromScore,
+  getScoreTrend,
+  clampScore,
+  isValidRiskTier,
+  isValidScoreTrend,
+  getCreditLimitsForTier,
 } from '../../../src/modules/credit-scoring/types/credit-score.types.js';
 
 describe('CreditScoreCalculator', () => {
@@ -537,8 +544,6 @@ describe('CreditScoreCalculator', () => {
 
 describe('Score Weight Validation', () => {
   it('should have weights that sum to 100', () => {
-    const { SCORE_WEIGHTS } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     const totalWeight =
       SCORE_WEIGHTS.DELIVERY +
       SCORE_WEIGHTS.QUALITY +
@@ -552,24 +557,18 @@ describe('Score Weight Validation', () => {
 
 describe('Risk Tier Classification', () => {
   it('should classify Tier A for scores >= 90', () => {
-    const { getRiskTierFromScore, RiskTier } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(getRiskTierFromScore(90)).toBe(RiskTier.A);
     expect(getRiskTierFromScore(95)).toBe(RiskTier.A);
     expect(getRiskTierFromScore(100)).toBe(RiskTier.A);
   });
 
   it('should classify Tier B for scores 70-89', () => {
-    const { getRiskTierFromScore, RiskTier } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(getRiskTierFromScore(70)).toBe(RiskTier.B);
     expect(getRiskTierFromScore(80)).toBe(RiskTier.B);
     expect(getRiskTierFromScore(89)).toBe(RiskTier.B);
   });
 
   it('should classify Tier C for scores < 70', () => {
-    const { getRiskTierFromScore, RiskTier } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(getRiskTierFromScore(0)).toBe(RiskTier.C);
     expect(getRiskTierFromScore(50)).toBe(RiskTier.C);
     expect(getRiskTierFromScore(69)).toBe(RiskTier.C);
@@ -578,22 +577,16 @@ describe('Risk Tier Classification', () => {
 
 describe('Score Trend Detection', () => {
   it('should detect improving trend', () => {
-    const { getScoreTrend, ScoreTrend } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(getScoreTrend(5, 8, 10)).toBe(ScoreTrend.IMPROVING);
     expect(getScoreTrend(3, 3, 3)).toBe(ScoreTrend.IMPROVING);
   });
 
   it('should detect stable trend', () => {
-    const { getScoreTrend, ScoreTrend } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(getScoreTrend(0, 0, 0)).toBe(ScoreTrend.STABLE);
     expect(getScoreTrend(1, -1, 0)).toBe(ScoreTrend.STABLE);
   });
 
   it('should detect declining trend', () => {
-    const { getScoreTrend, ScoreTrend } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(getScoreTrend(-5, -8, -10)).toBe(ScoreTrend.DECLINING);
     expect(getScoreTrend(-3, -3, -3)).toBe(ScoreTrend.DECLINING);
   });
@@ -601,16 +594,12 @@ describe('Score Trend Detection', () => {
 
 describe('Utility Functions', () => {
   it('should clamp scores correctly', () => {
-    const { clampScore } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(clampScore(-10)).toBe(0);
     expect(clampScore(50)).toBe(50);
     expect(clampScore(110)).toBe(100);
   });
 
   it('should validate risk tier correctly', () => {
-    const { isValidRiskTier } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(isValidRiskTier('A')).toBe(true);
     expect(isValidRiskTier('B')).toBe(true);
     expect(isValidRiskTier('C')).toBe(true);
@@ -619,8 +608,6 @@ describe('Utility Functions', () => {
   });
 
   it('should validate score trend correctly', () => {
-    const { isValidScoreTrend } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     expect(isValidScoreTrend('IMPROVING')).toBe(true);
     expect(isValidScoreTrend('STABLE')).toBe(true);
     expect(isValidScoreTrend('DECLINING')).toBe(true);
@@ -628,8 +615,6 @@ describe('Utility Functions', () => {
   });
 
   it('should get credit limits for tier correctly', () => {
-    const { getCreditLimitsForTier, RiskTier } = require('../../../src/modules/credit-scoring/types/credit-score.types.js');
-
     const tierA = getCreditLimitsForTier(RiskTier.A);
     expect(tierA.maxAdvancePercentage).toBe(85);
     expect(tierA.maxAdvanceAmount).toBe(500000);

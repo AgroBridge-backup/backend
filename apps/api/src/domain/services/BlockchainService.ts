@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { AppError } from '../../shared/errors/AppError.js';
 import logger from '../../shared/utils/logger.js';
+import { instrumentBlockchain, addBreadcrumb, captureException } from '../../infrastructure/monitoring/sentry.js';
 
 interface BlockchainConfig {
     rpcUrl: string;
@@ -121,7 +122,13 @@ export class BlockchainService {
         txHash: string;
         gasUsed: string;
     }> {
-        return this.executeWithRetry(async () => {
+        addBreadcrumb('Blockchain operation started', 'blockchain', {
+            operation: 'registerEvent',
+            batchId: params.batchId
+        });
+
+        return instrumentBlockchain('registerEventOnChain', () =>
+            this.executeWithRetry(async () => {
             try {
                 // Convert coordinates to blockchain format (multiply by 1e6)
                 const latitudeScaled = Math.round(params.latitude * 1_000_000);
@@ -214,17 +221,22 @@ export class BlockchainService {
                 if (error.message?.includes('Already whitelisted')) {
                     throw new AppError('Batch already registered', 400);
                 }
+                captureException(error, { batchId: params.batchId, operation: 'registerEventOnChain' });
                 throw error;
             }
-        });
+        })
+        );
     }
 
     /**
      * Get batch history from blockchain (with fallback to cache)
      */
     async getBatchHistoryFromChain(batchId: string): Promise<any[]> {
-        try {
-            logger.info('Fetching batch history from blockchain', { batchId });
+        addBreadcrumb('Fetching batch history', 'blockchain', { batchId });
+
+        return instrumentBlockchain('getBatchHistoryFromChain', async () => {
+            try {
+                logger.info('Fetching batch history from blockchain', { batchId });
             const history = await this.traceabilityContract.getBatchHistory(batchId);
             return history.map((event: any) => ({
                 eventId: event.eventId,
@@ -243,8 +255,10 @@ export class BlockchainService {
                 error: error.message,
                 batchId,
             });
+            captureException(error, { batchId, operation: 'getBatchHistoryFromChain' });
             throw new AppError('Failed to fetch blockchain data', 500);
         }
+        });
     }
 
     /**
@@ -259,7 +273,10 @@ export class BlockchainService {
         latitude: number;
         longitude: number;
     }): Promise<{ txHash: string }> {
-        return this.executeWithRetry(async () => {
+        addBreadcrumb('Whitelisting producer', 'blockchain', { walletAddress: params.walletAddress });
+
+        return instrumentBlockchain('whitelistProducerOnChain', () =>
+            this.executeWithRetry(async () => {
             try {
                 const latitudeScaled = Math.round(params.latitude * 1_000_000);
                 const longitudeScaled = Math.round(params.longitude * 1_000_000);
@@ -283,9 +300,11 @@ export class BlockchainService {
                     error: error.message,
                     walletAddress: params.walletAddress,
                 });
+                captureException(error, { walletAddress: params.walletAddress, operation: 'whitelistProducerOnChain' });
                 throw error;
             }
-        });
+        })
+        );
     }
 
     /**
@@ -296,7 +315,10 @@ export class BlockchainService {
         batchNumber: string;
         ipfsMetadataHash: string;
     }): Promise<{ tokenId: string; txHash: string }> {
-        return this.executeWithRetry(async () => {
+        addBreadcrumb('Minting batch NFT', 'blockchain', { batchNumber: params.batchNumber });
+
+        return instrumentBlockchain('mintBatchNFT', () =>
+            this.executeWithRetry(async () => {
             try {
                 const tokenURI = `ipfs://${params.ipfsMetadataHash}`;
                 const tx = await this.batchTokenContract.mintBatch(
@@ -333,9 +355,11 @@ export class BlockchainService {
                     error: error.message,
                     batchNumber: params.batchNumber,
                 });
+                captureException(error, { batchNumber: params.batchNumber, operation: 'mintBatchNFT' });
                 throw error;
             }
-        });
+        })
+        );
     }
 
     /**

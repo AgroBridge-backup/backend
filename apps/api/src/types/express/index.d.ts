@@ -1,5 +1,11 @@
-import { User } from '../../domain/entities/User.js';
-import * as Prisma from '@prisma/client';
+/**
+ * Express Request Type Augmentation
+ * Provides type-safe access to authenticated user properties
+ */
+import { UserRole } from '@prisma/client';
+
+// Make this a module so declare global works
+export {};
 
 declare global {
   namespace Express {
@@ -9,14 +15,28 @@ declare global {
         startTime: number;
       };
       user?: {
+        // Core auth properties
         userId: string;
-        role: Prisma.UserRole;
+        id?: string; // Alias for userId (some routes use this)
         email: string;
+        role: UserRole;
         jti: string;
         exp: number;
+
+        // Producer properties
         producerId?: string;
+
+        // Export company properties
+        exportCompanyId?: string;
+        exportCompanyAdminId?: string;
+        companyId?: string;
+
+        // User profile
+        firstName?: string;
+        lastName?: string;
       };
       id?: string;
+      requestId?: string;
     }
   }
 }

@@ -28,6 +28,14 @@ const INVOICE_REGISTRY_ABI = [
   'event InvoiceRegistered(bytes32 indexed invoiceHash, string uuid, string folio, address indexed producer, uint256 total, uint256 timestamp)',
 ];
 
+// P1-7 FIX: Fallback status when blockchain is unavailable
+export const BLOCKCHAIN_STATUS = {
+  CONFIRMED: 'CONFIRMED',
+  PENDING: 'PENDING',
+  UNAVAILABLE: 'BLOCKCHAIN_UNAVAILABLE',
+  FAILED: 'FAILED',
+} as const;
+
 export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService {
   private provider: ethers.providers.JsonRpcProvider;
   private wallet: ethers.Wallet;
@@ -37,6 +45,8 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
   private readonly RETRY_DELAY_MS = 2000;
   private readonly GAS_LIMIT_BUFFER = 1.2;
   private readonly REQUIRED_CONFIRMATIONS = 1;
+  // P1-7 FIX: Add timeout to prevent hanging
+  private readonly RPC_TIMEOUT_MS = 30000; // 30 seconds
 
   constructor(config: InvoiceBlockchainConfig) {
     this.networkName = config.networkName;
@@ -82,81 +92,144 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
   }
 
   /**
+   * P1-7 FIX: Timeout wrapper for RPC calls
+   */
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = this.RPC_TIMEOUT_MS): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`RPC timeout after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timeoutId!);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId!);
+      throw error;
+    }
+  }
+
+  /**
+   * P1-7 FIX: Notify admin of blockchain failure
+   */
+  private async notifyBlockchainFailure(type: string, id: string, error: any): Promise<void> {
+    // Log critical error for monitoring systems (Sentry, CloudWatch, etc.)
+    logger.error('🚨 BLOCKCHAIN FAILURE ALERT', {
+      type,
+      id,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+      network: this.networkName,
+      action: 'REQUIRES_RETRY',
+    });
+
+    // TODO: In production, send to Slack/PagerDuty/Email
+    // await slackClient.sendAlert({ ... });
+  }
+
+  /**
    * Registers an invoice on the blockchain with retry logic.
+   * P1-7 FIX: Returns fallback result instead of throwing when blockchain unavailable
    * @param data - Invoice data to register
    * @returns Registration result with transaction hash and blockchain hash
-   * @throws Error if max retries exceeded or transaction fails
    */
   async registerInvoice(
     data: InvoiceBlockchainData
   ): Promise<InvoiceRegistrationResult> {
-    return this.executeWithRetry(async () => {
-      const invoiceHash = this.hashInvoice(data);
+    const invoiceHash = this.hashInvoice(data);
 
-      logger.info('Registering invoice on blockchain', {
-        uuid: data.uuid,
-        folio: data.folio,
-        invoiceHash,
-      });
+    try {
+      // P1-7 FIX: Wrap in timeout to prevent hanging
+      return await this.withTimeout(this.executeWithRetry(async () => {
+        logger.info('Registering invoice on blockchain', {
+          uuid: data.uuid,
+          folio: data.folio,
+          invoiceHash,
+        });
 
-      // Estimate gas
-      const estimatedGas = await this.contract.registerInvoice.estimateGas(
-        invoiceHash,
-        data.uuid,
-        data.folio,
-        this.wallet.address, // Use wallet as producer address
-        Math.round(data.total * 100),
-        data.currency,
-        Math.floor(data.issuedAt.getTime() / 1000)
-      );
-      const gasLimit = Math.ceil(Number(estimatedGas) * this.GAS_LIMIT_BUFFER);
+        // Estimate gas
+        const estimatedGas = await this.contract.registerInvoice.estimateGas(
+          invoiceHash,
+          data.uuid,
+          data.folio,
+          this.wallet.address, // Use wallet as producer address
+          Math.round(data.total * 100),
+          data.currency,
+          Math.floor(data.issuedAt.getTime() / 1000)
+        );
+        const gasLimit = Math.ceil(Number(estimatedGas) * this.GAS_LIMIT_BUFFER);
 
-      // Get fee data
-      const feeData = await this.provider.getFeeData();
+        // Get fee data
+        const feeData = await this.provider.getFeeData();
 
-      // Send transaction
-      const tx = await this.contract.registerInvoice(
-        invoiceHash,
-        data.uuid,
-        data.folio,
-        this.wallet.address,
-        Math.round(data.total * 100),
-        data.currency,
-        Math.floor(data.issuedAt.getTime() / 1000),
-        {
-          gasLimit,
-          maxFeePerGas: feeData.maxFeePerGas,
-          maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+        // Send transaction
+        const tx = await this.contract.registerInvoice(
+          invoiceHash,
+          data.uuid,
+          data.folio,
+          this.wallet.address,
+          Math.round(data.total * 100),
+          data.currency,
+          Math.floor(data.issuedAt.getTime() / 1000),
+          {
+            gasLimit,
+            maxFeePerGas: feeData.maxFeePerGas,
+            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+          }
+        );
+
+        logger.info('Invoice registration transaction sent', {
+          txHash: tx.hash,
+          uuid: data.uuid,
+        });
+
+        // Wait for confirmation
+        const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
+
+        if (!receipt || receipt.status !== 1) {
+          throw new Error('Transaction failed');
         }
-      );
 
-      logger.info('Invoice registration transaction sent', {
-        txHash: tx.hash,
+        logger.info('Invoice registered successfully', {
+          txHash: receipt.hash,
+          gasUsed: receipt.gasUsed.toString(),
+          uuid: data.uuid,
+        });
+
+        return {
+          success: true,
+          txHash: receipt.hash,
+          blockchainHash: invoiceHash,
+          network: this.networkName,
+          timestamp: new Date(),
+          gasUsed: receipt.gasUsed.toString(),
+        };
+      }));
+    } catch (error: any) {
+      // P1-7 FIX: Return fallback result instead of throwing
+      await this.notifyBlockchainFailure('invoice', data.uuid, error);
+
+      logger.warn('Blockchain registration failed, returning fallback', {
         uuid: data.uuid,
+        error: error.message,
       });
 
-      // Wait for confirmation
-      const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
-
-      if (!receipt || receipt.status !== 1) {
-        throw new Error('Transaction failed');
-      }
-
-      logger.info('Invoice registered successfully', {
-        txHash: receipt.hash,
-        gasUsed: receipt.gasUsed.toString(),
-        uuid: data.uuid,
-      });
-
+      // Return fallback - invoice is still created, blockchain pending
       return {
-        success: true,
-        txHash: receipt.hash,
+        success: false,
+        txHash: null,
         blockchainHash: invoiceHash,
         network: this.networkName,
         timestamp: new Date(),
-        gasUsed: receipt.gasUsed.toString(),
+        gasUsed: null,
+        status: BLOCKCHAIN_STATUS.UNAVAILABLE,
+        error: 'Blockchain temporarily unavailable. Invoice created, verification pending.',
       };
-    });
+    }
   }
 
   /**

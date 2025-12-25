@@ -83,9 +83,23 @@ AWS_SECRET_ACCESS_KEY=your-aws-secret
 AWS_REGION=us-east-1
 AWS_S3_BUCKET=agrobridge-production
 
+# ─── AWS Secrets Manager (SOC2 Compliance) ─────────────────────────
+# In production, secrets are loaded from AWS Secrets Manager
+# The following are loaded automatically if AWS_SECRET_NAME is set:
+#   - DATABASE_URL, JWT_SECRET, REDIS_URL, API keys
+AWS_SECRET_NAME=agrobridge/production
+
+# ─── APM Monitoring (Optional) ─────────────────────────────────────
+# Choose one: Datadog, New Relic, or AWS X-Ray
+DD_AGENT_HOST=localhost
+DD_TRACE_ENABLED=false
+# NEW_RELIC_LICENSE_KEY=your-key
+# AWS_XRAY_DAEMON_ADDRESS=127.0.0.1:2000
+
 # ─── Monitoring & Error Tracking ───────────────────────────────────
 SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 SENTRY_ENVIRONMENT=production
+DATADOG_API_KEY=your-datadog-api-key
 ```
 
 ### 2. Security Checklist

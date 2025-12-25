@@ -38,7 +38,7 @@ const advanceCalculationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request): string => {
-    const userId = (req as any).user?.userId || req.ip;
+    const userId = req.user?.userId || req.ip;
     return `advance-calc:${userId}`;
   },
 });
@@ -57,13 +57,13 @@ const advanceRequestLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request): string => {
-    const userId = (req as any).user?.userId || req.ip;
+    const userId = req.user?.userId || req.ip;
     return `advance-request:${userId}`;
   },
   handler: (req: Request, res: Response) => {
     logger.warn(`[RateLimiter] Advance request rate limit exceeded`, {
       ip: req.ip,
-      userId: (req as any).user?.userId,
+      userId: req.user?.userId,
       path: req.path,
     });
     res.status(429).json({
@@ -86,7 +86,7 @@ const financialOperationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request): string => {
-    const userId = (req as any).user?.userId || req.ip;
+    const userId = req.user?.userId || req.ip;
     return `financial-op:${userId}`;
   },
 });
@@ -99,7 +99,7 @@ const financialOperationLimiter = rateLimit({
  * Middleware to require admin or operator role
  */
 const requireAdminOrOperator = (req: Request, res: Response, next: NextFunction): void => {
-  const user = (req as any).user;
+  const user = req.user;
   if (!user) {
     res.status(401).json({ success: false, error: 'Authentication required' });
     return;
@@ -129,7 +129,7 @@ const requireAdminOrOperator = (req: Request, res: Response, next: NextFunction)
  */
 const requireFarmerOwnershipOrAdmin = (farmerIdParam: string = 'farmerId') => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) {
       res.status(401).json({ success: false, error: 'Authentication required' });
       return;

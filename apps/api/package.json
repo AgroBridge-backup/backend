@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
+    "@aws-sdk/client-secrets-manager": "^3.958.0",
     "@aws-sdk/client-ses": "^3.948.0",
     "@aws-sdk/s3-request-presigner": "^3.948.0",
     "@bull-board/api": "^5.23.0",
@@ -57,6 +58,10 @@
     "@parse/node-apn": "^7.0.1",
     "@prisma/client": "^5.9.1",
     "@sendgrid/mail": "^8.1.0",
+    "@sentry/node": "^10.32.1",
+    "@sentry/profiling-node": "^10.32.1",
+    "@turf/bbox": "^7.3.1",
+    "@turf/helpers": "^7.3.1",
     "@types/node-cron": "^3.0.11",
     "@vendia/serverless-express": "^4.12.6",
     "axios": "^1.6.5",

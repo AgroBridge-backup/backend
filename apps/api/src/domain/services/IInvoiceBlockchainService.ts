@@ -15,11 +15,13 @@ export interface InvoiceBlockchainData {
 
 export interface InvoiceRegistrationResult {
   success: boolean;
-  txHash: string;
+  txHash: string | null; // P1-7 FIX: Nullable when blockchain unavailable
   blockchainHash: string;
   network: string;
   timestamp: Date;
-  gasUsed?: string;
+  gasUsed?: string | null;
+  status?: string; // P1-7 FIX: BLOCKCHAIN_UNAVAILABLE when fallback
+  error?: string;  // P1-7 FIX: Error message when fallback
 }
 
 export interface InvoiceVerificationResult {

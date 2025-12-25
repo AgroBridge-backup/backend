@@ -1,6 +1,7 @@
 // FIX: ARCHITECTURAL REFACTOR TO ALIGN WITH FACTORY PATTERN & DI
 import express, { Request, Response, NextFunction } from 'express';
 import 'express-async-errors';
+import compression from 'compression';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +22,14 @@ import { auditMiddleware } from './infrastructure/http/middleware/audit.middlewa
 import { correlationIdMiddleware } from './infrastructure/http/middleware/correlation-id.middleware.js';
 import { performanceMiddleware } from './infrastructure/http/middleware/performance.middleware.js';
 import { errorTrackingMiddleware, setupUncaughtExceptionHandler } from './infrastructure/http/middleware/error-tracking.middleware.js';
+
+// Sentry APM
+import {
+  initSentry,
+  sentryRequestHandler,
+  sentryTracingHandler,
+  sentryErrorHandler,
+} from './infrastructure/monitoring/sentry.js';
 
 // Health Routes
 import healthRoutes from './presentation/routes/health.routes.js';
@@ -45,6 +54,9 @@ import { basicAuthMiddleware } from './infrastructure/http/middleware/admin-auth
 
 // Setup global error handlers
 setupUncaughtExceptionHandler();
+
+// Initialize Sentry APM (must be before app creation)
+initSentry();
 
 // --- DEPENDENCY INJECTION WIRING (Centralized) ---
 import { prisma } from './infrastructure/database/prisma/client.js';
@@ -84,6 +96,33 @@ import { GetBatchHistoryUseCase } from './application/use-cases/batches/GetBatch
 import { GetEventByIdUseCase } from './application/use-cases/events/GetEventByIdUseCase.js';
 import { RegisterEventUseCase } from './application/use-cases/events/RegisterEventUseCase.js';
 
+// Traceability 2.0 - Verification Stages
+import { GetBatchStagesUseCase } from './application/use-cases/verification-stages/GetBatchStagesUseCase.js';
+import { CreateBatchStageUseCase } from './application/use-cases/verification-stages/CreateBatchStageUseCase.js';
+import { UpdateBatchStageUseCase } from './application/use-cases/verification-stages/UpdateBatchStageUseCase.js';
+import { FinalizeBatchStagesUseCase } from './application/use-cases/verification-stages/FinalizeBatchStagesUseCase.js';
+import { PrismaVerificationStageRepository } from './infrastructure/database/prisma/repositories/PrismaVerificationStageRepository.js';
+import { VerificationStageService } from './domain/services/VerificationStageService.js';
+import { StageFinalizationService } from './domain/services/StageFinalizationService.js';
+
+// Traceability 2.0 - Quality Certificates
+import { IssueCertificateUseCase } from './application/use-cases/certificates/IssueCertificateUseCase.js';
+import { GetCertificateUseCase } from './application/use-cases/certificates/GetCertificateUseCase.js';
+import { ListBatchCertificatesUseCase } from './application/use-cases/certificates/ListBatchCertificatesUseCase.js';
+import { VerifyCertificateUseCase } from './application/use-cases/certificates/VerifyCertificateUseCase.js';
+import { CheckCertificateEligibilityUseCase } from './application/use-cases/certificates/CheckCertificateEligibilityUseCase.js';
+import { PrismaQualityCertificateRepository } from './infrastructure/database/prisma/repositories/PrismaQualityCertificateRepository.js';
+import { QualityCertificateService } from './domain/services/QualityCertificateService.js';
+
+// Traceability 2.0 - Real-Time Transit Tracking
+import { CreateTransitSessionUseCase } from './application/use-cases/transit/CreateTransitSessionUseCase.js';
+import { GetTransitSessionUseCase } from './application/use-cases/transit/GetTransitSessionUseCase.js';
+import { UpdateTransitStatusUseCase } from './application/use-cases/transit/UpdateTransitStatusUseCase.js';
+import { AddLocationUpdateUseCase } from './application/use-cases/transit/AddLocationUpdateUseCase.js';
+import { GetLocationHistoryUseCase } from './application/use-cases/transit/GetLocationHistoryUseCase.js';
+import { PrismaTransitSessionRepository } from './infrastructure/database/prisma/repositories/PrismaTransitSessionRepository.js';
+import { TransitTrackingService } from './domain/services/TransitTrackingService.js';
+
 import { Router } from 'express';
 
 export function createApp(injectedRouter?: Router): express.Express {
@@ -99,6 +138,24 @@ export function createApp(injectedRouter?: Router): express.Express {
         const producerRepository = new PrismaProducerRepository(prisma);
         const batchRepository = new PrismaBatchRepository();
         const eventRepository = new PrismaEventRepository(prisma);
+
+        // Traceability 2.0 - Verification Stages
+        const verificationStageRepository = new PrismaVerificationStageRepository(prisma);
+        const verificationStageService = new VerificationStageService(verificationStageRepository);
+        const stageFinalizationService = new StageFinalizationService(prisma, verificationStageService);
+
+        // Traceability 2.0 - Quality Certificates
+        const certificateRepository = new PrismaQualityCertificateRepository(prisma);
+        const certificateService = new QualityCertificateService(
+          prisma,
+          certificateRepository,
+          verificationStageRepository
+          // BlockchainService is optional - will be added when configured
+        );
+
+        // Traceability 2.0 - Real-Time Transit Tracking
+        const transitSessionRepository = new PrismaTransitSessionRepository(prisma);
+        const transitTrackingService = new TransitTrackingService(prisma, transitSessionRepository);
 
         const useCases: AllUseCases = {
             auth: {
@@ -130,7 +187,31 @@ export function createApp(injectedRouter?: Router): express.Express {
             events: {
                 registerEventUseCase: new RegisterEventUseCase(eventRepository),
                 getEventByIdUseCase: new GetEventByIdUseCase(eventRepository),
-            }
+            },
+            // Traceability 2.0 - Verification Stages
+            verificationStages: {
+                getBatchStagesUseCase: new GetBatchStagesUseCase(verificationStageService),
+                createBatchStageUseCase: new CreateBatchStageUseCase(verificationStageService),
+                updateBatchStageUseCase: new UpdateBatchStageUseCase(verificationStageService),
+                finalizeBatchStagesUseCase: new FinalizeBatchStagesUseCase(stageFinalizationService),
+            },
+            // Traceability 2.0 - Quality Certificates
+            certificates: {
+                issueCertificateUseCase: new IssueCertificateUseCase(certificateService),
+                getCertificateUseCase: new GetCertificateUseCase(certificateService),
+                listBatchCertificatesUseCase: new ListBatchCertificatesUseCase(certificateService),
+                verifyCertificateUseCase: new VerifyCertificateUseCase(certificateService),
+                checkCertificateEligibilityUseCase: new CheckCertificateEligibilityUseCase(certificateService),
+            },
+            // Traceability 2.0 - Real-Time Transit Tracking
+            transit: {
+                createTransitSessionUseCase: new CreateTransitSessionUseCase(transitTrackingService),
+                getTransitSessionUseCase: new GetTransitSessionUseCase(transitTrackingService),
+                updateTransitStatusUseCase: new UpdateTransitStatusUseCase(transitTrackingService),
+                addLocationUpdateUseCase: new AddLocationUpdateUseCase(transitTrackingService),
+                getLocationHistoryUseCase: new GetLocationHistoryUseCase(transitTrackingService),
+                transitService: transitTrackingService,
+            },
         };
         
         apiRouter = createApiRouter(useCases, prisma);
@@ -142,6 +223,13 @@ export function createApp(injectedRouter?: Router): express.Express {
 
     // 1. HEALTH ROUTES (No middleware - must be accessible for probes)
     app.use('/health', healthRoutes);
+
+    // 1.1. SENTRY REQUEST HANDLER (Must be first middleware after health)
+    // Captures request data for error tracking and performance monitoring
+    app.use(sentryRequestHandler());
+
+    // 1.2. SENTRY TRACING HANDLER (Before routes for transaction tracking)
+    app.use(sentryTracingHandler());
 
     // 1.5. DOCUMENTATION ROUTES (No auth required - public documentation)
     app.use('/', docsRouter);
@@ -165,11 +253,26 @@ export function createApp(injectedRouter?: Router): express.Express {
     // 5. SECURITY: CORS with Whitelist
     app.use(corsMiddleware);
 
-    // 6. Body Parsers
+    // 6. PERFORMANCE: Response Compression
+    // Compresses responses > 1KB using gzip/deflate
+    app.use(compression({
+      threshold: 1024, // Only compress responses > 1KB
+      level: 6, // Balanced compression level
+      filter: (req, res) => {
+        // Don't compress if client doesn't accept it
+        if (req.headers['x-no-compression']) {
+          return false;
+        }
+        // Use default filter (compresses text/json types)
+        return compression.filter(req, res);
+      },
+    }));
+
+    // 7. Body Parsers
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
 
-    // 7. OBSERVABILITY: Request Logging (Morgan)
+    // 8. OBSERVABILITY: Request Logging (Morgan)
     if (process.env.NODE_ENV === 'development') {
         app.use(morgan('dev'));
     } else {
@@ -240,6 +343,10 @@ export function createApp(injectedRouter?: Router): express.Express {
     app.use('/api', (req: Request, res: Response, next: NextFunction) => {
         next(new AppError(`The route ${req.method} ${req.originalUrl} does not exist.`, 404));
     });
+
+    // SENTRY ERROR HANDLER (Must be before custom error handler)
+    // Captures 5xx errors and sends to Sentry with full context
+    app.use(sentryErrorHandler());
 
     app.use(errorHandler);
 

@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 250 250 250;
+    --foreground: 23 23 23;
+    --card: 255 255 255;
+    --card-foreground: 23 23 23;
+    --primary: 34 197 94;
+    --primary-foreground: 255 255 255;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900 antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+@layer components {
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium;
+  }
+
+  .badge-verified {
+    @apply bg-primary-100 text-primary-800;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-800;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  .card {
+    @apply rounded-2xl bg-white shadow-sm border border-neutral-100;
+  }
+
+  .card-elevated {
+    @apply rounded-2xl bg-white shadow-lg border border-neutral-100;
+  }
+
+  .key-fact {
+    @apply flex flex-col items-center justify-center rounded-xl bg-neutral-50 p-4 text-center;
+  }
+
+  .journey-dot {
+    @apply absolute left-0 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white;
+  }
+
+  .journey-line {
+    @apply absolute left-0 top-0 h-full w-0.5 -translate-x-1/2 bg-gradient-to-b from-primary-500 to-primary-300;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400;
+  }
+
+  .animate-in {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+}

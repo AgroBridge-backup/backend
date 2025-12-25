@@ -7,7 +7,7 @@ export class GetProducerByIdUseCase {
     async execute(dto) {
         const producer = await this.producerRepository.findById(dto.producerId);
         if (!producer) {
-            throw new NotFoundError(`Producer with ID ${dto.producerId} not found.`);
+            throw new NotFoundError('Producer not found');
         }
         return producer;
     }

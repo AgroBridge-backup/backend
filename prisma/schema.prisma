@@ -42,12 +42,286 @@ model Producer {
 }
 
 model Batch {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  batchNumber    String?  @unique
+  description    String?
+  producerId     String?
+  cropType       String?
+  variety        String?
+  status         BatchStatus @default(PENDING)
+  quantity       Decimal?
+  harvestDate    DateTime?
+  parcelName     String?
+  latitude       Decimal?
+  longitude      Decimal?
+  qrCode         String?
+  nftTokenId     String?
+  blockchainHash String?
+  origin         String?
+
+  // Traceability 2.0: Multi-stage verification finalization
+  stagesFinalized     Boolean   @default(false)
+  stagesFinalizedAt   DateTime?
+  stagesFinalizedHash String?   // Hash of all stages stored on blockchain
+  stagesFinalizedTxId String?   // Blockchain transaction ID
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  verificationStages VerificationStage[]
+  qualityCertificates QualityCertificate[]
+  transitSessions    TransitSession[]
+  temperatureReadings TemperatureReading[]
+  nfcSeals           NfcSeal[]
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRACEABILITY 2.0: MULTI-STAGE VERIFICATION (Feature 1)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model VerificationStage {
+  id          String              @id @default(uuid())
+  batchId     String
+  stageType   StageType
+  status      StageStatus         @default(PENDING)
+  actorId     String              // User who performed/approved the stage
+  timestamp   DateTime            @default(now())
+  location    String?             // Free-form location or structured JSON
+  latitude    Decimal?
+  longitude   Decimal?
+  notes       String?
+  evidenceUrl String?             // Photo/document URL for evidence
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  batch       Batch               @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, stageType])  // Only one stage of each type per batch
+  @@index([batchId])
+  @@index([actorId])
+}
+
+enum StageType {
+  HARVEST
+  PACKING
+  COLD_CHAIN
+  EXPORT
+  DELIVERY
+}
+
+enum StageStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum BatchStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRACEABILITY 2.0: QUALITY CERTIFICATES (Feature 2)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model QualityCertificate {
+  id             String   @id @default(uuid())
+  batchId        String
+  grade          CertificateGrade
+  certifyingBody String
+  validFrom      DateTime
+  validTo        DateTime
+  hashOnChain    String?
+  pdfUrl         String?
+  issuedAt       DateTime @default(now())
+  issuedBy       String   // User/org ID who issued
+
+  // Certificate payload snapshot (JSON of all stages, NFC, temps at time of issuance)
+  payloadSnapshot String?  @db.Text
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  batch          Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+}
+
+enum CertificateGrade {
+  STANDARD
+  PREMIUM
+  EXPORT
+  ORGANIC
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRACEABILITY 2.0: REAL-TIME TRANSIT TRACKING (Feature 3)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model TransitSession {
+  id        String    @id @default(uuid())
+  batchId   String
+  deviceId  String?
+  driverId  String?
+  carrier   String?
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  status    TransitStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  batch     Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  locations TransitLocation[]
+
+  @@index([batchId])
+  @@index([driverId])
+}
+
+model TransitLocation {
   id          String   @id @default(uuid())
-  code        String   @unique
-  description String?
-  status      String   @default("pending")
+  sessionId   String
+  lat         Decimal
+  lng         Decimal
+  speed       Decimal?
+  temperature Decimal? // For cold chain reuse
+  battery     Decimal?
+  timestamp   DateTime @default(now())
+
+  session     TransitSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([timestamp])
+}
+
+enum TransitStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRACEABILITY 2.0: COLD CHAIN TEMPERATURE LOG (Feature 4)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model TemperatureReading {
+  id              String   @id @default(uuid())
+  batchId         String
+  transitSessionId String?
+  source          TemperatureSource
+  value           Decimal
+  units           String   @default("C")
+  timestamp       DateTime @default(now())
+
+  // Alert tracking
+  isOutOfRange    Boolean  @default(false)
+  alertSent       Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+
+  batch           Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([transitSessionId])
+  @@index([timestamp])
+}
+
+enum TemperatureSource {
+  SENSOR
+  MANUAL
+  BLUETOOTH
+  IOT
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRACEABILITY 2.0: TAMPER-EVIDENT NFC SEALS (Feature 5)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model NfcSeal {
+  id              String    @id @default(uuid())
+  uid             String    @unique  // NFC chip UID
+  batchId         String
+  status          NfcSealStatus @default(INTACT)
+  linkedAt        DateTime  @default(now())
+  lastVerifiedAt  DateTime?
+  lastVerifierId  String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  batch           Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  verifications   NfcSealVerification[]
+
+  @@index([batchId])
+  @@index([uid])
+}
+
+model NfcSealVerification {
+  id         String   @id @default(uuid())
+  sealId     String
+  verifierId String
+  status     NfcSealStatus
+  location   String?
+  latitude   Decimal?
+  longitude  Decimal?
+  timestamp  DateTime @default(now())
+
+  seal       NfcSeal  @relation(fields: [sealId], references: [id], onDelete: Cascade)
+
+  @@index([sealId])
+}
+
+enum NfcSealStatus {
+  INTACT
+  BROKEN
+  UNKNOWN
+  TAMPERED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRACEABILITY 2.0: SATELLITE IMAGERY TIME-LAPSE (Feature 6)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Field {
+  id          String   @id @default(uuid())
+  producerId  String
+  name        String
+  latitude    Decimal
+  longitude   Decimal
+  areaHa      Decimal?
+  boundary    String?  @db.Text  // GeoJSON polygon
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  imagery     FieldImagery[]
+
+  @@index([producerId])
+}
+
+model FieldImagery {
+  id          String   @id @default(uuid())
+  fieldId     String
+  capturedAt  DateTime
+  imageUrl    String
+  thumbnailUrl String?
+  ndvi        Decimal? // Normalized Difference Vegetation Index
+  cloudCover  Decimal?
+  provider    String   // Sentinel, Landsat, Planet, etc.
+  resolution  Decimal? // meters per pixel
+
+  createdAt   DateTime @default(now())
+
+  field       Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([fieldId])
+  @@index([capturedAt])
 }
 
 enum UserRole {
@@ -55,4 +329,7 @@ enum UserRole {
   PRODUCER
   ADMIN
   CERTIFIER
+  QA          // Quality Assurance role for stage approval
+  EXPORTER    // Exporter role for export stage
+  DRIVER      // Driver role for transit
 }

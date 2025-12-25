@@ -233,11 +233,11 @@ router.get('/docs/api', (req: Request, res: Response) => {
       <span class="version-badge">v2.0.0</span>
       <div class="stats">
         <div class="stat">
-          <div class="stat-value">50+</div>
+          <div class="stat-value">120+</div>
           <div class="stat-label">API Endpoints</div>
         </div>
         <div class="stat">
-          <div class="stat-value">9</div>
+          <div class="stat-value">20+</div>
           <div class="stat-label">Resource Types</div>
         </div>
         <div class="stat">

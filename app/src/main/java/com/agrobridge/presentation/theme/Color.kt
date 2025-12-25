@@ -121,6 +121,28 @@ val StatusHarvest = Color(0xFFFF6D00)
 val StatusPreparation = Color(0xFFFFEB3B)
 
 // ============================================================================
+// VERIFICATION STAGE STATUS COLORS (Traceability 2.0)
+// ============================================================================
+
+/**
+ * StatusApproved - Stage approved/verified
+ * Uso: Stages in APPROVED state
+ */
+val StatusApproved = Color(0xFF4CAF50) // Green
+
+/**
+ * StatusRejected - Stage rejected
+ * Uso: Stages in REJECTED state
+ */
+val StatusRejected = Color(0xFFF44336) // Red
+
+/**
+ * StatusFlagged - Stage flagged for review
+ * Uso: Stages in FLAGGED state
+ */
+val StatusFlagged = Color(0xFFFFEB3B) // Yellow
+
+// ============================================================================
 // UI COMPONENT COLORS (colores para elementos de interfaz)
 // ============================================================================
 

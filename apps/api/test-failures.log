@@ -1,0 +1,2650 @@
+
+> @agrobridge/api@2.0.0 test
+> npx vitest --run
+
+
+ RUN  v1.6.1 /Users/mac/Documents/agrobridge-backend/apps/api
+
+ ✓ tests/unit/satellite/FieldImagery.test.ts  (51 tests) 5ms
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts  (30 tests | 11 failed) 15ms
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Weight Validation > should have weights that sum to 100
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Risk Tier Classification > should classify Tier A for scores >= 90
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Risk Tier Classification > should classify Tier B for scores 70-89
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Risk Tier Classification > should classify Tier C for scores < 70
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Trend Detection > should detect improving trend
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Trend Detection > should detect stable trend
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Trend Detection > should detect declining trend
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should clamp scores correctly
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should validate risk tier correctly
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should validate score trend correctly
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+   ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should get credit limits for tier correctly
+     → Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > createField() > should create field with valid polygon
+2025-01-15 06:00:00 [32minfo[39m: Field created
+{
+  "fieldId": "field-123",
+  "producerId": "producer-456",
+  "areaHectares": 50
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > createField() > should calculate area if not provided
+2025-01-15 06:00:00 [32minfo[39m: Field created
+{
+  "fieldId": "field-123",
+  "producerId": "producer-456",
+  "areaHectares": 11677.733293359375
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > storeImagery() > should store imagery for existing field
+2025-01-15 06:00:00 [32minfo[39m: Imagery stored
+{
+  "imageryId": "imagery-789",
+  "fieldId": "field-123",
+  "source": "SENTINEL_2",
+  "captureDate": "2025-01-15T12:00:00.000Z"
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > generateTimeLapse() > should generate time-lapse from imagery
+2025-01-15 06:00:00 [32minfo[39m: Time-lapse generated
+{
+  "fieldId": "field-123",
+  "frameCount": 4,
+  "startDate": "2024-06-01T00:00:00.000Z",
+  "endDate": "2024-12-01T00:00:00.000Z"
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > generateTimeLapse() > should filter by cloud cover
+2025-01-15 06:00:00 [32minfo[39m: Time-lapse generated
+{
+  "fieldId": "field-123",
+  "frameCount": 2,
+  "startDate": "2024-06-01T00:00:00.000Z",
+  "endDate": "2024-12-01T00:00:00.000Z"
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > generateTimeLapse() > should handle empty imagery list
+2025-01-15 06:00:00 [32minfo[39m: Time-lapse generated
+{
+  "fieldId": "field-123",
+  "frameCount": 0,
+  "startDate": "2024-06-01T00:00:00.000Z",
+  "endDate": "2024-12-01T00:00:00.000Z"
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > analyzeFieldHealth() > should analyze field health with imagery data
+2025-01-15 06:00:00 [32minfo[39m: Field health analysis completed
+{
+  "fieldId": "field-123",
+  "overallHealthScore": 84,
+  "ndviAverage": 0.65,
+  "anomalyCount": 0
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > analyzeFieldHealth() > should detect anomalies from imagery
+2025-01-15 06:00:00 [32minfo[39m: Field health analysis completed
+{
+  "fieldId": "field-123",
+  "overallHealthScore": 84,
+  "ndviAverage": 0.65,
+  "anomalyCount": 1
+}
+
+stdout | tests/unit/satellite/SatelliteImageryService.test.ts > SatelliteImageryService > linkFieldToBatch() > should link field to batch
+2025-01-15 06:00:00 [32minfo[39m: Field linked to batch
+{
+  "fieldId": "field-123",
+  "batchId": "batch-123"
+}
+
+ ✓ tests/unit/satellite/SatelliteImageryService.test.ts  (29 tests) 13ms
+stdout | tests/performance/benchmarks.test.ts
+
+═══════════════════════════════════════════════════════════════════
+  PERFORMANCE BENCHMARK SUITE
+═══════════════════════════════════════════════════════════════════
+
+
+ ❯ tests/security/security.test.ts  (0 test)
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > GET /api/v1/public/farmers/:farmerId > should return 404 for non-existent farmer
+2025-12-23 07:44:49 [31merror[39m: Farmer not found
+AppError: Farmer not found
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:72:17
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+{
+  "path": "/api/v1/public/farmers/nonexistent",
+  "method": "GET"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > GET /api/v1/public/batches/:shortCode > should return 404 or error for invalid short code format
+2025-12-23 07:44:49 [31merror[39m: this.prisma.$queryRawUnsafe is not a function
+TypeError: this.prisma.$queryRawUnsafe is not a function
+    at PrismaPublicTraceabilityRepository.findByShortCode (/Users/mac/Documents/agrobridge-backend/apps/api/src/infrastructure/database/prisma/repositories/PrismaPublicTraceabilityRepository.ts:90:39)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PublicTraceabilityService.getBatchTraceability (/Users/mac/Documents/agrobridge-backend/apps/api/src/domain/services/PublicTraceabilityService.ts:243:18)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:106:30
+{
+  "path": "/api/v1/public/batches/ABC",
+  "method": "GET"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > GET /api/v1/public/batches/:shortCode > should set shorter cache for dynamic traceability data
+2025-12-23 07:44:49 [31merror[39m: this.prisma.$queryRawUnsafe is not a function
+TypeError: this.prisma.$queryRawUnsafe is not a function
+    at PrismaPublicTraceabilityRepository.findByShortCode (/Users/mac/Documents/agrobridge-backend/apps/api/src/infrastructure/database/prisma/repositories/PrismaPublicTraceabilityRepository.ts:90:39)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PublicTraceabilityService.getBatchTraceability (/Users/mac/Documents/agrobridge-backend/apps/api/src/domain/services/PublicTraceabilityService.ts:243:18)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:106:30
+{
+  "path": "/api/v1/public/batches/ABC12345",
+  "method": "GET"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/public/events/scan > should record scan event successfully
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {}
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/public/events/scan > should accept referrer parameter
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {}
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/public/events/scan > should not fail for unknown short code (silent analytics)
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {}
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/public/events/scan > should extract country from CDN headers
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {}
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/public/events/scan > should reject invalid short code format
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {
+    "issues": [
+      {
+        "code": "too_small",
+        "minimum": 6,
+        "type": "string",
+        "inclusive": true,
+        "exact": false,
+        "message": "String must contain at least 6 character(s)",
+        "path": [
+          "shortCode"
+        ]
+      }
+    ],
+    "name": "ZodError"
+  }
+}
+
+ ✓ tests/unit/public/PublicTraceabilityService.test.ts  (25 tests) 26ms
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > generatePublicLink() > should create new link when none exists
+2025-01-15 06:00:00 [32minfo[39m: Public traceability link generated
+{
+  "batchId": "batch-456",
+  "shortCode": "74twqy74",
+  "publicUrl": "https://agrobridge.io/t/74twqy74"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > generatePublicLink() > should retry on short code collision
+2025-01-15 06:00:00 [32minfo[39m: Public traceability link generated
+{
+  "batchId": "batch-456",
+  "shortCode": "g9lIVLg9",
+  "publicUrl": "https://agrobridge.io/t/g9lIVLg9"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > generatePublicLink() > should create new link if existing link is inactive
+2025-01-15 06:00:00 [32minfo[39m: Public traceability link generated
+{
+  "batchId": "batch-456",
+  "shortCode": "PkWXHgPk",
+  "publicUrl": "https://agrobridge.io/t/PkWXHgPk"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > recordScan() > should record scan event with device detection
+2025-01-15 06:00:00 [32minfo[39m: QR scan recorded
+{
+  "shortCode": "ABC12345",
+  "country": "US",
+  "deviceType": "MOBILE"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > recordScan() > should detect browser from user agent
+2025-01-15 06:00:00 [32minfo[39m: QR scan recorded
+{
+  "shortCode": "ABC12345",
+  "country": null,
+  "deviceType": "UNKNOWN"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > recordScan() > should not throw for unknown short code (silent fail for analytics)
+2025-01-15 06:00:00 [33mwarn[39m: Scan recorded for unknown short code
+{
+  "shortCode": "UNKNOWN"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > recordScan() > should handle missing user agent gracefully
+2025-01-15 06:00:00 [32minfo[39m: QR scan recorded
+{
+  "shortCode": "ABC12345",
+  "country": null,
+  "deviceType": "UNKNOWN"
+}
+
+stdout | tests/unit/public/PublicTraceabilityService.test.ts > PublicTraceabilityService > recordScan() > should include referrer when provided
+2025-01-15 06:00:00 [32minfo[39m: QR scan recorded
+{
+  "shortCode": "ABC12345",
+  "country": null,
+  "deviceType": "UNKNOWN"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/public/events/scan > should not require authentication
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {}
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/batches/:id/public-link > should generate public link for valid batch
+2025-12-23 07:44:49 [31merror[39m: this.prisma.$queryRawUnsafe is not a function [UserID: test-user-123]
+TypeError: this.prisma.$queryRawUnsafe is not a function
+    at PrismaPublicTraceabilityRepository.findByBatchId (/Users/mac/Documents/agrobridge-backend/apps/api/src/infrastructure/database/prisma/repositories/PrismaPublicTraceabilityRepository.ts:100:39)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PublicTraceabilityService.generatePublicLink (/Users/mac/Documents/agrobridge-backend/apps/api/src/domain/services/PublicTraceabilityService.ts:62:22)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:221:24
+{
+  "path": "/api/v1/batches/550e8400-e29b-41d4-a716-446655440000/public-link",
+  "method": "POST"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/batches/:id/public-link > should reject invalid UUID format
+2025-12-23 07:44:49 [31merror[39m: Invalid batch ID [UserID: test-user-123]
+AppError: Invalid batch ID
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:218:17
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:284:15
+    at param (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:365:14)
+    at param (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:376:14)
+    at Function.process_params (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:421:3)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:280:10)
+{
+  "path": "/api/v1/batches/invalid-id/public-link",
+  "method": "POST"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > POST /api/v1/batches/:id/public-link > should return existing link if already created
+2025-12-23 07:44:49 [31merror[39m: this.prisma.$queryRawUnsafe is not a function [UserID: test-user-123]
+TypeError: this.prisma.$queryRawUnsafe is not a function
+    at PrismaPublicTraceabilityRepository.findByBatchId (/Users/mac/Documents/agrobridge-backend/apps/api/src/infrastructure/database/prisma/repositories/PrismaPublicTraceabilityRepository.ts:100:39)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PublicTraceabilityService.generatePublicLink (/Users/mac/Documents/agrobridge-backend/apps/api/src/domain/services/PublicTraceabilityService.ts:62:22)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:221:24
+{
+  "path": "/api/v1/batches/550e8400-e29b-41d4-a716-446655440000/public-link",
+  "method": "POST"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > GET /api/v1/batches/:id/public-stats > should return 404 when no public link exists
+2025-12-23 07:44:49 [31merror[39m: this.prisma.$queryRawUnsafe is not a function [UserID: test-user-123]
+TypeError: this.prisma.$queryRawUnsafe is not a function
+    at PrismaPublicTraceabilityRepository.findByBatchId (/Users/mac/Documents/agrobridge-backend/apps/api/src/infrastructure/database/prisma/repositories/PrismaPublicTraceabilityRepository.ts:100:39)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PublicTraceabilityService.getScanAnalytics (/Users/mac/Documents/agrobridge-backend/apps/api/src/domain/services/PublicTraceabilityService.ts:691:18)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:265:27
+{
+  "path": "/api/v1/batches/550e8400-e29b-41d4-a716-446655440000/public-stats",
+  "method": "GET"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > GET /api/v1/batches/:id/public-stats > should reject invalid UUID format
+2025-12-23 07:44:49 [31merror[39m: Invalid batch ID [UserID: test-user-123]
+AppError: Invalid batch ID
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:262:17
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:284:15
+    at param (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:365:14)
+    at param (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:376:14)
+    at Function.process_params (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:421:3)
+    at next (/Users/mac/Documents/agrobridge-backend/apps/api/node_modules/express/lib/router/index.js:280:10)
+{
+  "path": "/api/v1/batches/invalid-id/public-stats",
+  "method": "GET"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > GET /api/v1/batches/:id/public-stats > should return analytics for existing link
+2025-12-23 07:44:49 [31merror[39m: this.prisma.$queryRawUnsafe is not a function [UserID: test-user-123]
+TypeError: this.prisma.$queryRawUnsafe is not a function
+    at PrismaPublicTraceabilityRepository.findByBatchId (/Users/mac/Documents/agrobridge-backend/apps/api/src/infrastructure/database/prisma/repositories/PrismaPublicTraceabilityRepository.ts:100:39)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PublicTraceabilityService.getScanAnalytics (/Users/mac/Documents/agrobridge-backend/apps/api/src/domain/services/PublicTraceabilityService.ts:691:18)
+    at /Users/mac/Documents/agrobridge-backend/apps/api/src/presentation/routes/public.routes.ts:265:27
+{
+  "path": "/api/v1/batches/550e8400-e29b-41d4-a716-446655440000/public-stats",
+  "method": "GET"
+}
+
+stdout | tests/integration/public-traceability.test.ts > Public Traceability API Integration Tests > Privacy & Security > should not expose IP addresses in scan events
+2025-12-23 07:44:49 [31merror[39m: Failed to record scan event
+{
+  "error": {}
+}
+
+ ✓ tests/integration/public-traceability.test.ts  (25 tests) 76ms
+stdout | unknown test
+2025-12-23 07:44:49 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:49 [32minfo[39m: Redis client connected
+
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache SET operations
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache SET                                           │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  21.67                                           ms │
+│ Average:     0.217                                           ms │
+│ Min:         0.076                                           ms │
+│ Max:         1.961                                           ms │
+│ P50:         0.127                                           ms │
+│ P95:         0.808                                           ms │
+│ P99:         1.737                                           ms │
+│ Ops/sec:     4614.70                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > createKey() > should generate a secure API key with correct format (ab_test_xxxx)
+2025-12-23 07:44:49 [34mdebug[39m: [ApiKeyService] Creating new API key [UserID: user-1]
+{
+  "label": "Test Key",
+  "keyPrefix": "ab_test_KyXC"
+}
+2025-12-23 07:44:49 [32minfo[39m: [ApiKeyService] API key created [UserID: user-1]
+{
+  "keyId": "key-123",
+  "label": "Test Key"
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > createKey() > should never store the original key, only the hash
+2025-12-23 07:44:49 [34mdebug[39m: [ApiKeyService] Creating new API key [UserID: user-1]
+{
+  "label": "My API Key",
+  "keyPrefix": "ab_test_tlDW"
+}
+2025-12-23 07:44:49 [32minfo[39m: [ApiKeyService] API key created [UserID: user-1]
+{
+  "keyId": "key-456",
+  "label": "My API Key"
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > createKey() > should apply SHA-256 hashing to the key
+2025-12-23 07:44:49 [34mdebug[39m: [ApiKeyService] Creating new API key [UserID: user-1]
+{
+  "label": "Hash Test",
+  "keyPrefix": "ab_test_Iina"
+}
+2025-12-23 07:44:49 [32minfo[39m: [ApiKeyService] API key created [UserID: user-1]
+{
+  "keyId": "key-789",
+  "label": "Hash Test"
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > createKey() > should set default scopes to READ when not provided
+2025-12-23 07:44:49 [34mdebug[39m: [ApiKeyService] Creating new API key [UserID: user-1]
+{
+  "label": "Default Scope Key",
+  "keyPrefix": "ab_test_xOqy"
+}
+2025-12-23 07:44:49 [32minfo[39m: [ApiKeyService] API key created [UserID: user-1]
+{
+  "keyId": "key-default",
+  "label": "Default Scope Key"
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > createKey() > should respect custom rate limit when provided
+2025-12-23 07:44:49 [34mdebug[39m: [ApiKeyService] Creating new API key [UserID: user-1]
+{
+  "label": "Custom Rate",
+  "keyPrefix": "ab_test_Jbj6"
+}
+2025-12-23 07:44:49 [32minfo[39m: [ApiKeyService] API key created [UserID: user-1]
+{
+  "keyId": "key-rate",
+  "label": "Custom Rate"
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > validateKey() > should reject revoked keys
+2025-12-23 07:44:49 [33mwarn[39m: [ApiKeyService] Inactive API key used
+{
+  "keyId": "key-revoked",
+  "status": "REVOKED"
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > validateKey() > should block requests from non-whitelisted IPs
+2025-12-23 07:44:49 [33mwarn[39m: [ApiKeyService] API key used from unauthorized IP
+{
+  "keyId": "key-ip-restricted",
+  "ip": "192.168.1.100",
+  "allowedIps": [
+    "10.0.0.1",
+    "10.0.0.2"
+  ]
+}
+
+stdout | tests/unit/infrastructure/auth/ApiKeyService.test.ts > ApiKeyService > revokeKey() > should set status to REVOKED with timestamp and reason
+2025-12-23 07:44:49 [32minfo[39m: [ApiKeyService] API key revoked [UserID: user-1]
+{
+  "keyId": "key-to-revoke",
+  "revokedBy": "admin-1",
+  "reason": "Security concern"
+}
+
+ ✓ tests/unit/infrastructure/auth/ApiKeyService.test.ts  (22 tests) 10ms
+stdout | unknown test
+2025-12-23 07:44:49 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:49 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+ ✓ tests/unit/public/PublicTraceability.test.ts  (58 tests) 7ms
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache GET operations (hit)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache GET (hit)                                     │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  54.84                                           ms │
+│ Average:     0.548                                           ms │
+│ Min:         0.071                                           ms │
+│ Max:         17.729                                          ms │
+│ P50:         0.108                                           ms │
+│ P95:         1.776                                           ms │
+│ P99:         7.516                                           ms │
+│ Ops/sec:     1823.64                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:49 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:49 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:50 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache GET operations (miss)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache GET (miss)                                    │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  39.64                                           ms │
+│ Average:     0.396                                           ms │
+│ Min:         0.065                                           ms │
+│ Max:         3.866                                           ms │
+│ P50:         0.145                                           ms │
+│ P95:         1.476                                           ms │
+│ P99:         3.536                                           ms │
+│ Ops/sec:     2522.44                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:50 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:50 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+ ✓ tests/unit/nfc-seals/NfcSeal.test.ts  (37 tests) 159ms
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+ ✓ tests/unit/temperature/TemperatureReading.test.ts  (25 tests) 7ms
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache GET + SET (cache-aside pattern)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache GET + SET (cache-aside)                       │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  263.06                                          ms │
+│ Average:     2.631                                           ms │
+│ Min:         0.070                                           ms │
+│ Max:         32.229                                          ms │
+│ P50:         1.542                                           ms │
+│ P95:         9.710                                           ms │
+│ P99:         12.204                                          ms │
+│ Ops/sec:     380.13                                             │
+└──────────────────────────────────────────────────────────────────┘
+
+
+ ✓ tests/unit/verification-stages/VerificationStage.test.ts  (44 tests) 7ms
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache DELETE operations
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache DELETE                                        │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  18.91                                           ms │
+│ Average:     0.189                                           ms │
+│ Min:         0.051                                           ms │
+│ Max:         0.901                                           ms │
+│ P50:         0.122                                           ms │
+│ P95:         0.564                                           ms │
+│ P99:         0.879                                           ms │
+│ Ops/sec:     5288.32                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache MGET (batch read)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache MGET (10 keys)                                │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  13.81                                           ms │
+│ Average:     0.138                                           ms │
+│ Min:         0.060                                           ms │
+│ Max:         1.005                                           ms │
+│ P50:         0.120                                           ms │
+│ P95:         0.259                                           ms │
+│ P99:         0.329                                           ms │
+│ Ops/sec:     7242.36                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:50 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:50 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | tests/performance/benchmarks.test.ts > Cache Performance Benchmarks > should benchmark cache pipeline operations
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache Pipeline (5 ops)                              │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  14.93                                           ms │
+│ Average:     0.149                                           ms │
+│ Min:         0.071                                           ms │
+│ Max:         1.552                                           ms │
+│ P50:         0.111                                           ms │
+│ P95:         0.264                                           ms │
+│ P99:         0.411                                           ms │
+│ Ops/sec:     6698.41                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:50 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:50 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:50 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:50 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark simple count query
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: DB: COUNT batches                                   │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  29.42                                           ms │
+│ Average:     0.294                                           ms │
+│ Min:         0.103                                           ms │
+│ Max:         1.807                                           ms │
+│ P50:         0.246                                           ms │
+│ P95:         0.591                                           ms │
+│ P99:         1.425                                           ms │
+│ Ops/sec:     3398.56                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:50 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:50 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark aggregate query
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: DB: AGGREGATE batch stats                           │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  33.42                                           ms │
+│ Average:     0.334                                           ms │
+│ Min:         0.119                                           ms │
+│ Max:         3.501                                           ms │
+│ P50:         0.251                                           ms │
+│ P95:         0.740                                           ms │
+│ P99:         1.602                                           ms │
+│ Ops/sec:     2992.39                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:51 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:51 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:51 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:51 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:51 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:51 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:51 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:51 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+ ❯ tests/integration/websocket.test.ts  (27 tests | 26 failed) 1650ms
+   ❯ tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should allow anonymous connection
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should accept valid JWT token
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should allow connection with invalid token (unauthenticated)
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should respond to ping with pong
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should auto-join user room when authenticated
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should auto-join admin room for admin users
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should subscribe to batch updates
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should unsubscribe from batch updates without error
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should subscribe to producer updates when authenticated
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should reject producer subscription for anonymous users
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should allow subscribing to multiple batches
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Notification Handling > should confirm notification read
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Notification Handling > should handle multiple notification reads
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Multi-Client Scenarios > should maintain multiple simultaneous connections
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Multi-Client Scenarios > should allow different users to subscribe to same batch
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Multi-Client Scenarios > should handle independent subscriptions per client
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Reconnection Handling > should reconnect after manual disconnect
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Reconnection Handling > should maintain subscriptions after reconnect
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Error Handling > should handle malformed events gracefully
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Error Handling > should handle empty subscription ids
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Performance > should handle rapid ping/pong exchanges
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Performance > should handle multiple rapid subscriptions
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Performance > should handle 10 concurrent connections
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Transport > should connect with websocket transport
+     → websocket error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Transport > should connect with polling transport
+     → xhr poll error
+   ❯ tests/integration/websocket.test.ts > WebSocket: Transport > should work with auto transport selection
+     → websocket error
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connected and ready
+
+stdout | tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark groupBy query
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: DB: GROUP BY status                                 │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  38.28                                           ms │
+│ Average:     0.383                                           ms │
+│ Min:         0.150                                           ms │
+│ Max:         0.880                                           ms │
+│ P50:         0.359                                           ms │
+│ P95:         0.796                                           ms │
+│ P99:         0.854                                           ms │
+│ Ops/sec:     2612.49                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:51 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:51 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:51 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:51 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:51 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark producer with batch count
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: DB: SELECT producer with batch count                │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  148.09                                          ms │
+│ Average:     1.481                                           ms │
+│ Min:         0.405                                           ms │
+│ Max:         11.223                                          ms │
+│ P50:         1.001                                           ms │
+│ P95:         4.415                                           ms │
+│ P99:         6.175                                           ms │
+│ Ops/sec:     675.25                                             │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | tests/performance/benchmarks.test.ts > Serialization Benchmarks > should benchmark JSON.stringify
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: JSON.stringify (complex object)                     │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  1000                                               │
+│ Total Time:  4.77                                            ms │
+│ Average:     0.005                                           ms │
+│ Min:         0.004                                           ms │
+│ Max:         0.108                                           ms │
+│ P50:         0.004                                           ms │
+│ P95:         0.009                                           ms │
+│ P99:         0.011                                           ms │
+│ Ops/sec:     209684.75                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:51 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | tests/performance/benchmarks.test.ts > Serialization Benchmarks > should benchmark JSON.parse
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: JSON.parse (complex object)                         │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  1000                                               │
+│ Total Time:  7.95                                            ms │
+│ Average:     0.008                                           ms │
+│ Min:         0.005                                           ms │
+│ Max:         0.111                                           ms │
+│ P50:         0.005                                           ms │
+│ P95:         0.021                                           ms │
+│ P99:         0.040                                           ms │
+│ Ops/sec:     125732.87                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:51 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:51 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:51 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:51 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:51 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | tests/performance/benchmarks.test.ts > Serialization Benchmarks > should benchmark full cache round-trip
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Benchmark: Cache round-trip (serialize + store + retrieve + parse) │
+├──────────────────────────────────────────────────────────────────┤
+│ Iterations:  100                                                │
+│ Total Time:  41.69                                           ms │
+│ Average:     0.417                                           ms │
+│ Min:         0.117                                           ms │
+│ Max:         9.775                                           ms │
+│ P50:         0.168                                           ms │
+│ P95:         1.026                                           ms │
+│ P99:         6.630                                           ms │
+│ Ops/sec:     2398.46                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/verification-stages.e2e.test.ts  (0 test)
+ ❯ tests/e2e/certificates.e2e.test.ts  (0 test)
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:51 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/integration/api-keys.test.ts  (0 test)
+ ❯ tests/e2e/public-verify.e2e.test.ts  (0 test)
+ ❯ tests/integration/critical-flows.test.ts  (0 test)
+stdout | tests/performance/benchmarks.test.ts > Memory Usage Benchmarks > should track memory during batch processing
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Memory Usage: Batch Processing (1000 items)                      │
+├──────────────────────────────────────────────────────────────────┤
+│ Initial Heap:     33.60                                      MB │
+│ After Creation:   35.20                                      MB │
+│ After Processing: 37.02                                      MB │
+│ After Cleanup:    23.61                                      MB │
+│ Peak Increase:    3.42                                       MB │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | tests/performance/benchmarks.test.ts > Memory Usage Benchmarks > should track memory during large JSON operations
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Memory Usage: Large JSON Operations (10000 items)                │
+├──────────────────────────────────────────────────────────────────┤
+│ Initial Heap:     23.65                                      MB │
+│ After Creation:   27.58                                      MB │
+│ After Serialize:  30.23                                      MB │
+│ After Parse:      33.05                                      MB │
+│ String Size:      1.50                                       MB │
+└──────────────────────────────────────────────────────────────────┘
+
+
+stdout | tests/performance/benchmarks.test.ts > Benchmark Summary > should generate summary report
+
+═══════════════════════════════════════════════════════════════════
+                    PERFORMANCE THRESHOLDS
+═══════════════════════════════════════════════════════════════════
+
+Component              P95 Max (ms)    P99 Max (ms)
+─────────────────────────────────────────────────────────────────
+Cache GET              5               10
+Cache SET              5               10
+Cache Get-Or-Set       10              20
+DB Simple Query        50              100
+DB Complex Query       100             200
+DB Write               100             200
+API Health Check       50              100
+API Batch List         200             500
+API Batch Detail       100             200
+
+═══════════════════════════════════════════════════════════════════
+
+
+stdout | tests/performance/benchmarks.test.ts
+
+═══════════════════════════════════════════════════════════════════
+  BENCHMARK SUITE COMPLETE
+═══════════════════════════════════════════════════════════════════
+
+
+ ❯ tests/performance/benchmarks.test.ts  (27 tests | 10 failed) 2502ms
+   ❯ tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with limit
+     → 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:379:28
+
+  376 const result = await runBenchmark(
+  377   'DB: SELECT batches LIMIT 20',
+  378   async () => {
+→ 379     await prisma.batch.findMany(
+The column `batches.stagesFinalized` does not exist in the current database.
+   ❯ tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with relations
+     → 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:396:28
+
+  393 const result = await runBenchmark(
+  394   'DB: SELECT batches with producer',
+  395   async () => {
+→ 396     await prisma.batch.findMany({
+            take: 10,
+            include: {
+              producer: {
+                select: {
+                  id: true,
+                  name: true,
+                  ~~~~
+          ?       userId?: true,
+          ?       businessName?: true,
+          ?       rfc?: true,
+          ?       state?: true,
+          ?       municipality?: true,
+          ?       address?: true,
+          ?       latitude?: true,
+          ?       longitude?: true,
+          ?       totalHectares?: true,
+          ?       cropTypes?: true,
+          ?       isWhitelisted?: true,
+          ?       whitelistedAt?: true,
+          ?       whitelistedBy?: true,
+          ?       createdAt?: true,
+          ?       updatedAt?: true,
+          ?       user?: true,
+          ?       batches?: true,
+          ?       certifications?: true,
+          ?       orders?: true,
+          ?       advances?: true,
+          ?       creditScore?: true,
+          ?       fields?: true,
+          ?       _count?: true
+                }
+              }
+            },
+            orderBy: {
+              createdAt: "desc"
+            }
+          })
+
+Unknown field `name` for select statement on model `Producer`. Available options are marked with ?.
+   ❯ tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with multiple relations
+     → 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:418:28
+
+  415 const result = await runBenchmark(
+  416   'DB: SELECT batches with producer + events',
+  417   async () => {
+→ 418     await prisma.batch.findMany({
+            take: 5,
+            include: {
+              producer: {
+                select: {
+                  id: true,
+                  name: true,
+                  ~~~~
+                  certifications: true,
+          ?       userId?: true,
+          ?       businessName?: true,
+          ?       rfc?: true,
+          ?       state?: true,
+          ?       municipality?: true,
+          ?       address?: true,
+          ?       latitude?: true,
+          ?       longitude?: true,
+          ?       totalHectares?: true,
+          ?       cropTypes?: true,
+          ?       isWhitelisted?: true,
+          ?       whitelistedAt?: true,
+          ?       whitelistedBy?: true,
+          ?       createdAt?: true,
+          ?       updatedAt?: true,
+          ?       user?: true,
+          ?       batches?: true,
+          ?       orders?: true,
+          ?       advances?: true,
+          ?       creditScore?: true,
+          ?       fields?: true,
+          ?       _count?: true
+                }
+              },
+              events: {
+                take: 5,
+                orderBy: {
+                  timestamp: "desc"
+                }
+              }
+            },
+            orderBy: {
+              createdAt: "desc"
+            }
+          })
+
+Unknown field `name` for select statement on model `Producer`. Available options are marked with ?.
+   ❯ tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with filters
+     → 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:444:28
+
+  441 const result = await runBenchmark(
+  442   'DB: SELECT batches with filter',
+  443   async () => {
+→ 444     await prisma.batch.findMany(
+The column `batches.stagesFinalized` does not exist in the current database.
+   ❯ tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findFirst with index
+     → 
+Invalid `prisma.batch.findFirst()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:499:28
+
+  496 const result = await runBenchmark(
+  497   'DB: findFirst by status (indexed)',
+  498   async () => {
+→ 499     await prisma.batch.findFirst(
+The column `batches.stagesFinalized` does not exist in the current database.
+   ❯ tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark event count by type
+     → Cannot read properties of undefined (reading 'groupBy')
+   ❯ tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark health endpoint
+     → Failed to parse URL from //health
+   ❯ tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark health/ready endpoint
+     → Failed to parse URL from //health/ready
+   ❯ tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark batch list endpoint (unauthenticated)
+     → Failed to parse URL from //api/v1/batches?page=1&limit=20
+   ❯ tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark concurrent API requests
+     → Failed to parse URL from //health
+stdout | unknown test
+2025-12-23 07:44:52 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:52 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+ ✓ tests/unit/notifications/MetricsCollector.test.ts  (9 tests) 33ms
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if auth header is missing
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if token is not Bearer
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if token is blacklisted
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token received: valid-token...
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with CustomTokenExpiredError if jwt.verify throws TokenExpiredError
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token received: expired-token...
+2025-12-23 07:44:52 [31merror[39m: [AuthMiddleware] Token verification failed: 
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InvalidTokenError if jwt.verify throws a generic error
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token received: invalid-signature-to...
+2025-12-23 07:44:52 [31merror[39m: [AuthMiddleware] Token verification failed: Invalid signature
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should call next with InsufficientPermissionsError if user role is not in required roles
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token received: producer-token...
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should attach user to request and call next if token is valid and role is sufficient
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token received: admin-token...
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+ ✓ tests/presentation/middlewares/auth.middleware.test.ts  (8 tests) 7ms
+stdout | tests/presentation/middlewares/auth.middleware.test.ts > Authentication Middleware > should succeed if no roles are required and token is valid
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Authenticating request for: undefined
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token received: any-role-token...
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Token verified successfully for user: mock-user-id
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:52 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:52 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+ ✓ tests/e2e/notifications/notifications.routes.test.ts  (13 tests) 72ms
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis cache service connecting...
+
+ ✓ tests/unit/notifications/NotificationQueue.test.ts  (7 tests) 30ms
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:52 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:52 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+ ✓ tests/unit/transit/TransitSession.test.ts  (23 tests) 3ms
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+ ✓ tests/unit/certificates/QualityCertificate.test.ts  (14 tests) 7ms
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:52 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+2025-12-23 07:44:52 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:52 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/referrals.e2e.test.ts  (0 test)
+ ✓ tests/unit/notifications/SMSService.test.ts  (8 tests) 15ms
+stdout | unknown test
+2025-12-23 07:44:52 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+ ✓ tests/unit/notifications/EmailService.test.ts  (6 tests) 35ms
+ ✓ tests/unit/domain/Password.test.ts  (17 tests) 9ms
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+ ✓ tests/unit/notifications/FCMService.test.ts  (5 tests) 16ms
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:53 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:53 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:53 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+ ✓ tests/unit/producers/ListProducersUseCase.test.ts  (2 tests) 2ms
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:53 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:53 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:53 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:53 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:53 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:53 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:53 [34mdebug[39m: [AuthMiddleware] Loading Public Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key.pub
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis client connected
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [GoogleOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [GitHubOAuthProvider] Not configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:53 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:53 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: S3 Storage Provider initialized
+{
+  "meta": {
+    "bucket": "agrobridge-uploads",
+    "region": "us-east-1"
+  }
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:53 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:53 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [StripeProvider] Not configured - STRIPE_SECRET_KEY not set
+
+stdout | unknown test
+2025-12-23 07:44:53 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:53 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:53 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/auth.e2e.test.ts  (0 test)
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/producers.e2e.test.ts  (0 test)
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/invoicing.e2e.test.ts  (0 test)
+stdout | unknown test
+2025-12-23 07:44:53 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/events.e2e.test.ts  (0 test)
+stdout | unknown test
+2025-12-23 07:44:53 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:54 [[32minfo[39m]: Logger initialized in test mode
+{
+  "logLevel": "info",
+  "logsDirectory": "/Users/mac/Documents/agrobridge-backend/apps/api/logs"
+}
+
+stdout | unknown test
+2025-12-23 07:44:53 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:54 [[33mwarn[39m]: [WhatsApp] Service not fully configured - missing credentials
+
+stdout | unknown test
+2025-12-23 07:44:54 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/batches.e2e.test.ts  (0 test)
+stdout | unknown test
+2025-12-23 07:44:54 [33mwarn[39m: [BlockchainTransactionJob] Blockchain not configured - jobs will be simulated
+{
+  "missingVars": [
+    "BLOCKCHAIN_RPC_URL",
+    "BLOCKCHAIN_PRIVATE_KEY"
+  ]
+}
+
+stdout | unknown test
+2025-12-23 07:44:54 [32minfo[39m: [SESProvider] AWS SES initialized
+{
+  "region": "us-east-1",
+  "fromEmail": "noreply@agrobridge.io"
+}
+2025-12-23 07:44:54 [33mwarn[39m: [EmailService] SendGrid API key not configured. Email will be disabled.
+2025-12-23 07:44:54 [32minfo[39m: [ResilientEmailService] Providers initialized
+{
+  "ses": true,
+  "sendgrid": false,
+  "primary": "ses"
+}
+
+stdout | unknown test
+2025-12-23 07:44:54 [32minfo[39m: Redis cache service connecting...
+
+stdout | unknown test
+2025-12-23 07:44:54 [32minfo[39m: Redis cache service connected and ready
+
+stdout | unknown test
+2025-12-23 07:44:54 [34mdebug[39m: [LoginUseCase] Loading Private Key from: /Users/mac/Documents/agrobridge-backend/apps/api/jwtRS256.key
+
+stdout | unknown test
+2025-12-23 07:44:54 [33mwarn[39m: [TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION
+
+stdout | unknown test
+2025-12-23 07:44:54 [33mwarn[39m: Using default NFC master key - DO NOT USE IN PRODUCTION
+
+ ❯ tests/e2e/event.e2e.test.ts  (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 13 ⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/e2e/auth.e2e.test.ts [ tests/e2e/auth.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/auth.e2e.test.ts:4:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/60]⎯
+
+ FAIL  tests/e2e/batches.e2e.test.ts [ tests/e2e/batches.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/batches.e2e.test.ts:5:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/60]⎯
+
+ FAIL  tests/e2e/certificates.e2e.test.ts [ tests/e2e/certificates.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/certificates.e2e.test.ts:4:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/60]⎯
+
+ FAIL  tests/e2e/event.e2e.test.ts [ tests/e2e/event.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/event.e2e.test.ts:4:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/60]⎯
+
+ FAIL  tests/e2e/events.e2e.test.ts [ tests/e2e/events.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/events.e2e.test.ts:4:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/60]⎯
+
+ FAIL  tests/e2e/invoicing.e2e.test.ts [ tests/e2e/invoicing.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/invoicing.e2e.test.ts:5:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/60]⎯
+
+ FAIL  tests/e2e/producers.e2e.test.ts [ tests/e2e/producers.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/producers.e2e.test.ts:5:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/60]⎯
+
+ FAIL  tests/e2e/public-verify.e2e.test.ts [ tests/e2e/public-verify.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/public-verify.e2e.test.ts:5:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/60]⎯
+
+ FAIL  tests/e2e/referrals.e2e.test.ts [ tests/e2e/referrals.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/referrals.e2e.test.ts:5:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/60]⎯
+
+ FAIL  tests/e2e/verification-stages.e2e.test.ts [ tests/e2e/verification-stages.e2e.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/e2e/verification-stages.e2e.test.ts:6:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/60]⎯
+
+ FAIL  tests/integration/api-keys.test.ts [ tests/integration/api-keys.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/integration/api-keys.test.ts:4:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/60]⎯
+
+ FAIL  tests/integration/critical-flows.test.ts [ tests/integration/critical-flows.test.ts ]
+TypeError: Router.use() requires a middleware function
+ ❯ Function.use node_modules/express/lib/router/index.js:462:11
+ ❯ Module.createApiKeysRouter [as default] src/presentation/routes/api-keys.routes.ts:60:10
+     58| 
+     59|   // Apply auth middleware to all routes
+     60|   router.use(authMiddleware);
+       |          ^
+     61| 
+     62|   // Apply stricter rate limiting for key creation
+ ❯ Module.createApiRouter src/presentation/routes/index.ts:83:27
+ ❯ createApp src/app.ts:206:21
+ ❯ src/app.ts:334:20
+ ❯ tests/integration/critical-flows.test.ts:3:31
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/60]⎯
+
+ FAIL  tests/security/security.test.ts [ tests/security/security.test.ts ]
+Error: Do not import `@jest/globals` outside of the Jest test environment
+ ❯ ../../../../node_modules/@jest/globals/build/index.js:23:7
+ ❯ Object.<anonymous> ../../../../node_modules/@jest/globals/build/index.js:25:12
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/60]⎯
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 47 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should allow anonymous connection
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should accept valid JWT token
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should allow connection with invalid token (unauthenticated)
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should respond to ping with pong
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should auto-join user room when authenticated
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Connection & Authentication > should auto-join admin room for admin users
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should subscribe to batch updates
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should unsubscribe from batch updates without error
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should subscribe to producer updates when authenticated
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should reject producer subscription for anonymous users
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Room Subscriptions > should allow subscribing to multiple batches
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Notification Handling > should confirm notification read
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Notification Handling > should handle multiple notification reads
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Multi-Client Scenarios > should maintain multiple simultaneous connections
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Multi-Client Scenarios > should allow different users to subscribe to same batch
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Multi-Client Scenarios > should handle independent subscriptions per client
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Reconnection Handling > should reconnect after manual disconnect
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Reconnection Handling > should maintain subscriptions after reconnect
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Error Handling > should handle malformed events gracefully
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Error Handling > should handle empty subscription ids
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Performance > should handle rapid ping/pong exchanges
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Performance > should handle multiple rapid subscriptions
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Performance > should handle 10 concurrent connections
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Transport > should connect with websocket transport
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Transport > should work with auto transport selection
+Error: websocket error
+ ❯ WS.onError node_modules/engine.io-client/build/esm-debug/transport.js:41:37
+ ❯ WebSocket.ws.onerror node_modules/engine.io-client/build/esm-debug/transports/websocket.js:51:39
+ ❯ callListener node_modules/engine.io-client/node_modules/ws/lib/event-target.js:290:14
+ ❯ WebSocket.onError node_modules/engine.io-client/node_modules/ws/lib/event-target.js:230:9
+ ❯ WebSocket.emit node:events:519:28
+ ❯ emitErrorAndClose node_modules/engine.io-client/node_modules/ws/lib/websocket.js:1035:13
+ ❯ ClientRequest.<anonymous> node_modules/engine.io-client/node_modules/ws/lib/websocket.js:880:5
+ ❯ ClientRequest.emit node:events:519:28
+ ❯ emitErrorEvent node:_http_client:107:11
+ ❯ Socket.socketErrorListener node:_http_client:574:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { description: { constructor: 'Function<ErrorEvent>', error: { stack: 'Error: getaddrinfo ENOTFOUND undefined\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)', message: 'getaddrinfo ENOTFOUND undefined', errno: -3008, code: 'ENOTFOUND', syscall: 'getaddrinfo', hostname: 'undefined', constructor: 'Function<Error>', name: 'Error', toString: 'Function<toString>' }, message: 'getaddrinfo ENOTFOUND undefined', target: { _events: { open: 'Function<onOpen>', close: 'Function<onClose>', message: 'Function<onMessage>', error: 'Function<onError>' }, _eventsCount: 4, _maxListeners: undefined, _binaryType: 'nodebuffer', _closeCode: 1006, _closeFrameReceived: false, _closeFrameSent: false, _closeMessage: { type: 'Buffer', data: [] }, _closeTimer: null, _extensions: {}, _paused: false, _protocol: '', _readyState: 3, _receiver: null, _sender: null, _socket: null, _bufferedAmount: +0, _isServer: false, _redirects: +0, _autoPong: true, _url: 'ws://undefined/socket.io/?EIO=4&transport=websocket', _req: null, constructor: 'Function<WebSocket>', binaryType: 'nodebuffer', bufferedAmount: +0, extensions: '', isPaused: false, onclose: 'Function<anonymous>', onerror: 'Function<anonymous>', onopen: 'Function<anonymous>', onmessage: 'Function<anonymous>', protocol: '', readyState: 3, url: 'ws://undefined/socket.io/?EIO=4&transport=websocket', setSocket: 'Function<setSocket>', emitClose: 'Function<emitClose>', close: 'Function<close>', pause: 'Function<pause>', ping: 'Function<ping>', pong: 'Function<pong>', resume: 'Function<resume>', send: 'Function<send>', terminate: 'Function<terminate>', CONNECTING: +0, OPEN: 1, CLOSING: 2, CLOSED: 3, addEventListener: 'Function<addEventListener>', removeEventListener: 'Function<removeEventListener>', setMaxListeners: 'Function<setMaxListeners>', getMaxListeners: 'Function<getMaxListeners>', emit: 'Function<emit>', addListener: 'Function<addListener>', on: 'Function<addListener>', prependListener: 'Function<prependListener>', once: 'Function<once>', prependOnceListener: 'Function<prependOnceListener>', removeListener: 'Function<removeListener>', off: 'Function<removeListener>', removeAllListeners: 'Function<removeAllListeners>', listeners: 'Function<listeners>', rawListeners: 'Function<rawListeners>', listenerCount: 'Function<listenerCount>', eventNames: 'Function<eventNames>' }, type: 'error' }, context: undefined }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/60]⎯
+
+ FAIL  tests/integration/websocket.test.ts > WebSocket: Transport > should connect with polling transport
+Error: xhr poll error
+ ❯ XHR.onError node_modules/engine.io-client/build/esm-debug/transport.js:41:37
+ ❯ Request.<anonymous> node_modules/engine.io-client/build/esm-debug/transports/polling-xhr.js:58:18
+ ❯ Request.Emitter.emit node_modules/@socket.io/component-emitter/lib/cjs/index.js:143:20
+ ❯ Request._onError node_modules/engine.io-client/build/esm-debug/transports/polling-xhr.js:166:14
+ ❯ Timeout._onTimeout node_modules/engine.io-client/build/esm-debug/transports/polling-xhr.js:139:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { description: +0, context: { UNSENT: +0, OPENED: 1, HEADERS_RECEIVED: 2, LOADING: 3, DONE: 4, readyState: +0, onreadystatechange: 'Function<empty>', responseText: '', responseXML: '', response: { type: 'Buffer', data: [] }, status: +0, statusText: { stack: 'Error: getaddrinfo ENOTFOUND undefined\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)', message: 'getaddrinfo ENOTFOUND undefined', errno: -3008, code: 'ENOTFOUND', syscall: 'getaddrinfo', hostname: 'undefined', constructor: 'Function<Error>', name: 'Error', toString: 'Function<toString>' }, open: 'Function<anonymous>', setDisableHeaderCheck: 'Function<anonymous>', setRequestHeader: 'Function<anonymous>', getResponseHeader: 'Function<anonymous>', getAllResponseHeaders: 'Function<anonymous>', getRequestHeader: 'Function<anonymous>', send: 'Function<anonymous>', handleError: 'Function<anonymous>', abort: 'Function<anonymous>', addEventListener: 'Function<anonymous>', removeEventListener: 'Function<anonymous>', dispatchEvent: 'Function<anonymous>', constructor: 'Function<XMLHttpRequest>' } }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with limit
+PrismaClientKnownRequestError: 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:379:28
+
+  376 const result = await runBenchmark(
+  377   'DB: SELECT batches LIMIT 20',
+  378   async () => {
+→ 379     await prisma.batch.findMany(
+The column `batches.stagesFinalized` does not exist in the current database.
+ ❯ $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:7315
+ ❯ $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ ❯ $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ ❯ l node_modules/@prisma/client/runtime/library.js:130:9633
+ ❯ tests/performance/benchmarks.test.ts:379:9
+    377|       'DB: SELECT batches LIMIT 20',
+    378|       async () => {
+    379|         await prisma.batch.findMany({
+       |         ^
+    380|           take: 20,
+    381|           orderBy: { createdAt: 'desc' },
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:376:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'P2022', clientVersion: '5.22.0', meta: { modelName: 'Batch', column: 'batches.stagesFinalized' }, batchRequestIdx: undefined }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with relations
+PrismaClientValidationError: 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:396:28
+
+  393 const result = await runBenchmark(
+  394   'DB: SELECT batches with producer',
+  395   async () => {
+→ 396     await prisma.batch.findMany({
+            take: 10,
+            include: {
+              producer: {
+                select: {
+                  id: true,
+                  name: true,
+                  ~~~~
+          ?       userId?: true,
+          ?       businessName?: true,
+          ?       rfc?: true,
+          ?       state?: true,
+          ?       municipality?: true,
+          ?       address?: true,
+          ?       latitude?: true,
+          ?       longitude?: true,
+          ?       totalHectares?: true,
+          ?       cropTypes?: true,
+          ?       isWhitelisted?: true,
+          ?       whitelistedAt?: true,
+          ?       whitelistedBy?: true,
+          ?       createdAt?: true,
+          ?       updatedAt?: true,
+          ?       user?: true,
+          ?       batches?: true,
+          ?       certifications?: true,
+          ?       orders?: true,
+          ?       advances?: true,
+          ?       creditScore?: true,
+          ?       fields?: true,
+          ?       _count?: true
+                }
+              }
+            },
+            orderBy: {
+              createdAt: "desc"
+            }
+          })
+
+Unknown field `name` for select statement on model `Producer`. Available options are marked with ?.
+ ❯ wn node_modules/@prisma/client/runtime/library.js:29:1363
+ ❯ $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:6958
+ ❯ $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ ❯ $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ ❯ l node_modules/@prisma/client/runtime/library.js:130:9633
+ ❯ tests/performance/benchmarks.test.ts:396:9
+    394|       'DB: SELECT batches with producer',
+    395|       async () => {
+    396|         await prisma.batch.findMany({
+       |         ^
+    397|           take: 10,
+    398|           include: {
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:393:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { clientVersion: '5.22.0' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with multiple relations
+PrismaClientValidationError: 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:418:28
+
+  415 const result = await runBenchmark(
+  416   'DB: SELECT batches with producer + events',
+  417   async () => {
+→ 418     await prisma.batch.findMany({
+            take: 5,
+            include: {
+              producer: {
+                select: {
+                  id: true,
+                  name: true,
+                  ~~~~
+                  certifications: true,
+          ?       userId?: true,
+          ?       businessName?: true,
+          ?       rfc?: true,
+          ?       state?: true,
+          ?       municipality?: true,
+          ?       address?: true,
+          ?       latitude?: true,
+          ?       longitude?: true,
+          ?       totalHectares?: true,
+          ?       cropTypes?: true,
+          ?       isWhitelisted?: true,
+          ?       whitelistedAt?: true,
+          ?       whitelistedBy?: true,
+          ?       createdAt?: true,
+          ?       updatedAt?: true,
+          ?       user?: true,
+          ?       batches?: true,
+          ?       orders?: true,
+          ?       advances?: true,
+          ?       creditScore?: true,
+          ?       fields?: true,
+          ?       _count?: true
+                }
+              },
+              events: {
+                take: 5,
+                orderBy: {
+                  timestamp: "desc"
+                }
+              }
+            },
+            orderBy: {
+              createdAt: "desc"
+            }
+          })
+
+Unknown field `name` for select statement on model `Producer`. Available options are marked with ?.
+ ❯ wn node_modules/@prisma/client/runtime/library.js:29:1363
+ ❯ $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:6958
+ ❯ $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ ❯ $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ ❯ l node_modules/@prisma/client/runtime/library.js:130:9633
+ ❯ tests/performance/benchmarks.test.ts:418:9
+    416|       'DB: SELECT batches with producer + events',
+    417|       async () => {
+    418|         await prisma.batch.findMany({
+       |         ^
+    419|           take: 5,
+    420|           include: {
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:415:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { clientVersion: '5.22.0' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findMany with filters
+PrismaClientKnownRequestError: 
+Invalid `prisma.batch.findMany()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:444:28
+
+  441 const result = await runBenchmark(
+  442   'DB: SELECT batches with filter',
+  443   async () => {
+→ 444     await prisma.batch.findMany(
+The column `batches.stagesFinalized` does not exist in the current database.
+ ❯ $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:7315
+ ❯ $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ ❯ $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ ❯ l node_modules/@prisma/client/runtime/library.js:130:9633
+ ❯ tests/performance/benchmarks.test.ts:444:9
+    442|       'DB: SELECT batches with filter',
+    443|       async () => {
+    444|         await prisma.batch.findMany({
+       |         ^
+    445|           where: {
+    446|             status: 'REGISTERED',
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:441:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'P2022', clientVersion: '5.22.0', meta: { modelName: 'Batch', column: 'batches.stagesFinalized' }, batchRequestIdx: undefined }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark findFirst with index
+PrismaClientKnownRequestError: 
+Invalid `prisma.batch.findFirst()` invocation in
+/Users/mac/Documents/agrobridge-backend/apps/api/tests/performance/benchmarks.test.ts:499:28
+
+  496 const result = await runBenchmark(
+  497   'DB: findFirst by status (indexed)',
+  498   async () => {
+→ 499     await prisma.batch.findFirst(
+The column `batches.stagesFinalized` does not exist in the current database.
+ ❯ $n.handleRequestError node_modules/@prisma/client/runtime/library.js:121:7315
+ ❯ $n.handleAndLogRequestError node_modules/@prisma/client/runtime/library.js:121:6623
+ ❯ $n.request node_modules/@prisma/client/runtime/library.js:121:6307
+ ❯ l node_modules/@prisma/client/runtime/library.js:130:9633
+ ❯ tests/performance/benchmarks.test.ts:499:9
+    497|       'DB: findFirst by status (indexed)',
+    498|       async () => {
+    499|         await prisma.batch.findFirst({
+       |         ^
+    500|           where: { status: 'REGISTERED' },
+    501|         });
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:496:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'P2022', clientVersion: '5.22.0', meta: { modelName: 'Batch', column: 'batches.stagesFinalized' }, batchRequestIdx: undefined }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > Database Performance Benchmarks > should benchmark event count by type
+TypeError: Cannot read properties of undefined (reading 'groupBy')
+ ❯ tests/performance/benchmarks.test.ts:536:28
+    534|       'DB: EVENT count by type',
+    535|       async () => {
+    536|         await prisma.event.groupBy({
+       |                            ^
+    537|           by: ['eventType'],
+    538|           _count: true,
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:11
+ ❯ tests/performance/benchmarks.test.ts:533:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark health endpoint
+TypeError: Failed to parse URL from //health
+ ❯ tests/performance/benchmarks.test.ts:559:9
+    557|       'API: GET /health',
+    558|       async () => {
+    559|         await fetch(`${BASE_URL}/health`);
+       |         ^
+    560|       },
+    561|       BENCHMARK_ITERATIONS
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:556:20
+
+Caused by: TypeError: Invalid URL
+ ❯ tests/performance/benchmarks.test.ts:559:15
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:11
+ ❯ tests/performance/benchmarks.test.ts:556:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: '//health' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark health/ready endpoint
+TypeError: Failed to parse URL from //health/ready
+ ❯ tests/performance/benchmarks.test.ts:573:9
+    571|       'API: GET /health/ready',
+    572|       async () => {
+    573|         await fetch(`${BASE_URL}/health/ready`);
+       |         ^
+    574|       },
+    575|       BENCHMARK_ITERATIONS
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:570:20
+
+Caused by: TypeError: Invalid URL
+ ❯ tests/performance/benchmarks.test.ts:573:15
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:11
+ ❯ tests/performance/benchmarks.test.ts:570:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: '//health/ready' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark batch list endpoint (unauthenticated)
+TypeError: Failed to parse URL from //api/v1/batches?page=1&limit=20
+ ❯ tests/performance/benchmarks.test.ts:587:9
+    585|       'API: GET /api/v1/batches',
+    586|       async () => {
+    587|         await fetch(`${BASE_URL}/api/v1/batches?page=1&limit=20`);
+       |         ^
+    588|       },
+    589|       BENCHMARK_ITERATIONS
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:5
+ ❯ tests/performance/benchmarks.test.ts:584:20
+
+Caused by: TypeError: Invalid URL
+ ❯ tests/performance/benchmarks.test.ts:587:15
+ ❯ runBenchmark tests/performance/benchmarks.test.ts:89:11
+ ❯ tests/performance/benchmarks.test.ts:584:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: '//api/v1/batches?page=1&limit=20' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/60]⎯
+
+ FAIL  tests/performance/benchmarks.test.ts > API Endpoint Benchmarks > should benchmark concurrent API requests
+TypeError: Failed to parse URL from //health
+ ❯ tests/performance/benchmarks.test.ts:606:7
+    604|       const start = performance.now();
+    605| 
+    606|       await Promise.all(
+       |       ^
+    607|         Array(concurrency)
+    608|           .fill(null)
+
+Caused by: TypeError: Invalid URL
+ ❯ tests/performance/benchmarks.test.ts:609:22
+ ❯ tests/performance/benchmarks.test.ts:609:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: '//health' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Weight Validation > should have weights that sum to 100
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:540:31
+    538| describe('Score Weight Validation', () => {
+    539|   it('should have weights that sum to 100', () => {
+    540|     const { SCORE_WEIGHTS } = require('../../../src/modules/credit-sco…
+       |                               ^
+    541| 
+    542|     const totalWeight =
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Risk Tier Classification > should classify Tier A for scores >= 90
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:555:48
+    553| describe('Risk Tier Classification', () => {
+    554|   it('should classify Tier A for scores >= 90', () => {
+    555|     const { getRiskTierFromScore, RiskTier } = require('../../../src/m…
+       |                                                ^
+    556| 
+    557|     expect(getRiskTierFromScore(90)).toBe(RiskTier.A);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Risk Tier Classification > should classify Tier B for scores 70-89
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:563:48
+    561| 
+    562|   it('should classify Tier B for scores 70-89', () => {
+    563|     const { getRiskTierFromScore, RiskTier } = require('../../../src/m…
+       |                                                ^
+    564| 
+    565|     expect(getRiskTierFromScore(70)).toBe(RiskTier.B);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Risk Tier Classification > should classify Tier C for scores < 70
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:571:48
+    569| 
+    570|   it('should classify Tier C for scores < 70', () => {
+    571|     const { getRiskTierFromScore, RiskTier } = require('../../../src/m…
+       |                                                ^
+    572| 
+    573|     expect(getRiskTierFromScore(0)).toBe(RiskTier.C);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Trend Detection > should detect improving trend
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:581:43
+    579| describe('Score Trend Detection', () => {
+    580|   it('should detect improving trend', () => {
+    581|     const { getScoreTrend, ScoreTrend } = require('../../../src/module…
+       |                                           ^
+    582| 
+    583|     expect(getScoreTrend(5, 8, 10)).toBe(ScoreTrend.IMPROVING);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Trend Detection > should detect stable trend
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:588:43
+    586| 
+    587|   it('should detect stable trend', () => {
+    588|     const { getScoreTrend, ScoreTrend } = require('../../../src/module…
+       |                                           ^
+    589| 
+    590|     expect(getScoreTrend(0, 0, 0)).toBe(ScoreTrend.STABLE);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Score Trend Detection > should detect declining trend
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:595:43
+    593| 
+    594|   it('should detect declining trend', () => {
+    595|     const { getScoreTrend, ScoreTrend } = require('../../../src/module…
+       |                                           ^
+    596| 
+    597|     expect(getScoreTrend(-5, -8, -10)).toBe(ScoreTrend.DECLINING);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should clamp scores correctly
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:604:28
+    602| describe('Utility Functions', () => {
+    603|   it('should clamp scores correctly', () => {
+    604|     const { clampScore } = require('../../../src/modules/credit-scorin…
+       |                            ^
+    605| 
+    606|     expect(clampScore(-10)).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should validate risk tier correctly
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:612:33
+    610| 
+    611|   it('should validate risk tier correctly', () => {
+    612|     const { isValidRiskTier } = require('../../../src/modules/credit-s…
+       |                                 ^
+    613| 
+    614|     expect(isValidRiskTier('A')).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should validate score trend correctly
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:622:35
+    620| 
+    621|   it('should validate score trend correctly', () => {
+    622|     const { isValidScoreTrend } = require('../../../src/modules/credit…
+       |                                   ^
+    623| 
+    624|     expect(isValidScoreTrend('IMPROVING')).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/60]⎯
+
+ FAIL  tests/unit/cash-flow-bridge/credit-score.calculator.test.ts > Utility Functions > should get credit limits for tier correctly
+Error: Cannot find module '../../../src/modules/credit-scoring/types/credit-score.types.js'
+Require stack:
+- /Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts
+ ❯ TracingChannel.traceSync node:diagnostics_channel:328:14
+ ❯ tests/unit/cash-flow-bridge/credit-score.calculator.test.ts:631:50
+    629| 
+    630|   it('should get credit limits for tier correctly', () => {
+    631|     const { getCreditLimitsForTier, RiskTier } = require('../../../src…
+       |                                                  ^
+    632| 
+    633|     const tierA = getCreditLimitsForTier(RiskTier.A);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'MODULE_NOT_FOUND', requireStack: [ '/Users/mac/Documents/agrobridge-backend/apps/api/tests/unit/cash-flow-bridge/credit-score.calculator.test.ts' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/60]⎯
+
+ Test Files  16 failed | 20 passed (36)
+      Tests  47 failed | 465 passed (512)
+   Start at  07:44:49
+   Duration  5.22s (transform 1.42s, setup 411ms, collect 1.41s, tests 4.71s, environment 5ms, prepare 1.98s)
+

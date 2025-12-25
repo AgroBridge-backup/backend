@@ -4,13 +4,25 @@ import { authenticate } from '../middlewares/auth.middleware.js';
 import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
 import { Password } from '../../domain/value-objects/Password.js';
 import { oAuthService } from '../../infrastructure/auth/oauth/OAuthService.js';
-import { loginSchema, refreshTokenSchema, passwordStrengthSchema, verify2FASchema, enable2FASchema, disable2FASchema, regenerateBackupCodesSchema, oauthCallbackSchema, } from '../validators/auth.validator.js';
+import { loginSchema, registerSchema, refreshTokenSchema, passwordStrengthSchema, verify2FASchema, enable2FASchema, disable2FASchema, regenerateBackupCodesSchema, oauthCallbackSchema, } from '../validators/auth.validator.js';
 export function createAuthRouter(useCases) {
     const router = Router();
     router.post('/login', RateLimiterConfig.auth(), validateRequest(loginSchema), async (req, res, next) => {
         try {
             const result = await useCases.loginUseCase.execute(req.body);
             res.json({
+                success: true,
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    });
+    router.post('/register', RateLimiterConfig.auth(), validateRequest(registerSchema), async (req, res, next) => {
+        try {
+            const result = await useCases.registerUseCase.execute(req.body);
+            res.status(201).json({
                 success: true,
                 data: result,
             });

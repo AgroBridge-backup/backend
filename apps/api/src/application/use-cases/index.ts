@@ -25,6 +25,27 @@ import { AddCertificationUseCase } from './producers/AddCertificationUseCase.js'
 
 import { GetBatchByIdUseCase } from './batches/GetBatchByIdUseCase.js';
 
+// Traceability 2.0 - Verification Stages
+import { GetBatchStagesUseCase } from './verification-stages/GetBatchStagesUseCase.js';
+import { CreateBatchStageUseCase } from './verification-stages/CreateBatchStageUseCase.js';
+import { UpdateBatchStageUseCase } from './verification-stages/UpdateBatchStageUseCase.js';
+import { FinalizeBatchStagesUseCase } from './verification-stages/FinalizeBatchStagesUseCase.js';
+
+// Traceability 2.0 - Quality Certificates
+import { IssueCertificateUseCase } from './certificates/IssueCertificateUseCase.js';
+import { GetCertificateUseCase } from './certificates/GetCertificateUseCase.js';
+import { ListBatchCertificatesUseCase } from './certificates/ListBatchCertificatesUseCase.js';
+import { VerifyCertificateUseCase } from './certificates/VerifyCertificateUseCase.js';
+import { CheckCertificateEligibilityUseCase } from './certificates/CheckCertificateEligibilityUseCase.js';
+
+// Traceability 2.0 - Real-Time Transit Tracking
+import { CreateTransitSessionUseCase } from './transit/CreateTransitSessionUseCase.js';
+import { GetTransitSessionUseCase } from './transit/GetTransitSessionUseCase.js';
+import { UpdateTransitStatusUseCase } from './transit/UpdateTransitStatusUseCase.js';
+import { AddLocationUpdateUseCase } from './transit/AddLocationUpdateUseCase.js';
+import { GetLocationHistoryUseCase } from './transit/GetLocationHistoryUseCase.js';
+import { TransitTrackingService } from '../../domain/services/TransitTrackingService.js';
+
 export interface AllUseCases {
   auth: {
     loginUseCase: LoginUseCase;
@@ -56,5 +77,29 @@ export interface AllUseCases {
     getProducerByIdUseCase: GetProducerByIdUseCase;
     whitelistProducerUseCase: WhitelistProducerUseCase;
     addCertificationUseCase: AddCertificationUseCase;
+  };
+  // Traceability 2.0 - Verification Stages
+  verificationStages: {
+    getBatchStagesUseCase: GetBatchStagesUseCase;
+    createBatchStageUseCase: CreateBatchStageUseCase;
+    updateBatchStageUseCase: UpdateBatchStageUseCase;
+    finalizeBatchStagesUseCase?: FinalizeBatchStagesUseCase;
+  };
+  // Traceability 2.0 - Quality Certificates
+  certificates: {
+    issueCertificateUseCase: IssueCertificateUseCase;
+    getCertificateUseCase: GetCertificateUseCase;
+    listBatchCertificatesUseCase: ListBatchCertificatesUseCase;
+    verifyCertificateUseCase: VerifyCertificateUseCase;
+    checkCertificateEligibilityUseCase: CheckCertificateEligibilityUseCase;
+  };
+  // Traceability 2.0 - Real-Time Transit Tracking
+  transit: {
+    createTransitSessionUseCase: CreateTransitSessionUseCase;
+    getTransitSessionUseCase: GetTransitSessionUseCase;
+    updateTransitStatusUseCase: UpdateTransitStatusUseCase;
+    addLocationUpdateUseCase: AddLocationUpdateUseCase;
+    getLocationHistoryUseCase: GetLocationHistoryUseCase;
+    transitService: TransitTrackingService;
   };
 }

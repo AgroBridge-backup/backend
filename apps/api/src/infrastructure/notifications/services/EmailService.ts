@@ -819,6 +819,216 @@ export class EmailService {
   }
 
   /**
+   * Send farmer invitation email (B2B2C enrollment flow)
+   */
+  async sendFarmerInvitationEmail(
+    email: string,
+    details: {
+      farmerName?: string;
+      exportCompanyName: string;
+      inviteToken: string;
+      signupUrl: string;
+      expiresAt: Date;
+    }
+  ): Promise<EmailSendResult> {
+    const expiryDate = details.expiresAt.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invitación a AgroBridge</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); color: white; padding: 40px 30px; text-align: center;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🌱</div>
+              <h1 style="margin: 0; font-size: 28px; font-weight: 700;">Invitación a AgroBridge</h1>
+              <p style="margin: 8px 0 0; opacity: 0.9;">Plataforma de Certificación Orgánica</p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="font-size: 16px; margin-bottom: 24px;">
+                Hola${details.farmerName ? ` <strong>${details.farmerName}</strong>` : ''},<br><br>
+                <strong>${details.exportCompanyName}</strong> te ha invitado a unirte a AgroBridge, la plataforma de certificación orgánica que conecta agricultores con mercados internacionales.
+              </p>
+
+              <!-- Benefits Box -->
+              <table role="presentation" style="width: 100%; background: #E8F5E9; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <h3 style="color: #1B5E20; margin: 0 0 16px;">Con AgroBridge podrás:</h3>
+                    <ul style="margin: 0; padding-left: 20px; color: #2E7D32;">
+                      <li style="margin-bottom: 8px;">Registrar tus campos orgánicos</li>
+                      <li style="margin-bottom: 8px;">Documentar inspecciones y prácticas agrícolas</li>
+                      <li style="margin-bottom: 8px;">Obtener certificados con verificación blockchain</li>
+                      <li style="margin-bottom: 8px;">Exportar a mercados de EE.UU. y Europa</li>
+                    </ul>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="text-align: center; font-size: 14px; color: #666; margin: 24px 0;">
+                Tu código de invitación es:
+              </p>
+
+              <div style="background: #F5F5F5; border: 2px dashed #2E7D32; border-radius: 8px; padding: 20px; text-align: center; margin: 16px 0;">
+                <span style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #1B5E20;">
+                  ${details.inviteToken.substring(0, 8).toUpperCase()}
+                </span>
+              </div>
+
+              <!-- CTA Button -->
+              <table role="presentation" style="width: 100%;">
+                <tr>
+                  <td align="center">
+                    <a href="${details.signupUrl}" style="display: inline-block; background: #2E7D32; color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 24px 0; font-size: 16px; box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);">
+                      Aceptar Invitación
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size: 13px; color: #999; text-align: center; margin-top: 24px;">
+                Esta invitación expira el <strong>${expiryDate}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="text-align: center; padding: 30px; color: #999; font-size: 14px; border-top: 1px solid #E0E0E0;">
+              <p style="margin: 0;">© ${new Date().getFullYear()} AgroBridge. Todos los derechos reservados.</p>
+              <p style="margin: 8px 0 0;">
+                <a href="${this.appUrl}" style="color: #2E7D32; text-decoration: none;">Visitar AgroBridge</a> |
+                <a href="${this.appUrl}/help" style="color: #2E7D32; text-decoration: none;">Ayuda</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    return await this.sendEmail({
+      to: email,
+      subject: `🌱 ${details.exportCompanyName} te invita a AgroBridge`,
+      html,
+      categories: ['farmer-invitation', 'b2b'],
+      customArgs: {
+        type: 'farmer-invitation',
+        exportCompanyName: details.exportCompanyName,
+      },
+    });
+  }
+
+  /**
+   * Send export company invoice email
+   */
+  async sendInvoiceEmail(
+    email: string,
+    details: {
+      companyName: string;
+      invoiceNumber: string;
+      periodStart: Date;
+      periodEnd: Date;
+      total: number;
+      currency: string;
+      dueDate: Date;
+      invoiceUrl: string;
+    }
+  ): Promise<EmailSendResult> {
+    const formatCurrency = (amount: number) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: details.currency }).format(amount);
+
+    const formatDate = (date: Date) =>
+      date.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Factura AgroBridge - ${details.invoiceNumber}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td style="background: #1B5E20; color: white; padding: 30px; text-align: center;">
+              <h1 style="margin: 0;">Factura ${details.invoiceNumber}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <p>Hola <strong>${details.companyName}</strong>,</p>
+              <p>Tu factura de AgroBridge está lista.</p>
+
+              <table style="width: 100%; background: #F5F5F5; border-radius: 8px; margin: 24px 0;">
+                <tr>
+                  <td style="padding: 16px; border-bottom: 1px solid #E0E0E0;">Período</td>
+                  <td style="padding: 16px; text-align: right; border-bottom: 1px solid #E0E0E0;">${formatDate(details.periodStart)} - ${formatDate(details.periodEnd)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 16px; border-bottom: 1px solid #E0E0E0;">Fecha de vencimiento</td>
+                  <td style="padding: 16px; text-align: right; border-bottom: 1px solid #E0E0E0;">${formatDate(details.dueDate)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 16px; font-weight: bold;">Total a pagar</td>
+                  <td style="padding: 16px; text-align: right; font-size: 20px; font-weight: bold; color: #1B5E20;">${formatCurrency(details.total)}</td>
+                </tr>
+              </table>
+
+              <div style="text-align: center;">
+                <a href="${details.invoiceUrl}" style="display: inline-block; background: #2E7D32; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                  Ver Factura Completa
+                </a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center; padding: 20px; color: #999; font-size: 12px; border-top: 1px solid #E0E0E0;">
+              © ${new Date().getFullYear()} AgroBridge
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    return await this.sendEmail({
+      to: email,
+      subject: `📄 Factura ${details.invoiceNumber} - AgroBridge`,
+      html,
+      categories: ['invoice', 'billing'],
+      customArgs: {
+        type: 'invoice',
+        invoiceNumber: details.invoiceNumber,
+      },
+    });
+  }
+
+  /**
    * Mask email for logging (security)
    */
   private maskEmail(email: string): string {
