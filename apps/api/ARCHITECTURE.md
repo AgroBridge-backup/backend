@@ -1,792 +1,356 @@
-# Architecture Documentation - AgroBridge Backend API
+# Architecture Guide
 
-## Overview
-
-AgroBridge Backend follows Clean Architecture principles with Domain-Driven Design (DDD), ensuring separation of concerns, testability, and maintainability at enterprise scale.
-
-**Last Updated**: December 13, 2025
-**Version**: 1.0.0
-**Architecture Pattern**: Clean Architecture (Hexagonal/Ports & Adapters)
-**Lead Architect**: Alejandro Navarro Ayala, CEO & CTO
+This document explains how the codebase is organized and why.
 
 ---
 
-## Architecture Diagram
+## The Big Picture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         API Layer (Controllers)                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │   Auth API   │  │  Producer    │  │   Batch      │  ...         │
-│  │  Controller  │  │  Controller  │  │  Controller  │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-└────────────────────────────┬─────────────────────────────────────────┘
-                             │
-┌────────────────────────────┴─────────────────────────────────────────┐
-│                    Application Layer (Use Cases)                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │   Register   │  │    Create    │  │   Update     │  ...         │
-│  │   User UC    │  │  Producer UC │  │   Batch UC   │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-└────────────────────────────┬─────────────────────────────────────────┘
-                             │
-┌────────────────────────────┴─────────────────────────────────────────┐
-│                      Domain Layer (Business Logic)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │    User      │  │   Producer   │  │    Batch     │  ...         │
-│  │   Entity     │  │   Entity     │  │   Entity     │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │   Password   │  │    Email     │  │  BatchCode   │  ...         │
-│  │     VO       │  │     VO       │  │     VO       │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-└────────────────────────────┬─────────────────────────────────────────┘
-                             │
-┌────────────────────────────┴─────────────────────────────────────────┐
-│                   Infrastructure Layer (Adapters)                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │   Prisma     │  │    Redis     │  │     AWS      │  ...         │
-│  │  Repository  │  │    Cache     │  │   S3 Store   │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │    HTTP      │  │   Logging    │  │    Email     │  ...         │
-│  │  Middleware  │  │   (Winston)  │  │   Service    │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     Presentation Layer                          │
+│              (Routes, Controllers, Middleware)                  │
+│                  Handles HTTP requests                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Application Layer                           │
+│                        (Use Cases)                              │
+│              Orchestrates business operations                   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       Domain Layer                              │
+│              (Entities, Services, Repositories)                 │
+│                  Core business logic                            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Infrastructure Layer                          │
+│          (Database, Cache, Email, Blockchain, etc.)             │
+│                  External integrations                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+**The rule:** Dependencies point downward. The domain layer knows nothing about HTTP or databases.
 
 ---
 
-## Layer Breakdown
+## Why This Architecture?
 
-### 1. Domain Layer (Core Business Logic)
+| Problem | How Clean Architecture Solves It |
+|---------|----------------------------------|
+| "Tests need a database" | Business logic is testable in isolation |
+| "Changing databases is scary" | Database is just an implementation detail |
+| "Where does this code go?" | Clear boundaries between layers |
+| "Everything depends on everything" | Dependencies only flow one direction |
 
-**Location**: `src/domain/`
+---
 
-**Purpose**: Contains pure business logic with zero dependencies on external frameworks.
+## Layer by Layer
 
-**Components**:
+### Domain Layer (`src/domain/`)
 
-#### Entities (`src/domain/entities/`)
-Business objects with identity and lifecycle.
+The heart of the application. Contains business rules that would exist even without computers.
 
-**Example**:
+```
+src/domain/
+├── entities/         # Business objects with identity
+├── services/         # Business logic
+├── repositories/     # Data access interfaces (not implementations!)
+└── value-objects/    # Immutable values (Email, Password, etc.)
+```
+
+**Example Entity:**
 ```typescript
-// src/domain/entities/User.ts
-export class User {
-  private constructor(
-    public readonly id: UserId,
-    public readonly email: Email,
-    private password: Password,
-    public readonly name: string,
-    public readonly role: UserRole,
-    public readonly createdAt: Date
+// src/domain/entities/OrganicCertificate.ts
+export class OrganicCertificate {
+  constructor(
+    public readonly id: string,
+    public readonly farmerId: string,
+    public readonly cropType: CropType,
+    public status: CertificateStatus,
   ) {}
 
-  static create(props: UserProps): Result<User> {
-    // Validation logic
-    // Business rules enforcement
-  }
-
-  changePassword(newPassword: Password): Result<void> {
-    // Business rule: can only change if not recently changed
-    this.password = newPassword;
-  }
-}
-```
-
-#### Value Objects (`src/domain/value-objects/`)
-Immutable objects defined by their attributes, not identity.
-
-**Implemented**:
-- ✅ `Password.ts` - Password validation and hashing
-- ✅ `Email.ts` - Email format validation
-- ✅ `UserId.ts` - UUID wrapper
-- ✅ `BatchCode.ts` - Batch identifier
-- ✅ `ProducerId.ts` - Producer identifier
-
-**Example**:
-```typescript
-// src/domain/value-objects/Password.ts
-export class Password extends ValueObject<string> {
-  private constructor(value: string) {
-    super(value);
-  }
-
-  static create(password: string): Result<Password> {
-    if (password.length < 8) {
-      return Result.fail('Password must be at least 8 characters');
+  approve(reviewerId: string): void {
+    if (this.status !== 'PENDING_REVIEW') {
+      throw new Error('Can only approve pending certificates');
     }
-    if (!this.hasUppercase(password)) {
-      return Result.fail('Password must contain uppercase letter');
-    }
-    // ... more validations
-    return Result.ok(new Password(password));
-  }
-
-  async hash(): Promise<string> {
-    return bcrypt.hash(this.value, 12);
-  }
-
-  async compare(hashed: string): Promise<boolean> {
-    return bcrypt.compare(this.value, hashed);
+    this.status = 'APPROVED';
   }
 }
 ```
 
-#### Domain Events (`src/domain/events/`)
-Events that represent something that happened in the domain.
-
-**Example**:
-```typescript
-export class UserRegisteredEvent extends DomainEvent {
-  constructor(
-    public readonly userId: string,
-    public readonly email: string,
-    public readonly occurredAt: Date
-  ) {
-    super();
-  }
-}
-```
+**Key point:** The entity doesn't know how it's stored or retrieved. It just knows business rules.
 
 ---
 
-### 2. Application Layer (Use Cases)
+### Application Layer (`src/application/`)
 
-**Location**: `src/application/use-cases/`
+Coordinates the domain to accomplish user goals. One use case per user action.
 
-**Purpose**: Orchestrates domain objects to fulfill specific business use cases.
-
-**Structure**:
 ```
 src/application/
 ├── use-cases/
-│   ├── auth/
-│   │   ├── RegisterUser.ts
-│   │   ├── LoginUser.ts
-│   │   └── RefreshToken.ts
-│   ├── producers/
-│   │   ├── CreateProducer.ts
-│   │   ├── UpdateProducer.ts
-│   │   └── DeleteProducer.ts
-│   └── batches/
-│       ├── CreateBatch.ts
-│       └── UpdateBatch.ts
-├── interfaces/
-│   ├── IUserRepository.ts
-│   ├── IProducerRepository.ts
-│   └── IAuthService.ts
-└── dtos/
-    ├── UserDTO.ts
-    └── ProducerDTO.ts
+│   ├── auth/                 # Login, Register, Refresh
+│   ├── batches/              # Create, Update, Track
+│   ├── organic-certificates/ # Generate, Approve, Revoke
+│   └── producers/            # CRUD operations
+└── interfaces/               # Port definitions
 ```
 
-**Example Use Case**:
+**Example Use Case:**
 ```typescript
-// src/application/use-cases/auth/RegisterUser.ts
-export class RegisterUser implements UseCase<RegisterUserDTO, Result<UserDTO>> {
+// src/application/use-cases/organic-certificates/ApproveCertificateUseCase.ts
+export class ApproveCertificateUseCase {
   constructor(
-    private userRepository: IUserRepository,
-    private passwordService: IPasswordService,
-    private eventDispatcher: IEventDispatcher
+    private certificateRepository: ICertificateRepository,
+    private notificationService: INotificationService,
   ) {}
 
-  async execute(request: RegisterUserDTO): Promise<Result<UserDTO>> {
-    // 1. Validate input
-    const emailOrError = Email.create(request.email);
-    if (emailOrError.isFailure) {
-      return Result.fail(emailOrError.error);
-    }
+  async execute(input: { certificateId: string; reviewerId: string }) {
+    const certificate = await this.certificateRepository.findById(input.certificateId);
+    if (!certificate) throw new Error('Certificate not found');
 
-    // 2. Check business rules
-    const userExists = await this.userRepository.findByEmail(request.email);
-    if (userExists) {
-      return Result.fail('User already exists');
-    }
+    certificate.approve(input.reviewerId);
 
-    // 3. Create domain entity
-    const passwordOrError = Password.create(request.password);
-    if (passwordOrError.isFailure) {
-      return Result.fail(passwordOrError.error);
-    }
+    await this.certificateRepository.save(certificate);
+    await this.notificationService.notifyApproval(certificate);
 
-    const user = User.create({
-      email: emailOrError.getValue(),
-      password: passwordOrError.getValue(),
-      name: request.name,
-      role: UserRole.FARMER
-    });
-
-    // 4. Persist
-    await this.userRepository.save(user.getValue());
-
-    // 5. Dispatch event
-    await this.eventDispatcher.dispatch(
-      new UserRegisteredEvent(user.getValue().id, request.email, new Date())
-    );
-
-    return Result.ok(UserMapper.toDTO(user.getValue()));
+    return { certificate };
   }
 }
 ```
 
+**Key point:** Use cases depend on interfaces, not concrete implementations.
+
 ---
 
-### 3. Infrastructure Layer (Technical Implementation)
+### Infrastructure Layer (`src/infrastructure/`)
 
-**Location**: `src/infrastructure/`
+Implements interfaces defined in domain/application layers with real technology.
 
-**Purpose**: Implements interfaces defined in Application layer with concrete technologies.
-
-**Structure**:
 ```
 src/infrastructure/
 ├── database/
-│   ├── prisma/
-│   │   └── schema.prisma
-│   ├── repositories/
-│   │   ├── PrismaUserRepository.ts
-│   │   ├── PrismaProducerRepository.ts
-│   │   └── PrismaBatchRepository.ts
-│   └── seed.ts
-├── http/
-│   ├── middleware/
-│   │   ├── auth.middleware.ts
-│   │   ├── cors.middleware.ts
-│   │   ├── helmet.middleware.ts
-│   │   ├── rate-limit.middleware.ts
-│   │   ├── audit.middleware.ts
-│   │   ├── error-handler.middleware.ts
-│   │   └── performance.middleware.ts
-│   └── server.ts
-├── services/
-│   ├── AuthService.ts
-│   ├── EmailService.ts
-│   └── StorageService.ts
-├── notifications/
-│   ├── queues/
-│   │   └── NotificationQueue.ts
-│   └── workers/
-│       └── notification-worker.ts
-└── logging/
-    └── WinstonLogger.ts
+│   └── prisma/
+│       ├── repositories/    # Prisma implementations of domain repositories
+│       └── schema.prisma    # Database schema
+├── cache/                   # Redis caching
+├── blockchain/              # Ethereum/Polygon integration
+├── notifications/           # Push, Email, SMS, WhatsApp
+├── storage/                 # S3, IPFS
+└── monitoring/              # Sentry, logging
 ```
 
-#### Repositories (Data Access)
+**Example Repository Implementation:**
 ```typescript
-// src/infrastructure/database/repositories/PrismaUserRepository.ts
-export class PrismaUserRepository implements IUserRepository {
+// src/infrastructure/database/prisma/repositories/PrismaCertificateRepository.ts
+export class PrismaCertificateRepository implements ICertificateRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findByEmail(email: string): Promise<User | null> {
-    const userData = await this.prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!userData) return null;
-
-    return UserMapper.toDomain(userData);
+  async findById(id: string): Promise<OrganicCertificate | null> {
+    const data = await this.prisma.organicCertificate.findUnique({ where: { id } });
+    return data ? this.toDomain(data) : null;
   }
 
-  async save(user: User): Promise<void> {
-    const raw = UserMapper.toPersistence(user);
-    await this.prisma.user.create({
-      data: raw
+  async save(certificate: OrganicCertificate): Promise<void> {
+    await this.prisma.organicCertificate.upsert({
+      where: { id: certificate.id },
+      update: this.toPersistence(certificate),
+      create: this.toPersistence(certificate),
     });
   }
 }
 ```
 
-#### HTTP Middleware Stack
-
-Recently Added (Commit 8d3d9d5):
-
-1. **Security Middleware** (`helmet.middleware.ts`)
-   - Content Security Policy
-   - XSS Protection
-   - Frameguard
-   - HSTS
-
-2. **CORS Middleware** (`cors.middleware.ts`)
-   - Whitelist-based origin validation
-   - Credentials support
-   - Pre-flight caching
-
-3. **Rate Limiting Middleware** (`rate-limit.middleware.ts`)
-   - Per-IP rate limiting
-   - Endpoint-specific limits
-   - DDoS protection
-
-4. **Audit Logging Middleware** (`audit.middleware.ts`)
-   - Request/response logging
-   - User action tracking
-   - Compliance (GDPR, SOC 2)
-
-5. **Performance Middleware** (`performance.middleware.ts`)
-   - Response time tracking
-   - Slow query detection
-   - Metrics collection
-
-6. **Error Handler Middleware** (`error-handler.middleware.ts`)
-   - Centralized error handling
-   - Error formatting
-   - Stack trace sanitization (production)
-
 ---
 
-### 4. API Layer (Controllers & Routes)
+### Presentation Layer (`src/presentation/`)
 
-**Location**: `src/api/` or `src/presentation/`
+HTTP interface. Translates web requests into use case calls.
 
-**Purpose**: HTTP interface exposing use cases via REST API.
-
-**Structure**:
 ```
 src/presentation/
-├── controllers/
-│   ├── auth.controller.ts
-│   ├── producer.controller.ts
-│   ├── batch.controller.ts
-│   ├── event.controller.ts
-│   └── health.controller.ts
-├── routes/
-│   ├── auth.routes.ts
-│   ├── producer.routes.ts
-│   ├── batch.routes.ts
-│   ├── event.routes.ts
-│   └── health.routes.ts
-├── validators/
-│   ├── auth.validators.ts
-│   └── common.validators.ts
-└── middlewares/
-    └── validate.middleware.ts
+├── routes/          # Express route definitions
+├── middlewares/     # Auth, rate limiting, validation
+└── validators/      # Request validation schemas
 ```
 
-**Example Controller**:
+**Example Route:**
 ```typescript
-// src/presentation/controllers/auth.controller.ts
-export class AuthController {
-  constructor(
-    private registerUserUC: RegisterUser,
-    private loginUserUC: LoginUser
-  ) {}
-
-  async register(req: Request, res: Response): Promise<void> {
-    const result = await this.registerUserUC.execute(req.body);
-
-    if (result.isFailure) {
-      res.status(400).json({ error: result.error });
-      return;
-    }
-
-    res.status(201).json({
-      success: true,
-      data: {
-        user: result.getValue(),
-        token: this.generateToken(result.getValue())
-      }
+// src/presentation/routes/organic-certificates.routes.ts
+router.post('/:id/approve',
+  authenticate(['EXPORT_COMPANY_ADMIN', 'ADMIN']),
+  async (req: Request, res: Response) => {
+    const result = await approveCertificateUseCase.execute({
+      certificateId: req.params.id,
+      reviewerId: req.user.id,
     });
+    res.json({ success: true, data: result.certificate });
   }
-
-  async login(req: Request, res: Response): Promise<void> {
-    const result = await this.loginUserUC.execute(req.body);
-
-    if (result.isFailure) {
-      res.status(401).json({ error: result.error });
-      return;
-    }
-
-    res.status(200).json({
-      success: true,
-      data: {
-        user: result.getValue(),
-        token: this.generateToken(result.getValue())
-      }
-    });
-  }
-}
+);
 ```
 
-**Health Check Endpoint** (Added in commit 8d3d9d5):
+---
+
+## How Data Flows
+
+### Example: Approving a Certificate
+
+```
+1. HTTP Request
+   POST /api/v1/organic-certificates/123/approve
+   Authorization: Bearer <token>
+
+2. Presentation Layer
+   - auth.middleware validates token
+   - Route handler calls use case
+
+3. Application Layer
+   - ApproveCertificateUseCase.execute()
+   - Calls repository to get certificate
+   - Calls domain method: certificate.approve()
+   - Saves via repository
+   - Triggers notification
+
+4. Domain Layer
+   - OrganicCertificate.approve() validates business rules
+   - Returns updated entity
+
+5. Infrastructure Layer
+   - PrismaCertificateRepository saves to PostgreSQL
+   - NotificationService sends push/email
+
+6. Response
+   { success: true, data: { ... } }
+```
+
+---
+
+## Key Design Patterns
+
+### Repository Pattern
+
+Abstracts data access behind interfaces.
+
 ```typescript
-// src/presentation/controllers/health.controller.ts
-export class HealthController {
-  async check(req: Request, res: Response): Promise<void> {
-    try {
-      // Check database connectivity
-      await prisma.$queryRaw`SELECT 1`;
-
-      res.status(200).json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        database: 'connected',
-        uptime: process.uptime()
-      });
-    } catch (error) {
-      res.status(503).json({
-        status: 'unhealthy',
-        timestamp: new Date().toISOString(),
-        database: 'disconnected',
-        uptime: process.uptime()
-      });
-    }
-  }
+// Domain defines WHAT it needs
+interface ICertificateRepository {
+  findById(id: string): Promise<OrganicCertificate | null>;
+  save(certificate: OrganicCertificate): Promise<void>;
 }
+
+// Infrastructure defines HOW
+class PrismaCertificateRepository implements ICertificateRepository { ... }
 ```
 
----
+### Dependency Injection
 
-## Design Patterns Used
+Dependencies are passed in, not created internally.
 
-### 1. Repository Pattern
-**Purpose**: Abstract data access layer
-
-**Benefits**:
-- Testability (easy mocking)
-- Database agnostic
-- Centralized queries
-
-**Example**:
 ```typescript
-interface IUserRepository {
-  findById(id: string): Promise<User | null>;
-  findByEmail(email: string): Promise<User | null>;
-  save(user: User): Promise<void>;
-  update(user: User): Promise<void>;
-  delete(id: string): Promise<void>;
-}
+// In app.ts - wire up dependencies
+const certificateRepo = new PrismaCertificateRepository(prisma);
+const notificationService = new NotificationService(fcm, sendgrid);
+const approveUseCase = new ApproveCertificateUseCase(certificateRepo, notificationService);
+
+// Use case doesn't know about Prisma or FCM
 ```
 
-### 2. Dependency Injection
-**Purpose**: Loose coupling between layers
+### Use Case Pattern
 
-**Implementation**: Constructor injection
+Each user action is a separate class with a single `execute` method.
 
-**Example**:
 ```typescript
-class RegisterUser {
-  constructor(
-    private userRepo: IUserRepository,      // Injected dependency
-    private emailService: IEmailService     // Injected dependency
-  ) {}
-}
-```
-
-### 3. Result Pattern (Railway Oriented Programming)
-**Purpose**: Explicit error handling without exceptions
-
-**Example**:
-```typescript
-class Result<T> {
-  private constructor(
-    public isSuccess: boolean,
-    public value?: T,
-    public error?: string
-  ) {}
-
-  static ok<U>(value: U): Result<U> {
-    return new Result<U>(true, value);
-  }
-
-  static fail<U>(error: string): Result<U> {
-    return new Result<U>(false, undefined, error);
-  }
-}
-```
-
-### 4. Value Object Pattern
-**Purpose**: Encapsulate validation and behavior of primitive values
-
-**Example**: `Password`, `Email`, `UserId`
-
-### 5. Use Case Pattern
-**Purpose**: Each use case represents one business operation
-
-**Example**: `RegisterUser`, `CreateProducer`, `UpdateBatch`
-
-### 6. Mapper Pattern
-**Purpose**: Transform between domain entities and DTOs/persistence models
-
-**Example**:
-```typescript
-class UserMapper {
-  static toDomain(raw: any): User {
-    // Convert database record to domain entity
-  }
-
-  static toDTO(user: User): UserDTO {
-    // Convert domain entity to DTO
-  }
-
-  static toPersistence(user: User): any {
-    // Convert domain entity to database record
-  }
+class ApproveCertificateUseCase {
+  execute(input: ApproveInput): Promise<ApproveOutput>;
 }
 ```
 
 ---
 
-## Data Flow Examples
+## Technology Stack
 
-### Example 1: User Registration Flow
+| Layer | Technology |
+|-------|------------|
+| Runtime | Node.js 20, TypeScript 5.3 |
+| HTTP | Express 4.x |
+| Database | PostgreSQL 15, Prisma ORM |
+| Cache | Redis 7.x |
+| Queue | Bull (Redis-based) |
+| Blockchain | ethers.js (Polygon) |
+| Notifications | FCM, APNs, SendGrid, Twilio |
+| Monitoring | Sentry, Winston |
+
+---
+
+## Adding New Features
+
+### New API Endpoint
+
+1. Create route in `src/presentation/routes/`
+2. Add validation schema if needed
+3. Call existing use case or create new one
+
+### New Use Case
+
+1. Create use case in `src/application/use-cases/`
+2. Define interfaces for dependencies
+3. Implement interfaces in `src/infrastructure/`
+4. Wire up in dependency injection
+
+### New Entity
+
+1. Create entity in `src/domain/entities/`
+2. Create repository interface in `src/domain/repositories/`
+3. Implement repository in `src/infrastructure/database/prisma/repositories/`
+4. Update Prisma schema and run migration
+
+---
+
+## Module Structure
+
+Feature modules live in `src/modules/` and follow the same layered structure:
 
 ```
-Client → POST /api/auth/register
-  ↓
-API Layer (AuthController)
-  - Validates request (Joi validator)
-  - Calls RegisterUser use case
-  ↓
-Application Layer (RegisterUser use case)
-  - Creates Email value object
-  - Creates Password value object
-  - Checks if user exists (via repository)
-  - Creates User entity
-  - Saves via repository
-  - Dispatches UserRegisteredEvent
-  ↓
-Infrastructure Layer
-  - PrismaUserRepository persists to PostgreSQL
-  - Event handler sends welcome email
-  ↓
-API Layer
-  - Returns 201 Created with user data + JWT token
-```
-
-### Example 2: Create Batch Flow
-
-```
-Client → POST /api/batches (with JWT token)
-  ↓
-Middleware Stack
-  - Rate limiter checks request count
-  - Auth middleware validates JWT
-  - Audit logger records request
-  ↓
-API Layer (BatchController)
-  - Validates request body
-  - Calls CreateBatch use case
-  ↓
-Application Layer (CreateBatch use case)
-  - Validates producer exists
-  - Creates Batch entity with business rules
-  - Saves via repository
-  ↓
-Infrastructure Layer
-  - PrismaBatchRepository persists to PostgreSQL
-  ↓
-API Layer
-  - Returns 201 Created with batch data
+src/modules/credit-scoring/
+├── domain/
+│   ├── CreditScore.ts
+│   └── ICreditScoreRepository.ts
+├── application/
+│   ├── CalculateCreditScoreUseCase.ts
+│   └── GetCreditHistoryUseCase.ts
+├── infrastructure/
+│   └── PrismaCreditScoreRepository.ts
+└── presentation/
+    └── credit-scoring.routes.ts
 ```
 
 ---
 
-## Database Schema (Prisma)
+## Testing Strategy
 
-**Location**: `src/infrastructure/database/prisma/schema.prisma`
+| Layer | Test Type | What to Test |
+|-------|-----------|--------------|
+| Domain | Unit | Business rules in isolation |
+| Application | Unit | Use case logic with mocked dependencies |
+| Infrastructure | Integration | Database operations, external APIs |
+| Presentation | E2E | Full request/response cycles |
 
-**Key Models**:
-```prisma
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      UserRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  producers Producer[]
-}
-
-model Producer {
-  id        String   @id @default(uuid())
-  name      String
-  location  String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id])
-  batches Batch[]
-}
-
-model Batch {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  producerId  String
-  quantity    Int
-  harvestDate DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  producer Producer @relation(fields: [producerId], references: [id])
-  events   Event[]
-}
-
-model Event {
-  id          String   @id @default(uuid())
-  batchId     String
-  type        String
-  description String
-  location    String?
-  timestamp   DateTime @default(now())
-
-  batch Batch @relation(fields: [batchId], references: [id])
-}
+```bash
+npm run test:unit         # Domain + Application
+npm run test:integration  # Infrastructure
+npm run test:e2e          # Full API tests
 ```
 
-**Indexes**:
-- `User.email` (unique)
-- `Batch.code` (unique)
-- `Batch.producerId` (foreign key)
-- `Event.batchId` (foreign key)
-
 ---
 
-## Security Architecture
+## Further Reading
 
-### Authentication Flow
-```
-User submits credentials
-  ↓
-Password validated against hashed version
-  ↓
-JWT token generated (7d expiration)
-  ↓
-Token includes: userId, email, role
-  ↓
-Client includes token in Authorization header
-  ↓
-Auth middleware validates token on each request
-  ↓
-Request context includes authenticated user
-```
-
-### Authorization
-- **RBAC**: Role-Based Access Control
-- **Roles**: ADMIN, FARMER, EXPORTER
-- **Middleware**: Checks user role before controller execution
-
----
-
-## Performance Optimizations
-
-### 1. Database
-- ✅ Connection pooling (`connection_limit=20`)
-- ✅ Optimized queries (select only needed fields)
-- ✅ Indexes on frequently queried fields
-- ✅ N+1 query elimination
-
-### 2. API
-- ✅ Response compression (gzip)
-- ✅ Caching headers
-- ✅ Pagination on list endpoints
-
-### 3. Infrastructure
-- ✅ PM2 cluster mode (multi-core utilization)
-- ✅ Docker multi-stage build (smaller image)
-- ✅ Nginx reverse proxy (static file serving)
-
----
-
-## Scalability Considerations
-
-### Horizontal Scaling
-- **Stateless API**: No session storage in memory
-- **Database**: Can add read replicas
-- **Load Balancer**: Nginx/ALB distributes traffic
-- **Auto-scaling**: ECS/K8s can scale based on CPU/memory
-
-### Vertical Scaling
-- **Database**: Upgrade RDS instance type
-- **API**: Increase container CPU/memory
-
-### Future Enhancements
-- [ ] Redis caching layer
-- [ ] ElasticSearch for search
-- [ ] Message queue (RabbitMQ/SQS) for async operations
-- [ ] CDN for static assets
-- [ ] Multi-region deployment
-
----
-
-## Technology Stack Summary
-
-| Layer | Technologies |
-|-------|-------------|
-| **Language** | TypeScript 5.3 |
-| **Runtime** | Node.js 20.x |
-| **Framework** | Express 4.x |
-| **Database** | PostgreSQL 15.x |
-| **ORM** | Prisma 5.x |
-| **Cache** | Redis 7.x |
-| **Testing** | Vitest |
-| **Logging** | Winston |
-| **Validation** | Joi/Zod |
-| **Auth** | JWT (jsonwebtoken) |
-| **Security** | Helmet, bcrypt |
-| **Process Manager** | PM2 |
-| **Containerization** | Docker |
-
----
-
-## Architecture Principles
-
-### 1. Separation of Concerns
-Each layer has a specific responsibility and doesn't know about outer layers.
-
-### 2. Dependency Rule
-Dependencies point inward. Domain layer has no dependencies on outer layers.
-
-### 3. Testability
-Business logic (domain + application) can be tested without infrastructure.
-
-### 4. Technology Agnostic Core
-Domain layer doesn't depend on Express, Prisma, or any framework.
-
-### 5. Explicit Over Implicit
-Use Result pattern instead of throwing exceptions. Explicit error handling.
-
-### 6. DRY (Don't Repeat Yourself)
-Reusable value objects, mappers, and utility functions.
-
----
-
-## Future Architecture Enhancements
-
-### Phase 2 (Post-Seed Funding)
-- [ ] **Event Sourcing**: Store all state changes as events
-- [ ] **CQRS**: Separate read/write models
-- [ ] **Microservices**: Split into smaller services
-  - Auth Service
-  - Producer Service
-  - Batch Service
-  - Event Service
-- [ ] **Message Queue**: RabbitMQ or AWS SQS
-- [ ] **API Gateway**: Kong or AWS API Gateway
-
-### Phase 3 (Series A+)
-- [ ] **GraphQL API**: In addition to REST
-- [ ] **WebSockets**: Real-time updates
-- [ ] **Multi-tenancy**: Separate data per organization
-- [ ] **Multi-region**: Deploy in multiple AWS regions
-- [ ] **Kubernetes**: Replace ECS for more control
-
----
-
-## References
-
-- [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Domain-Driven Design by Eric Evans](https://www.domainlanguage.com/ddd/)
-- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
-- [TypeScript Deep Dive](https://basarat.gitbook.io/typescript/)
-
----
-
-**Document Version**: 1.0.0
-**Last Updated**: December 13, 2025
-**Maintained by**: AgroBridge Engineering Team
-**Lead Architect**: Alejandro Navarro Ayala, CEO & CTO
-**Contact**: engineering@agrobridge.io
+- [Onboarding Guide](./docs/ONBOARDING.md) - Getting started
+- [API Documentation](./API-DOCUMENTATION.md) - Endpoint reference
+- [Deployment Guide](./DEPLOYMENT.md) - Production deployment
