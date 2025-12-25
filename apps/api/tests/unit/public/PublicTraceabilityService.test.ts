@@ -406,6 +406,9 @@ describe('PublicTraceabilityService', () => {
       certifications: [
         { name: 'USDA Organic', issuedBy: 'USDA', expiresAt: new Date('2026-01-01') },
       ],
+      organicCertificates: [
+        { certificateNumber: 'USDA Organic', issuedBy: 'USDA', validTo: new Date('2026-01-01') },
+      ],
       fields: [],
     };
 

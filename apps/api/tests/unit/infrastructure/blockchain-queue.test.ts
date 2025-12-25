@@ -231,8 +231,11 @@ describe('BlockchainQueue', () => {
       let stats = queue.getStats();
       expect(stats.completed).toBe(1);
 
-      // Prune with 0ms threshold (all completed jobs)
-      const pruned = queue.pruneCompleted(0);
+      // Wait a bit so the job becomes "old"
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Prune with 5ms threshold (jobs older than 5ms)
+      const pruned = queue.pruneCompleted(5);
       expect(pruned).toBe(1);
 
       stats = queue.getStats();
