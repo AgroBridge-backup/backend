@@ -232,11 +232,3 @@ export function createCertificatesRouter(useCases: CertificatesUseCases): Router
 
   return router;
 }
-
-// Legacy export for backwards compatibility
-export const certificatesRouter = Router();
-certificatesRouter.all('*', (_req, res) => {
-  res.status(501).json({
-    message: 'Legacy certificates router deprecated. Use createCertificatesRouter().'
-  });
-});
