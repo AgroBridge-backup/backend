@@ -120,7 +120,6 @@ class APMTracer {
   private async initDatadog(config: APMConfig): Promise<void> {
     try {
       // Dynamic import to avoid loading if not needed
-      // @ts-ignore - dd-trace is an optional dependency
       const ddTrace = await import('dd-trace');
       this.tracer = ddTrace.default.init({
         service: config.serviceName,
@@ -146,7 +145,6 @@ class APMTracer {
     logger.warn('[APM] New Relic should be initialized at application start. Add require("newrelic") to the first line of your entry file.');
 
     try {
-      // @ts-ignore - newrelic is an optional dependency
       const newrelic = await import('newrelic');
       this.tracer = newrelic.default;
     } catch (error) {
@@ -159,7 +157,6 @@ class APMTracer {
    */
   private async initXRay(config: APMConfig): Promise<void> {
     try {
-      // @ts-ignore - aws-xray-sdk is an optional dependency
       const AWSXRay = await import('aws-xray-sdk');
       AWSXRay.default.setDaemonAddress(process.env.AWS_XRAY_DAEMON_ADDRESS || '127.0.0.1:2000');
       AWSXRay.default.setContextMissingStrategy('LOG_ERROR');

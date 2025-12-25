@@ -68,7 +68,7 @@ export function createApiKeysRouter(prisma: PrismaClient): Router {
    */
   router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = req.user?.userId;
       if (!userId) {
         throw new AppError('Unauthorized', 401);
       }
@@ -120,7 +120,7 @@ export function createApiKeysRouter(prisma: PrismaClient): Router {
    */
   router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = req.user?.userId;
       if (!userId) {
         throw new AppError('Unauthorized', 401);
       }
@@ -145,7 +145,7 @@ export function createApiKeysRouter(prisma: PrismaClient): Router {
    */
   router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = req.user?.userId;
       if (!userId) {
         throw new AppError('Unauthorized', 401);
       }
@@ -172,7 +172,7 @@ export function createApiKeysRouter(prisma: PrismaClient): Router {
    */
   router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = req.user?.userId;
       if (!userId) {
         throw new AppError('Unauthorized', 401);
       }
@@ -215,7 +215,7 @@ export function createApiKeysRouter(prisma: PrismaClient): Router {
    */
   router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = req.user?.userId;
       if (!userId) {
         throw new AppError('Unauthorized', 401);
       }

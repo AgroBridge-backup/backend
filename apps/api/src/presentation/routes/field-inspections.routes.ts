@@ -364,7 +364,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
-        const verifiedBy = (req as any).user?.id || 'unknown';
+        const verifiedBy = req.user?.id || 'unknown';
 
         const result = await verifyInspectionUseCase.execute({
           inspectionId: id,
@@ -522,7 +522,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { inputId } = req.params;
-        const verifiedBy = (req as any).user?.id || 'unknown';
+        const verifiedBy = req.user?.id || 'unknown';
         const validation = verifyOrganicInputSchema.safeParse(req.body);
 
         if (!validation.success) {

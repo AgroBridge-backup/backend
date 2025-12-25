@@ -112,7 +112,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const farmerId = (req as any).user?.producerId || (req as any).user?.id;
+        const farmerId = req.user?.producerId || req.user?.id;
         if (!farmerId) {
           return res.status(401).json({
             success: false,
@@ -169,9 +169,9 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const farmerId = (req as any).user?.producerId;
-        const exportCompanyId = (req as any).user?.exportCompanyAdminId;
-        const isAdmin = (req as any).user?.role === 'ADMIN';
+        const farmerId = req.user?.producerId;
+        const exportCompanyId = req.user?.exportCompanyAdminId;
+        const isAdmin = req.user?.role === 'ADMIN';
 
         const validation = listCertificatesSchema.safeParse(req.query);
         if (!validation.success) {
@@ -276,7 +276,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const exportCompanyId = (req as any).user?.exportCompanyAdminId;
+        const exportCompanyId = req.user?.exportCompanyAdminId;
         if (!exportCompanyId) {
           return res.status(403).json({
             success: false,
@@ -314,7 +314,13 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
-        const reviewerId = (req as any).user?.id;
+        const reviewerId = req.user?.userId || req.user?.id;
+        if (!reviewerId) {
+          return res.status(401).json({
+            success: false,
+            error: 'Reviewer ID not found in token',
+          });
+        }
 
         const result = await approveCertificateUseCase.execute({
           certificateId: id,
@@ -350,7 +356,13 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
-        const reviewerId = (req as any).user?.id;
+        const reviewerId = req.user?.userId || req.user?.id;
+        if (!reviewerId) {
+          return res.status(401).json({
+            success: false,
+            error: 'Reviewer ID not found in token',
+          });
+        }
 
         const validation = rejectCertificateSchema.safeParse(req.body);
         if (!validation.success) {

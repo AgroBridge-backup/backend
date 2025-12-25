@@ -1,6 +1,5 @@
 // apps/api/src/shared/utils/logger.ts
 import winston from 'winston';
-// @ts-ignore
 import DatadogTransport from 'winston-datadog';
 
 /**

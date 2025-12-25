@@ -1,5 +1,28 @@
 import helmet from 'helmet';
 import { Request, Response, NextFunction } from 'express';
+import logger from '../../../shared/utils/logger.js';
+
+/**
+ * Force HTTPS in production
+ * Redirects HTTP requests to HTTPS with 301 status code
+ */
+export const forceHTTPS = (req: Request, res: Response, next: NextFunction): void => {
+  // Only enforce in production
+  if (process.env.NODE_ENV !== 'production') {
+    return next();
+  }
+
+  // Check if behind proxy (load balancer, CloudFront, etc.)
+  const proto = req.headers['x-forwarded-proto'] as string;
+
+  if (proto && proto !== 'https') {
+    const secureUrl = `https://${req.hostname}${req.url}`;
+    logger.debug(`[Security] Redirecting HTTP to HTTPS: ${secureUrl}`);
+    return res.redirect(301, secureUrl);
+  }
+
+  next();
+};
 
 /**
  * Security middleware using Helmet.js
@@ -79,8 +102,10 @@ export const additionalSecurityHeaders = (
 
 /**
  * Combined security middleware for easy integration
+ * Includes HTTPS enforcement, Helmet headers, and additional security headers
  */
 export const securityMiddleware = [
+  forceHTTPS,
   securityHeadersMiddleware,
   additionalSecurityHeaders,
 ];

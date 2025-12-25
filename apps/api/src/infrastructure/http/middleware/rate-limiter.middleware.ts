@@ -1,6 +1,32 @@
 import rateLimit, { RateLimitRequestHandler, Options } from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
 import { Request, Response } from 'express';
 import logger from '../../../shared/utils/logger.js';
+import { redisClient } from '../../cache/RedisClient.js';
+
+/**
+ * Create Redis store for rate limiting
+ * Falls back gracefully if Redis is unavailable
+ */
+function createRedisStore(prefix: string): RedisStore | undefined {
+  if (!redisClient.isAvailable()) {
+    logger.warn(`[RateLimiter] Redis unavailable, using in-memory store for ${prefix}`);
+    return undefined;
+  }
+
+  try {
+    return new RedisStore({
+      sendCommand: async (...args: string[]) => {
+        // Use apply to properly spread arguments to Redis call
+        return redisClient.client.call(args[0], ...args.slice(1)) as Promise<any>;
+      },
+      prefix: `rl:${prefix}:`,
+    });
+  } catch (error) {
+    logger.error(`[RateLimiter] Failed to create Redis store: ${error}`);
+    return undefined;
+  }
+}
 
 /**
  * Rate limiter configuration factory
@@ -12,9 +38,11 @@ export class RateLimiterConfig {
    * Very strict to prevent brute force attacks
    */
   static auth(): RateLimitRequestHandler {
+    const store = createRedisStore('auth');
     return rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
       max: 5, // 5 attempts per window
+      ...(store && { store }),
       message: {
         success: false,
         error: {
@@ -25,10 +53,11 @@ export class RateLimiterConfig {
       standardHeaders: true,
       legacyHeaders: false,
       skipSuccessfulRequests: false,
+      skipFailedRequests: true, // Don't count failed requests (graceful degradation)
       keyGenerator: (req: Request): string => {
         // Rate limit by IP + email combination for login attempts
         const email = req.body?.email || '';
-        return `auth:${req.ip}-${email}`;
+        return `${req.ip}-${email}`;
       },
       handler: (req: Request, res: Response) => {
         logger.warn(`[RateLimiter] Auth rate limit exceeded - IP: ${req.ip}, email: ${req.body?.email}, path: ${req.path}`);
@@ -49,9 +78,11 @@ export class RateLimiterConfig {
    * Balanced for normal API usage
    */
   static api(): RateLimitRequestHandler {
+    const store = createRedisStore('api');
     return rateLimit({
       windowMs: 60 * 1000, // 1 minute
       max: 100, // 100 requests per minute
+      ...(store && { store }),
       message: {
         success: false,
         error: {
@@ -61,6 +92,7 @@ export class RateLimiterConfig {
       },
       standardHeaders: true,
       legacyHeaders: false,
+      skipFailedRequests: true,
       skip: (req: Request): boolean => {
         // Skip health checks and status endpoints
         return req.path === '/health' ||
@@ -70,7 +102,7 @@ export class RateLimiterConfig {
       keyGenerator: (req: Request): string => {
         // Use user ID if authenticated, otherwise IP
         const userId = (req as any).user?.userId;
-        return userId ? `api:user:${userId}` : `api:ip:${req.ip}`;
+        return userId ? `user:${userId}` : `ip:${req.ip}`;
       },
     });
   }
@@ -284,9 +316,11 @@ export class RateLimiterConfig {
    * P1-2 FIX: Prevents DDoS, scraping, and API abuse on /verify/* routes
    */
   static publicApi(): RateLimitRequestHandler {
+    const store = createRedisStore('public');
     return rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 50, // 50 requests per 15 minutes per IP
+      max: 100, // 100 requests per 15 minutes per IP (for public traceability)
+      ...(store && { store }),
       message: {
         success: false,
         error: {
@@ -296,8 +330,9 @@ export class RateLimiterConfig {
       },
       standardHeaders: true,
       legacyHeaders: false,
+      skipFailedRequests: true,
       keyGenerator: (req: Request): string => {
-        return `public:ip:${req.ip}`;
+        return `ip:${req.ip}`;
       },
       handler: (req: Request, res: Response) => {
         logger.warn(`[RateLimiter] Public API rate limit exceeded - IP: ${req.ip}, path: ${req.path}`);
@@ -309,6 +344,33 @@ export class RateLimiterConfig {
             message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
           },
         });
+      },
+    });
+  }
+
+  /**
+   * Authenticated user rate limiter (60 req/min per user)
+   * For protected endpoints after authentication
+   */
+  static authenticated(): RateLimitRequestHandler {
+    const store = createRedisStore('authenticated');
+    return rateLimit({
+      windowMs: 60 * 1000, // 1 minute
+      max: 60, // 60 requests per minute per user
+      ...(store && { store }),
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Rate limit exceeded',
+        },
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      skipFailedRequests: true,
+      keyGenerator: (req: Request): string => {
+        const userId = (req as any).user?.userId;
+        return userId ? `user:${userId}` : `ip:${req.ip}`;
       },
     });
   }

@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
+    "@aws-sdk/client-secrets-manager": "^3.958.0",
     "@aws-sdk/client-ses": "^3.948.0",
     "@aws-sdk/s3-request-presigner": "^3.948.0",
     "@bull-board/api": "^5.23.0",

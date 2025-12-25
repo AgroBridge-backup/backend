@@ -16,8 +16,7 @@ import { createVerificationStagesRouter } from './verification-stages.routes.js'
 import { createCertificatesRouter, CertificatesUseCases } from './certificates.routes.js';
 import { createTransitRouter } from './transit.routes.js';
 import { createTemperatureRoutes } from './temperature.routes.js';
-import { createNfcSealsRouter } from './nfc-seals.routes.js';
-import { createSatelliteImageryRouter } from './satellite-imagery.routes.js';
+// Note: NFC Seals and Satellite Imagery are POST-MVP features - see docs/POST_MVP_FEATURES.md
 
 // FinTech Module Routes
 import whatsappRoutes from '../../modules/whatsapp-bot/whatsapp.routes.js';
@@ -62,10 +61,7 @@ export function createApiRouter(useCases: AllUseCases, prisma: PrismaClient): Ro
   router.use('/', createTransitRouter(useCases.transit));
   // Traceability 2.0 - Cold Chain Temperature Monitoring
   router.use('/temperature', createTemperatureRoutes(prisma));
-  // Traceability 2.0 - Tamper-Evident NFC Seals
-  router.use('/nfc-seals', createNfcSealsRouter(prisma));
-  // Traceability 2.0 - Satellite Imagery Time-Lapse
-  router.use('/satellite', createSatelliteImageryRouter(prisma));
+  // Note: NFC Seals and Satellite Imagery are POST-MVP features
   router.use('/events', createEventsRouter(useCases.events));
   router.use('/producers', createProducersRouter(useCases.producers));
   router.use('/notifications', createNotificationsRouter());

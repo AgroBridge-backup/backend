@@ -102,7 +102,7 @@ const updateBrandingSchema = z.object({
 // ════════════════════════════════════════════════════════════════════════════════
 
 function getCompanyId(req: Request): string {
-  const user = (req as any).user;
+  const user = req.user;
   if (!user?.exportCompanyId) {
     throw new Error('Export company ID not found in token');
   }
@@ -110,7 +110,7 @@ function getCompanyId(req: Request): string {
 }
 
 function getUserId(req: Request): string {
-  const user = (req as any).user;
+  const user = req.user;
   return user?.userId || user?.id || '';
 }
 

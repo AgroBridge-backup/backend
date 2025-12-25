@@ -31,8 +31,16 @@ export interface AuthenticatedUser {
   role: UserRole;
   /** Producer ID if user is associated with a producer */
   producerId?: string;
+  /** Export Company ID if user belongs to an export company */
+  exportCompanyId?: string;
   /** Export Company Admin ID if user is an export company admin */
   exportCompanyAdminId?: string;
+  /** Company ID (alias) */
+  companyId?: string;
+  /** User's first name */
+  firstName?: string;
+  /** User's last name */
+  lastName?: string;
   /** JWT token ID for blacklisting */
   jti?: string;
   /** Token expiration timestamp */

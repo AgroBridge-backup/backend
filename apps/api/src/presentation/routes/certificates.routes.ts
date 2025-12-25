@@ -7,13 +7,15 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { validateRequest } from '../middlewares/validator.middleware.js';
-import { UserRole, CertificateGrade } from '@prisma/client';
+import { UserRole, CertificateGrade as PrismaCertificateGrade } from '@prisma/client';
+import { CertificateGrade } from '../../domain/entities/QualityCertificate.js';
 import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
 import { IssueCertificateUseCase } from '../../application/use-cases/certificates/IssueCertificateUseCase.js';
 import { GetCertificateUseCase } from '../../application/use-cases/certificates/GetCertificateUseCase.js';
 import { ListBatchCertificatesUseCase } from '../../application/use-cases/certificates/ListBatchCertificatesUseCase.js';
 import { VerifyCertificateUseCase } from '../../application/use-cases/certificates/VerifyCertificateUseCase.js';
 import { CheckCertificateEligibilityUseCase } from '../../application/use-cases/certificates/CheckCertificateEligibilityUseCase.js';
+import { isValidCertificateGrade, VALID_CERTIFICATE_GRADES } from '../validation/certificate.schemas.js';
 
 export interface CertificatesUseCases {
   issueCertificateUseCase: IssueCertificateUseCase;
@@ -29,7 +31,7 @@ export function createCertificatesRouter(useCases: CertificatesUseCases): Router
   // Schema Definitions
   const issueCertificateSchema = z.object({
     body: z.object({
-      grade: z.nativeEnum(CertificateGrade),
+      grade: z.nativeEnum(PrismaCertificateGrade),
       certifyingBody: z.string().min(1).max(255),
       validityDays: z.number().int().min(1).max(3650).optional(), // Max 10 years
     }),
@@ -43,7 +45,9 @@ export function createCertificatesRouter(useCases: CertificatesUseCases): Router
       id: z.string().uuid(),
     }),
     query: z.object({
-      grade: z.nativeEnum(CertificateGrade),
+      grade: z.string().refine(isValidCertificateGrade, {
+        message: `Invalid grade. Must be one of: ${VALID_CERTIFICATE_GRADES.join(', ')}`,
+      }),
     }),
   });
 
@@ -139,9 +143,11 @@ export function createCertificatesRouter(useCases: CertificatesUseCases): Router
     validateRequest(checkEligibilitySchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
+        // Grade has already been validated by Zod schema
+        const validatedGrade = req.query.grade as CertificateGrade;
         const result = await useCases.checkCertificateEligibilityUseCase.execute({
           batchId: req.params.id,
-          grade: req.query.grade as string as any, // Cast to any - Prisma and domain enums have same values
+          grade: validatedGrade,
         });
 
         res.status(200).json({
