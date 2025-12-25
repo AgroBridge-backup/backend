@@ -72,7 +72,7 @@ router.post('/:advanceId', async (req: Request, res: Response) => {
       paymentMethod: paymentMethod as PaymentMethod,
       referenceNumber,
       notes,
-      processedBy: (req as any).user?.id,
+      processedBy: req.user?.id || req.user?.userId,
     };
 
     const result = await repaymentService.recordPayment(request);
@@ -149,7 +149,7 @@ router.patch('/:advanceId/extend', async (req: Request, res: Response) => {
       });
     }
 
-    const extendedBy = (req as any).user?.id || 'system';
+    const extendedBy = req.user?.id || req.user?.userId || 'system';
 
     logger.info('[Repayments Route] Extending due date', {
       advanceId,

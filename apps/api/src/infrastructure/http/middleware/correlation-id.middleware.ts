@@ -25,10 +25,10 @@ export const correlationIdMiddleware = (
   const correlationId = existingCorrelationId || randomUUID();
 
   // Attach to request for use in logging and downstream services
-  (req as any).correlationId = correlationId;
+  req.correlationId = correlationId;
 
   // Also set on req.requestId for compatibility with existing code
-  (req as any).requestId = correlationId;
+  req.requestId = correlationId;
 
   // Add to response headers so client can track their request
   res.setHeader('X-Correlation-ID', correlationId);
@@ -42,5 +42,5 @@ export const correlationIdMiddleware = (
  * Safe to use in any middleware or controller
  */
 export const getCorrelationId = (req: Request): string => {
-  return (req as any).correlationId || (req as any).requestId || 'unknown';
+  return req.correlationId || req.requestId || 'unknown';
 };

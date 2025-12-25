@@ -80,7 +80,7 @@ export const auditMiddleware = (
 
     // Extract info from request
     const requestInfo = AuditLogger.extractRequestInfo(req);
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     const action = determineAction(req, responseBody);
     const resource = extractResourceFromPath(req.path);
     const resourceId = extractResourceIdFromPath(req.path, responseBody);

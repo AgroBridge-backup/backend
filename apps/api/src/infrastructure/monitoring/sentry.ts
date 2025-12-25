@@ -14,6 +14,7 @@
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import type { Express, Request, Response, NextFunction } from 'express';
+import { getErrorStatusCode } from '../../shared/types/errors.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isStaging = process.env.NODE_ENV === 'staging';
@@ -184,8 +185,8 @@ export function sentryErrorHandler() {
       return next(err);
     }
 
-    // Get status code from error
-    const statusCode = (err as any).statusCode || (err as any).status || 500;
+    // Get status code from error using type-safe helper
+    const statusCode = getErrorStatusCode(err, 500);
 
     // Only report 5xx errors to Sentry
     if (statusCode >= 500) {
@@ -198,11 +199,11 @@ export function sentryErrorHandler() {
         scope.setExtra('body', req.body);
 
         // Add user context if available
-        if ((req as any).user) {
+        if (req.user) {
           scope.setUser({
-            id: (req as any).user.id,
-            email: (req as any).user.email,
-            role: (req as any).user.role,
+            id: req.user.id || req.user.userId,
+            email: req.user.email,
+            role: req.user.role,
           });
         }
 

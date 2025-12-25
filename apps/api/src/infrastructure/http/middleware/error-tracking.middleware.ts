@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import logger from '../../../shared/utils/logger.js';
 import { getCorrelationId } from './correlation-id.middleware.js';
 import { AppError } from '../../../shared/errors/AppError.js';
+import { getErrorCode } from '../../../shared/types/errors.js';
 
 /**
  * Error Tracking Middleware
@@ -24,7 +25,7 @@ export const errorTrackingMiddleware = (
 
   // Determine status code
   const statusCode = err instanceof AppError ? err.statusCode : 500;
-  const errorCode = (err as any).code || 'INTERNAL_ERROR';
+  const errorCode = getErrorCode(err, 'INTERNAL_ERROR');
 
   // Build error context for logging
   const errorContext = {
@@ -44,9 +45,9 @@ export const errorTrackingMiddleware = (
       userAgent: req.headers['user-agent'],
     },
     user: {
-      userId: (req as any).user?.userId,
-      role: (req as any).user?.role,
-      email: (req as any).user?.email,
+      userId: req.user?.userId,
+      role: req.user?.role,
+      email: req.user?.email,
     },
     timestamp: new Date().toISOString(),
   };

@@ -39,7 +39,7 @@ router.get('/health', (req: Request, res: Response) => {
 router.post('/run', async (req: Request, res: Response) => {
   try {
     logger.info('[Collections Route] Manual collection run triggered', {
-      triggeredBy: (req as any).user?.id || 'system',
+      triggeredBy: req.user?.id || req.user?.userId || 'system',
     });
 
     // Dynamic import to avoid circular dependencies
@@ -121,7 +121,7 @@ router.post('/trigger/:advanceId', async (req: Request, res: Response) => {
     logger.info('[Collections Route] Manual trigger for advance', {
       advanceId,
       channels,
-      triggeredBy: (req as any).user?.id,
+      triggeredBy: req.user?.id || req.user?.userId,
     });
 
     const { collectionService } = await import('../services/collection.service.js');

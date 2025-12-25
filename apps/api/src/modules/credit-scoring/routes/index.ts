@@ -126,7 +126,7 @@ router.post('/calculate/:userId', async (req: Request, res: Response) => {
 
     logger.info('[CreditScoring Route] Force recalculation', {
       userId,
-      triggeredBy: (req as any).user?.id,
+      triggeredBy: req.user?.id || req.user?.userId,
     });
 
     const result = await simpleCreditScoringService.calculateScore(userId);

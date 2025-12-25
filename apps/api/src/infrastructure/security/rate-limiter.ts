@@ -194,7 +194,7 @@ export function createRateLimiter(
     ...customOptions,
     keyGenerator: (req: Request): string => {
       // Use user ID if authenticated, otherwise IP
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id || req.user?.userId;
       const ip = req.ip || req.socket.remoteAddress || 'unknown';
       return userId ? `user:${userId}` : `ip:${ip}`;
     },
@@ -210,7 +210,7 @@ export function createRateLimiter(
         ip: req.ip,
         path: req.path,
         method: req.method,
-        userId: (req as any).user?.id,
+        userId: req.user?.id || req.user?.userId,
         tier,
       });
 
@@ -227,11 +227,11 @@ export function createRateLimiter(
 
   // Use custom store only if Redis is available
   if (store) {
-    (options as any).store = {
+    options.store = {
       increment: async (key: string) => store.increment(key),
       decrement: async (key: string) => store.decrement(key),
       resetKey: async (key: string) => store.resetKey(key),
-    };
+    } as Options['store'];
   }
 
   return rateLimit(options);
@@ -282,7 +282,7 @@ export function userRateLimiter(
       },
     },
     keyGenerator: (req: Request): string => {
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id || req.user?.userId;
       return userId ? `user:${userId}` : req.ip || 'unknown';
     },
     standardHeaders: true,
@@ -322,7 +322,7 @@ export function dynamicRateLimiter(): (req: Request, res: Response, next: NextFu
   };
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const tier = (req as any).user?.subscriptionTier || 'free';
+    const tier = req.user?.subscriptionTier || 'free';
     const limiter = limiters[tier] || limiters.free;
     limiter(req, res, next);
   };

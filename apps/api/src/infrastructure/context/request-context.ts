@@ -156,9 +156,9 @@ export function requestContextMiddleware(
   };
 
   // Attach to request object for backwards compatibility
-  (req as any).correlationId = correlationId;
-  (req as any).requestId = requestId;
-  (req as any).context = context;
+  req.correlationId = correlationId;
+  req.requestId = requestId;
+  req.context = context;
 
   // Add to response headers so client can track their request
   res.setHeader('X-Correlation-ID', correlationId);

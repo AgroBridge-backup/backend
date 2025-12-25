@@ -195,7 +195,7 @@ function ensureCSRFToken(
 
   // Generate new token
   const newToken = generateCSRFToken();
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id || req.user?.userId;
 
   tokenStore.set(newToken, {
     token: newToken,
@@ -237,7 +237,7 @@ function timingSafeEqual(a: string, b: string): boolean {
  */
 export function csrfTokenEndpoint(req: Request, res: Response): void {
   const token = generateCSRFToken();
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id || req.user?.userId;
 
   tokenStore.set(token, {
     token,

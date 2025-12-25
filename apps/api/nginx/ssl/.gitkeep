@@ -1,0 +1,9 @@
+# SSL certificates go here
+# In production, use Let's Encrypt or AWS Certificate Manager
+#
+# Required files:
+# - fullchain.pem (certificate chain)
+# - privkey.pem (private key)
+#
+# Generate with certbot:
+# certbot certonly --standalone -d api.agrobridge.io

@@ -254,11 +254,10 @@ export class AuditLogger {
     this.entry.ipAddress = req.ip || req.socket.remoteAddress;
     this.entry.userAgent = req.headers['user-agent'];
     this.entry.requestId = req.headers['x-request-id'] as string;
-    const user = (req as any).user;
-    if (user) {
-      this.entry.userId = user.id;
-      this.entry.userEmail = user.email;
-      this.entry.userRole = user.role;
+    if (req.user) {
+      this.entry.userId = req.user.id || req.user.userId;
+      this.entry.userEmail = req.user.email;
+      this.entry.userRole = req.user.role;
     }
     return this;
   }
@@ -367,11 +366,10 @@ export function auditMiddleware(
           },
         };
 
-        const user = (req as any).user;
-        if (user) {
-          entry.userId = user.id;
-          entry.userEmail = user.email;
-          entry.userRole = user.role;
+        if (req.user) {
+          entry.userId = req.user.id || req.user.userId;
+          entry.userEmail = req.user.email;
+          entry.userRole = req.user.role;
         }
 
         // Don't await - fire and forget

@@ -239,7 +239,7 @@ export class AdvanceController {
     res: Response,
     next: NextFunction,
   ): void => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) {
       res.status(401).json({ success: false, error: 'Authentication required' });
       return;
