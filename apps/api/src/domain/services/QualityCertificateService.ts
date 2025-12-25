@@ -18,6 +18,7 @@ import { StageStatus, STAGE_ORDER } from '../entities/VerificationStage.js';
 import { BlockchainService } from './BlockchainService.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import logger from '../../shared/utils/logger.js';
+import { instrumentAsync, addBreadcrumb, captureException, setContext } from '../../infrastructure/monitoring/sentry.js';
 
 export interface IssueCertificateInput {
   batchId: string;
@@ -50,8 +51,12 @@ export class QualityCertificateService {
   async issueCertificate(input: IssueCertificateInput): Promise<IssueCertificateResult> {
     const { batchId, grade, certifyingBody, validityDays, issuedBy } = input;
 
-    // 1. Validate batch exists
-    const batch = await this.prisma.batch.findUnique({
+    addBreadcrumb('Issuing certificate', 'certificate', { batchId, grade });
+    setContext('certificate', { batchId, grade, certifyingBody, issuedBy });
+
+    return instrumentAsync('issueCertificate', 'certificate.issue', async () => {
+      // 1. Validate batch exists
+      const batch = await this.prisma.batch.findUnique({
       where: { id: batchId },
       include: { producer: { select: { latitude: true, longitude: true } } },
     });
@@ -126,6 +131,7 @@ export class QualityCertificateService {
       hash,
       blockchainTxId,
     };
+    });
   }
 
   /**
@@ -159,7 +165,10 @@ export class QualityCertificateService {
     storedHash: string | null;
     isExpired: boolean;
   }> {
-    const certificate = await this.certificateRepository.findById(certificateId);
+    addBreadcrumb('Verifying certificate', 'certificate', { certificateId });
+
+    return instrumentAsync('verifyCertificate', 'certificate.verify', async () => {
+      const certificate = await this.certificateRepository.findById(certificateId);
 
     if (!certificate) {
       return {
@@ -194,6 +203,7 @@ export class QualityCertificateService {
       storedHash: certificate.hashOnChain,
       isExpired,
     };
+    });
   }
 
   /**

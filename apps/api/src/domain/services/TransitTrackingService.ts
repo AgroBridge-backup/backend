@@ -19,6 +19,7 @@ import {
 } from '../entities/TransitSession.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import logger from '../../shared/utils/logger.js';
+import { instrumentAsync, addBreadcrumb, setContext } from '../../infrastructure/monitoring/sentry.js';
 
 export interface TransitSessionWithProgress extends TransitSession {
   progressPercent: number;
@@ -49,36 +50,41 @@ export class TransitTrackingService {
    * Create a new transit session
    */
   async createSession(input: CreateTransitSessionInput): Promise<TransitSession> {
-    // Validate batch exists
-    const batch = await this.prisma.batch.findUnique({
-      where: { id: input.batchId },
+    addBreadcrumb('Creating transit session', 'transit', { batchId: input.batchId });
+    setContext('transit', { batchId: input.batchId, driverId: input.driverId });
+
+    return instrumentAsync('createSession', 'transit.create', async () => {
+      // Validate batch exists
+      const batch = await this.prisma.batch.findUnique({
+        where: { id: input.batchId },
+      });
+
+      if (!batch) {
+        throw new AppError('Batch not found', 404);
+      }
+
+      // Check for existing active sessions for this batch
+      const existingSessions = await this.sessionRepository.findByBatchId(input.batchId);
+      const activeSession = existingSessions.find(s =>
+        [TransitStatus.SCHEDULED, TransitStatus.IN_TRANSIT, TransitStatus.PAUSED, TransitStatus.DELAYED].includes(s.status)
+      );
+
+      if (activeSession) {
+        throw new AppError('Batch already has an active transit session', 400);
+      }
+
+      const session = await this.sessionRepository.create(input);
+
+      logger.info('Transit session created', {
+        sessionId: session.id,
+        batchId: input.batchId,
+        driverId: input.driverId,
+        origin: input.originName,
+        destination: input.destinationName,
+      });
+
+      return session;
     });
-
-    if (!batch) {
-      throw new AppError('Batch not found', 404);
-    }
-
-    // Check for existing active sessions for this batch
-    const existingSessions = await this.sessionRepository.findByBatchId(input.batchId);
-    const activeSession = existingSessions.find(s =>
-      [TransitStatus.SCHEDULED, TransitStatus.IN_TRANSIT, TransitStatus.PAUSED, TransitStatus.DELAYED].includes(s.status)
-    );
-
-    if (activeSession) {
-      throw new AppError('Batch already has an active transit session', 400);
-    }
-
-    const session = await this.sessionRepository.create(input);
-
-    logger.info('Transit session created', {
-      sessionId: session.id,
-      batchId: input.batchId,
-      driverId: input.driverId,
-      origin: input.originName,
-      destination: input.destinationName,
-    });
-
-    return session;
   }
 
   /**
@@ -192,11 +198,14 @@ export class TransitTrackingService {
    * Add a GPS location update
    */
   async addLocationUpdate(input: AddLocationInput): Promise<LocationUpdateResult> {
-    const session = await this.sessionRepository.findById(input.sessionId);
+    addBreadcrumb('Adding location update', 'transit', { sessionId: input.sessionId });
 
-    if (!session) {
-      throw new AppError('Transit session not found', 404);
-    }
+    return instrumentAsync('addLocationUpdate', 'transit.location', async () => {
+      const session = await this.sessionRepository.findById(input.sessionId);
+
+      if (!session) {
+        throw new AppError('Transit session not found', 404);
+      }
 
     // Only allow location updates for active sessions
     if (![TransitStatus.IN_TRANSIT, TransitStatus.PAUSED, TransitStatus.DELAYED].includes(session.status)) {
@@ -297,6 +306,7 @@ export class TransitTrackingService {
       estimatedArrival: newEstimatedArrival,
       alert,
     };
+    });
   }
 
   /**
