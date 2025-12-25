@@ -85,6 +85,33 @@ import { GetBatchHistoryUseCase } from './application/use-cases/batches/GetBatch
 import { GetEventByIdUseCase } from './application/use-cases/events/GetEventByIdUseCase.js';
 import { RegisterEventUseCase } from './application/use-cases/events/RegisterEventUseCase.js';
 
+// Traceability 2.0 - Verification Stages
+import { GetBatchStagesUseCase } from './application/use-cases/verification-stages/GetBatchStagesUseCase.js';
+import { CreateBatchStageUseCase } from './application/use-cases/verification-stages/CreateBatchStageUseCase.js';
+import { UpdateBatchStageUseCase } from './application/use-cases/verification-stages/UpdateBatchStageUseCase.js';
+import { FinalizeBatchStagesUseCase } from './application/use-cases/verification-stages/FinalizeBatchStagesUseCase.js';
+import { PrismaVerificationStageRepository } from './infrastructure/database/prisma/repositories/PrismaVerificationStageRepository.js';
+import { VerificationStageService } from './domain/services/VerificationStageService.js';
+import { StageFinalizationService } from './domain/services/StageFinalizationService.js';
+
+// Traceability 2.0 - Quality Certificates
+import { IssueCertificateUseCase } from './application/use-cases/certificates/IssueCertificateUseCase.js';
+import { GetCertificateUseCase } from './application/use-cases/certificates/GetCertificateUseCase.js';
+import { ListBatchCertificatesUseCase } from './application/use-cases/certificates/ListBatchCertificatesUseCase.js';
+import { VerifyCertificateUseCase } from './application/use-cases/certificates/VerifyCertificateUseCase.js';
+import { CheckCertificateEligibilityUseCase } from './application/use-cases/certificates/CheckCertificateEligibilityUseCase.js';
+import { PrismaQualityCertificateRepository } from './infrastructure/database/prisma/repositories/PrismaQualityCertificateRepository.js';
+import { QualityCertificateService } from './domain/services/QualityCertificateService.js';
+
+// Traceability 2.0 - Real-Time Transit Tracking
+import { CreateTransitSessionUseCase } from './application/use-cases/transit/CreateTransitSessionUseCase.js';
+import { GetTransitSessionUseCase } from './application/use-cases/transit/GetTransitSessionUseCase.js';
+import { UpdateTransitStatusUseCase } from './application/use-cases/transit/UpdateTransitStatusUseCase.js';
+import { AddLocationUpdateUseCase } from './application/use-cases/transit/AddLocationUpdateUseCase.js';
+import { GetLocationHistoryUseCase } from './application/use-cases/transit/GetLocationHistoryUseCase.js';
+import { PrismaTransitSessionRepository } from './infrastructure/database/prisma/repositories/PrismaTransitSessionRepository.js';
+import { TransitTrackingService } from './domain/services/TransitTrackingService.js';
+
 import { Router } from 'express';
 
 export function createApp(injectedRouter?: Router): express.Express {
@@ -100,6 +127,24 @@ export function createApp(injectedRouter?: Router): express.Express {
         const producerRepository = new PrismaProducerRepository(prisma);
         const batchRepository = new PrismaBatchRepository();
         const eventRepository = new PrismaEventRepository(prisma);
+
+        // Traceability 2.0 - Verification Stages
+        const verificationStageRepository = new PrismaVerificationStageRepository(prisma);
+        const verificationStageService = new VerificationStageService(verificationStageRepository);
+        const stageFinalizationService = new StageFinalizationService(prisma, verificationStageService);
+
+        // Traceability 2.0 - Quality Certificates
+        const certificateRepository = new PrismaQualityCertificateRepository(prisma);
+        const certificateService = new QualityCertificateService(
+          prisma,
+          certificateRepository,
+          verificationStageRepository
+          // BlockchainService is optional - will be added when configured
+        );
+
+        // Traceability 2.0 - Real-Time Transit Tracking
+        const transitSessionRepository = new PrismaTransitSessionRepository(prisma);
+        const transitTrackingService = new TransitTrackingService(prisma, transitSessionRepository);
 
         const useCases: AllUseCases = {
             auth: {
@@ -131,7 +176,31 @@ export function createApp(injectedRouter?: Router): express.Express {
             events: {
                 registerEventUseCase: new RegisterEventUseCase(eventRepository),
                 getEventByIdUseCase: new GetEventByIdUseCase(eventRepository),
-            }
+            },
+            // Traceability 2.0 - Verification Stages
+            verificationStages: {
+                getBatchStagesUseCase: new GetBatchStagesUseCase(verificationStageService),
+                createBatchStageUseCase: new CreateBatchStageUseCase(verificationStageService),
+                updateBatchStageUseCase: new UpdateBatchStageUseCase(verificationStageService),
+                finalizeBatchStagesUseCase: new FinalizeBatchStagesUseCase(stageFinalizationService),
+            },
+            // Traceability 2.0 - Quality Certificates
+            certificates: {
+                issueCertificateUseCase: new IssueCertificateUseCase(certificateService),
+                getCertificateUseCase: new GetCertificateUseCase(certificateService),
+                listBatchCertificatesUseCase: new ListBatchCertificatesUseCase(certificateService),
+                verifyCertificateUseCase: new VerifyCertificateUseCase(certificateService),
+                checkCertificateEligibilityUseCase: new CheckCertificateEligibilityUseCase(certificateService),
+            },
+            // Traceability 2.0 - Real-Time Transit Tracking
+            transit: {
+                createTransitSessionUseCase: new CreateTransitSessionUseCase(transitTrackingService),
+                getTransitSessionUseCase: new GetTransitSessionUseCase(transitTrackingService),
+                updateTransitStatusUseCase: new UpdateTransitStatusUseCase(transitTrackingService),
+                addLocationUpdateUseCase: new AddLocationUpdateUseCase(transitTrackingService),
+                getLocationHistoryUseCase: new GetLocationHistoryUseCase(transitTrackingService),
+                transitService: transitTrackingService,
+            },
         };
         
         apiRouter = createApiRouter(useCases, prisma);

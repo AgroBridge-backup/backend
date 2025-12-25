@@ -15,7 +15,7 @@ import { Request } from 'express';
 /**
  * User role type (matches Prisma UserRole enum)
  */
-export type UserRole = 'ADMIN' | 'PRODUCER' | 'CONSUMER' | 'AUDITOR' | 'CERTIFIER' | 'BUYER';
+export type UserRole = 'ADMIN' | 'PRODUCER' | 'CERTIFIER' | 'BUYER' | 'QA' | 'EXPORTER' | 'DRIVER' | 'EXPORT_COMPANY_ADMIN';
 
 /**
  * Authenticated user data attached to requests
@@ -23,12 +23,16 @@ export type UserRole = 'ADMIN' | 'PRODUCER' | 'CONSUMER' | 'AUDITOR' | 'CERTIFIE
 export interface AuthenticatedUser {
   /** User's unique identifier (UUID) */
   userId: string;
+  /** User ID (alias for userId) */
+  id?: string;
   /** User's email address */
   email: string;
   /** User's role in the system */
   role: UserRole;
   /** Producer ID if user is associated with a producer */
   producerId?: string;
+  /** Export Company Admin ID if user is an export company admin */
+  exportCompanyAdminId?: string;
   /** JWT token ID for blacklisting */
   jti?: string;
   /** Token expiration timestamp */

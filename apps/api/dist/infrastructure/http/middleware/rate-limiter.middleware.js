@@ -221,4 +221,32 @@ export class RateLimiterConfig {
             },
         });
     }
+    static publicApi() {
+        return rateLimit({
+            windowMs: 15 * 60 * 1000,
+            max: 50,
+            message: {
+                success: false,
+                error: {
+                    code: 'RATE_LIMIT_PUBLIC_API_EXCEEDED',
+                    message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
+                },
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
+            keyGenerator: (req) => {
+                return `public:ip:${req.ip}`;
+            },
+            handler: (req, res) => {
+                logger.warn(`[RateLimiter] Public API rate limit exceeded - IP: ${req.ip}, path: ${req.path}`);
+                res.status(429).json({
+                    success: false,
+                    error: {
+                        code: 'RATE_LIMIT_PUBLIC_API_EXCEEDED',
+                        message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
+                    },
+                });
+            },
+        });
+    }
 }

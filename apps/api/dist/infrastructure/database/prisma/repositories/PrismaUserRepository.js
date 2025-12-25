@@ -41,4 +41,33 @@ export class PrismaUserRepository {
         }
         return domainUser;
     }
+    async create(input) {
+        const user = await this.prisma.user.create({
+            data: {
+                id: input.id,
+                email: input.email,
+                passwordHash: input.passwordHash,
+                firstName: input.firstName,
+                lastName: input.lastName,
+                role: input.role,
+                isActive: input.isActive,
+                createdAt: input.createdAt,
+                updatedAt: input.updatedAt,
+            },
+        });
+        return {
+            id: user.id,
+            email: user.email,
+            passwordHash: user.passwordHash,
+            role: user.role,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            walletAddress: user.walletAddress,
+            twoFactorEnabled: user.twoFactorEnabled,
+            twoFactorSecret: user.twoFactorSecret,
+            backupCodes: user.backupCodes,
+            twoFactorEnabledAt: user.twoFactorEnabledAt,
+        };
+    }
 }
