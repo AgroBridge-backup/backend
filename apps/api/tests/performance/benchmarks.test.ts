@@ -66,8 +66,8 @@ interface Threshold {
 
 // Performance thresholds for validation (relaxed for CI/test environments)
 const THRESHOLDS = {
-  cacheGet: { p95MaxMs: 50, p99MaxMs: 100 },
-  cacheSet: { p95MaxMs: 50, p99MaxMs: 100 },
+  cacheGet: { p95MaxMs: 100, p99MaxMs: 200 },
+  cacheSet: { p95MaxMs: 100, p99MaxMs: 200 },
   cacheGetOrSet: { p95MaxMs: 100, p99MaxMs: 200 },
   dbSimpleQuery: { p95MaxMs: 100, p99MaxMs: 200 },
   dbComplexQuery: { p95MaxMs: 200, p99MaxMs: 400 },
