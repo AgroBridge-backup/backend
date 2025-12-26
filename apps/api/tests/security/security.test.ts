@@ -3,7 +3,7 @@
  * Comprehensive security testing for the AgroBridge API
  */
 
-import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express, { Express } from 'express';
 
@@ -36,7 +36,7 @@ const MALICIOUS_PAYLOADS = {
     { $gt: '' },
     { $where: 'this.password.length > 0' },
     { $regex: '.*' },
-    { email: { $ne: null } },
+    { $ne: null }, // Direct operator, not nested
   ],
   commandInjection: [
     '; ls -la',

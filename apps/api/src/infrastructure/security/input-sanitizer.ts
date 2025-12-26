@@ -27,33 +27,36 @@ const defaultOptions: SanitizeOptions = {
 };
 
 /**
- * Dangerous patterns for SQL injection detection
+ * Dangerous patterns for SQL injection detection (using 'i' flag only)
  */
 const SQL_INJECTION_PATTERNS = [
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b)/gi,
-  /(-{2}|;|\/\*|\*\/)/g,
-  /((\%27)|('))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/gi,
-  /(\b(AND|OR)\b\s+\d+\s*=\s*\d+)/gi,
-  /(\b(AND|OR)\b\s+['"][^'"]+['"]\s*=\s*['"][^'"]+['"])/gi,
+  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b)/i,
+  /(-{2}|;|\/\*|\*\/)/,
+  /((\%27)|('))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/i,
+  /(\b(AND|OR)\b\s+\d+\s*=\s*\d+)/i,
+  /(\b(AND|OR)\b\s+['"][^'"]+['"]\s*=\s*['"][^'"]+['"])/i,
+  // Additional patterns for common SQL injection attempts
+  /'\s*(OR|AND)\s*'/i,  // ' OR ' or ' AND '
+  /'\s*=\s*'/i,         // '=' pattern
 ];
 
 /**
- * Dangerous patterns for NoSQL injection detection
+ * Dangerous patterns for NoSQL injection detection (using 'i' flag only)
  */
 const NOSQL_INJECTION_PATTERNS = [
-  /\$where/gi,
-  /\$gt/gi,
-  /\$lt/gi,
-  /\$ne/gi,
-  /\$regex/gi,
-  /\$or/gi,
-  /\$and/gi,
-  /\$nor/gi,
-  /\$not/gi,
-  /\$exists/gi,
-  /\$type/gi,
-  /\$expr/gi,
-  /\$jsonSchema/gi,
+  /\$where/i,
+  /\$gt/i,
+  /\$lt/i,
+  /\$ne/i,
+  /\$regex/i,
+  /\$or/i,
+  /\$and/i,
+  /\$nor/i,
+  /\$not/i,
+  /\$exists/i,
+  /\$type/i,
+  /\$expr/i,
+  /\$jsonSchema/i,
 ];
 
 /**
@@ -66,15 +69,15 @@ const COMMAND_INJECTION_PATTERNS = [
 ];
 
 /**
- * XSS patterns
+ * XSS patterns (using 'i' flag only, not 'g' to avoid lastIndex issues with .test())
  */
 const XSS_PATTERNS = [
-  /<script[^>]*>[\s\S]*?<\/script>/gi,
-  /javascript:/gi,
-  /on\w+\s*=/gi,
-  /data:/gi,
-  /vbscript:/gi,
-  /expression\s*\(/gi,
+  /<script[^>]*>[\s\S]*?<\/script>/i,
+  /javascript:/i,
+  /on\w+\s*=/i,
+  /data:/i,
+  /vbscript:/i,
+  /expression\s*\(/i,
 ];
 
 /**
