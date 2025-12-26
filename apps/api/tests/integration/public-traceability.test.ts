@@ -27,6 +27,8 @@ const mockPrismaClient = {
   },
   $queryRaw: vi.fn(),
   $executeRaw: vi.fn(),
+  $queryRawUnsafe: vi.fn(),
+  $executeRawUnsafe: vi.fn(),
 } as unknown as PrismaClient;
 
 function createTestApp(): Express {
@@ -225,7 +227,7 @@ describe('Public Traceability API Integration Tests', () => {
   describe('GET /api/v1/public/batches/:shortCode', () => {
     beforeEach(() => {
       // Mock repository responses via raw queries
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         {
           id: 'link-123',
           batchId: 'batch-123',
@@ -246,7 +248,7 @@ describe('Public Traceability API Integration Tests', () => {
     });
 
     it('should set shorter cache for dynamic traceability data', async () => {
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValueOnce([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValueOnce([
         {
           id: 'link-123',
           batchId: 'batch-123',
@@ -256,7 +258,7 @@ describe('Public Traceability API Integration Tests', () => {
           viewCount: 42,
         },
       ]);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
       vi.mocked(mockPrismaClient.batch.findUnique).mockResolvedValue(mockBatch as any);
 
       const response = await request(app).get('/api/v1/public/batches/ABC12345');
@@ -273,10 +275,10 @@ describe('Public Traceability API Integration Tests', () => {
 
   describe('POST /api/v1/public/events/scan', () => {
     it('should record scan event successfully', async () => {
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         { id: 'link-123', shortCode: 'ABC12345', isActive: true },
       ]);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
 
       const response = await request(app)
         .post('/api/v1/public/events/scan')
@@ -288,10 +290,10 @@ describe('Public Traceability API Integration Tests', () => {
     });
 
     it('should accept referrer parameter', async () => {
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         { id: 'link-123', shortCode: 'ABC12345', isActive: true },
       ]);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
 
       const response = await request(app)
         .post('/api/v1/public/events/scan')
@@ -305,7 +307,7 @@ describe('Public Traceability API Integration Tests', () => {
 
     it('should not fail for unknown short code (silent analytics)', async () => {
       // Analytics should fail silently, not return errors
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([]);
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([]);
 
       const response = await request(app)
         .post('/api/v1/public/events/scan')
@@ -316,10 +318,10 @@ describe('Public Traceability API Integration Tests', () => {
     });
 
     it('should extract country from CDN headers', async () => {
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         { id: 'link-123', shortCode: 'ABC12345', isActive: true },
       ]);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
 
       const response = await request(app)
         .post('/api/v1/public/events/scan')
@@ -339,10 +341,10 @@ describe('Public Traceability API Integration Tests', () => {
     });
 
     it('should not require authentication', async () => {
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         { id: 'link-123', shortCode: 'ABC12345', isActive: true },
       ]);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
 
       const response = await request(app)
         .post('/api/v1/public/events/scan')
@@ -360,9 +362,9 @@ describe('Public Traceability API Integration Tests', () => {
   describe('POST /api/v1/batches/:id/public-link', () => {
     it('should generate public link for valid batch', async () => {
       const batchId = '550e8400-e29b-41d4-a716-446655440000';
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([]);
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([]);
       vi.mocked(mockPrismaClient.batch.findUnique).mockResolvedValue(mockBatch as any);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
 
       const token = generateTestToken();
       const response = await request(app)
@@ -385,7 +387,7 @@ describe('Public Traceability API Integration Tests', () => {
 
     it('should return existing link if already created', async () => {
       const batchId = '550e8400-e29b-41d4-a716-446655440000';
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         {
           id: 'link-123',
           batchId,
@@ -415,7 +417,7 @@ describe('Public Traceability API Integration Tests', () => {
   describe('GET /api/v1/batches/:id/public-stats', () => {
     it('should return 404 when no public link exists', async () => {
       const batchId = '550e8400-e29b-41d4-a716-446655440000';
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([]);
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([]);
 
       const token = generateTestToken();
       const response = await request(app)
@@ -440,7 +442,7 @@ describe('Public Traceability API Integration Tests', () => {
 
     it('should return analytics for existing link', async () => {
       const batchId = '550e8400-e29b-41d4-a716-446655440000';
-      vi.mocked(mockPrismaClient.$queryRaw)
+      vi.mocked(mockPrismaClient.$queryRawUnsafe)
         .mockResolvedValueOnce([
           { id: 'link-123', shortCode: 'ABC12345', batchId, isActive: true },
         ])
@@ -464,10 +466,10 @@ describe('Public Traceability API Integration Tests', () => {
 
   describe('Privacy & Security', () => {
     it('should not expose IP addresses in scan events', async () => {
-      vi.mocked(mockPrismaClient.$queryRaw).mockResolvedValue([
+      vi.mocked(mockPrismaClient.$queryRawUnsafe).mockResolvedValue([
         { id: 'link-123', shortCode: 'ABC12345', isActive: true },
       ]);
-      vi.mocked(mockPrismaClient.$executeRaw).mockResolvedValue(1);
+      vi.mocked(mockPrismaClient.$executeRawUnsafe).mockResolvedValue(1);
 
       const response = await request(app)
         .post('/api/v1/public/events/scan')

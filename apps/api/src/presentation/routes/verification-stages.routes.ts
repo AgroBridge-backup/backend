@@ -13,9 +13,14 @@ import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-lim
 import { FinalizeBatchStagesUseCase } from '../../application/use-cases/verification-stages/FinalizeBatchStagesUseCase.js';
 
 export function createVerificationStagesRouter(
-  useCases: VerificationStagesUseCases & { finalizeBatchStagesUseCase?: FinalizeBatchStagesUseCase }
+  useCases?: VerificationStagesUseCases & { finalizeBatchStagesUseCase?: FinalizeBatchStagesUseCase }
 ): Router {
   const router = Router();
+
+  // Guard: Return empty router if use cases not provided
+  if (!useCases) {
+    return router;
+  }
 
   // Schema Definitions
   const createStageSchema = z.object({

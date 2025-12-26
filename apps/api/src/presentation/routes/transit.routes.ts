@@ -25,8 +25,13 @@ export interface TransitUseCases {
   transitService: TransitTrackingService;
 }
 
-export function createTransitRouter(useCases: TransitUseCases): Router {
+export function createTransitRouter(useCases?: TransitUseCases): Router {
   const router = Router();
+
+  // Guard: Return empty router if use cases not provided
+  if (!useCases) {
+    return router;
+  }
 
   // Schema Definitions
   const createSessionSchema = z.object({

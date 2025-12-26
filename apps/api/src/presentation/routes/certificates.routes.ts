@@ -25,8 +25,13 @@ export interface CertificatesUseCases {
   checkCertificateEligibilityUseCase: CheckCertificateEligibilityUseCase;
 }
 
-export function createCertificatesRouter(useCases: CertificatesUseCases): Router {
+export function createCertificatesRouter(useCases?: CertificatesUseCases): Router {
   const router = Router();
+
+  // Guard: Return empty router if use cases not provided
+  if (!useCases) {
+    return router;
+  }
 
   // Schema Definitions
   const issueCertificateSchema = z.object({
