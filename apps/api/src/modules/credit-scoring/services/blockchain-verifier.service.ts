@@ -15,22 +15,22 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { ethers, providers, Contract } from 'ethers';
-import { PrismaClient } from '@prisma/client';
+import { ethers, providers, Contract } from "ethers";
+import { PrismaClient } from "@prisma/client";
 import {
   BlockchainDeliveryData,
   BlockchainMetrics,
-} from '../types/credit-score.types.js';
+} from "../types/credit-score.types.js";
 
 /**
  * Contract ABI for AgroBridge Traceability
  */
 const TRACEABILITY_ABI = [
-  'function getDeliveryRecord(bytes32 deliveryId) view returns (address producer, uint256 timestamp, uint256 weightKg, uint256 qualityGrade, bool verified)',
-  'function getProducerRecords(address producer) view returns (bytes32[] memory)',
-  'function verifyDelivery(bytes32 deliveryId) view returns (bool)',
-  'event DeliveryRecorded(bytes32 indexed deliveryId, address indexed producer, uint256 timestamp)',
-  'event DeliveryVerified(bytes32 indexed deliveryId, address indexed verifier, uint256 timestamp)',
+  "function getDeliveryRecord(bytes32 deliveryId) view returns (address producer, uint256 timestamp, uint256 weightKg, uint256 qualityGrade, bool verified)",
+  "function getProducerRecords(address producer) view returns (bytes32[] memory)",
+  "function verifyDelivery(bytes32 deliveryId) view returns (bool)",
+  "event DeliveryRecorded(bytes32 indexed deliveryId, address indexed producer, uint256 timestamp)",
+  "event DeliveryVerified(bytes32 indexed deliveryId, address indexed verifier, uint256 timestamp)",
 ];
 
 /**
@@ -50,13 +50,13 @@ export interface BlockchainVerifierConfig {
  * Default configuration
  */
 const DEFAULT_CONFIG: BlockchainVerifierConfig = {
-  rpcUrl: process.env.BLOCKCHAIN_RPC_URL || 'https://rpc-mumbai.maticvigil.com',
-  contractAddress: process.env.TRACEABILITY_CONTRACT_ADDRESS || '',
-  networkName: 'polygon-mumbai',
+  rpcUrl: process.env.BLOCKCHAIN_RPC_URL || "https://rpc-mumbai.maticvigil.com",
+  contractAddress: process.env.TRACEABILITY_CONTRACT_ADDRESS || "",
+  networkName: "polygon-mumbai",
   chainId: 80001,
   confirmationsRequired: 3,
   timeout: 30000,
-  enabled: process.env.BLOCKCHAIN_VERIFICATION_ENABLED === 'true',
+  enabled: process.env.BLOCKCHAIN_VERIFICATION_ENABLED === "true",
 };
 
 /**
@@ -86,7 +86,10 @@ export class BlockchainVerifierService {
   private readonly config: BlockchainVerifierConfig;
   private isConnected = false;
 
-  constructor(prisma: PrismaClient, config: Partial<BlockchainVerifierConfig> = {}) {
+  constructor(
+    prisma: PrismaClient,
+    config: Partial<BlockchainVerifierConfig> = {},
+  ) {
     this.prisma = prisma;
     this.config = { ...DEFAULT_CONFIG, ...config };
 
@@ -118,9 +121,11 @@ export class BlockchainVerifierService {
       );
 
       this.isConnected = true;
-      console.log(`✅ Blockchain verifier connected to ${this.config.networkName}`);
+      console.log(
+        `✅ Blockchain verifier connected to ${this.config.networkName}`,
+      );
     } catch (error) {
-      console.error('Failed to initialize blockchain verifier:', error);
+      console.error("Failed to initialize blockchain verifier:", error);
       this.isConnected = false;
     }
   }
@@ -158,12 +163,14 @@ export class BlockchainVerifierService {
       }
 
       // Fetch on-chain records
-      const onChainRecords = await this.fetchOnChainRecords(producer.user.walletAddress);
+      const onChainRecords = await this.fetchOnChainRecords(
+        producer.user.walletAddress,
+      );
 
       // Merge with database metrics
       return this.mergeMetrics(dbMetrics, onChainRecords);
     } catch (error) {
-      console.error('Error fetching blockchain metrics:', error);
+      console.error("Error fetching blockchain metrics:", error);
       return dbMetrics;
     }
   }
@@ -180,7 +187,7 @@ export class BlockchainVerifierService {
     if (!this.isAvailable()) {
       return {
         verified: false,
-        error: 'Blockchain verification not available',
+        error: "Blockchain verification not available",
       };
     }
 
@@ -199,10 +206,10 @@ export class BlockchainVerifierService {
 
       return { verified: false };
     } catch (error) {
-      console.error('Error verifying delivery:', error);
+      console.error("Error verifying delivery:", error);
       return {
         verified: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -226,7 +233,7 @@ export class BlockchainVerifierService {
 
         deliveries.push({
           txHash: recordId,
-          orderId: '', // Would need to decode from record
+          orderId: "", // Would need to decode from record
           producerAddress: record.producer,
           deliveryTimestamp: Number(record.timestamp),
           expectedDeliveryTimestamp: Number(record.timestamp), // Would need additional data
@@ -242,7 +249,7 @@ export class BlockchainVerifierService {
 
       return deliveries;
     } catch (error) {
-      console.error('Error fetching producer deliveries:', error);
+      console.error("Error fetching producer deliveries:", error);
       return [];
     }
   }
@@ -307,7 +314,7 @@ export class BlockchainVerifierService {
 
       return { synced, errors };
     } catch (error) {
-      console.error('Error syncing blockchain data:', error);
+      console.error("Error syncing blockchain data:", error);
       return { synced, errors: errors + 1 };
     }
   }
@@ -328,7 +335,8 @@ export class BlockchainVerifierService {
     const rateScore = (metrics.verificationRate / 100) * 70 * rateWeight;
 
     // Volume score (0-30) - more verifications = higher trust
-    const volumeScore = Math.min(30, (metrics.verifiedTransactions / 10) * 30) * volumeWeight;
+    const volumeScore =
+      Math.min(30, (metrics.verifiedTransactions / 10) * 30) * volumeWeight;
 
     return Math.round(rateScore + volumeScore);
   }
@@ -383,7 +391,8 @@ export class BlockchainVerifierService {
     return {
       verifiedTransactions: verified.length,
       totalTransactions: events.length,
-      verificationRate: events.length > 0 ? (verified.length / events.length) * 100 : 0,
+      verificationRate:
+        events.length > 0 ? (verified.length / events.length) * 100 : 0,
       verificationHashes: hashes,
       lastSyncAt: lastSync?.lastBlockchainSync || null,
     };
@@ -417,7 +426,7 @@ export class BlockchainVerifierService {
 
       return records;
     } catch (error) {
-      console.error('Error fetching on-chain records:', error);
+      console.error("Error fetching on-chain records:", error);
       return [];
     }
   }
@@ -460,11 +469,19 @@ export class BlockchainVerifierService {
     const onChainHashes = onChainVerified.map((r) => r.txHash);
 
     // Merge verification hashes (deduplicate)
-    const allHashes = [...new Set([...dbMetrics.verificationHashes, ...onChainHashes])];
+    const allHashes = [
+      ...new Set([...dbMetrics.verificationHashes, ...onChainHashes]),
+    ];
 
     // Use the higher count
-    const verifiedCount = Math.max(dbMetrics.verifiedTransactions, onChainVerified.length);
-    const totalCount = Math.max(dbMetrics.totalTransactions, onChainRecords.length);
+    const verifiedCount = Math.max(
+      dbMetrics.verifiedTransactions,
+      onChainVerified.length,
+    );
+    const totalCount = Math.max(
+      dbMetrics.totalTransactions,
+      onChainRecords.length,
+    );
 
     return {
       verifiedTransactions: verifiedCount,

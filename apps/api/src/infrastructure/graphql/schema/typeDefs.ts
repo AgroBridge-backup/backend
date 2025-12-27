@@ -234,7 +234,11 @@ export const typeDefs = /* GraphQL */ `
 
     # Relationships
     user: User!
-    batches(pagination: PaginationInput, filter: BatchFilterInput, sort: BatchSortInput): BatchConnection!
+    batches(
+      pagination: PaginationInput
+      filter: BatchFilterInput
+      sort: BatchSortInput
+    ): BatchConnection!
     certifications: [Certification!]!
 
     # Computed fields
@@ -256,7 +260,11 @@ export const typeDefs = /* GraphQL */ `
 
     # Relationships
     producer: Producer!
-    events(pagination: PaginationInput, filter: EventFilterInput, sort: EventSortInput): EventConnection!
+    events(
+      pagination: PaginationInput
+      filter: EventFilterInput
+      sort: EventSortInput
+    ): EventConnection!
 
     # Computed fields
     eventCount: Int!
@@ -566,7 +574,10 @@ export const typeDefs = /* GraphQL */ `
   type Mutation {
     # Batch mutations
     createBatch(input: CreateBatchInput!): BatchMutationResponse!
-    updateBatchStatus(id: ID!, input: UpdateBatchStatusInput!): BatchMutationResponse!
+    updateBatchStatus(
+      id: ID!
+      input: UpdateBatchStatusInput!
+    ): BatchMutationResponse!
     deleteBatch(id: ID!): DeleteMutationResponse!
 
     # Event mutations
@@ -574,13 +585,21 @@ export const typeDefs = /* GraphQL */ `
     verifyEvent(id: ID!): EventMutationResponse!
 
     # Producer mutations (Admin only)
-    createProducer(userId: ID!, input: CreateProducerInput!): ProducerMutationResponse!
-    updateProducer(id: ID!, input: UpdateProducerInput!): ProducerMutationResponse!
+    createProducer(
+      userId: ID!
+      input: CreateProducerInput!
+    ): ProducerMutationResponse!
+    updateProducer(
+      id: ID!
+      input: UpdateProducerInput!
+    ): ProducerMutationResponse!
     whitelistProducer(id: ID!): ProducerMutationResponse!
     deleteProducer(id: ID!): DeleteMutationResponse!
 
     # Certification mutations
-    addCertification(input: AddCertificationInput!): CertificationMutationResponse!
+    addCertification(
+      input: AddCertificationInput!
+    ): CertificationMutationResponse!
   }
 
   # ═══════════════════════════════════════════════════════════════════════════════

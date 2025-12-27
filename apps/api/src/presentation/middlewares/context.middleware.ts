@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { Request, Response, NextFunction } from "express";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Middleware to initialize the request context.
@@ -10,7 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
  * requestContextMiddleware from infrastructure/context/request-context.ts
  * which provides AsyncLocalStorage-based context propagation.
  */
-export const contextMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const contextMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const traceId = uuidv4();
 
   req.context = {
@@ -23,8 +27,8 @@ export const contextMiddleware = (req: Request, res: Response, next: NextFunctio
   };
 
   // Ensure traceId is also sent back in response headers for debugging
-  res.setHeader('X-Trace-ID', traceId);
-  res.setHeader('X-Correlation-ID', traceId);
+  res.setHeader("X-Trace-ID", traceId);
+  res.setHeader("X-Correlation-ID", traceId);
 
   next();
 };

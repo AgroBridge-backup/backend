@@ -14,10 +14,17 @@
  * @author AgroBridge Engineering Team
  */
 
-import { PrismaClient, SubscriptionTier, SubscriptionStatus } from '@prisma/client';
-import Stripe from 'stripe';
-import { stripeProvider, StripeProviderError } from './providers/StripeProvider.js';
-import logger from '../../shared/utils/logger.js';
+import {
+  PrismaClient,
+  SubscriptionTier,
+  SubscriptionStatus,
+} from "@prisma/client";
+import Stripe from "stripe";
+import {
+  stripeProvider,
+  StripeProviderError,
+} from "./providers/StripeProvider.js";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -44,7 +51,7 @@ export interface TierConfig {
 export const TIER_CONFIGS: Record<SubscriptionTier, TierConfig> = {
   FREE: {
     tier: SubscriptionTier.FREE,
-    name: 'Free',
+    name: "Free",
     priceMonthly: 0,
     priceYearly: 0,
     batchesLimit: 10,
@@ -53,7 +60,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierConfig> = {
   },
   BASIC: {
     tier: SubscriptionTier.BASIC,
-    name: 'Basic',
+    name: "Basic",
     priceMonthly: 1900, // $19/month
     priceYearly: 19000, // $190/year (save ~17%)
     batchesLimit: 100,
@@ -64,7 +71,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierConfig> = {
   },
   PREMIUM: {
     tier: SubscriptionTier.PREMIUM,
-    name: 'Premium',
+    name: "Premium",
     priceMonthly: 4900, // $49/month
     priceYearly: 49000, // $490/year (save ~17%)
     batchesLimit: 1000,
@@ -75,7 +82,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierConfig> = {
   },
   ENTERPRISE: {
     tier: SubscriptionTier.ENTERPRISE,
-    name: 'Enterprise',
+    name: "Enterprise",
     priceMonthly: 50000, // $500/month
     priceYearly: 500000, // $5000/year (save ~17%)
     batchesLimit: -1, // unlimited
@@ -95,7 +102,7 @@ export interface CreateSubscriptionInput {
   name: string;
   tier: SubscriptionTier;
   paymentMethodId: string;
-  billingCycle: 'monthly' | 'yearly';
+  billingCycle: "monthly" | "yearly";
   trialDays?: number;
 }
 
@@ -105,8 +112,8 @@ export interface CreateSubscriptionInput {
 export interface UpdateSubscriptionInput {
   userId: string;
   tier: SubscriptionTier;
-  billingCycle?: 'monthly' | 'yearly';
-  prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
+  billingCycle?: "monthly" | "yearly";
+  prorationBehavior?: "create_prorations" | "none" | "always_invoice";
 }
 
 /**
@@ -176,10 +183,10 @@ export class PaymentServiceError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly statusCode: number = 400
+    public readonly statusCode: number = 400,
   ) {
     super(message);
-    this.name = 'PaymentServiceError';
+    this.name = "PaymentServiceError";
   }
 }
 
@@ -211,13 +218,13 @@ export class PaymentService {
   async getOrCreateCustomer(
     userId: string,
     email: string,
-    name: string
+    name: string,
   ): Promise<string> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -236,7 +243,7 @@ export class PaymentService {
       name,
       metadata: {
         userId,
-        platform: 'agrobridge',
+        platform: "agrobridge",
       },
     });
 
@@ -254,7 +261,7 @@ export class PaymentService {
       },
     });
 
-    logger.info('[PaymentService] Customer created', {
+    logger.info("[PaymentService] Customer created", {
       userId,
       customerId: customer.id,
     });
@@ -267,13 +274,13 @@ export class PaymentService {
    */
   async updateCustomer(
     userId: string,
-    updates: { email?: string; name?: string }
+    updates: { email?: string; name?: string },
   ): Promise<void> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -283,15 +290,15 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     await stripeProvider.updateCustomer(subscription.stripeCustomerId, updates);
 
-    logger.info('[PaymentService] Customer updated', { userId });
+    logger.info("[PaymentService] Customer updated", { userId });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -304,13 +311,13 @@ export class PaymentService {
   async addPaymentMethod(
     userId: string,
     paymentMethodId: string,
-    setAsDefault: boolean = true
+    setAsDefault: boolean = true,
   ): Promise<PaymentMethodData> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -320,27 +327,27 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     // Attach payment method to customer
     const paymentMethod = await stripeProvider.attachPaymentMethod(
       paymentMethodId,
-      subscription.stripeCustomerId
+      subscription.stripeCustomerId,
     );
 
     // Set as default if requested
     if (setAsDefault) {
       await stripeProvider.setDefaultPaymentMethod(
         subscription.stripeCustomerId,
-        paymentMethodId
+        paymentMethodId,
       );
     }
 
-    logger.info('[PaymentService] Payment method added', {
+    logger.info("[PaymentService] Payment method added", {
       userId,
       paymentMethodId,
       setAsDefault,
@@ -354,13 +361,13 @@ export class PaymentService {
    */
   async removePaymentMethod(
     userId: string,
-    paymentMethodId: string
+    paymentMethodId: string,
   ): Promise<void> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -371,28 +378,28 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     const paymentMethods = await stripeProvider.listPaymentMethods(
-      subscription.stripeCustomerId
+      subscription.stripeCustomerId,
     );
 
     const belongs = paymentMethods.some((pm) => pm.id === paymentMethodId);
     if (!belongs) {
       throw new PaymentServiceError(
-        'Payment method not found for this user',
-        'PAYMENT_METHOD_NOT_FOUND',
-        404
+        "Payment method not found for this user",
+        "PAYMENT_METHOD_NOT_FOUND",
+        404,
       );
     }
 
     await stripeProvider.detachPaymentMethod(paymentMethodId);
 
-    logger.info('[PaymentService] Payment method removed', {
+    logger.info("[PaymentService] Payment method removed", {
       userId,
       paymentMethodId,
     });
@@ -404,9 +411,9 @@ export class PaymentService {
   async listPaymentMethods(userId: string): Promise<PaymentMethodData[]> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -416,9 +423,9 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
@@ -428,12 +435,12 @@ export class PaymentService {
     ]);
 
     const defaultId =
-      typeof customer.invoice_settings?.default_payment_method === 'string'
+      typeof customer.invoice_settings?.default_payment_method === "string"
         ? customer.invoice_settings.default_payment_method
         : customer.invoice_settings?.default_payment_method?.id;
 
     return paymentMethods.map((pm) =>
-      this.formatPaymentMethod(pm, pm.id === defaultId)
+      this.formatPaymentMethod(pm, pm.id === defaultId),
     );
   }
 
@@ -442,13 +449,13 @@ export class PaymentService {
    */
   async setDefaultPaymentMethod(
     userId: string,
-    paymentMethodId: string
+    paymentMethodId: string,
   ): Promise<void> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -458,18 +465,18 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     await stripeProvider.setDefaultPaymentMethod(
       subscription.stripeCustomerId,
-      paymentMethodId
+      paymentMethodId,
     );
 
-    logger.info('[PaymentService] Default payment method set', {
+    logger.info("[PaymentService] Default payment method set", {
       userId,
       paymentMethodId,
     });
@@ -514,30 +521,38 @@ export class PaymentService {
    * Create or upgrade subscription
    */
   async createSubscription(
-    input: CreateSubscriptionInput
+    input: CreateSubscriptionInput,
   ): Promise<SubscriptionData> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
-    const { userId, email, name, tier, paymentMethodId, billingCycle, trialDays } = input;
+    const {
+      userId,
+      email,
+      name,
+      tier,
+      paymentMethodId,
+      billingCycle,
+      trialDays,
+    } = input;
 
     // Get tier configuration
     const tierConfig = TIER_CONFIGS[tier];
     const priceId =
-      billingCycle === 'yearly'
+      billingCycle === "yearly"
         ? tierConfig.stripePriceIdYearly
         : tierConfig.stripePriceIdMonthly;
 
     if (tier !== SubscriptionTier.FREE && !priceId) {
       throw new PaymentServiceError(
         `Price ID not configured for ${tier} ${billingCycle}`,
-        'PRICE_NOT_CONFIGURED',
-        500
+        "PRICE_NOT_CONFIGURED",
+        500,
       );
     }
 
@@ -555,18 +570,18 @@ export class PaymentService {
 
     if (!existingSubscription) {
       throw new PaymentServiceError(
-        'Subscription record not found',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "Subscription record not found",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     // If upgrading from FREE, create Stripe subscription
     if (tier === SubscriptionTier.FREE) {
       throw new PaymentServiceError(
-        'Cannot create subscription for FREE tier',
-        'INVALID_TIER',
-        400
+        "Cannot create subscription for FREE tier",
+        "INVALID_TIER",
+        400,
       );
     }
 
@@ -574,7 +589,7 @@ export class PaymentService {
     if (existingSubscription.stripeSubscriptionId) {
       await stripeProvider.cancelSubscription(
         existingSubscription.stripeSubscriptionId,
-        true
+        true,
       );
     }
 
@@ -586,7 +601,7 @@ export class PaymentService {
       metadata: {
         userId,
         tier,
-        platform: 'agrobridge',
+        platform: "agrobridge",
       },
     };
 
@@ -594,7 +609,8 @@ export class PaymentService {
       subscriptionParams.trial_period_days = trialDays;
     }
 
-    const stripeSubscription = await stripeProvider.createSubscription(subscriptionParams);
+    const stripeSubscription =
+      await stripeProvider.createSubscription(subscriptionParams);
 
     // Update database
     const updatedSubscription = await this.prisma.subscription.update({
@@ -604,8 +620,14 @@ export class PaymentService {
         stripePriceId: priceId,
         tier,
         status: this.mapStripeStatus(stripeSubscription.status),
-        currentPeriodStart: new Date((stripeSubscription.items.data[0]?.current_period_start ?? Math.floor(Date.now() / 1000)) * 1000),
-        currentPeriodEnd: new Date((stripeSubscription.items.data[0]?.current_period_end ?? Math.floor(Date.now() / 1000)) * 1000),
+        currentPeriodStart: new Date(
+          (stripeSubscription.items.data[0]?.current_period_start ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
+        currentPeriodEnd: new Date(
+          (stripeSubscription.items.data[0]?.current_period_end ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
         cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
         trialEnd: stripeSubscription.trial_end
           ? new Date(stripeSubscription.trial_end * 1000)
@@ -616,7 +638,7 @@ export class PaymentService {
       },
     });
 
-    logger.info('[PaymentService] Subscription created', {
+    logger.info("[PaymentService] Subscription created", {
       userId,
       tier,
       stripeSubscriptionId: stripeSubscription.id,
@@ -645,17 +667,22 @@ export class PaymentService {
    * Update subscription tier
    */
   async updateSubscription(
-    input: UpdateSubscriptionInput
+    input: UpdateSubscriptionInput,
   ): Promise<SubscriptionData> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
-    const { userId, tier, billingCycle = 'monthly', prorationBehavior = 'create_prorations' } = input;
+    const {
+      userId,
+      tier,
+      billingCycle = "monthly",
+      prorationBehavior = "create_prorations",
+    } = input;
 
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
@@ -663,16 +690,16 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     // Get tier configuration
     const tierConfig = TIER_CONFIGS[tier];
     const priceId =
-      billingCycle === 'yearly'
+      billingCycle === "yearly"
         ? tierConfig.stripePriceIdYearly
         : tierConfig.stripePriceIdMonthly;
 
@@ -681,7 +708,7 @@ export class PaymentService {
       if (subscription.stripeSubscriptionId) {
         await stripeProvider.cancelSubscription(
           subscription.stripeSubscriptionId,
-          false // at period end
+          false, // at period end
         );
       }
 
@@ -696,7 +723,9 @@ export class PaymentService {
         },
       });
 
-      logger.info('[PaymentService] Subscription downgraded to FREE', { userId });
+      logger.info("[PaymentService] Subscription downgraded to FREE", {
+        userId,
+      });
 
       return this.mapSubscriptionToData(updatedSubscription);
     }
@@ -705,22 +734,22 @@ export class PaymentService {
     if (!priceId) {
       throw new PaymentServiceError(
         `Price ID not configured for ${tier} ${billingCycle}`,
-        'PRICE_NOT_CONFIGURED',
-        500
+        "PRICE_NOT_CONFIGURED",
+        500,
       );
     }
 
     if (!subscription.stripeSubscriptionId) {
       throw new PaymentServiceError(
-        'No active subscription to update',
-        'NO_ACTIVE_SUBSCRIPTION',
-        400
+        "No active subscription to update",
+        "NO_ACTIVE_SUBSCRIPTION",
+        400,
       );
     }
 
     // Get current subscription from Stripe
     const stripeSubscription = await stripeProvider.getSubscription(
-      subscription.stripeSubscriptionId
+      subscription.stripeSubscriptionId,
     );
 
     // Update subscription with new price
@@ -737,9 +766,9 @@ export class PaymentService {
         metadata: {
           userId,
           tier,
-          platform: 'agrobridge',
+          platform: "agrobridge",
         },
-      }
+      },
     );
 
     // Update database
@@ -749,8 +778,14 @@ export class PaymentService {
         stripePriceId: priceId,
         tier,
         status: this.mapStripeStatus(updatedStripeSubscription.status),
-        currentPeriodStart: new Date((updatedStripeSubscription.items.data[0]?.current_period_start ?? Math.floor(Date.now() / 1000)) * 1000),
-        currentPeriodEnd: new Date((updatedStripeSubscription.items.data[0]?.current_period_end ?? Math.floor(Date.now() / 1000)) * 1000),
+        currentPeriodStart: new Date(
+          (updatedStripeSubscription.items.data[0]?.current_period_start ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
+        currentPeriodEnd: new Date(
+          (updatedStripeSubscription.items.data[0]?.current_period_end ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
         cancelAtPeriodEnd: updatedStripeSubscription.cancel_at_period_end,
         batchesLimit: tierConfig.batchesLimit,
         apiCallsLimit: tierConfig.apiCallsLimit,
@@ -758,7 +793,7 @@ export class PaymentService {
       },
     });
 
-    logger.info('[PaymentService] Subscription updated', {
+    logger.info("[PaymentService] Subscription updated", {
       userId,
       tier,
       billingCycle,
@@ -772,13 +807,13 @@ export class PaymentService {
    */
   async cancelSubscription(
     userId: string,
-    immediately: boolean = false
+    immediately: boolean = false,
   ): Promise<SubscriptionData> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -788,23 +823,23 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     if (!subscription.stripeSubscriptionId) {
       throw new PaymentServiceError(
-        'No active subscription to cancel',
-        'NO_ACTIVE_SUBSCRIPTION',
-        400
+        "No active subscription to cancel",
+        "NO_ACTIVE_SUBSCRIPTION",
+        400,
       );
     }
 
     const stripeSubscription = await stripeProvider.cancelSubscription(
       subscription.stripeSubscriptionId,
-      immediately
+      immediately,
     );
 
     const updateData: Record<string, unknown> = {
@@ -828,7 +863,7 @@ export class PaymentService {
       data: updateData,
     });
 
-    logger.info('[PaymentService] Subscription canceled', {
+    logger.info("[PaymentService] Subscription canceled", {
       userId,
       immediately,
     });
@@ -842,9 +877,9 @@ export class PaymentService {
   async resumeSubscription(userId: string): Promise<SubscriptionData> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -854,30 +889,30 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     if (!subscription.stripeSubscriptionId) {
       throw new PaymentServiceError(
-        'No subscription to resume',
-        'NO_ACTIVE_SUBSCRIPTION',
-        400
+        "No subscription to resume",
+        "NO_ACTIVE_SUBSCRIPTION",
+        400,
       );
     }
 
     if (!subscription.cancelAtPeriodEnd) {
       throw new PaymentServiceError(
-        'Subscription is not scheduled for cancellation',
-        'NOT_CANCELING',
-        400
+        "Subscription is not scheduled for cancellation",
+        "NOT_CANCELING",
+        400,
       );
     }
 
     const stripeSubscription = await stripeProvider.resumeSubscription(
-      subscription.stripeSubscriptionId
+      subscription.stripeSubscriptionId,
     );
 
     const updatedSubscription = await this.prisma.subscription.update({
@@ -889,7 +924,7 @@ export class PaymentService {
       },
     });
 
-    logger.info('[PaymentService] Subscription resumed', { userId });
+    logger.info("[PaymentService] Subscription resumed", { userId });
 
     return this.mapSubscriptionToData(updatedSubscription);
   }
@@ -902,17 +937,24 @@ export class PaymentService {
    * Create a one-time payment
    */
   async createOneTimePayment(
-    input: CreateOneTimePaymentInput
+    input: CreateOneTimePaymentInput,
   ): Promise<{ clientSecret: string; paymentIntentId: string }> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
-    const { userId, amount, currency = 'usd', description, paymentMethodId, metadata } = input;
+    const {
+      userId,
+      amount,
+      currency = "usd",
+      description,
+      paymentMethodId,
+      metadata,
+    } = input;
 
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
@@ -920,9 +962,9 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
@@ -933,8 +975,8 @@ export class PaymentService {
       description,
       metadata: {
         userId,
-        platform: 'agrobridge',
-        type: 'one_time',
+        platform: "agrobridge",
+        type: "one_time",
         ...metadata,
       },
     };
@@ -944,7 +986,8 @@ export class PaymentService {
       paymentIntentParams.confirm = true;
     }
 
-    const paymentIntent = await stripeProvider.createPaymentIntent(paymentIntentParams);
+    const paymentIntent =
+      await stripeProvider.createPaymentIntent(paymentIntentParams);
 
     // Record payment in database
     await this.prisma.payment.create({
@@ -958,7 +1001,7 @@ export class PaymentService {
       },
     });
 
-    logger.info('[PaymentService] One-time payment created', {
+    logger.info("[PaymentService] One-time payment created", {
       userId,
       amount,
       paymentIntentId: paymentIntent.id,
@@ -977,12 +1020,15 @@ export class PaymentService {
   /**
    * List invoices for user
    */
-  async listInvoices(userId: string, limit: number = 10): Promise<InvoiceData[]> {
+  async listInvoices(
+    userId: string,
+    limit: number = 10,
+  ): Promise<InvoiceData[]> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -992,15 +1038,15 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     const invoices = await stripeProvider.listInvoices(
       subscription.stripeCustomerId,
-      limit
+      limit,
     );
 
     return invoices.map((invoice) => ({
@@ -1021,12 +1067,15 @@ export class PaymentService {
   /**
    * Get invoice PDF URL
    */
-  async getInvoicePdf(userId: string, invoiceId: string): Promise<string | null> {
+  async getInvoicePdf(
+    userId: string,
+    invoiceId: string,
+  ): Promise<string | null> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -1036,9 +1085,9 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
@@ -1046,9 +1095,9 @@ export class PaymentService {
     const invoice = await stripeProvider.getInvoice(invoiceId);
     if (invoice.customer !== subscription.stripeCustomerId) {
       throw new PaymentServiceError(
-        'Invoice not found for this user',
-        'INVOICE_NOT_FOUND',
-        404
+        "Invoice not found for this user",
+        "INVOICE_NOT_FOUND",
+        404,
       );
     }
 
@@ -1064,9 +1113,14 @@ export class PaymentService {
    */
   async checkUsage(
     userId: string,
-    type: 'batches' | 'apiCalls' | 'storage',
-    amount: number = 1
-  ): Promise<{ allowed: boolean; used: number; limit: number; remaining: number }> {
+    type: "batches" | "apiCalls" | "storage",
+    amount: number = 1,
+  ): Promise<{
+    allowed: boolean;
+    used: number;
+    limit: number;
+    remaining: number;
+  }> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
     });
@@ -1079,15 +1133,15 @@ export class PaymentService {
     let limit: number;
 
     switch (type) {
-      case 'batches':
+      case "batches":
         used = subscription.batchesUsed;
         limit = subscription.batchesLimit;
         break;
-      case 'apiCalls':
+      case "apiCalls":
         used = subscription.apiCallsUsed;
         limit = subscription.apiCallsLimit;
         break;
-      case 'storage':
+      case "storage":
         used = subscription.storageUsedMb;
         limit = subscription.storageLimitMb;
         break;
@@ -1109,15 +1163,15 @@ export class PaymentService {
    */
   async incrementUsage(
     userId: string,
-    type: 'batches' | 'apiCalls' | 'storage',
-    amount: number = 1
+    type: "batches" | "apiCalls" | "storage",
+    amount: number = 1,
   ): Promise<void> {
     const field =
-      type === 'batches'
-        ? 'batchesUsed'
-        : type === 'apiCalls'
-          ? 'apiCallsUsed'
-          : 'storageUsedMb';
+      type === "batches"
+        ? "batchesUsed"
+        : type === "apiCalls"
+          ? "apiCallsUsed"
+          : "storageUsedMb";
 
     await this.prisma.subscription.update({
       where: { userId },
@@ -1126,7 +1180,7 @@ export class PaymentService {
       },
     });
 
-    logger.debug('[PaymentService] Usage incremented', {
+    logger.debug("[PaymentService] Usage incremented", {
       userId,
       type,
       amount,
@@ -1144,7 +1198,7 @@ export class PaymentService {
       },
     });
 
-    logger.info('[PaymentService] Monthly usage reset', {
+    logger.info("[PaymentService] Monthly usage reset", {
       count: result.count,
     });
 
@@ -1160,13 +1214,13 @@ export class PaymentService {
    */
   async createPortalSession(
     userId: string,
-    returnUrl: string
+    returnUrl: string,
   ): Promise<{ url: string }> {
     if (!this.isAvailable()) {
       throw new PaymentServiceError(
-        'Payment service not available',
-        'PAYMENTS_UNAVAILABLE',
-        503
+        "Payment service not available",
+        "PAYMENTS_UNAVAILABLE",
+        503,
       );
     }
 
@@ -1176,18 +1230,18 @@ export class PaymentService {
 
     if (!subscription) {
       throw new PaymentServiceError(
-        'No subscription found for user',
-        'SUBSCRIPTION_NOT_FOUND',
-        404
+        "No subscription found for user",
+        "SUBSCRIPTION_NOT_FOUND",
+        404,
       );
     }
 
     const session = await stripeProvider.createPortalSession(
       subscription.stripeCustomerId,
-      returnUrl
+      returnUrl,
     );
 
-    logger.info('[PaymentService] Portal session created', {
+    logger.info("[PaymentService] Portal session created", {
       userId,
       sessionUrl: session.url,
     });
@@ -1220,23 +1274,25 @@ export class PaymentService {
   /**
    * Map Stripe subscription status to our status
    */
-  private mapStripeStatus(status: Stripe.Subscription.Status): SubscriptionStatus {
+  private mapStripeStatus(
+    status: Stripe.Subscription.Status,
+  ): SubscriptionStatus {
     switch (status) {
-      case 'active':
+      case "active":
         return SubscriptionStatus.ACTIVE;
-      case 'past_due':
+      case "past_due":
         return SubscriptionStatus.PAST_DUE;
-      case 'canceled':
+      case "canceled":
         return SubscriptionStatus.CANCELED;
-      case 'incomplete':
+      case "incomplete":
         return SubscriptionStatus.INCOMPLETE;
-      case 'incomplete_expired':
+      case "incomplete_expired":
         return SubscriptionStatus.INCOMPLETE_EXPIRED;
-      case 'trialing':
+      case "trialing":
         return SubscriptionStatus.TRIALING;
-      case 'unpaid':
+      case "unpaid":
         return SubscriptionStatus.UNPAID;
-      case 'paused':
+      case "paused":
         return SubscriptionStatus.PAUSED;
       default:
         return SubscriptionStatus.ACTIVE;
@@ -1248,12 +1304,12 @@ export class PaymentService {
    */
   private formatPaymentMethod(
     pm: Stripe.PaymentMethod,
-    isDefault: boolean
+    isDefault: boolean,
   ): PaymentMethodData {
     return {
       id: pm.id,
-      brand: pm.card?.brand || 'unknown',
-      last4: pm.card?.last4 || '****',
+      brand: pm.card?.brand || "unknown",
+      last4: pm.card?.last4 || "****",
       expMonth: pm.card?.exp_month || 0,
       expYear: pm.card?.exp_year || 0,
       isDefault,

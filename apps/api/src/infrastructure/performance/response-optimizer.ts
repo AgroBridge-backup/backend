@@ -3,10 +3,10 @@
  * Compression, ETags, field selection, and response optimization
  */
 
-import { Request, Response, NextFunction } from 'express';
-import compression from 'compression';
-import crypto from 'crypto';
-import { logger } from '../logging/logger.js';
+import { Request, Response, NextFunction } from "express";
+import compression from "compression";
+import crypto from "crypto";
+import { logger } from "../logging/logger.js";
 
 /**
  * Compression middleware configuration
@@ -16,7 +16,7 @@ export const compressionMiddleware = compression({
   threshold: 1024, // Only compress responses larger than 1KB
   filter: (req: Request, res: Response) => {
     // Don't compress if client doesn't support it
-    if (req.headers['x-no-compression']) {
+    if (req.headers["x-no-compression"]) {
       return false;
     }
 
@@ -29,8 +29,8 @@ export const compressionMiddleware = compression({
  * Generate ETag for response body
  */
 export function generateETag(body: unknown): string {
-  const content = typeof body === 'string' ? body : JSON.stringify(body);
-  const hash = crypto.createHash('md5').update(content).digest('hex');
+  const content = typeof body === "string" ? body : JSON.stringify(body);
+  const hash = crypto.createHash("md5").update(content).digest("hex");
   return `"${hash}"`;
 }
 
@@ -38,18 +38,26 @@ export function generateETag(body: unknown): string {
  * Weak ETag generator (for semantic equivalence)
  */
 export function generateWeakETag(body: unknown, version?: string): string {
-  const content = typeof body === 'string' ? body : JSON.stringify(body);
-  const hash = crypto.createHash('md5').update(content).digest('hex').substring(0, 16);
-  return `W/"${version || 'v1'}-${hash}"`;
+  const content = typeof body === "string" ? body : JSON.stringify(body);
+  const hash = crypto
+    .createHash("md5")
+    .update(content)
+    .digest("hex")
+    .substring(0, 16);
+  return `W/"${version || "v1"}-${hash}"`;
 }
 
 /**
  * ETag middleware
  */
-export function etagMiddleware(): (req: Request, res: Response, next: NextFunction) => void {
+export function etagMiddleware(): (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     // Only for GET and HEAD requests
-    if (!['GET', 'HEAD'].includes(req.method)) {
+    if (!["GET", "HEAD"].includes(req.method)) {
       next();
       return;
     }
@@ -58,10 +66,10 @@ export function etagMiddleware(): (req: Request, res: Response, next: NextFuncti
 
     res.json = function (body: unknown): Response {
       const etag = generateETag(body);
-      res.setHeader('ETag', etag);
+      res.setHeader("ETag", etag);
 
       // Check If-None-Match header
-      const ifNoneMatch = req.headers['if-none-match'];
+      const ifNoneMatch = req.headers["if-none-match"];
       if (ifNoneMatch === etag) {
         res.status(304).end();
         return this;
@@ -79,22 +87,24 @@ export function etagMiddleware(): (req: Request, res: Response, next: NextFuncti
  */
 export function selectFields<T extends Record<string, unknown>>(
   data: T,
-  fields: string[]
+  fields: string[],
 ): Partial<T> {
   if (fields.length === 0) return data;
 
   const result: Partial<T> = {};
   for (const field of fields) {
-    if (field.includes('.')) {
+    if (field.includes(".")) {
       // Handle nested fields
-      const [parent, ...rest] = field.split('.');
+      const [parent, ...rest] = field.split(".");
       if (parent in data) {
-        const nestedPath = rest.join('.');
+        const nestedPath = rest.join(".");
         const parentValue = data[parent];
-        if (typeof parentValue === 'object' && parentValue !== null) {
+        if (typeof parentValue === "object" && parentValue !== null) {
           (result as any)[parent] = {
             ...(result as any)[parent],
-            ...selectFields(parentValue as Record<string, unknown>, [nestedPath]),
+            ...selectFields(parentValue as Record<string, unknown>, [
+              nestedPath,
+            ]),
           };
         }
       }
@@ -104,7 +114,7 @@ export function selectFields<T extends Record<string, unknown>>(
   }
 
   // Always include id if present
-  if ('id' in data && !('id' in result)) {
+  if ("id" in data && !("id" in result)) {
     (result as any).id = data.id;
   }
 
@@ -114,7 +124,11 @@ export function selectFields<T extends Record<string, unknown>>(
 /**
  * Field selection middleware
  */
-export function fieldSelectionMiddleware(): (req: Request, res: Response, next: NextFunction) => void {
+export function fieldSelectionMiddleware(): (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     const fieldsParam = req.query.fields as string;
 
@@ -123,28 +137,34 @@ export function fieldSelectionMiddleware(): (req: Request, res: Response, next: 
       return;
     }
 
-    const requestedFields = fieldsParam.split(',').map((f) => f.trim());
+    const requestedFields = fieldsParam.split(",").map((f) => f.trim());
     const originalJson = res.json.bind(res);
 
     res.json = function (body: unknown): Response {
-      if (body && typeof body === 'object') {
+      if (body && typeof body === "object") {
         if (Array.isArray(body)) {
           body = body.map((item) =>
-            typeof item === 'object' && item !== null
+            typeof item === "object" && item !== null
               ? selectFields(item as Record<string, unknown>, requestedFields)
-              : item
+              : item,
           );
-        } else if ('data' in (body as any)) {
+        } else if ("data" in (body as any)) {
           // Handle standard response format { success, data, ... }
           const response = body as Record<string, unknown>;
           if (Array.isArray(response.data)) {
             response.data = response.data.map((item) =>
-              typeof item === 'object' && item !== null
+              typeof item === "object" && item !== null
                 ? selectFields(item as Record<string, unknown>, requestedFields)
-                : item
+                : item,
             );
-          } else if (typeof response.data === 'object' && response.data !== null) {
-            response.data = selectFields(response.data as Record<string, unknown>, requestedFields);
+          } else if (
+            typeof response.data === "object" &&
+            response.data !== null
+          ) {
+            response.data = selectFields(
+              response.data as Record<string, unknown>,
+              requestedFields,
+            );
           }
           body = response;
         } else {
@@ -162,20 +182,24 @@ export function fieldSelectionMiddleware(): (req: Request, res: Response, next: 
 /**
  * Response time header middleware
  */
-export function responseTimeMiddleware(): (req: Request, res: Response, next: NextFunction) => void {
+export function responseTimeMiddleware(): (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     const startTime = process.hrtime.bigint();
 
-    res.on('finish', () => {
+    res.on("finish", () => {
       const endTime = process.hrtime.bigint();
       const durationNs = endTime - startTime;
       const durationMs = Number(durationNs) / 1_000_000;
 
-      res.setHeader('X-Response-Time', `${durationMs.toFixed(2)}ms`);
+      res.setHeader("X-Response-Time", `${durationMs.toFixed(2)}ms`);
 
       // Log slow responses
       if (durationMs > 1000) {
-        logger.warn('Slow response', {
+        logger.warn("Slow response", {
           path: req.path,
           method: req.method,
           duration: `${durationMs.toFixed(2)}ms`,
@@ -203,19 +227,21 @@ export interface CacheOptions {
   immutable?: boolean;
 }
 
-export function cacheControl(options: CacheOptions): (req: Request, res: Response, next: NextFunction) => void {
+export function cacheControl(
+  options: CacheOptions,
+): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     const directives: string[] = [];
 
     if (options.noStore) {
-      directives.push('no-store');
+      directives.push("no-store");
     } else if (options.noCache) {
-      directives.push('no-cache');
+      directives.push("no-cache");
     } else {
       if (options.private) {
-        directives.push('private');
+        directives.push("private");
       } else {
-        directives.push('public');
+        directives.push("public");
       }
 
       if (options.maxAge !== undefined) {
@@ -227,7 +253,9 @@ export function cacheControl(options: CacheOptions): (req: Request, res: Respons
       }
 
       if (options.staleWhileRevalidate !== undefined) {
-        directives.push(`stale-while-revalidate=${options.staleWhileRevalidate}`);
+        directives.push(
+          `stale-while-revalidate=${options.staleWhileRevalidate}`,
+        );
       }
 
       if (options.staleIfError !== undefined) {
@@ -235,15 +263,15 @@ export function cacheControl(options: CacheOptions): (req: Request, res: Respons
       }
 
       if (options.mustRevalidate) {
-        directives.push('must-revalidate');
+        directives.push("must-revalidate");
       }
 
       if (options.immutable) {
-        directives.push('immutable');
+        directives.push("immutable");
       }
     }
 
-    res.setHeader('Cache-Control', directives.join(', '));
+    res.setHeader("Cache-Control", directives.join(", "));
     next();
   };
 }
@@ -317,8 +345,8 @@ export interface ResponseEnvelope<T> {
  */
 export function successResponse<T>(
   data: T,
-  meta?: ResponseEnvelope<T>['meta'],
-  links?: ResponseEnvelope<T>['links']
+  meta?: ResponseEnvelope<T>["meta"],
+  links?: ResponseEnvelope<T>["links"],
 ): ResponseEnvelope<T> {
   return {
     success: true,
@@ -335,7 +363,7 @@ export function successResponse<T>(
 export function errorResponse(
   code: string,
   message: string,
-  details?: unknown
+  details?: unknown,
 ): ResponseEnvelope<never> {
   return {
     success: false,
@@ -351,15 +379,19 @@ export function errorResponse(
 /**
  * Response envelope middleware
  */
-export function responseEnvelopeMiddleware(): (req: Request, res: Response, next: NextFunction) => void {
+export function responseEnvelopeMiddleware(): (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     const originalJson = res.json.bind(res);
 
     res.json = function (body: unknown): Response {
       // Skip if already enveloped
-      if (body && typeof body === 'object' && 'success' in (body as object)) {
+      if (body && typeof body === "object" && "success" in (body as object)) {
         // Add request ID if available
-        const requestId = req.headers['x-request-id'] as string;
+        const requestId = req.headers["x-request-id"] as string;
         if (requestId) {
           (body as any).requestId = requestId;
         }
@@ -371,7 +403,7 @@ export function responseEnvelopeMiddleware(): (req: Request, res: Response, next
         success: res.statusCode < 400,
         data: body,
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'] as string,
+        requestId: req.headers["x-request-id"] as string,
       };
 
       return originalJson(envelope);
@@ -386,17 +418,17 @@ export function responseEnvelopeMiddleware(): (req: Request, res: Response, next
  */
 export function streamJsonArray<T>(
   res: Response,
-  items: AsyncIterable<T> | T[]
+  items: AsyncIterable<T> | T[],
 ): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     res.write('{"success":true,"data":[');
 
     let first = true;
     try {
       for await (const item of items) {
         if (!first) {
-          res.write(',');
+          res.write(",");
         }
         res.write(JSON.stringify(item));
         first = false;
@@ -414,24 +446,26 @@ export function streamJsonArray<T>(
 /**
  * Content negotiation helper
  */
-export function negotiateContent(req: Request): 'json' | 'xml' | 'csv' {
-  const accept = req.headers.accept || 'application/json';
+export function negotiateContent(req: Request): "json" | "xml" | "csv" {
+  const accept = req.headers.accept || "application/json";
 
-  if (accept.includes('application/xml') || accept.includes('text/xml')) {
-    return 'xml';
+  if (accept.includes("application/xml") || accept.includes("text/xml")) {
+    return "xml";
   }
 
-  if (accept.includes('text/csv')) {
-    return 'csv';
+  if (accept.includes("text/csv")) {
+    return "csv";
   }
 
-  return 'json';
+  return "json";
 }
 
 /**
  * Response size limiter
  */
-export function responseSizeLimiter(maxSizeBytes: number = 10 * 1024 * 1024): (req: Request, res: Response, next: NextFunction) => void {
+export function responseSizeLimiter(
+  maxSizeBytes: number = 10 * 1024 * 1024,
+): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     const originalJson = res.json.bind(res);
 
@@ -439,7 +473,7 @@ export function responseSizeLimiter(maxSizeBytes: number = 10 * 1024 * 1024): (r
       const json = JSON.stringify(body);
 
       if (json.length > maxSizeBytes) {
-        logger.warn('Response size limit exceeded', {
+        logger.warn("Response size limit exceeded", {
           path: req.path,
           size: json.length,
           limit: maxSizeBytes,
@@ -448,8 +482,8 @@ export function responseSizeLimiter(maxSizeBytes: number = 10 * 1024 * 1024): (r
         return originalJson({
           success: false,
           error: {
-            code: 'RESPONSE_TOO_LARGE',
-            message: 'Response exceeds maximum size limit',
+            code: "RESPONSE_TOO_LARGE",
+            message: "Response exceeds maximum size limit",
           },
         });
       }
@@ -467,13 +501,16 @@ export function responseSizeLimiter(maxSizeBytes: number = 10 * 1024 * 1024): (r
 export function setCorsHeaders(
   res: Response,
   origin: string,
-  methods: string[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+  methods: string[] = ["GET", "POST", "PUT", "DELETE", "PATCH"],
 ): void {
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', methods.join(', '));
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Methods", methods.join(", "));
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Request-ID",
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "86400");
 }
 
 export default {

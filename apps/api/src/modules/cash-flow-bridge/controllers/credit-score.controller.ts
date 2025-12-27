@@ -17,34 +17,40 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { Request, Response, NextFunction, Router } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import type { Redis } from 'ioredis';
+import { Request, Response, NextFunction, Router } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import type { Redis } from "ioredis";
 import {
   CreditScoringService,
   createCreditScoringService,
-} from '../../credit-scoring/services/credit-scoring.service.js';
+} from "../../credit-scoring/services/credit-scoring.service.js";
 import {
   BlockchainVerifierService,
   createBlockchainVerifierService,
-} from '../../credit-scoring/services/blockchain-verifier.service.js';
+} from "../../credit-scoring/services/blockchain-verifier.service.js";
 import {
   RiskTier,
   ScoreSimulationInput,
-} from '../../credit-scoring/types/credit-score.types.js';
+} from "../../credit-scoring/types/credit-score.types.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
 // ════════════════════════════════════════════════════════════════════════════════
 
 const producerIdParamSchema = z.object({
-  producerId: z.string().uuid('Invalid producer ID format'),
+  producerId: z.string().uuid("Invalid producer ID format"),
 });
 
 const calculateScoreQuerySchema = z.object({
-  forceRecalculate: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
-  includeDetails: z.enum(['true', 'false']).optional().transform((v) => v !== 'false'),
+  forceRecalculate: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+  includeDetails: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v !== "false"),
 });
 
 const historyQuerySchema = z.object({
@@ -60,8 +66,8 @@ const simulationBodySchema = z.object({
 });
 
 const eligibilityQuerySchema = z.object({
-  requestedAmount: z.coerce.number().positive('Amount must be positive'),
-  orderId: z.string().uuid('Invalid order ID format'),
+  requestedAmount: z.coerce.number().positive("Amount must be positive"),
+  orderId: z.string().uuid("Invalid order ID format"),
 });
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -91,49 +97,49 @@ export class CreditScoreController {
   private initializeRoutes(): void {
     // GET /api/v1/credit-scores/:producerId
     this.router.get(
-      '/:producerId',
+      "/:producerId",
       this.validateProducerId,
       this.getCreditScore.bind(this),
     );
 
     // POST /api/v1/credit-scores/:producerId/calculate
     this.router.post(
-      '/:producerId/calculate',
+      "/:producerId/calculate",
       this.validateProducerId,
       this.calculateCreditScore.bind(this),
     );
 
     // GET /api/v1/credit-scores/:producerId/history
     this.router.get(
-      '/:producerId/history',
+      "/:producerId/history",
       this.validateProducerId,
       this.getScoreHistory.bind(this),
     );
 
     // POST /api/v1/credit-scores/:producerId/simulate
     this.router.post(
-      '/:producerId/simulate',
+      "/:producerId/simulate",
       this.validateProducerId,
       this.simulateScore.bind(this),
     );
 
     // GET /api/v1/credit-scores/:producerId/eligibility
     this.router.get(
-      '/:producerId/eligibility',
+      "/:producerId/eligibility",
       this.validateProducerId,
       this.checkEligibility.bind(this),
     );
 
     // POST /api/v1/credit-scores/:producerId/sync
     this.router.post(
-      '/:producerId/sync',
+      "/:producerId/sync",
       this.validateProducerId,
       this.syncBlockchainData.bind(this),
     );
 
     // GET /api/v1/credit-scores/:producerId/summary
     this.router.get(
-      '/:producerId/summary',
+      "/:producerId/summary",
       this.validateProducerId,
       this.getScoreSummary.bind(this),
     );
@@ -152,7 +158,7 @@ export class CreditScoreController {
     if (!result.success) {
       res.status(400).json({
         success: false,
-        error: 'Invalid producer ID',
+        error: "Invalid producer ID",
         details: result.error.flatten().fieldErrors,
       });
       return;
@@ -170,8 +176,12 @@ export class CreditScoreController {
       const { producerId } = req.params;
       const queryResult = calculateScoreQuerySchema.safeParse(req.query);
 
-      const forceRecalculate = queryResult.success ? (queryResult.data.forceRecalculate ?? false) : false;
-      const includeDetails = queryResult.success ? (queryResult.data.includeDetails ?? true) : true;
+      const forceRecalculate = queryResult.success
+        ? (queryResult.data.forceRecalculate ?? false)
+        : false;
+      const includeDetails = queryResult.success
+        ? (queryResult.data.includeDetails ?? true)
+        : true;
 
       const result = await this.creditScoringService.calculateScore({
         producerId,
@@ -194,10 +204,10 @@ export class CreditScoreController {
         cacheTtl: result.cacheTtl,
       });
     } catch (error) {
-      console.error('Error getting credit score:', error);
+      console.error("Error getting credit score:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -206,7 +216,10 @@ export class CreditScoreController {
    * POST /api/v1/credit-scores/:producerId/calculate
    * Force recalculate credit score
    */
-  private async calculateCreditScore(req: Request, res: Response): Promise<void> {
+  private async calculateCreditScore(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
     try {
       const { producerId } = req.params;
 
@@ -227,13 +240,13 @@ export class CreditScoreController {
       res.status(200).json({
         success: true,
         data: result.data,
-        message: 'Credit score recalculated successfully',
+        message: "Credit score recalculated successfully",
       });
     } catch (error) {
-      console.error('Error calculating credit score:', error);
+      console.error("Error calculating credit score:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -250,7 +263,7 @@ export class CreditScoreController {
       if (!queryResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid query parameters',
+          error: "Invalid query parameters",
           details: queryResult.error.flatten().fieldErrors,
         });
         return;
@@ -267,10 +280,10 @@ export class CreditScoreController {
         count: history.length,
       });
     } catch (error) {
-      console.error('Error getting score history:', error);
+      console.error("Error getting score history:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -287,7 +300,7 @@ export class CreditScoreController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid simulation parameters',
+          error: "Invalid simulation parameters",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -303,7 +316,8 @@ export class CreditScoreController {
       if (!result) {
         res.status(404).json({
           success: false,
-          error: 'Could not simulate score. Producer may not have a credit score yet.',
+          error:
+            "Could not simulate score. Producer may not have a credit score yet.",
         });
         return;
       }
@@ -313,10 +327,10 @@ export class CreditScoreController {
         data: result,
       });
     } catch (error) {
-      console.error('Error simulating score:', error);
+      console.error("Error simulating score:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -333,7 +347,7 @@ export class CreditScoreController {
       if (!queryResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid eligibility check parameters',
+          error: "Invalid eligibility check parameters",
           details: queryResult.error.flatten().fieldErrors,
         });
         return;
@@ -350,10 +364,10 @@ export class CreditScoreController {
         data: result,
       });
     } catch (error) {
-      console.error('Error checking eligibility:', error);
+      console.error("Error checking eligibility:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -370,12 +384,13 @@ export class CreditScoreController {
       if (!this.blockchainVerifier.isAvailable()) {
         res.status(503).json({
           success: false,
-          error: 'Blockchain verification service is not available',
+          error: "Blockchain verification service is not available",
         });
         return;
       }
 
-      const result = await this.blockchainVerifier.syncBlockchainData(producerId);
+      const result =
+        await this.blockchainVerifier.syncBlockchainData(producerId);
 
       // Invalidate cache after sync
       await this.creditScoringService.invalidateCache(producerId);
@@ -389,10 +404,10 @@ export class CreditScoreController {
         },
       });
     } catch (error) {
-      console.error('Error syncing blockchain data:', error);
+      console.error("Error syncing blockchain data:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -405,12 +420,13 @@ export class CreditScoreController {
     try {
       const { producerId } = req.params;
 
-      const summary = await this.creditScoringService.getScoreSummary(producerId);
+      const summary =
+        await this.creditScoringService.getScoreSummary(producerId);
 
       if (!summary) {
         res.status(404).json({
           success: false,
-          error: 'Credit score not found for this producer',
+          error: "Credit score not found for this producer",
         });
         return;
       }
@@ -420,10 +436,10 @@ export class CreditScoreController {
         data: summary,
       });
     } catch (error) {
-      console.error('Error getting score summary:', error);
+      console.error("Error getting score summary:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }

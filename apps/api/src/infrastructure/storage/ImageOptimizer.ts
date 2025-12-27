@@ -12,8 +12,8 @@
  * @author AgroBridge Engineering Team
  */
 
-import sharp, { Sharp, FitEnum } from 'sharp';
-import logger from '../../shared/utils/logger.js';
+import sharp, { Sharp, FitEnum } from "sharp";
+import logger from "../../shared/utils/logger.js";
 
 /**
  * Image optimization options
@@ -23,7 +23,7 @@ export interface ImageOptimizationOptions {
   height?: number;
   fit?: keyof FitEnum;
   quality?: number;
-  format?: 'jpeg' | 'png' | 'webp' | 'avif';
+  format?: "jpeg" | "png" | "webp" | "avif";
   stripMetadata?: boolean;
   progressive?: boolean;
 }
@@ -36,7 +36,7 @@ export interface ThumbnailOptions {
   height?: number;
   fit?: keyof FitEnum;
   quality?: number;
-  format?: 'jpeg' | 'png' | 'webp';
+  format?: "jpeg" | "png" | "webp";
 }
 
 /**
@@ -81,37 +81,37 @@ export const OptimizationPresets = {
   /** High quality for hero images */
   HIGH_QUALITY: {
     quality: 85,
-    format: 'webp' as const,
+    format: "webp" as const,
     stripMetadata: true,
     progressive: true,
   },
   /** Medium quality for general use */
   MEDIUM_QUALITY: {
     quality: 75,
-    format: 'webp' as const,
+    format: "webp" as const,
     stripMetadata: true,
     progressive: true,
   },
   /** Low quality for thumbnails */
   LOW_QUALITY: {
     quality: 60,
-    format: 'webp' as const,
+    format: "webp" as const,
     stripMetadata: true,
   },
   /** Avatar preset */
   AVATAR: {
     width: 256,
     height: 256,
-    fit: 'cover' as const,
+    fit: "cover" as const,
     quality: 80,
-    format: 'webp' as const,
+    format: "webp" as const,
     stripMetadata: true,
   },
   /** Batch photo preset */
   BATCH_PHOTO: {
     width: 1200,
     quality: 80,
-    format: 'webp' as const,
+    format: "webp" as const,
     stripMetadata: true,
     progressive: true,
   },
@@ -119,7 +119,7 @@ export const OptimizationPresets = {
   CERTIFICATE: {
     width: 2000,
     quality: 90,
-    format: 'png' as const,
+    format: "png" as const,
     stripMetadata: false, // Keep metadata for certificates
   },
 } as const;
@@ -149,14 +149,14 @@ export class ImageOptimizer {
    */
   async optimize(
     buffer: Buffer,
-    options: ImageOptimizationOptions = {}
+    options: ImageOptimizationOptions = {},
   ): Promise<OptimizationResult> {
     const {
       width,
       height,
-      fit = 'inside',
+      fit = "inside",
       quality = 80,
-      format = 'webp',
+      format = "webp",
       stripMetadata = true,
       progressive = true,
     } = options;
@@ -172,21 +172,26 @@ export class ImageOptimizer {
 
       // Resize if dimensions specified
       if (width || height) {
-        pipeline = pipeline.resize(width, height, { fit, withoutEnlargement: true });
+        pipeline = pipeline.resize(width, height, {
+          fit,
+          withoutEnlargement: true,
+        });
       }
 
       // Convert format
       switch (format) {
-        case 'jpeg':
+        case "jpeg":
           pipeline = pipeline.jpeg({ quality, progressive });
           break;
-        case 'png':
-          pipeline = pipeline.png({ compressionLevel: Math.round((100 - quality) / 10) });
+        case "png":
+          pipeline = pipeline.png({
+            compressionLevel: Math.round((100 - quality) / 10),
+          });
           break;
-        case 'webp':
+        case "webp":
           pipeline = pipeline.webp({ quality });
           break;
-        case 'avif':
+        case "avif":
           pipeline = pipeline.avif({ quality });
           break;
       }
@@ -200,11 +205,12 @@ export class ImageOptimizer {
         height: metadata.height || 0,
         format,
         size: outputBuffer.length,
-        compressionRatio: originalSize > 0 ? outputBuffer.length / originalSize : 1,
+        compressionRatio:
+          originalSize > 0 ? outputBuffer.length / originalSize : 1,
       };
 
       logger.debug({
-        message: 'Image optimized',
+        message: "Image optimized",
         meta: {
           originalSize,
           newSize: result.size,
@@ -216,7 +222,7 @@ export class ImageOptimizer {
       return result;
     } catch (error) {
       logger.error({
-        message: 'Image optimization failed',
+        message: "Image optimization failed",
         meta: { error: (error as Error).message },
       });
       throw error;
@@ -232,14 +238,14 @@ export class ImageOptimizer {
    */
   async generateThumbnail(
     buffer: Buffer,
-    options: ThumbnailOptions = { width: 200 }
+    options: ThumbnailOptions = { width: 200 },
   ): Promise<Buffer> {
     const {
       width,
       height,
-      fit = 'cover',
+      fit = "cover",
       quality = 70,
-      format = 'webp',
+      format = "webp",
     } = options;
 
     try {
@@ -248,13 +254,13 @@ export class ImageOptimizer {
         .resize(width, height, { fit, withoutEnlargement: true });
 
       switch (format) {
-        case 'jpeg':
+        case "jpeg":
           pipeline = pipeline.jpeg({ quality });
           break;
-        case 'png':
+        case "png":
           pipeline = pipeline.png({ compressionLevel: 6 });
           break;
-        case 'webp':
+        case "webp":
           pipeline = pipeline.webp({ quality });
           break;
       }
@@ -262,7 +268,7 @@ export class ImageOptimizer {
       return pipeline.toBuffer();
     } catch (error) {
       logger.error({
-        message: 'Thumbnail generation failed',
+        message: "Thumbnail generation failed",
         meta: { error: (error as Error).message },
       });
       throw error;
@@ -281,21 +287,21 @@ export class ImageOptimizer {
         this.optimize(buffer, {
           width: RESPONSIVE_SIZES.small.width,
           quality: RESPONSIVE_SIZES.small.quality,
-          format: 'webp',
+          format: "webp",
         }),
         this.optimize(buffer, {
           width: RESPONSIVE_SIZES.medium.width,
           quality: RESPONSIVE_SIZES.medium.quality,
-          format: 'webp',
+          format: "webp",
         }),
         this.optimize(buffer, {
           width: RESPONSIVE_SIZES.large.width,
           quality: RESPONSIVE_SIZES.large.quality,
-          format: 'webp',
+          format: "webp",
         }),
         this.optimize(buffer, {
           quality: 85,
-          format: 'webp',
+          format: "webp",
         }),
       ]);
 
@@ -307,7 +313,7 @@ export class ImageOptimizer {
       };
     } catch (error) {
       logger.error({
-        message: 'Responsive image generation failed',
+        message: "Responsive image generation failed",
         meta: { error: (error as Error).message },
       });
       throw error;
@@ -327,15 +333,15 @@ export class ImageOptimizer {
       return {
         width: metadata.width || 0,
         height: metadata.height || 0,
-        format: metadata.format || 'unknown',
-        space: metadata.space || 'unknown',
+        format: metadata.format || "unknown",
+        space: metadata.space || "unknown",
         channels: metadata.channels || 0,
         hasAlpha: metadata.hasAlpha || false,
         size: buffer.length,
       };
     } catch (error) {
       logger.error({
-        message: 'Failed to get image metadata',
+        message: "Failed to get image metadata",
         meta: { error: (error as Error).message },
       });
       throw error;
@@ -352,22 +358,24 @@ export class ImageOptimizer {
    */
   async convertFormat(
     buffer: Buffer,
-    format: 'jpeg' | 'png' | 'webp' | 'avif',
-    quality: number = 80
+    format: "jpeg" | "png" | "webp" | "avif",
+    quality: number = 80,
   ): Promise<Buffer> {
     let pipeline = sharp(buffer);
 
     switch (format) {
-      case 'jpeg':
+      case "jpeg":
         pipeline = pipeline.jpeg({ quality });
         break;
-      case 'png':
-        pipeline = pipeline.png({ compressionLevel: Math.round((100 - quality) / 10) });
+      case "png":
+        pipeline = pipeline.png({
+          compressionLevel: Math.round((100 - quality) / 10),
+        });
         break;
-      case 'webp':
+      case "webp":
         pipeline = pipeline.webp({ quality });
         break;
-      case 'avif':
+      case "avif":
         pipeline = pipeline.avif({ quality });
         break;
     }
@@ -418,10 +426,10 @@ export class ImageOptimizer {
     buffer: Buffer,
     width: number,
     height: number,
-    position: 'center' | 'top' | 'bottom' | 'left' | 'right' = 'center'
+    position: "center" | "top" | "bottom" | "left" | "right" = "center",
   ): Promise<Buffer> {
     return sharp(buffer)
-      .resize(width, height, { fit: 'cover', position })
+      .resize(width, height, { fit: "cover", position })
       .toBuffer();
   }
 
@@ -455,7 +463,7 @@ export class ImageOptimizer {
    */
   async generatePlaceholder(buffer: Buffer): Promise<Buffer> {
     return sharp(buffer)
-      .resize(20, 20, { fit: 'inside' })
+      .resize(20, 20, { fit: "inside" })
       .blur(5)
       .webp({ quality: 20 })
       .toBuffer();

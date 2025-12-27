@@ -3,10 +3,13 @@
  * Use Case: Check Cold Chain Compliance
  */
 
-import { PrismaClient } from '@prisma/client';
-import { TemperatureMonitoringService } from '../../../domain/services/TemperatureMonitoringService.js';
-import { TemperatureReading, TemperatureSummary } from '../../../domain/entities/TemperatureReading.js';
-import { AppError } from '../../../shared/errors/AppError.js';
+import { PrismaClient } from "@prisma/client";
+import { TemperatureMonitoringService } from "../../../domain/services/TemperatureMonitoringService.js";
+import {
+  TemperatureReading,
+  TemperatureSummary,
+} from "../../../domain/entities/TemperatureReading.js";
+import { AppError } from "../../../shared/errors/AppError.js";
 
 export interface CheckComplianceDTO {
   batchId: string;
@@ -24,7 +27,7 @@ export interface ComplianceResult {
 export class CheckComplianceUseCase {
   constructor(
     private prisma: PrismaClient,
-    private temperatureService: TemperatureMonitoringService
+    private temperatureService: TemperatureMonitoringService,
   ) {}
 
   async execute(input: CheckComplianceDTO): Promise<ComplianceResult> {
@@ -34,7 +37,7 @@ export class CheckComplianceUseCase {
     });
 
     if (!batch) {
-      throw new AppError('Batch not found', 404);
+      throw new AppError("Batch not found", 404);
     }
 
     const result = await this.temperatureService.checkCompliance(input.batchId);
@@ -58,29 +61,31 @@ export class CheckComplianceUseCase {
       // Generate recommendations
       if (outOfRangePercent > 0) {
         recommendations.push(
-          `${outOfRangePercent}% of readings were out of range. Review cold chain equipment.`
+          `${outOfRangePercent}% of readings were out of range. Review cold chain equipment.`,
         );
       }
 
       if (rapidChangeCount > 0) {
         recommendations.push(
-          `${rapidChangeCount} rapid temperature change(s) detected. Check for cold chain breaches.`
+          `${rapidChangeCount} rapid temperature change(s) detected. Check for cold chain breaches.`,
         );
       }
 
       if (result.summary.maxValue - result.summary.minValue > 10) {
         recommendations.push(
-          'High temperature variance detected. Consider improving insulation or cooling capacity.'
+          "High temperature variance detected. Consider improving insulation or cooling capacity.",
         );
       }
 
       if (complianceScore < 80) {
         recommendations.push(
-          'Compliance score is below acceptable threshold. Immediate corrective action required.'
+          "Compliance score is below acceptable threshold. Immediate corrective action required.",
         );
       }
     } else {
-      recommendations.push('No temperature readings recorded. Start monitoring to ensure compliance.');
+      recommendations.push(
+        "No temperature readings recorded. Start monitoring to ensure compliance.",
+      );
     }
 
     return {

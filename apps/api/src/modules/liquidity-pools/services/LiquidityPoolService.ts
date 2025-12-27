@@ -16,8 +16,8 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import type { Redis } from 'ioredis';
+import { PrismaClient, Prisma } from "@prisma/client";
+import type { Redis } from "ioredis";
 import {
   PoolStatus,
   RiskTier,
@@ -46,7 +46,7 @@ import {
   assessPoolHealth,
   validateAllocationAmount,
   getFeesForTier,
-} from '../types/PoolTypes.js';
+} from "../types/PoolTypes.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -56,7 +56,7 @@ const CACHE_KEYS = {
   POOL_BALANCE: (poolId: string) => `pool:balance:${poolId}`,
   POOL_METRICS: (poolId: string) => `pool:metrics:${poolId}`,
   POOL_DETAILS: (poolId: string) => `pool:details:${poolId}`,
-  ALL_POOLS_SUMMARY: 'pools:summary:all',
+  ALL_POOLS_SUMMARY: "pools:summary:all",
 } as const;
 
 const CACHE_TTL = {
@@ -113,14 +113,14 @@ export class LiquidityPoolService {
       if (!pool) {
         return {
           success: false,
-          error: 'No suitable pool found for allocation',
+          error: "No suitable pool found for allocation",
           errorCode: AllocationErrorCode.POOL_NOT_FOUND,
           alternatives: await this.findAlternativePools(request),
         };
       }
 
       // 2. Check pool status
-      if (pool.status !== 'ACTIVE') {
+      if (pool.status !== "ACTIVE") {
         return {
           success: false,
           error: `Pool ${pool.name} is ${pool.status}`,
@@ -165,7 +165,7 @@ export class LiquidityPoolService {
         });
 
         if (!lockedPool) {
-          throw new Error('Pool not found during allocation');
+          throw new Error("Pool not found during allocation");
         }
 
         // Re-validate after lock (optimistic locking pattern)
@@ -177,7 +177,7 @@ export class LiquidityPoolService {
         );
 
         if (request.requestedAmount > effectiveAvailable) {
-          throw new Error('CONCURRENT_ALLOCATION');
+          throw new Error("CONCURRENT_ALLOCATION");
         }
 
         // Update pool balances
@@ -202,7 +202,7 @@ export class LiquidityPoolService {
         const transaction = await tx.poolTransaction.create({
           data: {
             poolId: pool.id,
-            type: 'ADVANCE_DISBURSEMENT',
+            type: "ADVANCE_DISBURSEMENT",
             amount: new Prisma.Decimal(request.requestedAmount),
             balanceBefore: lockedPool.availableCapital,
             balanceAfter: updatedPool.availableCapital,
@@ -254,19 +254,19 @@ export class LiquidityPoolService {
         },
       };
     } catch (error) {
-      console.error('Error allocating capital:', error);
+      console.error("Error allocating capital:", error);
 
-      if (error instanceof Error && error.message === 'CONCURRENT_ALLOCATION') {
+      if (error instanceof Error && error.message === "CONCURRENT_ALLOCATION") {
         return {
           success: false,
-          error: 'Concurrent allocation detected. Please retry.',
+          error: "Concurrent allocation detected. Please retry.",
           errorCode: AllocationErrorCode.CONCURRENT_ALLOCATION,
         };
       }
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Internal error',
+        error: error instanceof Error ? error.message : "Internal error",
         errorCode: AllocationErrorCode.INTERNAL_ERROR,
       };
     }
@@ -286,7 +286,7 @@ export class LiquidityPoolService {
         });
 
         if (!pool) {
-          throw new Error('Pool not found');
+          throw new Error("Pool not found");
         }
 
         // Calculate net amount
@@ -295,7 +295,7 @@ export class LiquidityPoolService {
         const totalReturn = request.amount + feesCollected + penaltiesCollected;
 
         // Determine if this is completion or partial
-        const isCompletion = request.releaseType === 'FULL_REPAYMENT';
+        const isCompletion = request.releaseType === "FULL_REPAYMENT";
 
         // Update pool balances
         const updatedPool = await tx.liquidityPool.update({
@@ -324,7 +324,7 @@ export class LiquidityPoolService {
         const transaction = await tx.poolTransaction.create({
           data: {
             poolId: request.poolId,
-            type: 'ADVANCE_REPAYMENT',
+            type: "ADVANCE_REPAYMENT",
             amount: new Prisma.Decimal(request.amount),
             balanceBefore: pool.availableCapital,
             balanceAfter: updatedPool.availableCapital,
@@ -346,7 +346,7 @@ export class LiquidityPoolService {
           await tx.poolTransaction.create({
             data: {
               poolId: request.poolId,
-              type: 'FEE_COLLECTION',
+              type: "FEE_COLLECTION",
               amount: new Prisma.Decimal(feesCollected),
               balanceBefore: updatedPool.availableCapital,
               balanceAfter: updatedPool.availableCapital,
@@ -361,7 +361,7 @@ export class LiquidityPoolService {
           await tx.poolTransaction.create({
             data: {
               poolId: request.poolId,
-              type: 'PENALTY_FEE',
+              type: "PENALTY_FEE",
               amount: new Prisma.Decimal(penaltiesCollected),
               balanceBefore: updatedPool.availableCapital,
               balanceAfter: updatedPool.availableCapital,
@@ -391,16 +391,19 @@ export class LiquidityPoolService {
           principalReleased: result.principalReleased,
           feesCollected: result.feesCollected,
           penaltiesCollected: result.penaltiesCollected,
-          netAmount: result.principalReleased + result.feesCollected + result.penaltiesCollected,
+          netAmount:
+            result.principalReleased +
+            result.feesCollected +
+            result.penaltiesCollected,
           newAvailableCapital: Number(result.pool.availableCapital),
           releasedAt: result.transaction.createdAt,
         },
       };
     } catch (error) {
-      console.error('Error releasing capital:', error);
+      console.error("Error releasing capital:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Internal error',
+        error: error instanceof Error ? error.message : "Internal error",
       };
     }
   }
@@ -421,7 +424,7 @@ export class LiquidityPoolService {
         });
 
         if (!pool) {
-          throw new Error('Pool not found');
+          throw new Error("Pool not found");
         }
 
         const lossAmount = defaultedAmount - recoveredAmount;
@@ -442,7 +445,8 @@ export class LiquidityPoolService {
             defaultRate: {
               set: new Prisma.Decimal(
                 ((Number(pool.totalAdvancesDefaulted) + 1) /
-                  Math.max(Number(pool.totalAdvancesIssued), 1)) * 100,
+                  Math.max(Number(pool.totalAdvancesIssued), 1)) *
+                  100,
               ),
             },
           },
@@ -452,7 +456,7 @@ export class LiquidityPoolService {
         await tx.poolTransaction.create({
           data: {
             poolId,
-            type: 'ADJUSTMENT',
+            type: "ADJUSTMENT",
             amount: new Prisma.Decimal(-lossAmount),
             balanceBefore: pool.availableCapital,
             balanceAfter: updatedPool.availableCapital,
@@ -480,10 +484,10 @@ export class LiquidityPoolService {
         },
       };
     } catch (error) {
-      console.error('Error handling default:', error);
+      console.error("Error handling default:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Internal error',
+        error: error instanceof Error ? error.message : "Internal error",
       };
     }
   }
@@ -502,7 +506,7 @@ export class LiquidityPoolService {
 
     // Base criteria
     const where: Prisma.LiquidityPoolWhereInput = {
-      status: 'ACTIVE',
+      status: "ACTIVE",
       currency: request.currency,
       minAdvanceAmount: { lte: request.requestedAmount },
       maxAdvanceAmount: { gte: request.requestedAmount },
@@ -513,16 +517,16 @@ export class LiquidityPoolService {
 
     switch (priority) {
       case AllocationPriority.LOWEST_RISK:
-        orderBy = { defaultRate: 'asc' };
+        orderBy = { defaultRate: "asc" };
         break;
       case AllocationPriority.HIGHEST_AVAILABLE:
-        orderBy = { availableCapital: 'desc' };
+        orderBy = { availableCapital: "desc" };
         break;
       case AllocationPriority.BEST_RETURN:
-        orderBy = { actualReturnRate: 'desc' };
+        orderBy = { actualReturnRate: "desc" };
         break;
       default:
-        orderBy = { availableCapital: 'desc' };
+        orderBy = { availableCapital: "desc" };
     }
 
     const pools = await this.prisma.liquidityPool.findMany({
@@ -551,13 +555,15 @@ export class LiquidityPoolService {
    */
   private async findAlternativePools(
     request: PoolAllocationRequest,
-  ): Promise<Array<{ poolId: string; availableAmount: number; reason: string }>> {
+  ): Promise<
+    Array<{ poolId: string; availableAmount: number; reason: string }>
+  > {
     const pools = await this.prisma.liquidityPool.findMany({
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         currency: request.currency,
       },
-      orderBy: { availableCapital: 'desc' },
+      orderBy: { availableCapital: "desc" },
       take: 3,
     });
 
@@ -568,7 +574,7 @@ export class LiquidityPoolService {
         Number(pool.minReserveRatio),
       );
 
-      let reason = 'Available';
+      let reason = "Available";
       if (effectiveAvailable < request.requestedAmount) {
         reason = `Only ${effectiveAvailable.toFixed(2)} available`;
       }
@@ -623,7 +629,10 @@ export class LiquidityPoolService {
       totalCapital,
       minReserveRatio,
     );
-    const utilizationRate = calculateUtilizationRate(deployedCapital, totalCapital);
+    const utilizationRate = calculateUtilizationRate(
+      deployedCapital,
+      totalCapital,
+    );
     const reserveRatio = calculateReserveRatio(availableCapital, totalCapital);
 
     const balance: PoolBalance = {
@@ -640,11 +649,12 @@ export class LiquidityPoolService {
       effectiveAvailable,
       utilizationRate,
       reserveRatio,
-      isHealthy: assessPoolHealth(
-        Number(pool.defaultRate),
-        utilizationRate,
-        reserveRatio,
-      ) === 'HEALTHY',
+      isHealthy:
+        assessPoolHealth(
+          Number(pool.defaultRate),
+          utilizationRate,
+          reserveRatio,
+        ) === "HEALTHY",
       timestamp: new Date(),
       fromCache: false,
     };
@@ -701,10 +711,10 @@ export class LiquidityPoolService {
 
     // Calculate advance metrics
     const advances = pool.advances;
-    const completed = advances.filter((a) => a.status === 'COMPLETED');
-    const defaulted = advances.filter((a) => a.status === 'DEFAULTED');
+    const completed = advances.filter((a) => a.status === "COMPLETED");
+    const defaulted = advances.filter((a) => a.status === "DEFAULTED");
     const active = advances.filter(
-      (a) => !['COMPLETED', 'DEFAULTED', 'CANCELLED'].includes(a.status),
+      (a) => !["COMPLETED", "DEFAULTED", "CANCELLED"].includes(a.status),
     );
 
     const totalDisbursed = advances.reduce(
@@ -724,17 +734,18 @@ export class LiquidityPoolService {
       0,
     );
 
-    const avgDuration = completed.length > 0
-      ? completed.reduce((sum, a) => {
-          const days = a.repaidAt
-            ? Math.ceil(
-                (a.repaidAt.getTime() - a.disbursedAt!.getTime()) /
-                  (1000 * 60 * 60 * 24),
-              )
-            : 0;
-          return sum + days;
-        }, 0) / completed.length
-      : 0;
+    const avgDuration =
+      completed.length > 0
+        ? completed.reduce((sum, a) => {
+            const days = a.repaidAt
+              ? Math.ceil(
+                  (a.repaidAt.getTime() - a.disbursedAt!.getTime()) /
+                    (1000 * 60 * 60 * 24),
+                )
+              : 0;
+            return sum + days;
+          }, 0) / completed.length
+        : 0;
 
     // Calculate ROI
     const netRevenue = totalFeesEarned - totalLosses;
@@ -743,14 +754,18 @@ export class LiquidityPoolService {
       totalDisbursed > 0 ? (grossProfit / totalDisbursed) * 100 : 0;
     const annualizedROI =
       daysInPeriod > 0
-        ? ((grossProfit / Number(pool.totalCapital)) * 365) / daysInPeriod * 100
+        ? (((grossProfit / Number(pool.totalCapital)) * 365) / daysInPeriod) *
+          100
         : 0;
 
     // Top exposures
     const farmerExposures = new Map<string, number>();
     for (const advance of active) {
       const current = farmerExposures.get(advance.farmerId) || 0;
-      farmerExposures.set(advance.farmerId, current + Number(advance.advanceAmount));
+      farmerExposures.set(
+        advance.farmerId,
+        current + Number(advance.advanceAmount),
+      );
     }
 
     const topExposures = Array.from(farmerExposures.entries())
@@ -776,15 +791,12 @@ export class LiquidityPoolService {
         totalCompleted: completed.length,
         totalDefaulted: defaulted.length,
         totalActive: active.length,
-        completionRate: advances.length > 0
-          ? (completed.length / advances.length) * 100
-          : 0,
-        defaultRate: advances.length > 0
-          ? (defaulted.length / advances.length) * 100
-          : 0,
-        averageAmount: advances.length > 0
-          ? totalDisbursed / advances.length
-          : 0,
+        completionRate:
+          advances.length > 0 ? (completed.length / advances.length) * 100 : 0,
+        defaultRate:
+          advances.length > 0 ? (defaulted.length / advances.length) * 100 : 0,
+        averageAmount:
+          advances.length > 0 ? totalDisbursed / advances.length : 0,
         averageDuration: avgDuration,
       },
       financial: {
@@ -808,19 +820,18 @@ export class LiquidityPoolService {
           Number(pool.deployedCapital),
           Number(pool.totalCapital),
         ),
-        capitalTurnover: Number(pool.totalCapital) > 0
-          ? totalDisbursed / Number(pool.totalCapital)
-          : 0,
+        capitalTurnover:
+          Number(pool.totalCapital) > 0
+            ? totalDisbursed / Number(pool.totalCapital)
+            : 0,
         daysSalesOutstanding: avgDuration,
       },
       risk: {
         currentDefaultRate: Number(pool.defaultRate),
-        historicalDefaultRate: advances.length > 0
-          ? (defaulted.length / advances.length) * 100
-          : 0,
-        exposureConcentration: topExposures.length > 0
-          ? topExposures[0].percentage
-          : 0,
+        historicalDefaultRate:
+          advances.length > 0 ? (defaulted.length / advances.length) * 100 : 0,
+        exposureConcentration:
+          topExposures.length > 0 ? topExposures[0].percentage : 0,
         largestExposure: topExposures.length > 0 ? topExposures[0].amount : 0,
         topExposures,
       },
@@ -842,8 +853,14 @@ export class LiquidityPoolService {
 
     // Calculate health score components
     const liquidityScore = Math.min(100, balance.reserveRatio * 5); // 20% = 100
-    const performanceScore = Math.max(0, 100 - metrics.risk.currentDefaultRate * 10);
-    const concentrationScore = Math.max(0, 100 - metrics.risk.exposureConcentration * 2);
+    const performanceScore = Math.max(
+      0,
+      100 - metrics.risk.currentDefaultRate * 10,
+    );
+    const concentrationScore = Math.max(
+      0,
+      100 - metrics.risk.exposureConcentration * 2,
+    );
     const activityScore = Math.min(100, metrics.advances.totalActive * 10);
 
     const overallScore =
@@ -852,22 +869,26 @@ export class LiquidityPoolService {
       concentrationScore * 0.2 +
       activityScore * 0.15;
 
-    const overallHealth: 'HEALTHY' | 'WARNING' | 'CRITICAL' =
-      overallScore >= 70 ? 'HEALTHY' : overallScore >= 40 ? 'WARNING' : 'CRITICAL';
+    const overallHealth: "HEALTHY" | "WARNING" | "CRITICAL" =
+      overallScore >= 70
+        ? "HEALTHY"
+        : overallScore >= 40
+          ? "WARNING"
+          : "CRITICAL";
 
     const recommendations: string[] = [];
 
     if (balance.reserveRatio < 15) {
-      recommendations.push('Increase reserve ratio to at least 15%');
+      recommendations.push("Increase reserve ratio to at least 15%");
     }
     if (metrics.risk.currentDefaultRate > 5) {
-      recommendations.push('Review underwriting criteria to reduce defaults');
+      recommendations.push("Review underwriting criteria to reduce defaults");
     }
     if (metrics.risk.exposureConcentration > 20) {
-      recommendations.push('Diversify portfolio to reduce concentration risk');
+      recommendations.push("Diversify portfolio to reduce concentration risk");
     }
     if (balance.utilizationRate < 50) {
-      recommendations.push('Consider marketing to increase advance volume');
+      recommendations.push("Consider marketing to increase advance volume");
     }
 
     return {
@@ -876,22 +897,45 @@ export class LiquidityPoolService {
       healthScore: Math.round(overallScore),
       indicators: {
         liquidity: {
-          status: liquidityScore >= 70 ? 'HEALTHY' : liquidityScore >= 40 ? 'WARNING' : 'CRITICAL',
+          status:
+            liquidityScore >= 70
+              ? "HEALTHY"
+              : liquidityScore >= 40
+                ? "WARNING"
+                : "CRITICAL",
           reserveRatio: balance.reserveRatio,
-          daysOfRunway: balance.availableCapital / (metrics.financial.totalDisbursed / metrics.period.daysInPeriod || 1),
+          daysOfRunway:
+            balance.availableCapital /
+            (metrics.financial.totalDisbursed / metrics.period.daysInPeriod ||
+              1),
         },
         performance: {
-          status: performanceScore >= 70 ? 'HEALTHY' : performanceScore >= 40 ? 'WARNING' : 'CRITICAL',
+          status:
+            performanceScore >= 70
+              ? "HEALTHY"
+              : performanceScore >= 40
+                ? "WARNING"
+                : "CRITICAL",
           defaultRate: metrics.risk.currentDefaultRate,
           profitMargin: metrics.financial.profitMargin,
         },
         concentration: {
-          status: concentrationScore >= 70 ? 'HEALTHY' : concentrationScore >= 40 ? 'WARNING' : 'CRITICAL',
+          status:
+            concentrationScore >= 70
+              ? "HEALTHY"
+              : concentrationScore >= 40
+                ? "WARNING"
+                : "CRITICAL",
           topExposurePercentage: metrics.risk.exposureConcentration,
           diversificationScore: concentrationScore,
         },
         activity: {
-          status: activityScore >= 70 ? 'HEALTHY' : activityScore >= 40 ? 'WARNING' : 'CRITICAL',
+          status:
+            activityScore >= 70
+              ? "HEALTHY"
+              : activityScore >= 40
+                ? "WARNING"
+                : "CRITICAL",
           recentAdvances: metrics.advances.totalActive,
           growthRate: 0, // Would need historical comparison
         },
@@ -908,7 +952,9 @@ export class LiquidityPoolService {
   /**
    * Create a new liquidity pool
    */
-  async createPool(request: CreatePoolRequest): Promise<ServiceResult<PoolDetails>> {
+  async createPool(
+    request: CreatePoolRequest,
+  ): Promise<ServiceResult<PoolDetails>> {
     try {
       const pool = await this.prisma.liquidityPool.create({
         data: {
@@ -932,7 +978,7 @@ export class LiquidityPoolService {
             request.minReserveRatio || POOL_CONSTRAINTS.MIN_RESERVE_RATIO,
           ),
           autoRebalanceEnabled: request.autoRebalanceEnabled ?? true,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           createdBy: request.createdBy,
         },
       });
@@ -941,23 +987,23 @@ export class LiquidityPoolService {
       await this.prisma.poolTransaction.create({
         data: {
           poolId: pool.id,
-          type: 'CAPITAL_DEPOSIT',
+          type: "CAPITAL_DEPOSIT",
           amount: new Prisma.Decimal(request.initialCapital),
           balanceBefore: new Prisma.Decimal(0),
           balanceAfter: new Prisma.Decimal(request.initialCapital),
-          description: 'Initial pool capitalization',
+          description: "Initial pool capitalization",
         },
       });
 
       return {
         success: true,
-        data: await this.getPoolDetails(pool.id) as PoolDetails,
+        data: (await this.getPoolDetails(pool.id)) as PoolDetails,
       };
     } catch (error) {
-      console.error('Error creating pool:', error);
+      console.error("Error creating pool:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create pool',
+        error: error instanceof Error ? error.message : "Failed to create pool",
       };
     }
   }
@@ -965,27 +1011,40 @@ export class LiquidityPoolService {
   /**
    * Update pool configuration
    */
-  async updatePool(request: UpdatePoolRequest): Promise<ServiceResult<PoolDetails>> {
+  async updatePool(
+    request: UpdatePoolRequest,
+  ): Promise<ServiceResult<PoolDetails>> {
     try {
       const updateData: Prisma.LiquidityPoolUpdateInput = {};
 
       if (request.name !== undefined) updateData.name = request.name;
-      if (request.description !== undefined) updateData.description = request.description;
+      if (request.description !== undefined)
+        updateData.description = request.description;
       if (request.status !== undefined) updateData.status = request.status;
       if (request.targetReturnRate !== undefined) {
-        updateData.targetReturnRate = new Prisma.Decimal(request.targetReturnRate);
+        updateData.targetReturnRate = new Prisma.Decimal(
+          request.targetReturnRate,
+        );
       }
       if (request.minAdvanceAmount !== undefined) {
-        updateData.minAdvanceAmount = new Prisma.Decimal(request.minAdvanceAmount);
+        updateData.minAdvanceAmount = new Prisma.Decimal(
+          request.minAdvanceAmount,
+        );
       }
       if (request.maxAdvanceAmount !== undefined) {
-        updateData.maxAdvanceAmount = new Prisma.Decimal(request.maxAdvanceAmount);
+        updateData.maxAdvanceAmount = new Prisma.Decimal(
+          request.maxAdvanceAmount,
+        );
       }
       if (request.maxExposureLimit !== undefined) {
-        updateData.maxExposureLimit = new Prisma.Decimal(request.maxExposureLimit);
+        updateData.maxExposureLimit = new Prisma.Decimal(
+          request.maxExposureLimit,
+        );
       }
       if (request.minReserveRatio !== undefined) {
-        updateData.minReserveRatio = new Prisma.Decimal(request.minReserveRatio);
+        updateData.minReserveRatio = new Prisma.Decimal(
+          request.minReserveRatio,
+        );
       }
       if (request.autoRebalanceEnabled !== undefined) {
         updateData.autoRebalanceEnabled = request.autoRebalanceEnabled;
@@ -1000,13 +1059,13 @@ export class LiquidityPoolService {
 
       return {
         success: true,
-        data: await this.getPoolDetails(request.poolId) as PoolDetails,
+        data: (await this.getPoolDetails(request.poolId)) as PoolDetails,
       };
     } catch (error) {
-      console.error('Error updating pool:', error);
+      console.error("Error updating pool:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update pool',
+        error: error instanceof Error ? error.message : "Failed to update pool",
       };
     }
   }
@@ -1098,7 +1157,7 @@ export class LiquidityPoolService {
             select: { investors: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -1176,16 +1235,16 @@ export class LiquidityPoolService {
         poolId,
         isEligible: false,
         maxAllowedAmount: 0,
-        reasons: ['Pool not found'],
+        reasons: ["Pool not found"],
         constraints: {},
       };
     }
 
     const reasons: string[] = [];
-    const constraints: PoolAdvanceEligibility['constraints'] = {};
+    const constraints: PoolAdvanceEligibility["constraints"] = {};
 
     // Check pool status
-    if (pool.status !== 'ACTIVE') {
+    if (pool.status !== "ACTIVE") {
       reasons.push(`Pool is ${pool.status}`);
     }
 
@@ -1208,14 +1267,20 @@ export class LiquidityPoolService {
     );
 
     if (amount > effectiveAvailable) {
-      reasons.push(`Insufficient available capital after reserve (${effectiveAvailable.toFixed(2)})`);
+      reasons.push(
+        `Insufficient available capital after reserve (${effectiveAvailable.toFixed(2)})`,
+      );
       constraints.reserveConstraint = `Available: ${effectiveAvailable.toFixed(2)}`;
     }
 
     // Check exposure limit
-    const maxSingleAdvance = Number(pool.totalCapital) * (POOL_CONSTRAINTS.MAX_SINGLE_ADVANCE_RATIO / 100);
+    const maxSingleAdvance =
+      Number(pool.totalCapital) *
+      (POOL_CONSTRAINTS.MAX_SINGLE_ADVANCE_RATIO / 100);
     if (amount > maxSingleAdvance) {
-      reasons.push(`Exceeds single advance limit (${maxSingleAdvance.toFixed(2)})`);
+      reasons.push(
+        `Exceeds single advance limit (${maxSingleAdvance.toFixed(2)})`,
+      );
       constraints.exposureConstraint = `Max single: ${maxSingleAdvance.toFixed(2)}`;
     }
 
@@ -1230,7 +1295,7 @@ export class LiquidityPoolService {
       poolId,
       isEligible,
       maxAllowedAmount: Math.max(0, maxAllowedAmount),
-      reasons: isEligible ? ['All checks passed'] : reasons,
+      reasons: isEligible ? ["All checks passed"] : reasons,
       constraints,
     };
   }

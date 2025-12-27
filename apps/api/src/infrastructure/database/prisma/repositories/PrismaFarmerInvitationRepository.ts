@@ -6,20 +6,22 @@
 import {
   PrismaClient,
   FarmerInvitationStatus as PrismaStatus,
-} from '@prisma/client';
+} from "@prisma/client";
 import {
   IFarmerInvitationRepository,
   CreateFarmerInvitationData,
   FarmerInvitationListResult,
-} from '../../../../domain/repositories/IFarmerInvitationRepository.js';
+} from "../../../../domain/repositories/IFarmerInvitationRepository.js";
 import {
   FarmerInvitation,
   FarmerInvitationFilter,
   FarmerInvitationStatus,
   FarmerInvitationWithCompany,
-} from '../../../../domain/entities/FarmerInvitation.js';
+} from "../../../../domain/entities/FarmerInvitation.js";
 
-export class PrismaFarmerInvitationRepository implements IFarmerInvitationRepository {
+export class PrismaFarmerInvitationRepository
+  implements IFarmerInvitationRepository
+{
   constructor(private readonly prisma: PrismaClient) {}
 
   private mapToDomain(prismaInvitation: any): FarmerInvitation {
@@ -74,7 +76,9 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
     return invitation ? this.mapToDomain(invitation) : null;
   }
 
-  async findByToken(token: string): Promise<FarmerInvitationWithCompany | null> {
+  async findByToken(
+    token: string,
+  ): Promise<FarmerInvitationWithCompany | null> {
     const invitation = await this.prisma.farmerInvitation.findUnique({
       where: { inviteToken: token },
       include: {
@@ -91,18 +95,23 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
     return invitation ? this.mapToWithCompany(invitation) : null;
   }
 
-  async findByEmailAndCompany(email: string, exportCompanyId: string): Promise<FarmerInvitation | null> {
+  async findByEmailAndCompany(
+    email: string,
+    exportCompanyId: string,
+  ): Promise<FarmerInvitation | null> {
     const invitation = await this.prisma.farmerInvitation.findFirst({
       where: {
         email: email.toLowerCase(),
         exportCompanyId,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return invitation ? this.mapToDomain(invitation) : null;
   }
 
-  async list(filter: FarmerInvitationFilter): Promise<FarmerInvitationListResult> {
+  async list(
+    filter: FarmerInvitationFilter,
+  ): Promise<FarmerInvitationListResult> {
     const where: any = {};
 
     if (filter.exportCompanyId) {
@@ -112,13 +121,16 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
       where.status = filter.status as PrismaStatus;
     }
     if (filter.email) {
-      where.email = { contains: filter.email.toLowerCase(), mode: 'insensitive' };
+      where.email = {
+        contains: filter.email.toLowerCase(),
+        mode: "insensitive",
+      };
     }
 
     const [invitations, total] = await Promise.all([
       this.prisma.farmerInvitation.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: filter.limit || 50,
         skip: filter.offset || 0,
       }),
@@ -133,7 +145,7 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
 
   async listByCompany(
     exportCompanyId: string,
-    filter?: Omit<FarmerInvitationFilter, 'exportCompanyId'>
+    filter?: Omit<FarmerInvitationFilter, "exportCompanyId">,
   ): Promise<FarmerInvitationListResult> {
     return this.list({ ...filter, exportCompanyId });
   }
@@ -142,7 +154,7 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
     const invitation = await this.prisma.farmerInvitation.update({
       where: { id },
       data: {
-        status: 'ACCEPTED',
+        status: "ACCEPTED",
         farmerId,
         acceptedAt: new Date(),
       },
@@ -153,7 +165,7 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
   async cancel(id: string): Promise<FarmerInvitation> {
     const invitation = await this.prisma.farmerInvitation.update({
       where: { id },
-      data: { status: 'CANCELLED' },
+      data: { status: "CANCELLED" },
     });
     return this.mapToDomain(invitation);
   }
@@ -161,22 +173,26 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
   async markExpired(): Promise<number> {
     const result = await this.prisma.farmerInvitation.updateMany({
       where: {
-        status: 'PENDING',
+        status: "PENDING",
         expiresAt: { lt: new Date() },
       },
-      data: { status: 'EXPIRED' },
+      data: { status: "EXPIRED" },
     });
     return result.count;
   }
 
-  async resend(id: string, newToken: string, newExpiresAt: Date): Promise<FarmerInvitation> {
+  async resend(
+    id: string,
+    newToken: string,
+    newExpiresAt: Date,
+  ): Promise<FarmerInvitation> {
     const invitation = await this.prisma.farmerInvitation.update({
       where: { id },
       data: {
         inviteToken: newToken,
         expiresAt: newExpiresAt,
         sentAt: new Date(),
-        status: 'PENDING',
+        status: "PENDING",
       },
     });
     return this.mapToDomain(invitation);
@@ -186,17 +202,20 @@ export class PrismaFarmerInvitationRepository implements IFarmerInvitationReposi
     return this.prisma.farmerInvitation.count({
       where: {
         exportCompanyId,
-        status: 'PENDING',
+        status: "PENDING",
       },
     });
   }
 
-  async hasPendingInvitation(email: string, exportCompanyId: string): Promise<boolean> {
+  async hasPendingInvitation(
+    email: string,
+    exportCompanyId: string,
+  ): Promise<boolean> {
     const count = await this.prisma.farmerInvitation.count({
       where: {
         email: email.toLowerCase(),
         exportCompanyId,
-        status: 'PENDING',
+        status: "PENDING",
       },
     });
     return count > 0;

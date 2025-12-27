@@ -18,11 +18,11 @@
  * @author AgroBridge Engineering Team
  */
 
-import { authenticator } from 'otplib';
-import * as crypto from 'crypto';
-import QRCode from 'qrcode';
-import { prisma } from '../database/prisma/client.js';
-import logger from '../../shared/utils/logger.js';
+import { authenticator } from "otplib";
+import * as crypto from "crypto";
+import QRCode from "qrcode";
+import { prisma } from "../database/prisma/client.js";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -55,7 +55,7 @@ export interface BackupCodesResult {
  */
 export interface TwoFactorVerifyResult {
   valid: boolean;
-  method: 'totp' | 'backup_code';
+  method: "totp" | "backup_code";
   remainingBackupCodes?: number;
 }
 
@@ -77,7 +77,7 @@ export interface TwoFactorStatus {
  */
 const TOTP_CONFIG = {
   /** Application name shown in authenticator apps */
-  issuer: 'AgroBridge',
+  issuer: "AgroBridge",
   /** Time step in seconds (standard is 30) */
   step: 30,
   /** Number of digits in OTP (standard is 6) */
@@ -100,7 +100,7 @@ const BACKUP_CODES_CONFIG = {
  * Encryption configuration for storing secrets
  */
 const ENCRYPTION_CONFIG = {
-  algorithm: 'aes-256-gcm' as const,
+  algorithm: "aes-256-gcm" as const,
   keyLength: 32,
   ivLength: 16,
   tagLength: 16,
@@ -148,16 +148,27 @@ export class TwoFactorService {
     const envKey = process.env.TWO_FACTOR_ENCRYPTION_KEY;
     if (envKey) {
       // Key should be base64 encoded 32-byte key
-      return Buffer.from(envKey, 'base64');
+      return Buffer.from(envKey, "base64");
     }
 
     // In development, use a deterministic key (WARNING: Not secure for production!)
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-      logger.warn('[TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION');
-      return crypto.scryptSync('agrobridge-dev-key', 'salt', ENCRYPTION_CONFIG.keyLength);
+    if (
+      process.env.NODE_ENV === "development" ||
+      process.env.NODE_ENV === "test"
+    ) {
+      logger.warn(
+        "[TwoFactorService] Using development encryption key - NOT SECURE FOR PRODUCTION",
+      );
+      return crypto.scryptSync(
+        "agrobridge-dev-key",
+        "salt",
+        ENCRYPTION_CONFIG.keyLength,
+      );
     }
 
-    throw new Error('TWO_FACTOR_ENCRYPTION_KEY environment variable is required in production');
+    throw new Error(
+      "TWO_FACTOR_ENCRYPTION_KEY environment variable is required in production",
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -171,7 +182,10 @@ export class TwoFactorService {
    * @param email - User email (shown in authenticator app)
    * @returns Secret with QR code
    */
-  async generateSecret(userId: string, email: string): Promise<TwoFactorSecret> {
+  async generateSecret(
+    userId: string,
+    email: string,
+  ): Promise<TwoFactorSecret> {
     // Verify user exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -179,11 +193,13 @@ export class TwoFactorService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     if (user.twoFactorEnabled) {
-      throw new Error('2FA is already enabled. Disable it first to generate a new secret.');
+      throw new Error(
+        "2FA is already enabled. Disable it first to generate a new secret.",
+      );
     }
 
     // Generate secret
@@ -194,13 +210,13 @@ export class TwoFactorService {
 
     // Generate QR code as base64 data URL
     const qrCode = await QRCode.toDataURL(otpauthUrl, {
-      errorCorrectionLevel: 'M',
-      type: 'image/png',
+      errorCorrectionLevel: "M",
+      type: "image/png",
       width: 256,
       margin: 2,
       color: {
-        dark: '#1B5E20',
-        light: '#FFFFFF',
+        dark: "#1B5E20",
+        light: "#FFFFFF",
       },
     });
 
@@ -211,7 +227,7 @@ export class TwoFactorService {
       data: { twoFactorSecret: encryptedSecret },
     });
 
-    logger.info('[TwoFactorService] 2FA secret generated', { userId });
+    logger.info("[TwoFactorService] 2FA secret generated", { userId });
 
     return {
       secret,
@@ -231,7 +247,10 @@ export class TwoFactorService {
    * @param token - 6-digit TOTP token
    * @returns Verification result
    */
-  async verifyToken(userId: string, token: string): Promise<TwoFactorVerifyResult> {
+  async verifyToken(
+    userId: string,
+    token: string,
+  ): Promise<TwoFactorVerifyResult> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -243,26 +262,31 @@ export class TwoFactorService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     if (!user.twoFactorSecret) {
-      throw new Error('2FA is not set up for this user');
+      throw new Error("2FA is not set up for this user");
     }
 
     // Normalize token (remove spaces/dashes)
-    const normalizedToken = token.replace(/[\s-]/g, '');
+    const normalizedToken = token.replace(/[\s-]/g, "");
 
     // Try TOTP verification first
-    if (normalizedToken.length === TOTP_CONFIG.digits && /^\d+$/.test(normalizedToken)) {
+    if (
+      normalizedToken.length === TOTP_CONFIG.digits &&
+      /^\d+$/.test(normalizedToken)
+    ) {
       const secret = this.decrypt(user.twoFactorSecret);
       const isValid = authenticator.verify({ token: normalizedToken, secret });
 
       if (isValid) {
-        logger.info('[TwoFactorService] TOTP verified successfully', { userId });
+        logger.info("[TwoFactorService] TOTP verified successfully", {
+          userId,
+        });
         return {
           valid: true,
-          method: 'totp',
+          method: "totp",
           remainingBackupCodes: user.backupCodes.length,
         };
       }
@@ -274,8 +298,8 @@ export class TwoFactorService {
       return backupResult;
     }
 
-    logger.warn('[TwoFactorService] 2FA verification failed', { userId });
-    return { valid: false, method: 'totp' };
+    logger.warn("[TwoFactorService] 2FA verification failed", { userId });
+    return { valid: false, method: "totp" };
   }
 
   /**
@@ -285,27 +309,30 @@ export class TwoFactorService {
    * @param code - Backup code
    * @returns Verification result
    */
-  async verifyBackupCode(userId: string, code: string): Promise<TwoFactorVerifyResult> {
+  async verifyBackupCode(
+    userId: string,
+    code: string,
+  ): Promise<TwoFactorVerifyResult> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, backupCodes: true },
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Normalize code (uppercase, no spaces/dashes)
-    const normalizedCode = code.toUpperCase().replace(/[\s-]/g, '');
+    const normalizedCode = code.toUpperCase().replace(/[\s-]/g, "");
 
     // Check against hashed backup codes
     const codeHash = this.hashBackupCode(normalizedCode);
     const codeIndex = user.backupCodes.findIndex(
-      (hashedCode) => hashedCode === codeHash
+      (hashedCode) => hashedCode === codeHash,
     );
 
     if (codeIndex === -1) {
-      return { valid: false, method: 'backup_code' };
+      return { valid: false, method: "backup_code" };
     }
 
     // Remove used backup code
@@ -317,14 +344,14 @@ export class TwoFactorService {
       data: { backupCodes: updatedCodes },
     });
 
-    logger.info('[TwoFactorService] Backup code verified and consumed', {
+    logger.info("[TwoFactorService] Backup code verified and consumed", {
       userId,
       remainingCodes: updatedCodes.length,
     });
 
     return {
       valid: true,
-      method: 'backup_code',
+      method: "backup_code",
       remainingBackupCodes: updatedCodes.length,
     };
   }
@@ -346,11 +373,11 @@ export class TwoFactorService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     if (!user.twoFactorEnabled) {
-      throw new Error('2FA must be enabled before generating backup codes');
+      throw new Error("2FA must be enabled before generating backup codes");
     }
 
     // Generate backup codes
@@ -369,7 +396,7 @@ export class TwoFactorService {
       data: { backupCodes: hashedCodes },
     });
 
-    logger.info('[TwoFactorService] Backup codes generated', {
+    logger.info("[TwoFactorService] Backup codes generated", {
       userId,
       count: codes.length,
     });
@@ -384,8 +411,8 @@ export class TwoFactorService {
    * Generate a single backup code
    */
   private generateBackupCode(): string {
-    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars
-    let code = '';
+    const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude confusing chars
+    let code = "";
     const randomBytes = crypto.randomBytes(BACKUP_CODES_CONFIG.length);
 
     for (let i = 0; i < BACKUP_CODES_CONFIG.length; i++) {
@@ -406,7 +433,7 @@ export class TwoFactorService {
    * Hash a backup code for storage
    */
   private hashBackupCode(code: string): string {
-    return crypto.createHash('sha256').update(code).digest('hex');
+    return crypto.createHash("sha256").update(code).digest("hex");
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -431,23 +458,26 @@ export class TwoFactorService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     if (user.twoFactorEnabled) {
-      throw new Error('2FA is already enabled');
+      throw new Error("2FA is already enabled");
     }
 
     if (!user.twoFactorSecret) {
-      throw new Error('No 2FA secret found. Call generateSecret first.');
+      throw new Error("No 2FA secret found. Call generateSecret first.");
     }
 
     // Verify the token using the stored (but not yet enabled) secret
     const secret = this.decrypt(user.twoFactorSecret);
-    const isValid = authenticator.verify({ token: token.replace(/[\s-]/g, ''), secret });
+    const isValid = authenticator.verify({
+      token: token.replace(/[\s-]/g, ""),
+      secret,
+    });
 
     if (!isValid) {
-      throw new Error('Invalid verification token');
+      throw new Error("Invalid verification token");
     }
 
     // Generate backup codes
@@ -470,7 +500,7 @@ export class TwoFactorService {
       },
     });
 
-    logger.info('[TwoFactorService] 2FA enabled successfully', { userId });
+    logger.info("[TwoFactorService] 2FA enabled successfully", { userId });
 
     return {
       codes: codes.map(this.formatBackupCode),
@@ -495,17 +525,17 @@ export class TwoFactorService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     if (!user.twoFactorEnabled) {
-      throw new Error('2FA is not enabled');
+      throw new Error("2FA is not enabled");
     }
 
     // Verify the token before disabling
     const verifyResult = await this.verifyToken(userId, token);
     if (!verifyResult.valid) {
-      throw new Error('Invalid verification token');
+      throw new Error("Invalid verification token");
     }
 
     // Disable 2FA and clear related data
@@ -519,7 +549,7 @@ export class TwoFactorService {
       },
     });
 
-    logger.info('[TwoFactorService] 2FA disabled successfully', { userId });
+    logger.info("[TwoFactorService] 2FA disabled successfully", { userId });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -543,7 +573,7 @@ export class TwoFactorService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     return {
@@ -580,40 +610,40 @@ export class TwoFactorService {
     const cipher = crypto.createCipheriv(
       ENCRYPTION_CONFIG.algorithm,
       this.encryptionKey,
-      iv
+      iv,
     );
 
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
 
     const authTag = cipher.getAuthTag();
 
     // Format: iv:authTag:encrypted
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
   }
 
   /**
    * Decrypt a stored secret
    */
   private decrypt(encrypted: string): string {
-    const parts = encrypted.split(':');
+    const parts = encrypted.split(":");
     if (parts.length !== 3) {
-      throw new Error('Invalid encrypted data format');
+      throw new Error("Invalid encrypted data format");
     }
 
     const [ivHex, authTagHex, encryptedText] = parts;
-    const iv = Buffer.from(ivHex, 'hex');
-    const authTag = Buffer.from(authTagHex, 'hex');
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
 
     const decipher = crypto.createDecipheriv(
       ENCRYPTION_CONFIG.algorithm,
       this.encryptionKey,
-      iv
+      iv,
     );
     decipher.setAuthTag(authTag);
 
-    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    let decrypted = decipher.update(encryptedText, "hex", "utf8");
+    decrypted += decipher.final("utf8");
 
     return decrypted;
   }

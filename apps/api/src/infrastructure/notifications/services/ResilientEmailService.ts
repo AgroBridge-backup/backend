@@ -15,9 +15,13 @@
  * @author AgroBridge Engineering Team
  */
 
-import logger from '../../../shared/utils/logger.js';
-import { emailService, EmailService } from './EmailService.js';
-import { sesProvider, SESProvider, type SESHealth } from '../providers/SESProvider.js';
+import logger from "../../../shared/utils/logger.js";
+import { emailService, EmailService } from "./EmailService.js";
+import {
+  sesProvider,
+  SESProvider,
+  type SESHealth,
+} from "../providers/SESProvider.js";
 import type {
   EmailOptions,
   EmailSendResult,
@@ -25,7 +29,7 @@ import type {
   CertificateNotificationDetails,
   SensorAlertDetails,
   OrderNotificationDetails,
-} from '../types/index.js';
+} from "../types/index.js";
 
 /**
  * Provider status for circuit breaker
@@ -49,11 +53,11 @@ export interface EmailServiceHealth {
     ses: {
       available: boolean;
       health: SESHealth | null;
-      circuitStatus: 'closed' | 'open' | 'half-open';
+      circuitStatus: "closed" | "open" | "half-open";
     };
     sendgrid: {
       available: boolean;
-      circuitStatus: 'closed' | 'open' | 'half-open';
+      circuitStatus: "closed" | "open" | "half-open";
     };
   };
 }
@@ -66,7 +70,7 @@ interface ResilientEmailConfig {
   retryDelayMs: number;
   circuitBreakerThreshold: number;
   circuitBreakerResetMs: number;
-  primaryProvider: 'ses' | 'sendgrid';
+  primaryProvider: "ses" | "sendgrid";
 }
 
 /**
@@ -87,11 +91,12 @@ export class ResilientEmailService {
       retryDelayMs: 1000,
       circuitBreakerThreshold: 5,
       circuitBreakerResetMs: 60000, // 1 minute
-      primaryProvider: (process.env.EMAIL_PRIMARY_PROVIDER as 'ses' | 'sendgrid') || 'ses',
+      primaryProvider:
+        (process.env.EMAIL_PRIMARY_PROVIDER as "ses" | "sendgrid") || "ses",
     };
 
     this.sesStatus = {
-      name: 'ses',
+      name: "ses",
       available: false,
       consecutiveFailures: 0,
       lastFailure: null,
@@ -100,7 +105,7 @@ export class ResilientEmailService {
     };
 
     this.sendgridStatus = {
-      name: 'sendgrid',
+      name: "sendgrid",
       available: false,
       consecutiveFailures: 0,
       lastFailure: null,
@@ -128,7 +133,7 @@ export class ResilientEmailService {
     this.sesStatus.available = sesProvider.isAvailable();
     this.sendgridStatus.available = emailService.isAvailable();
 
-    logger.info('[ResilientEmailService] Providers initialized', {
+    logger.info("[ResilientEmailService] Providers initialized", {
       ses: this.sesStatus.available,
       sendgrid: this.sendgridStatus.available,
       primary: this.config.primaryProvider,
@@ -153,7 +158,8 @@ export class ResilientEmailService {
 
     return {
       primaryProvider: this.config.primaryProvider,
-      fallbackProvider: this.config.primaryProvider === 'ses' ? 'sendgrid' : 'ses',
+      fallbackProvider:
+        this.config.primaryProvider === "ses" ? "sendgrid" : "ses",
       providers: {
         ses: {
           available: this.sesStatus.available,
@@ -171,10 +177,13 @@ export class ResilientEmailService {
   /**
    * Get circuit breaker status
    */
-  private getCircuitStatus(status: ProviderStatus): 'closed' | 'open' | 'half-open' {
-    if (!status.circuitOpen) return 'closed';
-    if (status.circuitOpenUntil && new Date() > status.circuitOpenUntil) return 'half-open';
-    return 'open';
+  private getCircuitStatus(
+    status: ProviderStatus,
+  ): "closed" | "open" | "half-open" {
+    if (!status.circuitOpen) return "closed";
+    if (status.circuitOpenUntil && new Date() > status.circuitOpenUntil)
+      return "half-open";
+    return "open";
   }
 
   /**
@@ -184,7 +193,7 @@ export class ResilientEmailService {
     if (!status.available) return false;
 
     const circuitStatus = this.getCircuitStatus(status);
-    return circuitStatus === 'closed' || circuitStatus === 'half-open';
+    return circuitStatus === "closed" || circuitStatus === "half-open";
   }
 
   /**
@@ -205,9 +214,11 @@ export class ResilientEmailService {
 
     if (status.consecutiveFailures >= this.config.circuitBreakerThreshold) {
       status.circuitOpen = true;
-      status.circuitOpenUntil = new Date(Date.now() + this.config.circuitBreakerResetMs);
+      status.circuitOpenUntil = new Date(
+        Date.now() + this.config.circuitBreakerResetMs,
+      );
 
-      logger.warn('[ResilientEmailService] Circuit breaker opened', {
+      logger.warn("[ResilientEmailService] Circuit breaker opened", {
         provider: status.name,
         failures: status.consecutiveFailures,
         resetAt: status.circuitOpenUntil.toISOString(),
@@ -231,35 +242,37 @@ export class ResilientEmailService {
       }
     }
 
-    logger.error('[ResilientEmailService] All providers failed', {
+    logger.error("[ResilientEmailService] All providers failed", {
       to: options.to,
       subject: options.subject,
     });
 
     return {
       success: false,
-      error: 'All email providers failed',
-      errorCode: 'ALL_PROVIDERS_FAILED',
+      error: "All email providers failed",
+      errorCode: "ALL_PROVIDERS_FAILED",
     };
   }
 
   /**
    * Get providers in order of preference
    */
-  private getOrderedProviders(): Array<'ses' | 'sendgrid'> {
+  private getOrderedProviders(): Array<"ses" | "sendgrid"> {
     const primary = this.config.primaryProvider;
-    const fallback = primary === 'ses' ? 'sendgrid' : 'ses';
+    const fallback = primary === "ses" ? "sendgrid" : "ses";
 
-    const providers: Array<'ses' | 'sendgrid'> = [];
+    const providers: Array<"ses" | "sendgrid"> = [];
 
     // Add primary if available
-    const primaryStatus = primary === 'ses' ? this.sesStatus : this.sendgridStatus;
+    const primaryStatus =
+      primary === "ses" ? this.sesStatus : this.sendgridStatus;
     if (this.isProviderAvailable(primaryStatus)) {
       providers.push(primary);
     }
 
     // Add fallback if available
-    const fallbackStatus = fallback === 'ses' ? this.sesStatus : this.sendgridStatus;
+    const fallbackStatus =
+      fallback === "ses" ? this.sesStatus : this.sendgridStatus;
     if (this.isProviderAvailable(fallbackStatus)) {
       providers.push(fallback);
     }
@@ -271,16 +284,16 @@ export class ResilientEmailService {
    * Try to send with a specific provider
    */
   private async trySendWithProvider(
-    provider: 'ses' | 'sendgrid',
-    options: EmailOptions
+    provider: "ses" | "sendgrid",
+    options: EmailOptions,
   ): Promise<EmailSendResult> {
-    const status = provider === 'ses' ? this.sesStatus : this.sendgridStatus;
+    const status = provider === "ses" ? this.sesStatus : this.sendgridStatus;
 
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         let result: EmailSendResult;
 
-        if (provider === 'ses') {
+        if (provider === "ses") {
           result = await sesProvider.sendEmail(options);
         } else {
           result = await emailService.sendEmail(options);
@@ -306,7 +319,7 @@ export class ResilientEmailService {
           await this.delay(this.config.retryDelayMs * Math.pow(2, attempt - 1));
         }
       } catch (error) {
-        logger.error('[ResilientEmailService] Provider error', {
+        logger.error("[ResilientEmailService] Provider error", {
           provider,
           attempt,
           error: (error as Error).message,
@@ -322,7 +335,7 @@ export class ResilientEmailService {
     return {
       success: false,
       error: `Provider ${provider} failed after ${this.config.maxRetries} attempts`,
-      errorCode: 'MAX_RETRIES_EXCEEDED',
+      errorCode: "MAX_RETRIES_EXCEEDED",
       provider,
     };
   }
@@ -332,11 +345,11 @@ export class ResilientEmailService {
    */
   private isNonRetryableError(errorCode?: string): boolean {
     const nonRetryableErrors = [
-      'InvalidParameterValue',
-      'MessageRejected',
-      'MailFromDomainNotVerified',
-      'AddressBlacklisted',
-      'InvalidEmailAddress',
+      "InvalidParameterValue",
+      "MessageRejected",
+      "MailFromDomainNotVerified",
+      "AddressBlacklisted",
+      "InvalidEmailAddress",
     ];
 
     return errorCode ? nonRetryableErrors.includes(errorCode) : false;
@@ -358,7 +371,7 @@ export class ResilientEmailService {
    */
   async sendBatchCreatedEmail(
     email: string,
-    details: BatchNotificationDetails
+    details: BatchNotificationDetails,
   ): Promise<EmailSendResult> {
     // Use SendGrid templates for consistent formatting
     return await emailService.sendBatchCreatedEmail(email, details);
@@ -370,7 +383,7 @@ export class ResilientEmailService {
   async sendCertificateEmail(
     email: string,
     details: CertificateNotificationDetails,
-    pdfBase64?: string
+    pdfBase64?: string,
   ): Promise<EmailSendResult> {
     return await emailService.sendCertificateEmail(email, details, pdfBase64);
   }
@@ -380,7 +393,7 @@ export class ResilientEmailService {
    */
   async sendSensorAlertEmail(
     email: string,
-    details: SensorAlertDetails
+    details: SensorAlertDetails,
   ): Promise<EmailSendResult> {
     return await emailService.sendSensorAlertEmail(email, details);
   }
@@ -390,7 +403,7 @@ export class ResilientEmailService {
    */
   async sendOrderConfirmationEmail(
     email: string,
-    details: OrderNotificationDetails
+    details: OrderNotificationDetails,
   ): Promise<EmailSendResult> {
     return await emailService.sendOrderConfirmationEmail(email, details);
   }
@@ -398,15 +411,21 @@ export class ResilientEmailService {
   /**
    * Send welcome email
    */
-  async sendWelcomeEmail(email: string, name: string): Promise<EmailSendResult> {
+  async sendWelcomeEmail(
+    email: string,
+    name: string,
+  ): Promise<EmailSendResult> {
     return await emailService.sendWelcomeEmail(email, name);
   }
 
   /**
    * Send password reset email
    */
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<EmailSendResult> {
-    const appUrl = process.env.APP_URL || 'https://app.agrobridge.io';
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+  ): Promise<EmailSendResult> {
+    const appUrl = process.env.APP_URL || "https://app.agrobridge.io";
     const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
 
     const html = `
@@ -461,17 +480,20 @@ export class ResilientEmailService {
 
     return await this.sendEmail({
       to: email,
-      subject: 'Restablecer contraseña - AgroBridge',
+      subject: "Restablecer contraseña - AgroBridge",
       html,
-      categories: ['password-reset', 'transactional'],
+      categories: ["password-reset", "transactional"],
     });
   }
 
   /**
    * Send email verification
    */
-  async sendVerificationEmail(email: string, verificationToken: string): Promise<EmailSendResult> {
-    const appUrl = process.env.APP_URL || 'https://app.agrobridge.io';
+  async sendVerificationEmail(
+    email: string,
+    verificationToken: string,
+  ): Promise<EmailSendResult> {
+    const appUrl = process.env.APP_URL || "https://app.agrobridge.io";
     const verifyUrl = `${appUrl}/verify-email?token=${verificationToken}`;
 
     const html = `
@@ -526,16 +548,19 @@ export class ResilientEmailService {
 
     return await this.sendEmail({
       to: email,
-      subject: 'Verifica tu email - AgroBridge',
+      subject: "Verifica tu email - AgroBridge",
       html,
-      categories: ['email-verification', 'transactional'],
+      categories: ["email-verification", "transactional"],
     });
   }
 
   /**
    * Send 2FA code email
    */
-  async send2FACodeEmail(email: string, code: string): Promise<EmailSendResult> {
+  async send2FACodeEmail(
+    email: string,
+    code: string,
+  ): Promise<EmailSendResult> {
     const html = `
 <!DOCTYPE html>
 <html lang="es">
@@ -583,7 +608,7 @@ export class ResilientEmailService {
       to: email,
       subject: `${code} - Código de verificación AgroBridge`,
       html,
-      categories: ['2fa', 'transactional'],
+      categories: ["2fa", "transactional"],
     });
   }
 }

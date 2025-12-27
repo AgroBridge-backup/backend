@@ -1,10 +1,9 @@
-import * as Prisma from '@prisma/client';
-import { IBatchRepository } from '../../../domain/repositories/IBatchRepository.js';
-import { Batch } from '../../../domain/entities/Batch.js';
-import { prisma } from '../../../infrastructure/database/prisma/client.js';
+import * as Prisma from "@prisma/client";
+import { IBatchRepository } from "../../../domain/repositories/IBatchRepository.js";
+import { Batch } from "../../../domain/entities/Batch.js";
+import { prisma } from "../../../infrastructure/database/prisma/client.js";
 
 export class PrismaBatchRepository implements IBatchRepository {
-  
   async findById(id: string): Promise<Batch | null> {
     const batch = await prisma.batch.findUnique({
       where: { id },

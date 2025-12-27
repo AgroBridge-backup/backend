@@ -4,9 +4,9 @@
  * Handles field registration, status transitions, and boundary verification
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { AppError } from '../../shared/errors/AppError.js';
-import { IOrganicFieldRepository } from '../repositories/IOrganicFieldRepository.js';
+import { v4 as uuidv4 } from "uuid";
+import { AppError } from "../../shared/errors/AppError.js";
+import { IOrganicFieldRepository } from "../repositories/IOrganicFieldRepository.js";
 import {
   OrganicField,
   OrganicFieldFilter,
@@ -16,8 +16,8 @@ import {
   UpdateOrganicFieldInput,
   ORGANIC_TRANSITION_MONTHS,
   SUPPORTED_CROP_TYPES,
-} from '../entities/OrganicField.js';
-import logger from '../../shared/utils/logger.js';
+} from "../entities/OrganicField.js";
+import logger from "../../shared/utils/logger.js";
 
 export interface RegisterFieldResult {
   field: OrganicField;
@@ -30,20 +30,25 @@ export class OrganicFieldService {
   /**
    * Register a new organic field
    */
-  async registerField(input: CreateOrganicFieldInput): Promise<RegisterFieldResult> {
+  async registerField(
+    input: CreateOrganicFieldInput,
+  ): Promise<RegisterFieldResult> {
     // Validate crop type
     if (!SUPPORTED_CROP_TYPES.includes(input.cropType as any)) {
-      throw new AppError(`Unsupported crop type: ${input.cropType}. Supported: ${SUPPORTED_CROP_TYPES.join(', ')}`, 400);
+      throw new AppError(
+        `Unsupported crop type: ${input.cropType}. Supported: ${SUPPORTED_CROP_TYPES.join(", ")}`,
+        400,
+      );
     }
 
     // Validate GeoJSON boundary
     if (!this.isValidGeoJson(input.boundaryGeoJson)) {
-      throw new AppError('Invalid GeoJSON boundary format', 400);
+      throw new AppError("Invalid GeoJSON boundary format", 400);
     }
 
     // Validate area
     if (input.areaHectares <= 0) {
-      throw new AppError('Area must be greater than 0 hectares', 400);
+      throw new AppError("Area must be greater than 0 hectares", 400);
     }
 
     // Calculate transition end date if organicSince is provided
@@ -53,7 +58,7 @@ export class OrganicFieldService {
     if (input.organicSince) {
       const organicSinceDate = new Date(input.organicSince);
       const monthsOrganic = Math.floor(
-        (Date.now() - organicSinceDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
+        (Date.now() - organicSinceDate.getTime()) / (1000 * 60 * 60 * 24 * 30),
       );
 
       if (monthsOrganic >= ORGANIC_TRANSITION_MONTHS) {
@@ -63,7 +68,9 @@ export class OrganicFieldService {
         // Still in transition
         certificationStatus = OrganicFieldStatus.TRANSITIONAL;
         transitionEndDate = new Date(organicSinceDate);
-        transitionEndDate.setMonth(transitionEndDate.getMonth() + ORGANIC_TRANSITION_MONTHS);
+        transitionEndDate.setMonth(
+          transitionEndDate.getMonth() + ORGANIC_TRANSITION_MONTHS,
+        );
       }
     }
 
@@ -91,7 +98,9 @@ export class OrganicFieldService {
       lastSoilTestDate: input.lastSoilTestDate,
     });
 
-    logger.info(`Organic field registered: ${field.id} for producer ${field.producerId}`);
+    logger.info(
+      `Organic field registered: ${field.id} for producer ${field.producerId}`,
+    );
 
     return { field, transitionEndDate };
   }
@@ -102,7 +111,7 @@ export class OrganicFieldService {
   async getFieldWithStats(id: string): Promise<OrganicFieldWithStats> {
     const field = await this.repository.findByIdWithStats(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
     return field;
   }
@@ -113,7 +122,7 @@ export class OrganicFieldService {
   async getField(id: string): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
     return field;
   }
@@ -123,7 +132,7 @@ export class OrganicFieldService {
    */
   async listProducerFields(
     producerId: string,
-    filter?: Omit<OrganicFieldFilter, 'producerId'>
+    filter?: Omit<OrganicFieldFilter, "producerId">,
   ): Promise<{ fields: OrganicField[]; total: number }> {
     return this.repository.listByProducer(producerId, filter);
   }
@@ -131,20 +140,23 @@ export class OrganicFieldService {
   /**
    * Update field details
    */
-  async updateField(id: string, input: UpdateOrganicFieldInput): Promise<OrganicField> {
+  async updateField(
+    id: string,
+    input: UpdateOrganicFieldInput,
+  ): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
     // Validate GeoJSON if being updated
     if (input.boundaryGeoJson && !this.isValidGeoJson(input.boundaryGeoJson)) {
-      throw new AppError('Invalid GeoJSON boundary format', 400);
+      throw new AppError("Invalid GeoJSON boundary format", 400);
     }
 
     // Validate area if being updated
     if (input.areaHectares !== undefined && input.areaHectares <= 0) {
-      throw new AppError('Area must be greater than 0 hectares', 400);
+      throw new AppError("Area must be greater than 0 hectares", 400);
     }
 
     logger.info(`Updating organic field: ${id}`);
@@ -158,31 +170,33 @@ export class OrganicFieldService {
   async certifyField(id: string, standards: string[]): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
     // Field must be either transitional (past end date) or pending verification
     if (field.certificationStatus === OrganicFieldStatus.CERTIFIED) {
-      throw new AppError('Field is already certified', 400);
+      throw new AppError("Field is already certified", 400);
     }
 
     if (field.certificationStatus === OrganicFieldStatus.TRANSITIONAL) {
       if (field.transitionEndDate && new Date() < field.transitionEndDate) {
-        throw new AppError('Field is still in transition period', 400);
+        throw new AppError("Field is still in transition period", 400);
       }
     }
 
     // Update status and add standards
     let updatedField = await this.repository.updateCertificationStatus(
       id,
-      OrganicFieldStatus.CERTIFIED
+      OrganicFieldStatus.CERTIFIED,
     );
 
     for (const standard of standards) {
       updatedField = await this.repository.addCertifiedStandard(id, standard);
     }
 
-    logger.info(`Organic field certified: ${id} with standards ${standards.join(', ')}`);
+    logger.info(
+      `Organic field certified: ${id} with standards ${standards.join(", ")}`,
+    );
 
     return updatedField;
   }
@@ -190,19 +204,27 @@ export class OrganicFieldService {
   /**
    * Suspend field certification
    */
-  async suspendCertification(id: string, reason: string): Promise<OrganicField> {
+  async suspendCertification(
+    id: string,
+    reason: string,
+  ): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
     if (field.certificationStatus !== OrganicFieldStatus.CERTIFIED) {
-      throw new AppError('Only certified fields can be suspended', 400);
+      throw new AppError("Only certified fields can be suspended", 400);
     }
 
-    logger.warn(`Organic field certification suspended: ${id}, reason: ${reason}`);
+    logger.warn(
+      `Organic field certification suspended: ${id}, reason: ${reason}`,
+    );
 
-    return this.repository.updateCertificationStatus(id, OrganicFieldStatus.SUSPENDED);
+    return this.repository.updateCertificationStatus(
+      id,
+      OrganicFieldStatus.SUSPENDED,
+    );
   }
 
   /**
@@ -211,12 +233,17 @@ export class OrganicFieldService {
   async revokeCertification(id: string, reason: string): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
-    logger.warn(`Organic field certification revoked: ${id}, reason: ${reason}`);
+    logger.warn(
+      `Organic field certification revoked: ${id}, reason: ${reason}`,
+    );
 
-    return this.repository.updateCertificationStatus(id, OrganicFieldStatus.REVOKED);
+    return this.repository.updateCertificationStatus(
+      id,
+      OrganicFieldStatus.REVOKED,
+    );
   }
 
   /**
@@ -225,16 +252,19 @@ export class OrganicFieldService {
   async reinstateCertification(id: string): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
     if (field.certificationStatus !== OrganicFieldStatus.SUSPENDED) {
-      throw new AppError('Only suspended fields can be reinstated', 400);
+      throw new AppError("Only suspended fields can be reinstated", 400);
     }
 
     logger.info(`Organic field certification reinstated: ${id}`);
 
-    return this.repository.updateCertificationStatus(id, OrganicFieldStatus.CERTIFIED);
+    return this.repository.updateCertificationStatus(
+      id,
+      OrganicFieldStatus.CERTIFIED,
+    );
   }
 
   /**
@@ -243,21 +273,25 @@ export class OrganicFieldService {
   async verifyLocationWithinField(
     fieldId: string,
     lat: number,
-    lng: number
+    lng: number,
   ): Promise<{ isWithin: boolean; distanceFromCenter?: number }> {
     const field = await this.repository.findById(fieldId);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
-    const isWithin = await this.repository.isPointWithinBoundary(fieldId, lat, lng);
+    const isWithin = await this.repository.isPointWithinBoundary(
+      fieldId,
+      lat,
+      lng,
+    );
 
     // Calculate distance from center
     const distanceFromCenter = this.haversineDistance(
       lat,
       lng,
       field.centerLat,
-      field.centerLng
+      field.centerLng,
     );
 
     return { isWithin, distanceFromCenter };
@@ -269,7 +303,7 @@ export class OrganicFieldService {
   async deactivateField(id: string): Promise<OrganicField> {
     const field = await this.repository.findById(id);
     if (!field) {
-      throw new AppError('Organic field not found', 404);
+      throw new AppError("Organic field not found", 404);
     }
 
     logger.info(`Organic field deactivated: ${id}`);
@@ -289,7 +323,10 @@ export class OrganicFieldService {
     const [totalFields, totalHectares, allFields] = await Promise.all([
       this.repository.countByProducer(producerId),
       this.repository.getTotalHectaresByProducer(producerId),
-      this.repository.listByProducer(producerId, { isActive: true, limit: 1000 }),
+      this.repository.listByProducer(producerId, {
+        isActive: true,
+        limit: 1000,
+      }),
     ]);
 
     const byStatus: Record<OrganicFieldStatus, number> = {
@@ -324,7 +361,7 @@ export class OrganicFieldService {
     try {
       const parsed = JSON.parse(geoJson);
       return (
-        parsed.type === 'Polygon' &&
+        parsed.type === "Polygon" &&
         Array.isArray(parsed.coordinates) &&
         parsed.coordinates.length > 0 &&
         Array.isArray(parsed.coordinates[0]) &&
@@ -342,7 +379,7 @@ export class OrganicFieldService {
     lat1: number,
     lng1: number,
     lat2: number,
-    lng2: number
+    lng2: number,
   ): number {
     const R = 6371000; // Earth's radius in meters
     const dLat = this.toRad(lat2 - lat1);

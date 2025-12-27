@@ -17,11 +17,14 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Job } from 'bull';
-import { PrismaClient } from '@prisma/client';
-import { BaseJobProcessor } from '../processors/JobProcessor.js';
-import logger from '../../../shared/utils/logger.js';
-import type { BlockchainJobData, BlockchainJobResult } from '../QueueService.js';
+import { Job } from "bull";
+import { PrismaClient } from "@prisma/client";
+import { BaseJobProcessor } from "../processors/JobProcessor.js";
+import logger from "../../../shared/utils/logger.js";
+import type {
+  BlockchainJobData,
+  BlockchainJobResult,
+} from "../QueueService.js";
 
 // Prisma client instance
 const prisma = new PrismaClient();
@@ -64,12 +67,15 @@ const DEFAULT_CONFIG: BlockchainConfig = {
  * Handles async blockchain transactions with proper error handling
  * and retry logic for failed transactions
  */
-export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData, BlockchainJobResult> {
+export class BlockchainTransactionJob extends BaseJobProcessor<
+  BlockchainJobData,
+  BlockchainJobResult
+> {
   private config: BlockchainConfig;
   private isBlockchainAvailable: boolean = false;
 
   constructor(config: Partial<BlockchainConfig> = {}) {
-    super('blockchain-tx');
+    super("blockchain-tx");
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.checkBlockchainAvailability();
   }
@@ -79,13 +85,16 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    */
   private checkBlockchainAvailability(): void {
     // Check for required environment variables
-    const requiredVars = ['BLOCKCHAIN_RPC_URL', 'BLOCKCHAIN_PRIVATE_KEY'];
-    this.isBlockchainAvailable = requiredVars.every(v => !!process.env[v]);
+    const requiredVars = ["BLOCKCHAIN_RPC_URL", "BLOCKCHAIN_PRIVATE_KEY"];
+    this.isBlockchainAvailable = requiredVars.every((v) => !!process.env[v]);
 
     if (!this.isBlockchainAvailable) {
-      logger.warn('[BlockchainTransactionJob] Blockchain not configured - jobs will be simulated', {
-        missingVars: requiredVars.filter(v => !process.env[v]),
-      });
+      logger.warn(
+        "[BlockchainTransactionJob] Blockchain not configured - jobs will be simulated",
+        {
+          missingVars: requiredVars.filter((v) => !process.env[v]),
+        },
+      );
     }
   }
 
@@ -96,18 +105,19 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    * @returns Transaction result
    */
   async process(job: Job<BlockchainJobData>): Promise<BlockchainJobResult> {
-    const { type, batchId, eventId, producerId, userId, payload, priority } = job.data;
+    const { type, batchId, eventId, producerId, userId, payload, priority } =
+      job.data;
 
     try {
       // Step 1: Validate job data
-      await this.reportProgress(job, 10, 'Validating transaction data');
+      await this.reportProgress(job, 10, "Validating transaction data");
       const validationResult = await this.validateJobData(job.data);
 
       if (!validationResult.valid) {
         return {
           success: false,
           error: validationResult.error,
-          errorCode: 'VALIDATION_ERROR',
+          errorCode: "VALIDATION_ERROR",
         };
       }
 
@@ -117,7 +127,7 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
       }
 
       // Step 2: Prepare transaction
-      await this.reportProgress(job, 20, 'Preparing transaction');
+      await this.reportProgress(job, 20, "Preparing transaction");
       const txData = await this.prepareTransaction(type, {
         batchId,
         eventId,
@@ -126,19 +136,19 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
       });
 
       // Step 3: Estimate gas
-      await this.reportProgress(job, 30, 'Estimating gas');
-      const gasEstimate = await this.estimateGas(txData, priority || 'normal');
+      await this.reportProgress(job, 30, "Estimating gas");
+      const gasEstimate = await this.estimateGas(txData, priority || "normal");
 
       // Step 4: Send transaction
-      await this.reportProgress(job, 50, 'Sending transaction');
+      await this.reportProgress(job, 50, "Sending transaction");
       const txHash = await this.sendTransaction(txData, gasEstimate);
 
       // Step 5: Wait for confirmation
-      await this.reportProgress(job, 70, 'Waiting for confirmation');
+      await this.reportProgress(job, 70, "Waiting for confirmation");
       const receipt = await this.waitForConfirmation(txHash);
 
       // Step 6: Update database
-      await this.reportProgress(job, 90, 'Updating database');
+      await this.reportProgress(job, 90, "Updating database");
       await this.updateDatabaseWithTxHash(type, {
         batchId,
         eventId,
@@ -148,9 +158,9 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
       });
 
       // Step 7: Complete
-      await this.reportProgress(job, 100, 'Complete');
+      await this.reportProgress(job, 100, "Complete");
 
-      logger.info('[BlockchainTransactionJob] Transaction completed', {
+      logger.info("[BlockchainTransactionJob] Transaction completed", {
         type,
         txHash: receipt.transactionHash,
         blockNumber: receipt.blockNumber,
@@ -165,7 +175,7 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[BlockchainTransactionJob] Transaction failed', {
+      logger.error("[BlockchainTransactionJob] Transaction failed", {
         type,
         batchId,
         eventId,
@@ -185,22 +195,27 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    * Simulate transaction when blockchain is not available
    * Useful for development/testing
    */
-  private async simulateTransaction(job: Job<BlockchainJobData>): Promise<BlockchainJobResult> {
+  private async simulateTransaction(
+    job: Job<BlockchainJobData>,
+  ): Promise<BlockchainJobResult> {
     const { type, batchId, eventId, producerId } = job.data;
 
-    logger.info('[BlockchainTransactionJob] Simulating transaction (blockchain not configured)', {
-      type,
-      batchId,
-      eventId,
-    });
+    logger.info(
+      "[BlockchainTransactionJob] Simulating transaction (blockchain not configured)",
+      {
+        type,
+        batchId,
+        eventId,
+      },
+    );
 
     // Simulate processing time
     await this.delay(1000 + Math.random() * 2000);
 
     // Generate fake transaction hash
     const fakeHash = `0x${Array.from({ length: 64 }, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    ).join('')}`;
+      Math.floor(Math.random() * 16).toString(16),
+    ).join("")}`;
 
     const fakeBlockNumber = Math.floor(Math.random() * 1000000) + 10000000;
 
@@ -225,15 +240,15 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    * Validate job data before processing
    */
   private async validateJobData(
-    data: BlockchainJobData
+    data: BlockchainJobData,
   ): Promise<{ valid: boolean; error?: string }> {
     const { type, batchId, eventId, producerId } = data;
 
     // Validate based on transaction type
     switch (type) {
-      case 'batch-creation':
+      case "batch-creation":
         if (!batchId) {
-          return { valid: false, error: 'batchId required for batch-creation' };
+          return { valid: false, error: "batchId required for batch-creation" };
         }
         const batch = await prisma.batch.findUnique({ where: { id: batchId } });
         if (!batch) {
@@ -241,29 +256,36 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
         }
         break;
 
-      case 'event-creation':
+      case "event-creation":
         if (!eventId) {
-          return { valid: false, error: 'eventId required for event-creation' };
+          return { valid: false, error: "eventId required for event-creation" };
         }
-        const event = await prisma.traceabilityEvent.findUnique({ where: { id: eventId } });
+        const event = await prisma.traceabilityEvent.findUnique({
+          where: { id: eventId },
+        });
         if (!event) {
           return { valid: false, error: `Event not found: ${eventId}` };
         }
         break;
 
-      case 'certification':
+      case "certification":
         if (!producerId) {
-          return { valid: false, error: 'producerId required for certification' };
+          return {
+            valid: false,
+            error: "producerId required for certification",
+          };
         }
-        const producer = await prisma.producer.findUnique({ where: { id: producerId } });
+        const producer = await prisma.producer.findUnique({
+          where: { id: producerId },
+        });
         if (!producer) {
           return { valid: false, error: `Producer not found: ${producerId}` };
         }
         break;
 
-      case 'transfer':
+      case "transfer":
         if (!batchId) {
-          return { valid: false, error: 'batchId required for transfer' };
+          return { valid: false, error: "batchId required for transfer" };
         }
         break;
 
@@ -278,13 +300,13 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    * Prepare transaction data based on type
    */
   private async prepareTransaction(
-    type: BlockchainJobData['type'],
+    type: BlockchainJobData["type"],
     data: {
       batchId?: string;
       eventId?: string;
       producerId?: string;
       payload?: Record<string, unknown>;
-    }
+    },
   ): Promise<Record<string, unknown>> {
     // This would be implemented with actual contract calls
     // For now, return placeholder data
@@ -300,7 +322,7 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    */
   private async estimateGas(
     _txData: Record<string, unknown>,
-    priority: 'low' | 'normal' | 'high'
+    priority: "low" | "normal" | "high",
   ): Promise<{ gasLimit: number; gasPrice: number }> {
     // Placeholder implementation
     const baseGasLimit = 100000;
@@ -308,7 +330,9 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
 
     return {
       gasLimit: Math.min(baseGasLimit * 1.2, this.config.maxGasLimit),
-      gasPrice: Math.floor(baseGasPrice * this.config.gasPriceMultiplier[priority]),
+      gasPrice: Math.floor(
+        baseGasPrice * this.config.gasPriceMultiplier[priority],
+      ),
     };
   }
 
@@ -317,41 +341,45 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
    */
   private async sendTransaction(
     _txData: Record<string, unknown>,
-    _gasEstimate: { gasLimit: number; gasPrice: number }
+    _gasEstimate: { gasLimit: number; gasPrice: number },
   ): Promise<string> {
     // Placeholder implementation - would use ethers.js or web3.js
     // Returns transaction hash
-    throw new Error('Blockchain integration not implemented');
+    throw new Error("Blockchain integration not implemented");
   }
 
   /**
    * Wait for transaction confirmation
    */
   private async waitForConfirmation(
-    _txHash: string
-  ): Promise<{ transactionHash: string; blockNumber: number; gasUsed: number }> {
+    _txHash: string,
+  ): Promise<{
+    transactionHash: string;
+    blockNumber: number;
+    gasUsed: number;
+  }> {
     // Placeholder implementation
-    throw new Error('Blockchain integration not implemented');
+    throw new Error("Blockchain integration not implemented");
   }
 
   /**
    * Update database with transaction hash
    */
   private async updateDatabaseWithTxHash(
-    type: BlockchainJobData['type'],
+    type: BlockchainJobData["type"],
     data: {
       batchId?: string;
       eventId?: string;
       producerId?: string;
       txHash: string;
       blockNumber: number;
-    }
+    },
   ): Promise<void> {
     const { batchId, eventId, producerId, txHash, blockNumber } = data;
 
     switch (type) {
-      case 'batch-creation':
-      case 'transfer':
+      case "batch-creation":
+      case "transfer":
         if (batchId) {
           // Batch model uses blockchainHash field
           await prisma.batch.update({
@@ -360,15 +388,18 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
               blockchainHash: txHash,
             },
           });
-          logger.info('[BlockchainTransactionJob] Batch blockchain hash updated', {
-            batchId,
-            txHash,
-            blockNumber,
-          });
+          logger.info(
+            "[BlockchainTransactionJob] Batch blockchain hash updated",
+            {
+              batchId,
+              txHash,
+              blockNumber,
+            },
+          );
         }
         break;
 
-      case 'event-creation':
+      case "event-creation":
         if (eventId) {
           // TraceabilityEvent model uses blockchainTxHash field
           await prisma.traceabilityEvent.update({
@@ -377,23 +408,29 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
               blockchainTxHash: txHash,
             },
           });
-          logger.info('[BlockchainTransactionJob] Event blockchain hash updated', {
-            eventId,
-            txHash,
-            blockNumber,
-          });
+          logger.info(
+            "[BlockchainTransactionJob] Event blockchain hash updated",
+            {
+              eventId,
+              txHash,
+              blockNumber,
+            },
+          );
         }
         break;
 
-      case 'certification':
+      case "certification":
         if (producerId) {
           // Certification doesn't have a blockchain field in schema
           // Log the result for now
-          logger.info('[BlockchainTransactionJob] Certification recorded on blockchain', {
-            producerId,
-            txHash,
-            blockNumber,
-          });
+          logger.info(
+            "[BlockchainTransactionJob] Certification recorded on blockchain",
+            {
+              producerId,
+              txHash,
+              blockNumber,
+            },
+          );
         }
         break;
     }
@@ -405,14 +442,14 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
   private getErrorCode(error: Error): string {
     const message = error.message.toLowerCase();
 
-    if (message.includes('insufficient funds')) return 'INSUFFICIENT_FUNDS';
-    if (message.includes('gas')) return 'GAS_ERROR';
-    if (message.includes('nonce')) return 'NONCE_ERROR';
-    if (message.includes('timeout')) return 'TIMEOUT';
-    if (message.includes('rejected')) return 'REJECTED';
-    if (message.includes('network')) return 'NETWORK_ERROR';
+    if (message.includes("insufficient funds")) return "INSUFFICIENT_FUNDS";
+    if (message.includes("gas")) return "GAS_ERROR";
+    if (message.includes("nonce")) return "NONCE_ERROR";
+    if (message.includes("timeout")) return "TIMEOUT";
+    if (message.includes("rejected")) return "REJECTED";
+    if (message.includes("network")) return "NETWORK_ERROR";
 
-    return 'UNKNOWN_ERROR';
+    return "UNKNOWN_ERROR";
   }
 
   /**
@@ -426,7 +463,7 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
       /validation/i,
     ];
 
-    return !nonRetryablePatterns.some(pattern => pattern.test(error.message));
+    return !nonRetryablePatterns.some((pattern) => pattern.test(error.message));
   }
 
   /**
@@ -436,7 +473,7 @@ export class BlockchainTransactionJob extends BaseJobProcessor<BlockchainJobData
     await super.onFailed(job, error);
 
     // Could implement alerting here for critical blockchain failures
-    logger.error('[BlockchainTransactionJob] Transaction failed permanently', {
+    logger.error("[BlockchainTransactionJob] Transaction failed permanently", {
       type: job.data.type,
       batchId: job.data.batchId,
       eventId: job.data.eventId,

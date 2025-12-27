@@ -17,10 +17,16 @@
  * @author AgroBridge Engineering Team
  */
 
-import { PrismaClient, NotificationChannel, NotificationType, NotificationPriority, NotificationStatus } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
-import logger from '../../shared/utils/logger.js';
-import { notificationQueue } from './queue/NotificationQueue.js';
+import {
+  PrismaClient,
+  NotificationChannel,
+  NotificationType,
+  NotificationPriority,
+  NotificationStatus,
+} from "@prisma/client";
+import { v4 as uuidv4 } from "uuid";
+import logger from "../../shared/utils/logger.js";
+import { notificationQueue } from "./queue/NotificationQueue.js";
 import type {
   SendNotificationInput,
   SendNotificationResult,
@@ -30,7 +36,7 @@ import type {
   CertificateNotificationDetails,
   SensorAlertDetails,
   OrderNotificationDetails,
-} from './types/index.js';
+} from "./types/index.js";
 
 // Prisma client for database operations
 const prisma = new PrismaClient();
@@ -65,7 +71,9 @@ export class NotificationOrchestrator {
    * @param input - Notification input
    * @returns Promise with send result
    */
-  async sendNotification(input: SendNotificationInput): Promise<SendNotificationResult> {
+  async sendNotification(
+    input: SendNotificationInput,
+  ): Promise<SendNotificationResult> {
     try {
       // Validate input
       const validation = this.validateInput(input);
@@ -85,28 +93,34 @@ export class NotificationOrchestrator {
       if (!user) {
         return {
           success: false,
-          error: 'User not found',
+          error: "User not found",
         };
       }
 
       if (!user.isActive) {
         return {
           success: false,
-          error: 'User account is inactive',
+          error: "User account is inactive",
         };
       }
 
       // Determine channels based on user preferences
-      const channels = await this.determineChannels(input.userId, input.channels);
+      const channels = await this.determineChannels(
+        input.userId,
+        input.channels,
+      );
 
       if (channels.length === 0) {
-        logger.warn('[NotificationOrchestrator] User has disabled all notification channels', {
-          userId: input.userId,
-          requestedChannels: input.channels,
-        });
+        logger.warn(
+          "[NotificationOrchestrator] User has disabled all notification channels",
+          {
+            userId: input.userId,
+            requestedChannels: input.channels,
+          },
+        );
         return {
           success: false,
-          error: 'User has disabled all requested notification channels',
+          error: "User has disabled all requested notification channels",
         };
       }
 
@@ -125,10 +139,10 @@ export class NotificationOrchestrator {
         body: input.body,
         data: input.data,
         channels,
-        priority: input.priority || 'NORMAL',
+        priority: input.priority || "NORMAL",
       });
 
-      logger.info('[NotificationOrchestrator] Notification queued', {
+      logger.info("[NotificationOrchestrator] Notification queued", {
         notificationId: notification.id,
         userId: input.userId,
         type: input.type,
@@ -142,7 +156,7 @@ export class NotificationOrchestrator {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationOrchestrator] Failed to send notification', {
+      logger.error("[NotificationOrchestrator] Failed to send notification", {
         error: err.message,
         userId: input.userId,
         type: input.type,
@@ -165,17 +179,15 @@ export class NotificationOrchestrator {
    */
   async sendToUsers(
     userIds: string[],
-    input: Omit<SendNotificationInput, 'userId'>
+    input: Omit<SendNotificationInput, "userId">,
   ): Promise<SendNotificationResult[]> {
     const results = await Promise.all(
-      userIds.map((userId) =>
-        this.sendNotification({ ...input, userId })
-      )
+      userIds.map((userId) => this.sendNotification({ ...input, userId })),
     );
 
     const successCount = results.filter((r) => r.success).length;
 
-    logger.info('[NotificationOrchestrator] Batch notification sent', {
+    logger.info("[NotificationOrchestrator] Batch notification sent", {
       totalUsers: userIds.length,
       successCount,
       failureCount: userIds.length - successCount,
@@ -194,12 +206,12 @@ export class NotificationOrchestrator {
    */
   async sendBatchCreatedNotification(
     userId: string,
-    details: BatchNotificationDetails
+    details: BatchNotificationDetails,
   ): Promise<SendNotificationResult> {
     return await this.sendNotification({
       userId,
-      type: 'BATCH_CREATED',
-      title: 'Lote Registrado',
+      type: "BATCH_CREATED",
+      title: "Lote Registrado",
       body: `Tu lote ${details.batchId} ha sido registrado exitosamente en la blockchain`,
       data: {
         batchId: details.batchId,
@@ -207,8 +219,8 @@ export class NotificationOrchestrator {
         variety: details.variety,
         origin: details.origin,
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'NORMAL',
+      channels: ["PUSH", "EMAIL"],
+      priority: "NORMAL",
     });
   }
 
@@ -218,18 +230,18 @@ export class NotificationOrchestrator {
   async sendBatchStatusNotification(
     userId: string,
     batchId: string,
-    newStatus: string
+    newStatus: string,
   ): Promise<SendNotificationResult> {
     const statusMessages: Record<string, string> = {
-      IN_TRANSIT: 'Tu lote está en tránsito',
-      ARRIVED: 'Tu lote ha llegado a destino',
-      DELIVERED: 'Tu lote ha sido entregado',
-      REJECTED: 'Tu lote ha sido rechazado',
+      IN_TRANSIT: "Tu lote está en tránsito",
+      ARRIVED: "Tu lote ha llegado a destino",
+      DELIVERED: "Tu lote ha sido entregado",
+      REJECTED: "Tu lote ha sido rechazado",
     };
 
     return await this.sendNotification({
       userId,
-      type: 'BATCH_STATUS_CHANGED',
+      type: "BATCH_STATUS_CHANGED",
       title: `Actualización de Lote ${batchId}`,
       body: statusMessages[newStatus] || `Estado actualizado: ${newStatus}`,
       data: {
@@ -237,8 +249,8 @@ export class NotificationOrchestrator {
         status: newStatus,
         deepLink: `/batches/${batchId}`,
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'NORMAL',
+      channels: ["PUSH", "EMAIL"],
+      priority: "NORMAL",
     });
   }
 
@@ -247,12 +259,12 @@ export class NotificationOrchestrator {
    */
   async sendCertificateReadyNotification(
     userId: string,
-    details: CertificateNotificationDetails
+    details: CertificateNotificationDetails,
   ): Promise<SendNotificationResult> {
     return await this.sendNotification({
       userId,
-      type: 'CERTIFICATE_READY',
-      title: 'Certificado Blockchain Listo',
+      type: "CERTIFICATE_READY",
+      title: "Certificado Blockchain Listo",
       body: `Tu certificado para el lote ${details.batchId} está disponible para descargar`,
       data: {
         batchId: details.batchId,
@@ -260,8 +272,8 @@ export class NotificationOrchestrator {
         blockchainHash: details.blockchainHash,
         deepLink: `/certificates/${details.batchId}`,
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'HIGH',
+      channels: ["PUSH", "EMAIL"],
+      priority: "HIGH",
     });
   }
 
@@ -271,11 +283,11 @@ export class NotificationOrchestrator {
    */
   async sendSensorAlertNotification(
     userId: string,
-    details: SensorAlertDetails
+    details: SensorAlertDetails,
   ): Promise<SendNotificationResult> {
     return await this.sendNotification({
       userId,
-      type: 'SENSOR_ALERT',
+      type: "SENSOR_ALERT",
       title: `Alerta: ${details.sensorType}`,
       body: `${details.sensorType} excedió el umbral (${details.currentValue}${details.unit} > ${details.threshold}${details.unit})`,
       data: {
@@ -285,10 +297,10 @@ export class NotificationOrchestrator {
         unit: details.unit,
         location: details.location,
         batchId: details.batchId,
-        deepLink: '/sensors',
+        deepLink: "/sensors",
       },
-      channels: ['PUSH', 'SMS', 'EMAIL'], // Critical: include SMS
-      priority: 'CRITICAL',
+      channels: ["PUSH", "SMS", "EMAIL"], // Critical: include SMS
+      priority: "CRITICAL",
     });
   }
 
@@ -297,13 +309,13 @@ export class NotificationOrchestrator {
    */
   async sendOrderStatusNotification(
     userId: string,
-    details: OrderNotificationDetails
+    details: OrderNotificationDetails,
   ): Promise<SendNotificationResult> {
     const statusMessages: Record<string, string> = {
-      CONFIRMED: 'Tu orden ha sido confirmada',
-      SHIPPED: 'Tu orden ha sido enviada',
-      DELIVERED: 'Tu orden ha sido entregada',
-      CANCELLED: 'Tu orden ha sido cancelada',
+      CONFIRMED: "Tu orden ha sido confirmada",
+      SHIPPED: "Tu orden ha sido enviada",
+      DELIVERED: "Tu orden ha sido entregada",
+      CANCELLED: "Tu orden ha sido cancelada",
     };
 
     return await this.sendNotification({
@@ -318,8 +330,8 @@ export class NotificationOrchestrator {
         trackingUrl: details.trackingUrl,
         deepLink: `/orders/${details.orderId}`,
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'NORMAL',
+      channels: ["PUSH", "EMAIL"],
+      priority: "NORMAL",
     });
   }
 
@@ -330,17 +342,17 @@ export class NotificationOrchestrator {
     userId: string,
     orderId: string,
     amount: number,
-    currency: string = 'MXN'
+    currency: string = "MXN",
   ): Promise<SendNotificationResult> {
-    const formattedAmount = new Intl.NumberFormat('es-MX', {
-      style: 'currency',
+    const formattedAmount = new Intl.NumberFormat("es-MX", {
+      style: "currency",
       currency,
     }).format(amount);
 
     return await this.sendNotification({
       userId,
-      type: 'PAYMENT_RECEIVED',
-      title: 'Pago Recibido',
+      type: "PAYMENT_RECEIVED",
+      title: "Pago Recibido",
       body: `Hemos recibido tu pago de ${formattedAmount} para la orden #${orderId}`,
       data: {
         orderId,
@@ -348,8 +360,8 @@ export class NotificationOrchestrator {
         currency,
         deepLink: `/orders/${orderId}`,
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'HIGH',
+      channels: ["PUSH", "EMAIL"],
+      priority: "HIGH",
     });
   }
 
@@ -358,18 +370,18 @@ export class NotificationOrchestrator {
    */
   async sendProducerWhitelistedNotification(
     userId: string,
-    producerName: string
+    producerName: string,
   ): Promise<SendNotificationResult> {
     return await this.sendNotification({
       userId,
-      type: 'PRODUCER_WHITELISTED',
-      title: 'Cuenta Verificada',
+      type: "PRODUCER_WHITELISTED",
+      title: "Cuenta Verificada",
       body: `¡Felicidades! ${producerName} ha sido verificado y puede comenzar a registrar lotes`,
       data: {
-        deepLink: '/dashboard',
+        deepLink: "/dashboard",
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'HIGH',
+      channels: ["PUSH", "EMAIL"],
+      priority: "HIGH",
     });
   }
 
@@ -379,7 +391,7 @@ export class NotificationOrchestrator {
   async sendSystemAnnouncement(
     title: string,
     body: string,
-    data?: NotificationData
+    data?: NotificationData,
   ): Promise<{ success: boolean; sentCount: number }> {
     try {
       // Get all active users
@@ -391,13 +403,13 @@ export class NotificationOrchestrator {
       const results = await this.sendToUsers(
         users.map((u) => u.id),
         {
-          type: 'SYSTEM_ANNOUNCEMENT',
+          type: "SYSTEM_ANNOUNCEMENT",
           title,
           body,
           data,
-          channels: ['PUSH', 'EMAIL'],
-          priority: 'NORMAL',
-        }
+          channels: ["PUSH", "EMAIL"],
+          priority: "NORMAL",
+        },
       );
 
       const successCount = results.filter((r) => r.success).length;
@@ -408,7 +420,7 @@ export class NotificationOrchestrator {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationOrchestrator] System announcement failed', {
+      logger.error("[NotificationOrchestrator] System announcement failed", {
         error: err.message,
       });
       return { success: false, sentCount: 0 };
@@ -420,18 +432,18 @@ export class NotificationOrchestrator {
    */
   async sendWelcomeNotification(
     userId: string,
-    userName: string
+    userName: string,
   ): Promise<SendNotificationResult> {
     return await this.sendNotification({
       userId,
-      type: 'WELCOME',
+      type: "WELCOME",
       title: `Bienvenido a AgroBridge, ${userName}!`,
-      body: 'Gracias por unirte a nuestra plataforma de trazabilidad agrícola. Comienza registrando tu primer lote.',
+      body: "Gracias por unirte a nuestra plataforma de trazabilidad agrícola. Comienza registrando tu primer lote.",
       data: {
-        deepLink: '/dashboard',
+        deepLink: "/dashboard",
       },
-      channels: ['PUSH', 'EMAIL'],
-      priority: 'NORMAL',
+      channels: ["PUSH", "EMAIL"],
+      priority: "NORMAL",
     });
   }
 
@@ -454,7 +466,10 @@ export class NotificationOrchestrator {
   /**
    * Get user notifications
    */
-  async getUserNotifications(userId: string, options?: GetNotificationsOptions) {
+  async getUserNotifications(
+    userId: string,
+    options?: GetNotificationsOptions,
+  ) {
     return await prisma.notification.findMany({
       where: {
         userId,
@@ -462,7 +477,7 @@ export class NotificationOrchestrator {
         ...(options?.type ? { type: options.type } : {}),
         ...(options?.status ? { status: options.status } : {}),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip: options?.offset || 0,
       take: options?.limit || 50,
     });
@@ -476,7 +491,7 @@ export class NotificationOrchestrator {
       where: {
         userId,
         readAt: null,
-        status: { in: ['SENT', 'DELIVERED'] },
+        status: { in: ["SENT", "DELIVERED"] },
       },
     });
   }
@@ -512,7 +527,7 @@ export class NotificationOrchestrator {
       where: { id: notificationId },
       data: {
         clickedAt: new Date(),
-        status: 'CLICKED',
+        status: "CLICKED",
       },
     });
   }
@@ -534,10 +549,10 @@ export class NotificationOrchestrator {
 
     const [total, pending, sent, delivered, failed, read] = await Promise.all([
       prisma.notification.count({ where }),
-      prisma.notification.count({ where: { ...where, status: 'PENDING' } }),
-      prisma.notification.count({ where: { ...where, status: 'SENT' } }),
-      prisma.notification.count({ where: { ...where, status: 'DELIVERED' } }),
-      prisma.notification.count({ where: { ...where, status: 'FAILED' } }),
+      prisma.notification.count({ where: { ...where, status: "PENDING" } }),
+      prisma.notification.count({ where: { ...where, status: "SENT" } }),
+      prisma.notification.count({ where: { ...where, status: "DELIVERED" } }),
+      prisma.notification.count({ where: { ...where, status: "FAILED" } }),
       prisma.notification.count({ where: { ...where, readAt: { not: null } } }),
     ]);
 
@@ -560,33 +575,36 @@ export class NotificationOrchestrator {
   /**
    * Validate notification input
    */
-  private validateInput(input: SendNotificationInput): { valid: boolean; error?: string } {
-    if (!input.userId || input.userId.trim() === '') {
-      return { valid: false, error: 'userId is required' };
+  private validateInput(input: SendNotificationInput): {
+    valid: boolean;
+    error?: string;
+  } {
+    if (!input.userId || input.userId.trim() === "") {
+      return { valid: false, error: "userId is required" };
     }
 
     if (!input.type) {
-      return { valid: false, error: 'type is required' };
+      return { valid: false, error: "type is required" };
     }
 
-    if (!input.title || input.title.trim() === '') {
-      return { valid: false, error: 'title is required' };
+    if (!input.title || input.title.trim() === "") {
+      return { valid: false, error: "title is required" };
     }
 
     if (input.title.length > 255) {
-      return { valid: false, error: 'title must be less than 255 characters' };
+      return { valid: false, error: "title must be less than 255 characters" };
     }
 
-    if (!input.body || input.body.trim() === '') {
-      return { valid: false, error: 'body is required' };
+    if (!input.body || input.body.trim() === "") {
+      return { valid: false, error: "body is required" };
     }
 
     if (input.body.length > 5000) {
-      return { valid: false, error: 'body must be less than 5000 characters' };
+      return { valid: false, error: "body must be less than 5000 characters" };
     }
 
     if (!input.channels || input.channels.length === 0) {
-      return { valid: false, error: 'At least one channel is required' };
+      return { valid: false, error: "At least one channel is required" };
     }
 
     return { valid: true };
@@ -597,7 +615,7 @@ export class NotificationOrchestrator {
    */
   private async determineChannels(
     userId: string,
-    requestedChannels: NotificationChannel[]
+    requestedChannels: NotificationChannel[],
   ): Promise<NotificationChannel[]> {
     try {
       // Get user preferences
@@ -613,15 +631,15 @@ export class NotificationOrchestrator {
       // Filter channels based on user preferences
       const allowedChannels = requestedChannels.filter((channel) => {
         switch (channel) {
-          case 'PUSH':
+          case "PUSH":
             return preferences.pushEnabled !== false;
-          case 'EMAIL':
+          case "EMAIL":
             return preferences.emailEnabled !== false;
-          case 'SMS':
+          case "SMS":
             return preferences.smsEnabled !== false;
-          case 'WHATSAPP':
+          case "WHATSAPP":
             return preferences.whatsappEnabled !== false;
-          case 'IN_APP':
+          case "IN_APP":
             return true; // Always allow in-app
           default:
             return true;
@@ -631,7 +649,7 @@ export class NotificationOrchestrator {
       return allowedChannels;
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationOrchestrator] Failed to determine channels', {
+      logger.error("[NotificationOrchestrator] Failed to determine channels", {
         error: err.message,
         userId,
       });
@@ -645,7 +663,7 @@ export class NotificationOrchestrator {
    * Create notification record in database
    */
   private async createNotification(
-    input: SendNotificationInput & { channels: NotificationChannel[] }
+    input: SendNotificationInput & { channels: NotificationChannel[] },
   ) {
     const notification = await prisma.notification.create({
       data: {
@@ -657,8 +675,8 @@ export class NotificationOrchestrator {
         data: input.data || {},
         imageUrl: input.imageUrl,
         channels: input.channels,
-        priority: input.priority || 'NORMAL',
-        status: 'PENDING',
+        priority: input.priority || "NORMAL",
+        status: "PENDING",
         expiresAt: input.expiresAt,
       },
     });

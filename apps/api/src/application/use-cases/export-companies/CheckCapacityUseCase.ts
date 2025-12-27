@@ -3,8 +3,8 @@
  * Checks if an export company has capacity for more farmers or certificates
  */
 
-import { ExportCompanyService } from '../../../domain/services/ExportCompanyService.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
+import { ExportCompanyService } from "../../../domain/services/ExportCompanyService.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
 
 export interface CheckCapacityRequest {
   companyId: string;
@@ -33,7 +33,7 @@ export class CheckCapacityUseCase {
 
   async execute(request: CheckCapacityRequest): Promise<CheckCapacityResponse> {
     if (!request.companyId) {
-      throw new ValidationError('Company ID is required');
+      throw new ValidationError("Company ID is required");
     }
 
     const [farmerCapacity, certCapacity] = await Promise.all([
@@ -48,14 +48,24 @@ export class CheckCapacityUseCase {
         reason: farmerCapacity.reason,
         currentCount: farmerCapacity.currentCount,
         limit: farmerCapacity.limit,
-        percentUsed: farmerCapacity.limit === -1 ? 0 : Math.round((farmerCapacity.currentCount / farmerCapacity.limit) * 100),
+        percentUsed:
+          farmerCapacity.limit === -1
+            ? 0
+            : Math.round(
+                (farmerCapacity.currentCount / farmerCapacity.limit) * 100,
+              ),
       },
       certificates: {
         canIssue: certCapacity.canIssue,
         reason: certCapacity.reason,
         currentCount: certCapacity.currentCount,
         limit: certCapacity.limit,
-        percentUsed: certCapacity.limit === -1 ? 0 : Math.round((certCapacity.currentCount / certCapacity.limit) * 100),
+        percentUsed:
+          certCapacity.limit === -1
+            ? 0
+            : Math.round(
+                (certCapacity.currentCount / certCapacity.limit) * 100,
+              ),
       },
     };
   }

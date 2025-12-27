@@ -3,7 +3,7 @@
  * Application layer for organic certificate operations
  */
 
-import { OrganicCertificateService } from '../../../domain/services/OrganicCertificateService.js';
+import { OrganicCertificateService } from "../../../domain/services/OrganicCertificateService.js";
 import {
   OrganicCertificate,
   OrganicCertificateStatus,
@@ -14,8 +14,8 @@ import {
   CropType,
   CertificationStandard,
   ViewData,
-} from '../../../domain/entities/OrganicCertificate.js';
-import { OrganicCertificateWithDetails } from '../../../domain/repositories/IOrganicCertificateRepository.js';
+} from "../../../domain/entities/OrganicCertificate.js";
+import { OrganicCertificateWithDetails } from "../../../domain/repositories/IOrganicCertificateRepository.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CREATE CERTIFICATE USE CASE (Primary Workflow)
@@ -38,7 +38,9 @@ export interface CreateCertificateOutput {
 export class CreateCertificateUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: CreateCertificateInput): Promise<CreateCertificateOutput> {
+  async execute(
+    input: CreateCertificateInput,
+  ): Promise<CreateCertificateOutput> {
     const request: CertificateGenerationRequest = {
       farmerId: input.farmerId,
       fieldIds: input.fieldIds,
@@ -52,7 +54,8 @@ export class CreateCertificateUseCase {
 
     return {
       certificate,
-      message: 'Certificate generation in progress. You will be notified when ready.',
+      message:
+        "Certificate generation in progress. You will be notified when ready.",
     };
   }
 }
@@ -142,15 +145,17 @@ export interface ApproveCertificateOutput {
 export class ApproveCertificateUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: ApproveCertificateInput): Promise<ApproveCertificateOutput> {
+  async execute(
+    input: ApproveCertificateInput,
+  ): Promise<ApproveCertificateOutput> {
     const certificate = await this.service.approveCertificate(
       input.certificateId,
-      input.reviewerId
+      input.reviewerId,
     );
 
     return {
       certificate,
-      message: 'Certificate approved successfully',
+      message: "Certificate approved successfully",
     };
   }
 }
@@ -173,11 +178,13 @@ export interface RejectCertificateOutput {
 export class RejectCertificateUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: RejectCertificateInput): Promise<RejectCertificateOutput> {
+  async execute(
+    input: RejectCertificateInput,
+  ): Promise<RejectCertificateOutput> {
     const certificate = await this.service.rejectCertificate(
       input.certificateId,
       input.reviewerId,
-      input.reason
+      input.reason,
     );
 
     return {
@@ -204,15 +211,17 @@ export interface RevokeCertificateOutput {
 export class RevokeCertificateUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: RevokeCertificateInput): Promise<RevokeCertificateOutput> {
+  async execute(
+    input: RevokeCertificateInput,
+  ): Promise<RevokeCertificateOutput> {
     const certificate = await this.service.revokeCertificate(
       input.certificateId,
-      input.reason
+      input.reason,
     );
 
     return {
       certificate,
-      message: 'Certificate revoked',
+      message: "Certificate revoked",
     };
   }
 }
@@ -231,10 +240,12 @@ export interface VerifyCertificateOutput extends PublicCertificateData {}
 export class VerifyCertificateUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: VerifyCertificateInput): Promise<VerifyCertificateOutput> {
+  async execute(
+    input: VerifyCertificateInput,
+  ): Promise<VerifyCertificateOutput> {
     return this.service.verifyCertificateByCertNumber(
       input.certificateNumber,
-      input.viewData
+      input.viewData,
     );
   }
 }
@@ -252,7 +263,9 @@ export interface GetBlockchainProofOutput extends BlockchainProof {}
 export class GetBlockchainProofUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: GetBlockchainProofInput): Promise<GetBlockchainProofOutput> {
+  async execute(
+    input: GetBlockchainProofInput,
+  ): Promise<GetBlockchainProofOutput> {
     return this.service.verifyBlockchainProof(input.certificateNumber);
   }
 }
@@ -273,11 +286,13 @@ export interface DownloadCertificatePdfOutput {
 export class DownloadCertificatePdfUseCase {
   constructor(private readonly service: OrganicCertificateService) {}
 
-  async execute(input: DownloadCertificatePdfInput): Promise<DownloadCertificatePdfOutput> {
+  async execute(
+    input: DownloadCertificatePdfInput,
+  ): Promise<DownloadCertificatePdfOutput> {
     const certificate = await this.service.getCertificate(input.certificateId);
 
     if (!certificate.pdfUrl) {
-      throw new Error('PDF not yet generated for this certificate');
+      throw new Error("PDF not yet generated for this certificate");
     }
 
     return {

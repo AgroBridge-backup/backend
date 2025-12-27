@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { z, AnyZodObject } from 'zod';
+import { Request, Response, NextFunction } from "express";
+import { z, AnyZodObject } from "zod";
 
 export const validateRequest = (schema: AnyZodObject) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -13,7 +13,7 @@ export const validateRequest = (schema: AnyZodObject) => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          error: 'VALIDATION_ERROR',
+          error: "VALIDATION_ERROR",
           details: error.errors,
         });
       }

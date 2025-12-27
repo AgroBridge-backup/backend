@@ -11,32 +11,37 @@
  * @author AgroBridge Engineering Team
  */
 
-import logger from '../../shared/utils/logger.js';
+import logger from "../../shared/utils/logger.js";
 import {
   s3StorageProvider,
   S3StorageProvider,
   type S3UploadResult,
   type PresignedUrlResult,
   type S3FileMetadata,
-} from './providers/S3StorageProvider.js';
-import { fileValidator, FileValidator, FileTypeConfig, type FileValidationOptions } from './FileValidator.js';
+} from "./providers/S3StorageProvider.js";
+import {
+  fileValidator,
+  FileValidator,
+  FileTypeConfig,
+  type FileValidationOptions,
+} from "./FileValidator.js";
 import {
   imageOptimizer,
   ImageOptimizer,
   type OptimizationResult,
   type ResponsiveImageSizes,
-} from './ImageOptimizer.js';
+} from "./ImageOptimizer.js";
 
 /**
  * Upload types for different use cases
  */
 export type UploadType =
-  | 'image'
-  | 'document'
-  | 'certificate'
-  | 'avatar'
-  | 'batch_photo'
-  | 'general';
+  | "image"
+  | "document"
+  | "certificate"
+  | "avatar"
+  | "batch_photo"
+  | "general";
 
 /**
  * Upload options
@@ -104,7 +109,7 @@ export class StorageService {
   constructor(
     private storage: S3StorageProvider = s3StorageProvider,
     private validator: FileValidator = fileValidator,
-    private optimizer: ImageOptimizer = imageOptimizer
+    private optimizer: ImageOptimizer = imageOptimizer,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -124,14 +129,14 @@ export class StorageService {
     buffer: Buffer,
     filename: string,
     contentType: string,
-    options: UploadOptions = {}
+    options: UploadOptions = {},
   ): Promise<UploadResult> {
     const {
-      type = 'general',
+      type = "general",
       optimize = true,
       generateThumbnail = false,
       generateResponsive = false,
-      prefix = 'uploads',
+      prefix = "uploads",
       metadata = {},
     } = options;
 
@@ -142,12 +147,12 @@ export class StorageService {
         return {
           success: false,
           validation,
-          error: validation.errors.join('; '),
+          error: validation.errors.join("; "),
         };
       }
 
       // Determine if this is an image
-      const isImage = contentType.startsWith('image/');
+      const isImage = contentType.startsWith("image/");
 
       // Optimize image if applicable
       let uploadBuffer = buffer;
@@ -190,7 +195,7 @@ export class StorageService {
 
       // Generate thumbnail if requested
       if (isImage && generateThumbnail) {
-        const thumbnailKey = key.replace(/(\.[^.]+)$/, '_thumb$1');
+        const thumbnailKey = key.replace(/(\.[^.]+)$/, "_thumb$1");
         const thumbnail = await this.optimizer.generateThumbnail(buffer, {
           width: 200,
           height: 200,
@@ -198,7 +203,7 @@ export class StorageService {
 
         await this.storage.upload(thumbnail, {
           key: thumbnailKey,
-          contentType: 'image/webp',
+          contentType: "image/webp",
         });
 
         result.thumbnail = {
@@ -209,21 +214,22 @@ export class StorageService {
 
       // Generate responsive images if requested
       if (isImage && generateResponsive) {
-        const responsiveSet = await this.optimizer.generateResponsiveSet(buffer);
-        const baseKey = key.replace(/(\.[^.]+)$/, '');
+        const responsiveSet =
+          await this.optimizer.generateResponsiveSet(buffer);
+        const baseKey = key.replace(/(\.[^.]+)$/, "");
 
         const [smallResult, mediumResult, largeResult] = await Promise.all([
           this.storage.upload(responsiveSet.small, {
             key: `${baseKey}_small.webp`,
-            contentType: 'image/webp',
+            contentType: "image/webp",
           }),
           this.storage.upload(responsiveSet.medium, {
             key: `${baseKey}_medium.webp`,
-            contentType: 'image/webp',
+            contentType: "image/webp",
           }),
           this.storage.upload(responsiveSet.large, {
             key: `${baseKey}_large.webp`,
-            contentType: 'image/webp',
+            contentType: "image/webp",
           }),
         ]);
 
@@ -235,14 +241,14 @@ export class StorageService {
       }
 
       logger.info({
-        message: 'File uploaded successfully',
+        message: "File uploaded successfully",
         meta: { key, type, size: uploadBuffer.length },
       });
 
       return result;
     } catch (error) {
       logger.error({
-        message: 'File upload failed',
+        message: "File upload failed",
         meta: { filename, type, error: (error as Error).message },
       });
 
@@ -264,10 +270,10 @@ export class StorageService {
   async uploadAvatar(
     buffer: Buffer,
     filename: string,
-    userId: string
+    userId: string,
   ): Promise<UploadResult> {
-    return this.upload(buffer, filename, 'image/jpeg', {
-      type: 'avatar',
+    return this.upload(buffer, filename, "image/jpeg", {
+      type: "avatar",
       optimize: true,
       generateThumbnail: true,
       prefix: `avatars/${userId}`,
@@ -285,10 +291,10 @@ export class StorageService {
   async uploadBatchPhoto(
     buffer: Buffer,
     filename: string,
-    batchId: string
+    batchId: string,
   ): Promise<UploadResult> {
-    return this.upload(buffer, filename, 'image/jpeg', {
-      type: 'batch_photo',
+    return this.upload(buffer, filename, "image/jpeg", {
+      type: "batch_photo",
       optimize: true,
       generateThumbnail: true,
       generateResponsive: true,
@@ -308,11 +314,11 @@ export class StorageService {
     buffer: Buffer,
     filename: string,
     producerId: string,
-    contentType: string
+    contentType: string,
   ): Promise<UploadResult> {
     return this.upload(buffer, filename, contentType, {
-      type: 'certificate',
-      optimize: contentType.startsWith('image/'),
+      type: "certificate",
+      optimize: contentType.startsWith("image/"),
       prefix: `certificates/${producerId}`,
     });
   }
@@ -328,13 +334,15 @@ export class StorageService {
    * @returns Presigned URL result
    */
   async getPresignedUploadUrl(
-    request: PresignedUploadRequest
-  ): Promise<PresignedUrlResult & { validation: { valid: boolean; errors: string[] } }> {
+    request: PresignedUploadRequest,
+  ): Promise<
+    PresignedUrlResult & { validation: { valid: boolean; errors: string[] } }
+  > {
     const {
       filename,
       contentType,
-      type = 'general',
-      prefix = 'uploads',
+      type = "general",
+      prefix = "uploads",
       expiresIn = 3600,
       metadata,
     } = request;
@@ -368,7 +376,7 @@ export class StorageService {
    */
   async getPresignedDownloadUrl(
     key: string,
-    expiresIn: number = 3600
+    expiresIn: number = 3600,
   ): Promise<string> {
     return this.storage.getPresignedDownloadUrl(key, undefined, expiresIn);
   }
@@ -392,8 +400,8 @@ export class StorageService {
    * @param key - Main file S3 key
    */
   async deleteWithVariants(key: string): Promise<void> {
-    const baseKey = key.replace(/(\.[^.]+)$/, '');
-    const extension = key.match(/\.[^.]+$/)?.[0] || '';
+    const baseKey = key.replace(/(\.[^.]+)$/, "");
+    const extension = key.match(/\.[^.]+$/)?.[0] || "";
 
     const keysToDelete = [
       key, // Original
@@ -412,7 +420,7 @@ export class StorageService {
         } catch {
           // Ignore errors for non-existent files
         }
-      })
+      }),
     );
   }
 
@@ -455,14 +463,14 @@ export class StorageService {
    */
   private validateByType(buffer: Buffer, filename: string, type: UploadType) {
     switch (type) {
-      case 'image':
-      case 'batch_photo':
+      case "image":
+      case "batch_photo":
         return this.validator.validateImage(buffer, filename);
-      case 'document':
+      case "document":
         return this.validator.validateDocument(buffer, filename);
-      case 'certificate':
+      case "certificate":
         return this.validator.validateCertificate(buffer, filename);
-      case 'avatar':
+      case "avatar":
         return this.validator.validateAvatar(buffer, filename);
       default:
         return this.validator.validate(buffer, filename);
@@ -475,7 +483,7 @@ export class StorageService {
   private preValidate(
     filename: string,
     contentType: string,
-    type: UploadType
+    type: UploadType,
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
@@ -495,17 +503,23 @@ export class StorageService {
     }
 
     // Check content type
-    if (config.allowedMimeTypes && !config.allowedMimeTypes.includes(contentType)) {
+    if (
+      config.allowedMimeTypes &&
+      !config.allowedMimeTypes.includes(contentType)
+    ) {
       errors.push(
-        `Content type "${contentType}" not allowed. Allowed: ${config.allowedMimeTypes.join(', ')}`
+        `Content type "${contentType}" not allowed. Allowed: ${config.allowedMimeTypes.join(", ")}`,
       );
     }
 
     // Check extension
-    const extension = filename.match(/\.[^.]+$/)?.[0].toLowerCase() || '';
-    if (config.allowedExtensions && !config.allowedExtensions.includes(extension)) {
+    const extension = filename.match(/\.[^.]+$/)?.[0].toLowerCase() || "";
+    if (
+      config.allowedExtensions &&
+      !config.allowedExtensions.includes(extension)
+    ) {
       errors.push(
-        `Extension "${extension}" not allowed. Allowed: ${config.allowedExtensions.join(', ')}`
+        `Extension "${extension}" not allowed. Allowed: ${config.allowedExtensions.join(", ")}`,
       );
     }
 
@@ -520,14 +534,14 @@ export class StorageService {
    */
   private async optimizeByType(
     buffer: Buffer,
-    type: UploadType
+    type: UploadType,
   ): Promise<OptimizationResult> {
     switch (type) {
-      case 'avatar':
+      case "avatar":
         return this.optimizer.optimizeAvatar(buffer);
-      case 'batch_photo':
+      case "batch_photo":
         return this.optimizer.optimizeBatchPhoto(buffer);
-      case 'certificate':
+      case "certificate":
         return this.optimizer.optimizeCertificate(buffer);
       default:
         return this.optimizer.optimize(buffer);

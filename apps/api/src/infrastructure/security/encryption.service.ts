@@ -3,13 +3,13 @@
  * AES-256-GCM encryption for sensitive data and PII
  */
 
-import crypto from 'crypto';
-import { logger } from '../logging/logger.js';
+import crypto from "crypto";
+import { logger } from "../logging/logger.js";
 
 /**
  * Encryption configuration
  */
-const ALGORITHM = 'aes-256-gcm';
+const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16; // 128 bits for GCM
 const AUTH_TAG_LENGTH = 16; // 128 bits
 const SALT_LENGTH = 32;
@@ -22,22 +22,22 @@ const PBKDF2_ITERATIONS = 100000;
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
-    throw new Error('ENCRYPTION_KEY environment variable is required');
+    throw new Error("ENCRYPTION_KEY environment variable is required");
   }
 
   // If key is base64 encoded (44 chars = 32 bytes in base64)
   if (key.length === 44) {
-    return Buffer.from(key, 'base64');
+    return Buffer.from(key, "base64");
   }
 
   // If key is hex encoded (64 chars = 32 bytes in hex)
   if (key.length === 64) {
-    return Buffer.from(key, 'hex');
+    return Buffer.from(key, "hex");
   }
 
   // Otherwise derive key from password using configurable salt
   const salt = getEncryptionSalt();
-  return crypto.pbkdf2Sync(key, salt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+  return crypto.pbkdf2Sync(key, salt, PBKDF2_ITERATIONS, KEY_LENGTH, "sha512");
 }
 
 /**
@@ -50,32 +50,32 @@ function getEncryptionSalt(): Buffer {
   if (salt) {
     // If salt is base64 encoded (44 chars = 32 bytes)
     if (salt.length === 44) {
-      return Buffer.from(salt, 'base64');
+      return Buffer.from(salt, "base64");
     }
     // If salt is hex encoded (64 chars = 32 bytes)
     if (salt.length === 64) {
-      return Buffer.from(salt, 'hex');
+      return Buffer.from(salt, "hex");
     }
     // Use raw string as salt (not recommended but supported)
     if (salt.length >= 16) {
-      return Buffer.from(salt, 'utf8');
+      return Buffer.from(salt, "utf8");
     }
   }
 
   // In production, salt is required
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     throw new Error(
-      'ENCRYPTION_SALT environment variable is required in production. ' +
-      'Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"'
+      "ENCRYPTION_SALT environment variable is required in production. " +
+        "Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
     );
   }
 
   // Development/test fallback with warning
   logger.warn(
-    'ENCRYPTION_SALT not configured - using development fallback. ' +
-    'This is NOT secure for production!'
+    "ENCRYPTION_SALT not configured - using development fallback. " +
+      "This is NOT secure for production!",
   );
-  return crypto.createHash('sha256').update('agrobridge-dev-salt-v1').digest();
+  return crypto.createHash("sha256").update("agrobridge-dev-salt-v1").digest();
 }
 
 /**
@@ -91,7 +91,10 @@ export interface EncryptedData {
 /**
  * Encrypt data using AES-256-GCM
  */
-export function encrypt(plaintext: string, additionalData?: string): EncryptedData {
+export function encrypt(
+  plaintext: string,
+  additionalData?: string,
+): EncryptedData {
   try {
     const key = getEncryptionKey();
     const iv = crypto.randomBytes(IV_LENGTH);
@@ -99,56 +102,64 @@ export function encrypt(plaintext: string, additionalData?: string): EncryptedDa
     const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
     if (additionalData) {
-      cipher.setAAD(Buffer.from(additionalData, 'utf8'));
+      cipher.setAAD(Buffer.from(additionalData, "utf8"));
     }
 
-    let ciphertext = cipher.update(plaintext, 'utf8', 'base64');
-    ciphertext += cipher.final('base64');
+    let ciphertext = cipher.update(plaintext, "utf8", "base64");
+    ciphertext += cipher.final("base64");
 
     const authTag = cipher.getAuthTag();
 
     return {
       ciphertext,
-      iv: iv.toString('base64'),
-      authTag: authTag.toString('base64'),
+      iv: iv.toString("base64"),
+      authTag: authTag.toString("base64"),
       version: 1,
     };
   } catch (error) {
-    logger.error('Encryption failed', { error });
-    throw new Error('Encryption failed');
+    logger.error("Encryption failed", { error });
+    throw new Error("Encryption failed");
   }
 }
 
 /**
  * Decrypt data using AES-256-GCM
  */
-export function decrypt(encrypted: EncryptedData, additionalData?: string): string {
+export function decrypt(
+  encrypted: EncryptedData,
+  additionalData?: string,
+): string {
   try {
     const key = getEncryptionKey();
-    const iv = Buffer.from(encrypted.iv, 'base64');
-    const authTag = Buffer.from(encrypted.authTag, 'base64');
+    const iv = Buffer.from(encrypted.iv, "base64");
+    const authTag = Buffer.from(encrypted.authTag, "base64");
 
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
 
     if (additionalData) {
-      decipher.setAAD(Buffer.from(additionalData, 'utf8'));
+      decipher.setAAD(Buffer.from(additionalData, "utf8"));
     }
 
-    let plaintext = decipher.update(encrypted.ciphertext, 'base64', 'utf8');
-    plaintext += decipher.final('utf8');
+    let plaintext = decipher.update(encrypted.ciphertext, "base64", "utf8");
+    plaintext += decipher.final("utf8");
 
     return plaintext;
   } catch (error) {
-    logger.error('Decryption failed', { error });
-    throw new Error('Decryption failed - data may be corrupted or key mismatch');
+    logger.error("Decryption failed", { error });
+    throw new Error(
+      "Decryption failed - data may be corrupted or key mismatch",
+    );
   }
 }
 
 /**
  * Encrypt data to a single string (for database storage)
  */
-export function encryptToString(plaintext: string, additionalData?: string): string {
+export function encryptToString(
+  plaintext: string,
+  additionalData?: string,
+): string {
   const encrypted = encrypt(plaintext, additionalData);
   return `v${encrypted.version}:${encrypted.iv}:${encrypted.authTag}:${encrypted.ciphertext}`;
 }
@@ -156,10 +167,13 @@ export function encryptToString(plaintext: string, additionalData?: string): str
 /**
  * Decrypt from single string format
  */
-export function decryptFromString(encryptedString: string, additionalData?: string): string {
-  const parts = encryptedString.split(':');
+export function decryptFromString(
+  encryptedString: string,
+  additionalData?: string,
+): string {
+  const parts = encryptedString.split(":");
   if (parts.length !== 4) {
-    throw new Error('Invalid encrypted data format');
+    throw new Error("Invalid encrypted data format");
   }
 
   const version = parseInt(parts[0].substring(1), 10);
@@ -177,32 +191,36 @@ export function decryptFromString(encryptedString: string, additionalData?: stri
  * Hash data using SHA-256
  */
 export function hash(data: string): string {
-  return crypto.createHash('sha256').update(data).digest('hex');
+  return crypto.createHash("sha256").update(data).digest("hex");
 }
 
 /**
  * Hash data using SHA-512
  */
 export function hashSha512(data: string): string {
-  return crypto.createHash('sha512').update(data).digest('hex');
+  return crypto.createHash("sha512").update(data).digest("hex");
 }
 
 /**
  * Generate HMAC
  */
 export function hmac(data: string, secret?: string): string {
-  const key = secret || getEncryptionKey().toString('hex');
-  return crypto.createHmac('sha256', key).update(data).digest('hex');
+  const key = secret || getEncryptionKey().toString("hex");
+  return crypto.createHmac("sha256", key).update(data).digest("hex");
 }
 
 /**
  * Verify HMAC
  */
-export function verifyHmac(data: string, expectedHmac: string, secret?: string): boolean {
+export function verifyHmac(
+  data: string,
+  expectedHmac: string,
+  secret?: string,
+): boolean {
   const calculatedHmac = hmac(data, secret);
   return crypto.timingSafeEqual(
-    Buffer.from(calculatedHmac, 'hex'),
-    Buffer.from(expectedHmac, 'hex')
+    Buffer.from(calculatedHmac, "hex"),
+    Buffer.from(expectedHmac, "hex"),
   );
 }
 
@@ -216,37 +234,40 @@ export function hashPassword(password: string): string {
     salt,
     PBKDF2_ITERATIONS,
     KEY_LENGTH,
-    'sha512'
+    "sha512",
   );
-  return `pbkdf2:sha512:${PBKDF2_ITERATIONS}:${salt.toString('base64')}:${hash.toString('base64')}`;
+  return `pbkdf2:sha512:${PBKDF2_ITERATIONS}:${salt.toString("base64")}:${hash.toString("base64")}`;
 }
 
 /**
  * Verify password hash
  */
-export function verifyPassword(password: string, hashedPassword: string): boolean {
+export function verifyPassword(
+  password: string,
+  hashedPassword: string,
+): boolean {
   try {
-    const parts = hashedPassword.split(':');
-    if (parts.length !== 5 || parts[0] !== 'pbkdf2') {
+    const parts = hashedPassword.split(":");
+    if (parts.length !== 5 || parts[0] !== "pbkdf2") {
       return false;
     }
 
     const algorithm = parts[1];
     const iterations = parseInt(parts[2], 10);
-    const salt = Buffer.from(parts[3], 'base64');
-    const expectedHash = Buffer.from(parts[4], 'base64');
+    const salt = Buffer.from(parts[3], "base64");
+    const expectedHash = Buffer.from(parts[4], "base64");
 
     const computedHash = crypto.pbkdf2Sync(
       password,
       salt,
       iterations,
       expectedHash.length,
-      algorithm
+      algorithm,
     );
 
     return crypto.timingSafeEqual(computedHash, expectedHash);
   } catch (error) {
-    logger.error('Password verification failed', { error });
+    logger.error("Password verification failed", { error });
     return false;
   }
 }
@@ -255,7 +276,7 @@ export function verifyPassword(password: string, hashedPassword: string): boolea
  * Generate secure random token
  */
 export function generateToken(length: number = 32): string {
-  return crypto.randomBytes(length).toString('hex');
+  return crypto.randomBytes(length).toString("hex");
 }
 
 /**
@@ -277,7 +298,13 @@ export function generateUuid(): string {
  */
 export function deriveKey(password: string, salt?: Buffer): Buffer {
   const useSalt = salt || crypto.randomBytes(SALT_LENGTH);
-  return crypto.pbkdf2Sync(password, useSalt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+  return crypto.pbkdf2Sync(
+    password,
+    useSalt,
+    PBKDF2_ITERATIONS,
+    KEY_LENGTH,
+    "sha512",
+  );
 }
 
 /**
@@ -285,12 +312,12 @@ export function deriveKey(password: string, salt?: Buffer): Buffer {
  */
 export function encryptObject<T extends Record<string, unknown>>(
   obj: T,
-  fieldsToEncrypt: (keyof T)[]
+  fieldsToEncrypt: (keyof T)[],
 ): T {
   const result = { ...obj };
   for (const field of fieldsToEncrypt) {
     const value = obj[field];
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       (result as any)[field] = encryptToString(value);
     }
   }
@@ -302,17 +329,17 @@ export function encryptObject<T extends Record<string, unknown>>(
  */
 export function decryptObject<T extends Record<string, unknown>>(
   obj: T,
-  fieldsToDecrypt: (keyof T)[]
+  fieldsToDecrypt: (keyof T)[],
 ): T {
   const result = { ...obj };
   for (const field of fieldsToDecrypt) {
     const value = obj[field];
-    if (typeof value === 'string' && value.startsWith('v1:')) {
+    if (typeof value === "string" && value.startsWith("v1:")) {
       try {
         (result as any)[field] = decryptFromString(value);
       } catch (error) {
         // Keep encrypted value if decryption fails
-        logger.warn('Failed to decrypt field', { field });
+        logger.warn("Failed to decrypt field", { field });
       }
     }
   }
@@ -322,25 +349,31 @@ export function decryptObject<T extends Record<string, unknown>>(
 /**
  * Mask sensitive data for logging
  */
-export function maskSensitiveData(data: string, visibleChars: number = 4): string {
+export function maskSensitiveData(
+  data: string,
+  visibleChars: number = 4,
+): string {
   if (data.length <= visibleChars * 2) {
-    return '*'.repeat(data.length);
+    return "*".repeat(data.length);
   }
   const start = data.substring(0, visibleChars);
   const end = data.substring(data.length - visibleChars);
-  return `${start}${'*'.repeat(data.length - visibleChars * 2)}${end}`;
+  return `${start}${"*".repeat(data.length - visibleChars * 2)}${end}`;
 }
 
 /**
  * Mask email address
  */
 export function maskEmail(email: string): string {
-  const [localPart, domain] = email.split('@');
+  const [localPart, domain] = email.split("@");
   if (!domain) return maskSensitiveData(email);
 
-  const maskedLocal = localPart.length <= 2
-    ? '*'.repeat(localPart.length)
-    : localPart[0] + '*'.repeat(localPart.length - 2) + localPart[localPart.length - 1];
+  const maskedLocal =
+    localPart.length <= 2
+      ? "*".repeat(localPart.length)
+      : localPart[0] +
+        "*".repeat(localPart.length - 2) +
+        localPart[localPart.length - 1];
 
   return `${maskedLocal}@${domain}`;
 }
@@ -349,9 +382,9 @@ export function maskEmail(email: string): string {
  * Mask phone number
  */
 export function maskPhone(phone: string): string {
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length < 6) return '*'.repeat(cleaned.length);
-  return '*'.repeat(cleaned.length - 4) + cleaned.slice(-4);
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length < 6) return "*".repeat(cleaned.length);
+  return "*".repeat(cleaned.length - 4) + cleaned.slice(-4);
 }
 
 /**
@@ -368,7 +401,7 @@ export function secureCompare(a: string, b: string): boolean {
  * Generate encryption key (for key rotation)
  */
 export function generateEncryptionKey(): string {
-  return crypto.randomBytes(KEY_LENGTH).toString('base64');
+  return crypto.randomBytes(KEY_LENGTH).toString("base64");
 }
 
 /**
@@ -378,12 +411,12 @@ export function validateEncryptionKey(key: string): boolean {
   try {
     if (key.length === 44) {
       // Base64 encoded 256-bit key
-      const buffer = Buffer.from(key, 'base64');
+      const buffer = Buffer.from(key, "base64");
       return buffer.length === KEY_LENGTH;
     }
     if (key.length === 64) {
       // Hex encoded 256-bit key
-      const buffer = Buffer.from(key, 'hex');
+      const buffer = Buffer.from(key, "hex");
       return buffer.length === KEY_LENGTH;
     }
     return false;
@@ -399,7 +432,7 @@ export function reEncrypt(
   encryptedString: string,
   oldKey: string,
   newKey: string,
-  additionalData?: string
+  additionalData?: string,
 ): string {
   // Temporarily set old key
   const originalKey = process.env.ENCRYPTION_KEY;

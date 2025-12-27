@@ -16,7 +16,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { Decimal } from '@prisma/client/runtime/library';
+import type { Decimal } from "@prisma/client/runtime/library";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // ENUMS - Mirror Prisma enums for runtime use
@@ -26,74 +26,74 @@ import type { Decimal } from '@prisma/client/runtime/library';
  * Liquidity pool operational status
  */
 export enum PoolStatus {
-  ACTIVE = 'ACTIVE',
-  PAUSED = 'PAUSED',
-  CLOSED = 'CLOSED',
-  LIQUIDATING = 'LIQUIDATING',
+  ACTIVE = "ACTIVE",
+  PAUSED = "PAUSED",
+  CLOSED = "CLOSED",
+  LIQUIDATING = "LIQUIDATING",
 }
 
 /**
  * Risk tier classification
  */
 export enum RiskTier {
-  A = 'A',
-  B = 'B',
-  C = 'C',
+  A = "A",
+  B = "B",
+  C = "C",
 }
 
 /**
  * Investor type classification
  */
 export enum InvestorType {
-  INDIVIDUAL = 'INDIVIDUAL',
-  INSTITUTION = 'INSTITUTION',
-  FUND = 'FUND',
+  INDIVIDUAL = "INDIVIDUAL",
+  INSTITUTION = "INSTITUTION",
+  FUND = "FUND",
 }
 
 /**
  * Investor participation status
  */
 export enum InvestorStatus {
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  WITHDRAWN = 'WITHDRAWN',
-  PENDING_KYC = 'PENDING_KYC',
+  ACTIVE = "ACTIVE",
+  SUSPENDED = "SUSPENDED",
+  WITHDRAWN = "WITHDRAWN",
+  PENDING_KYC = "PENDING_KYC",
 }
 
 /**
  * Pool transaction types
  */
 export enum PoolTransactionType {
-  CAPITAL_DEPOSIT = 'CAPITAL_DEPOSIT',
-  CAPITAL_WITHDRAWAL = 'CAPITAL_WITHDRAWAL',
-  ADVANCE_DISBURSEMENT = 'ADVANCE_DISBURSEMENT',
-  ADVANCE_REPAYMENT = 'ADVANCE_REPAYMENT',
-  FEE_COLLECTION = 'FEE_COLLECTION',
-  INTEREST_DISTRIBUTION = 'INTEREST_DISTRIBUTION',
-  PENALTY_FEE = 'PENALTY_FEE',
-  ADJUSTMENT = 'ADJUSTMENT',
-  RESERVE_ALLOCATION = 'RESERVE_ALLOCATION',
+  CAPITAL_DEPOSIT = "CAPITAL_DEPOSIT",
+  CAPITAL_WITHDRAWAL = "CAPITAL_WITHDRAWAL",
+  ADVANCE_DISBURSEMENT = "ADVANCE_DISBURSEMENT",
+  ADVANCE_REPAYMENT = "ADVANCE_REPAYMENT",
+  FEE_COLLECTION = "FEE_COLLECTION",
+  INTEREST_DISTRIBUTION = "INTEREST_DISTRIBUTION",
+  PENALTY_FEE = "PENALTY_FEE",
+  ADJUSTMENT = "ADJUSTMENT",
+  RESERVE_ALLOCATION = "RESERVE_ALLOCATION",
 }
 
 /**
  * Rebalancing strategy types
  */
 export enum RebalancingStrategyType {
-  CONSERVATIVE = 'CONSERVATIVE',
-  MODERATE = 'MODERATE',
-  AGGRESSIVE = 'AGGRESSIVE',
-  CUSTOM = 'CUSTOM',
+  CONSERVATIVE = "CONSERVATIVE",
+  MODERATE = "MODERATE",
+  AGGRESSIVE = "AGGRESSIVE",
+  CUSTOM = "CUSTOM",
 }
 
 /**
  * Allocation priority modes
  */
 export enum AllocationPriority {
-  LOWEST_RISK = 'LOWEST_RISK',
-  HIGHEST_AVAILABLE = 'HIGHEST_AVAILABLE',
-  BEST_RETURN = 'BEST_RETURN',
-  ROUND_ROBIN = 'ROUND_ROBIN',
-  WEIGHTED = 'WEIGHTED',
+  LOWEST_RISK = "LOWEST_RISK",
+  HIGHEST_AVAILABLE = "HIGHEST_AVAILABLE",
+  BEST_RETURN = "BEST_RETURN",
+  ROUND_ROBIN = "ROUND_ROBIN",
+  WEIGHTED = "WEIGHTED",
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -108,7 +108,7 @@ export const POOL_CONSTRAINTS = {
   MAX_SINGLE_ADVANCE_RATIO: 10, // Max 10% of pool per advance
   MIN_ADVANCE_AMOUNT: 5000,
   MAX_ADVANCE_AMOUNT: 500000,
-  DEFAULT_CURRENCY: 'MXN',
+  DEFAULT_CURRENCY: "MXN",
   CACHE_TTL_SECONDS: 60,
 } as const;
 
@@ -124,7 +124,10 @@ export const RISK_TIER_ADVANCE_PERCENTAGES: Record<RiskTier, number> = {
 /**
  * Risk tier to fee percentage mapping (farmer fee)
  */
-export const RISK_TIER_FEES: Record<RiskTier, { farmerFee: number; buyerFee: number }> = {
+export const RISK_TIER_FEES: Record<
+  RiskTier,
+  { farmerFee: number; buyerFee: number }
+> = {
   [RiskTier.A]: { farmerFee: 2.0, buyerFee: 1.0 },
   [RiskTier.B]: { farmerFee: 2.5, buyerFee: 1.25 },
   [RiskTier.C]: { farmerFee: 3.5, buyerFee: 1.75 },
@@ -136,8 +139,8 @@ export const RISK_TIER_FEES: Record<RiskTier, { farmerFee: number; buyerFee: num
 export const PERFORMANCE_THRESHOLDS = {
   HEALTHY_DEFAULT_RATE: 0.02, // 2%
   WARNING_DEFAULT_RATE: 0.05, // 5%
-  CRITICAL_DEFAULT_RATE: 0.10, // 10%
-  MIN_UTILIZATION: 0.50, // 50%
+  CRITICAL_DEFAULT_RATE: 0.1, // 10%
+  MIN_UTILIZATION: 0.5, // 50%
   TARGET_UTILIZATION: 0.75, // 75%
   MAX_UTILIZATION: 0.85, // 85% (15% reserve)
 } as const;
@@ -223,18 +226,18 @@ export interface PoolAllocationResult {
  * Allocation error codes
  */
 export enum AllocationErrorCode {
-  INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
-  POOL_PAUSED = 'POOL_PAUSED',
-  POOL_NOT_FOUND = 'POOL_NOT_FOUND',
-  AMOUNT_BELOW_MINIMUM = 'AMOUNT_BELOW_MINIMUM',
-  AMOUNT_ABOVE_MAXIMUM = 'AMOUNT_ABOVE_MAXIMUM',
-  RISK_TIER_MISMATCH = 'RISK_TIER_MISMATCH',
-  RESERVE_RATIO_VIOLATION = 'RESERVE_RATIO_VIOLATION',
-  EXPOSURE_LIMIT_EXCEEDED = 'EXPOSURE_LIMIT_EXCEEDED',
-  FARMER_LIMIT_EXCEEDED = 'FARMER_LIMIT_EXCEEDED',
-  CONCURRENT_ALLOCATION = 'CONCURRENT_ALLOCATION',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  INSUFFICIENT_FUNDS = "INSUFFICIENT_FUNDS",
+  POOL_PAUSED = "POOL_PAUSED",
+  POOL_NOT_FOUND = "POOL_NOT_FOUND",
+  AMOUNT_BELOW_MINIMUM = "AMOUNT_BELOW_MINIMUM",
+  AMOUNT_ABOVE_MAXIMUM = "AMOUNT_ABOVE_MAXIMUM",
+  RISK_TIER_MISMATCH = "RISK_TIER_MISMATCH",
+  RESERVE_RATIO_VIOLATION = "RESERVE_RATIO_VIOLATION",
+  EXPOSURE_LIMIT_EXCEEDED = "EXPOSURE_LIMIT_EXCEEDED",
+  FARMER_LIMIT_EXCEEDED = "FARMER_LIMIT_EXCEEDED",
+  CONCURRENT_ALLOCATION = "CONCURRENT_ALLOCATION",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  INTERNAL_ERROR = "INTERNAL_ERROR",
 }
 
 /**
@@ -248,9 +251,18 @@ export interface CapitalReleaseRequest {
   /** Amount being released */
   amount: number;
   /** Type of release */
-  releaseType: 'PARTIAL_REPAYMENT' | 'FULL_REPAYMENT' | 'DEFAULT_RECOVERY' | 'ADJUSTMENT';
+  releaseType:
+    | "PARTIAL_REPAYMENT"
+    | "FULL_REPAYMENT"
+    | "DEFAULT_RECOVERY"
+    | "ADJUSTMENT";
   /** Source of funds */
-  source: 'BUYER_PAYMENT' | 'FARMER_PAYMENT' | 'INSURANCE' | 'COLLECTIONS' | 'OTHER';
+  source:
+    | "BUYER_PAYMENT"
+    | "FARMER_PAYMENT"
+    | "INSURANCE"
+    | "COLLECTIONS"
+    | "OTHER";
   /** Payment reference */
   paymentReference?: string;
   /** Fees collected */
@@ -326,7 +338,7 @@ export interface PoolBalanceChange {
   balanceBefore: PoolBalance;
   balanceAfter: PoolBalance;
   relatedEntityId?: string;
-  relatedEntityType?: 'ADVANCE' | 'INVESTOR' | 'ADJUSTMENT';
+  relatedEntityType?: "ADVANCE" | "INVESTOR" | "ADJUSTMENT";
   timestamp: Date;
   userId?: string;
 }
@@ -422,26 +434,26 @@ export interface PoolPerformanceMetrics {
  */
 export interface PoolHealthAssessment {
   poolId: string;
-  overallHealth: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+  overallHealth: "HEALTHY" | "WARNING" | "CRITICAL";
   healthScore: number; // 0-100
   indicators: {
     liquidity: {
-      status: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+      status: "HEALTHY" | "WARNING" | "CRITICAL";
       reserveRatio: number;
       daysOfRunway: number;
     };
     performance: {
-      status: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+      status: "HEALTHY" | "WARNING" | "CRITICAL";
       defaultRate: number;
       profitMargin: number;
     };
     concentration: {
-      status: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+      status: "HEALTHY" | "WARNING" | "CRITICAL";
       topExposurePercentage: number;
       diversificationScore: number;
     };
     activity: {
-      status: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+      status: "HEALTHY" | "WARNING" | "CRITICAL";
       recentAdvances: number;
       growthRate: number;
     };
@@ -486,7 +498,13 @@ export interface RebalancingStrategy {
  * Triggers that initiate rebalancing
  */
 export interface RebalancingTrigger {
-  type: 'UTILIZATION_HIGH' | 'UTILIZATION_LOW' | 'RESERVE_LOW' | 'DEFAULT_SPIKE' | 'SCHEDULED' | 'MANUAL';
+  type:
+    | "UTILIZATION_HIGH"
+    | "UTILIZATION_LOW"
+    | "RESERVE_LOW"
+    | "DEFAULT_SPIKE"
+    | "SCHEDULED"
+    | "MANUAL";
   threshold?: number;
   schedule?: string; // Cron expression for scheduled
   cooldownMinutes: number;
@@ -496,7 +514,12 @@ export interface RebalancingTrigger {
  * Actions taken during rebalancing
  */
 export interface RebalancingAction {
-  type: 'PAUSE_POOL' | 'TRANSFER_CAPITAL' | 'ADJUST_LIMITS' | 'ALERT_ADMIN' | 'AUTO_INVEST';
+  type:
+    | "PAUSE_POOL"
+    | "TRANSFER_CAPITAL"
+    | "ADJUST_LIMITS"
+    | "ALERT_ADMIN"
+    | "AUTO_INVEST";
   targetPoolId?: string;
   amount?: number;
   priority: number;
@@ -562,7 +585,7 @@ export interface InvestorPortfolio {
   recentPayouts: Array<{
     poolId: string;
     amount: number;
-    type: 'INTEREST' | 'PRINCIPAL' | 'BONUS';
+    type: "INTEREST" | "PRINCIPAL" | "BONUS";
     paidAt: Date;
   }>;
 }
@@ -637,11 +660,14 @@ export interface TransactionSummary {
     startDate: Date;
     endDate: Date;
   };
-  byType: Record<PoolTransactionType, {
-    count: number;
-    totalAmount: number;
-    netAmount: number;
-  }>;
+  byType: Record<
+    PoolTransactionType,
+    {
+      count: number;
+      totalAmount: number;
+      netAmount: number;
+    }
+  >;
   totals: {
     inflows: number;
     outflows: number;
@@ -826,7 +852,10 @@ export function getAdvancePercentageForTier(tier: RiskTier): number {
 /**
  * Get fees for risk tier
  */
-export function getFeesForTier(tier: RiskTier): { farmerFee: number; buyerFee: number } {
+export function getFeesForTier(tier: RiskTier): {
+  farmerFee: number;
+  buyerFee: number;
+} {
   return RISK_TIER_FEES[tier];
 }
 
@@ -871,12 +900,12 @@ export function assessPoolHealth(
   defaultRate: number,
   utilizationRate: number,
   reserveRatio: number,
-): 'HEALTHY' | 'WARNING' | 'CRITICAL' {
+): "HEALTHY" | "WARNING" | "CRITICAL" {
   if (
     defaultRate >= PERFORMANCE_THRESHOLDS.CRITICAL_DEFAULT_RATE ||
     reserveRatio < 5
   ) {
-    return 'CRITICAL';
+    return "CRITICAL";
   }
 
   if (
@@ -884,10 +913,10 @@ export function assessPoolHealth(
     utilizationRate > PERFORMANCE_THRESHOLDS.MAX_UTILIZATION * 100 ||
     reserveRatio < 10
   ) {
-    return 'WARNING';
+    return "WARNING";
   }
 
-  return 'HEALTHY';
+  return "HEALTHY";
 }
 
 /**

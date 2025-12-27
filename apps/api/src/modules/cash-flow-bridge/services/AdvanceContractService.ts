@@ -17,12 +17,12 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import type { Redis } from 'ioredis';
+import { PrismaClient, Prisma } from "@prisma/client";
+import type { Redis } from "ioredis";
 import {
   type CreditScoringService,
   createCreditScoringService,
-} from '../../credit-scoring/services/credit-scoring.service.js';
+} from "../../credit-scoring/services/credit-scoring.service.js";
 import {
   type LiquidityPoolService,
   createLiquidityPoolService,
@@ -31,7 +31,7 @@ import {
   RiskTier,
   getFeesForTier,
   getAdvancePercentageForTier,
-} from '../../liquidity-pools/index.js';
+} from "../../liquidity-pools/index.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // FINANCIAL CALCULATION UTILITIES
@@ -42,8 +42,8 @@ import {
  * Rounding modes for financial calculations
  */
 const ROUNDING = {
-  UP: 0,      // Round away from zero
-  DOWN: 1,    // Round towards zero
+  UP: 0, // Round away from zero
+  DOWN: 1, // Round towards zero
   HALF_UP: 4, // Round half away from zero (banker's rounding)
 } as const;
 
@@ -85,8 +85,8 @@ const ROUNDING_STRATEGIES = {
  * Safe conversion from Prisma.Decimal to number
  */
 function toNumber(value: number | string | Prisma.Decimal): number {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return parseFloat(value);
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return parseFloat(value);
   return Number(value.toString());
 }
 
@@ -98,44 +98,44 @@ function toNumber(value: number | string | Prisma.Decimal): number {
  * Advance status enum (mirrors Prisma)
  */
 export enum AdvanceStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  UNDER_REVIEW = 'UNDER_REVIEW',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  DISBURSED = 'DISBURSED',
-  ACTIVE = 'ACTIVE',
-  DELIVERY_IN_PROGRESS = 'DELIVERY_IN_PROGRESS',
-  DELIVERY_CONFIRMED = 'DELIVERY_CONFIRMED',
-  PARTIALLY_REPAID = 'PARTIALLY_REPAID',
-  COMPLETED = 'COMPLETED',
-  OVERDUE = 'OVERDUE',
-  DEFAULT_WARNING = 'DEFAULT_WARNING',
-  DEFAULTED = 'DEFAULTED',
-  IN_COLLECTIONS = 'IN_COLLECTIONS',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
-  DISPUTED = 'DISPUTED',
+  PENDING_APPROVAL = "PENDING_APPROVAL",
+  UNDER_REVIEW = "UNDER_REVIEW",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  DISBURSED = "DISBURSED",
+  ACTIVE = "ACTIVE",
+  DELIVERY_IN_PROGRESS = "DELIVERY_IN_PROGRESS",
+  DELIVERY_CONFIRMED = "DELIVERY_CONFIRMED",
+  PARTIALLY_REPAID = "PARTIALLY_REPAID",
+  COMPLETED = "COMPLETED",
+  OVERDUE = "OVERDUE",
+  DEFAULT_WARNING = "DEFAULT_WARNING",
+  DEFAULTED = "DEFAULTED",
+  IN_COLLECTIONS = "IN_COLLECTIONS",
+  CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED",
+  DISPUTED = "DISPUTED",
 }
 
 /**
  * Approval method enum
  */
 export enum ApprovalMethod {
-  MANUAL = 'MANUAL',
-  AUTOMATIC = 'AUTOMATIC',
-  SEMI_AUTO = 'SEMI_AUTO',
+  MANUAL = "MANUAL",
+  AUTOMATIC = "AUTOMATIC",
+  SEMI_AUTO = "SEMI_AUTO",
 }
 
 /**
  * Payment method enum
  */
 export enum PaymentMethod {
-  STRIPE = 'STRIPE',
-  OPENPAY = 'OPENPAY',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  SPEI = 'SPEI',
-  CRYPTO = 'CRYPTO',
-  CASH = 'CASH',
+  STRIPE = "STRIPE",
+  OPENPAY = "OPENPAY",
+  BANK_TRANSFER = "BANK_TRANSFER",
+  SPEI = "SPEI",
+  CRYPTO = "CRYPTO",
+  CASH = "CASH",
 }
 
 /**
@@ -238,7 +238,12 @@ export interface RepaymentInput {
   amount: number;
   paymentMethod: PaymentMethod;
   paymentReference: string;
-  source: 'BUYER_PAYMENT' | 'FARMER_PAYMENT' | 'INSURANCE' | 'COLLECTIONS' | 'OTHER';
+  source:
+    | "BUYER_PAYMENT"
+    | "FARMER_PAYMENT"
+    | "INSURANCE"
+    | "COLLECTIONS"
+    | "OTHER";
   notes?: string;
 }
 
@@ -271,8 +276,8 @@ class IdempotencyError extends Error {
   public readonly existingId: string;
 
   constructor(existingId: string) {
-    super('Idempotent operation - resource already exists');
-    this.name = 'IdempotencyError';
+    super("Idempotent operation - resource already exists");
+    this.name = "IdempotencyError";
     this.existingId = existingId;
   }
 }
@@ -282,10 +287,10 @@ class IdempotencyError extends Error {
 // ════════════════════════════════════════════════════════════════════════════════
 
 const ADVANCE_CONSTANTS = {
-  CONTRACT_PREFIX: 'ACF',
+  CONTRACT_PREFIX: "ACF",
   MIN_ADVANCE_AMOUNT: 5000,
   MAX_ADVANCE_AMOUNT: 500000,
-  DEFAULT_CURRENCY: 'MXN',
+  DEFAULT_CURRENCY: "MXN",
   DEFAULT_OPERATING_COST: 100, // Fixed cost per advance
   DEFAULT_DELIVERY_DAYS: 30, // Default delivery period
   PAYMENT_GRACE_DAYS: 7, // Grace period after delivery
@@ -293,7 +298,7 @@ const ADVANCE_CONSTANTS = {
   RISK_PROVISION_RATES: {
     [RiskTier.A]: 0.02,
     [RiskTier.B]: 0.05,
-    [RiskTier.C]: 0.10,
+    [RiskTier.C]: 0.1,
   },
   AUTO_APPROVE_THRESHOLD: 85, // Credit score threshold for auto-approval
   FRAUD_SCORE_THRESHOLD: 30, // Max fraud score for auto-approval
@@ -320,10 +325,7 @@ const VALID_TRANSITIONS: Record<AdvanceStatus, AdvanceStatus[]> = {
     AdvanceStatus.REJECTED,
     AdvanceStatus.CANCELLED,
   ],
-  [AdvanceStatus.APPROVED]: [
-    AdvanceStatus.DISBURSED,
-    AdvanceStatus.CANCELLED,
-  ],
+  [AdvanceStatus.APPROVED]: [AdvanceStatus.DISBURSED, AdvanceStatus.CANCELLED],
   [AdvanceStatus.REJECTED]: [],
   [AdvanceStatus.DISBURSED]: [
     AdvanceStatus.ACTIVE,
@@ -422,11 +424,14 @@ export class AdvanceContractService {
       });
 
       if (!order) {
-        return { success: false, error: 'Order not found' };
+        return { success: false, error: "Order not found" };
       }
 
       if (order.producerId !== farmerId) {
-        return { success: false, error: 'Order does not belong to this farmer' };
+        return {
+          success: false,
+          error: "Order does not belong to this farmer",
+        };
       }
 
       // Check if advance already exists
@@ -435,7 +440,10 @@ export class AdvanceContractService {
       });
 
       if (existingAdvance) {
-        return { success: false, error: 'Advance already exists for this order' };
+        return {
+          success: false,
+          error: "Advance already exists for this order",
+        };
       }
 
       // 2. Get credit score
@@ -446,7 +454,7 @@ export class AdvanceContractService {
       });
 
       if (!creditResult.success || !creditResult.data) {
-        return { success: false, error: 'Could not retrieve credit score' };
+        return { success: false, error: "Could not retrieve credit score" };
       }
 
       const creditScore = creditResult.data.overallScore;
@@ -460,12 +468,12 @@ export class AdvanceContractService {
       const orderAmount = toNumber(order.totalAmount);
       const maxAdvancePercentage = getAdvancePercentageForTier(riskTier);
       const maxAdvanceAmount = ROUNDING_STRATEGIES.AMOUNT(
-        orderAmount * maxAdvancePercentage / 100
+        (orderAmount * maxAdvancePercentage) / 100,
       );
 
       const requestedAmountValue = requestedAmount ?? maxAdvanceAmount;
       const actualAdvanceAmount = ROUNDING_STRATEGIES.AMOUNT(
-        Math.min(requestedAmountValue, maxAdvanceAmount)
+        Math.min(requestedAmountValue, maxAdvanceAmount),
       );
 
       // Check eligibility
@@ -474,17 +482,21 @@ export class AdvanceContractService {
 
       if (!order.advanceEligible) {
         isEligible = false;
-        eligibilityReasons.push('Order is not marked as advance eligible');
+        eligibilityReasons.push("Order is not marked as advance eligible");
       }
 
       if (actualAdvanceAmount < ADVANCE_CONSTANTS.MIN_ADVANCE_AMOUNT) {
         isEligible = false;
-        eligibilityReasons.push(`Amount below minimum (${ADVANCE_CONSTANTS.MIN_ADVANCE_AMOUNT})`);
+        eligibilityReasons.push(
+          `Amount below minimum (${ADVANCE_CONSTANTS.MIN_ADVANCE_AMOUNT})`,
+        );
       }
 
       if (actualAdvanceAmount > ADVANCE_CONSTANTS.MAX_ADVANCE_AMOUNT) {
         isEligible = false;
-        eligibilityReasons.push(`Amount above maximum (${ADVANCE_CONSTANTS.MAX_ADVANCE_AMOUNT})`);
+        eligibilityReasons.push(
+          `Amount above maximum (${ADVANCE_CONSTANTS.MAX_ADVANCE_AMOUNT})`,
+        );
       }
 
       // Check credit eligibility
@@ -517,14 +529,16 @@ export class AdvanceContractService {
 
       // Calculate fee amounts with proper rounding
       const farmerFeeAmount = ROUNDING_STRATEGIES.FEE(
-        actualAdvanceAmount * farmerFeePercentage / 100
+        (actualAdvanceAmount * farmerFeePercentage) / 100,
       );
       const buyerFeeAmount = ROUNDING_STRATEGIES.FEE(
-        actualAdvanceAmount * buyerFeePercentage / 100
+        (actualAdvanceAmount * buyerFeePercentage) / 100,
       );
-      const platformFeeTotal = ROUNDING_STRATEGIES.AMOUNT(farmerFeeAmount + buyerFeeAmount);
+      const platformFeeTotal = ROUNDING_STRATEGIES.AMOUNT(
+        farmerFeeAmount + buyerFeeAmount,
+      );
       const netToFarmer = ROUNDING_STRATEGIES.NET_TO_FARMER(
-        actualAdvanceAmount - farmerFeeAmount
+        actualAdvanceAmount - farmerFeeAmount,
       );
 
       // 5. Calculate timeline
@@ -536,29 +550,37 @@ export class AdvanceContractService {
       // 6. Calculate costs and profit with proper rounding
       // ════════════════════════════════════════════════════════════════════════════════
 
-      const daysOutstanding = Math.max(1, Math.ceil(
-        (dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-      ));
+      const daysOutstanding = Math.max(
+        1,
+        Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      );
 
       const dailyCapitalRate = ADVANCE_CONSTANTS.ANNUAL_CAPITAL_COST_RATE / 365;
       const implicitInterestRate = ROUNDING_STRATEGIES.PERCENTAGE(
-        dailyCapitalRate * daysOutstanding * 100
+        dailyCapitalRate * daysOutstanding * 100,
       );
       const implicitInterestAmount = ROUNDING_STRATEGIES.AMOUNT(
-        actualAdvanceAmount * implicitInterestRate / 100
+        (actualAdvanceAmount * implicitInterestRate) / 100,
       );
 
       const costOfCapital = implicitInterestAmount;
       const riskProvision = ROUNDING_STRATEGIES.AMOUNT(
-        actualAdvanceAmount * ADVANCE_CONSTANTS.RISK_PROVISION_RATES[riskTier]
+        actualAdvanceAmount * ADVANCE_CONSTANTS.RISK_PROVISION_RATES[riskTier],
       );
       const operatingCosts = ADVANCE_CONSTANTS.DEFAULT_OPERATING_COST;
 
-      const totalCosts = ROUNDING_STRATEGIES.AMOUNT(costOfCapital + riskProvision + operatingCosts);
-      const grossProfit = ROUNDING_STRATEGIES.AMOUNT(platformFeeTotal - totalCosts);
-      const profitMargin = platformFeeTotal > 0
-        ? ROUNDING_STRATEGIES.PERCENTAGE((grossProfit / platformFeeTotal) * 100)
-        : 0;
+      const totalCosts = ROUNDING_STRATEGIES.AMOUNT(
+        costOfCapital + riskProvision + operatingCosts,
+      );
+      const grossProfit = ROUNDING_STRATEGIES.AMOUNT(
+        platformFeeTotal - totalCosts,
+      );
+      const profitMargin =
+        platformFeeTotal > 0
+          ? ROUNDING_STRATEGIES.PERCENTAGE(
+              (grossProfit / platformFeeTotal) * 100,
+            )
+          : 0;
 
       const calculation: AdvanceCalculation = {
         orderId,
@@ -585,15 +607,20 @@ export class AdvanceContractService {
         grossProfit,
         profitMargin,
         isEligible,
-        eligibilityReasons: isEligible ? ['All checks passed'] : eligibilityReasons,
+        eligibilityReasons: isEligible
+          ? ["All checks passed"]
+          : eligibilityReasons,
       };
 
       return { success: true, data: calculation };
     } catch (error) {
-      console.error('Error calculating advance terms:', error);
+      console.error("Error calculating advance terms:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to calculate advance',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to calculate advance",
       };
     }
   }
@@ -621,7 +648,7 @@ export class AdvanceContractService {
       if (!calculation.isEligible) {
         return {
           success: false,
-          error: `Not eligible: ${calculation.eligibilityReasons.join(', ')}`,
+          error: `Not eligible: ${calculation.eligibilityReasons.join(", ")}`,
         };
       }
 
@@ -631,7 +658,7 @@ export class AdvanceContractService {
       });
 
       if (!order) {
-        return { success: false, error: 'Order not found' };
+        return { success: false, error: "Order not found" };
       }
 
       // 3. Determine approval method
@@ -641,22 +668,22 @@ export class AdvanceContractService {
       // 4. Find an active pool for this advance
       const activePool = await this.prisma.liquidityPool.findFirst({
         where: {
-          status: 'ACTIVE',
+          status: "ACTIVE",
           availableCapital: { gte: calculation.actualAdvanceAmount },
         },
-        orderBy: { availableCapital: 'desc' },
+        orderBy: { availableCapital: "desc" },
       });
 
       if (!activePool) {
         return {
           success: false,
-          error: 'No liquidity pool available with sufficient capital',
+          error: "No liquidity pool available with sufficient capital",
         };
       }
 
       // 5. Prepare allocation request
       const allocationRequest: PoolAllocationRequest = {
-        advanceId: '', // Will be set after advance creation
+        advanceId: "", // Will be set after advance creation
         farmerId: request.farmerId,
         orderId: request.orderId,
         requestedAmount: calculation.actualAdvanceAmount,
@@ -699,11 +726,17 @@ export class AdvanceContractService {
               (calculation.actualAdvanceAmount / calculation.orderAmount) * 100,
             ),
             advanceAmount: new Prisma.Decimal(calculation.actualAdvanceAmount),
-            farmerFeePercentage: new Prisma.Decimal(calculation.farmerFeePercentage),
+            farmerFeePercentage: new Prisma.Decimal(
+              calculation.farmerFeePercentage,
+            ),
             farmerFeeAmount: new Prisma.Decimal(calculation.farmerFeeAmount),
-            buyerFeePercentage: new Prisma.Decimal(calculation.buyerFeePercentage),
+            buyerFeePercentage: new Prisma.Decimal(
+              calculation.buyerFeePercentage,
+            ),
             buyerFeeAmount: new Prisma.Decimal(calculation.buyerFeeAmount),
-            implicitInterest: new Prisma.Decimal(calculation.implicitInterestAmount),
+            implicitInterest: new Prisma.Decimal(
+              calculation.implicitInterestAmount,
+            ),
             platformFeeTotal: new Prisma.Decimal(calculation.platformFeeTotal),
             costOfCapital: new Prisma.Decimal(calculation.costOfCapital),
             operatingCosts: new Prisma.Decimal(calculation.operatingCosts),
@@ -723,8 +756,11 @@ export class AdvanceContractService {
               ? ApprovalMethod.AUTOMATIC
               : ApprovalMethod.MANUAL,
             approvedAt: shouldAutoApprove ? new Date() : null,
-            remainingBalance: new Prisma.Decimal(calculation.actualAdvanceAmount),
-            disbursementMethod: request.disbursementMethod || PaymentMethod.STRIPE,
+            remainingBalance: new Prisma.Decimal(
+              calculation.actualAdvanceAmount,
+            ),
+            disbursementMethod:
+              request.disbursementMethod || PaymentMethod.STRIPE,
           },
         });
 
@@ -743,8 +779,8 @@ export class AdvanceContractService {
             advanceId: advance.id,
             fromStatus: null,
             toStatus: advance.status,
-            changedBy: 'SYSTEM',
-            reason: 'Advance request created',
+            changedBy: "SYSTEM",
+            reason: "Advance request created",
           },
         });
 
@@ -755,8 +791,8 @@ export class AdvanceContractService {
               advanceId: advance.id,
               fromStatus: AdvanceStatus.PENDING_APPROVAL,
               toStatus: AdvanceStatus.APPROVED,
-              changedBy: 'SYSTEM',
-              reason: 'Auto-approved based on credit score',
+              changedBy: "SYSTEM",
+              reason: "Auto-approved based on credit score",
             },
           });
         }
@@ -766,7 +802,8 @@ export class AdvanceContractService {
 
       // 7. Now allocate capital (outside transaction for pool service)
       allocationRequest.advanceId = result.id;
-      const allocation = await this.poolService.allocateCapital(allocationRequest);
+      const allocation =
+        await this.poolService.allocateCapital(allocationRequest);
 
       if (!allocation.success || !allocation.allocation) {
         // Rollback - cancel the advance
@@ -797,14 +834,17 @@ export class AdvanceContractService {
     } catch (error) {
       // Handle idempotent requests gracefully
       if (error instanceof IdempotencyError) {
-        console.log(`[Idempotency] Returning existing advance: ${error.existingId}`);
+        console.log(
+          `[Idempotency] Returning existing advance: ${error.existingId}`,
+        );
         return await this.getAdvanceDetails(error.existingId);
       }
 
-      console.error('Error requesting advance:', error);
+      console.error("Error requesting advance:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to request advance',
+        error:
+          error instanceof Error ? error.message : "Failed to request advance",
       };
     }
   }
@@ -816,7 +856,9 @@ export class AdvanceContractService {
   /**
    * Get advance contract details
    */
-  async getAdvanceDetails(advanceId: string): Promise<ServiceResult<AdvanceContractDetails>> {
+  async getAdvanceDetails(
+    advanceId: string,
+  ): Promise<ServiceResult<AdvanceContractDetails>> {
     try {
       // Check cache
       if (this.redis) {
@@ -838,7 +880,7 @@ export class AdvanceContractService {
       });
 
       if (!advance) {
-        return { success: false, error: 'Advance not found' };
+        return { success: false, error: "Advance not found" };
       }
 
       const details: AdvanceContractDetails = {
@@ -859,7 +901,8 @@ export class AdvanceContractService {
         buyerFeePercentage: Number(advance.buyerFeePercentage),
         buyerFeeAmount: Number(advance.buyerFeeAmount),
         platformFeeTotal: Number(advance.platformFeeTotal),
-        netToFarmer: Number(advance.advanceAmount) - Number(advance.farmerFeeAmount),
+        netToFarmer:
+          Number(advance.advanceAmount) - Number(advance.farmerFeeAmount),
         amountRepaid: Number(advance.amountRepaid),
         remainingBalance: Number(advance.remainingBalance),
         requestedAt: advance.requestedAt,
@@ -889,10 +932,10 @@ export class AdvanceContractService {
 
       return { success: true, data: details };
     } catch (error) {
-      console.error('Error getting advance details:', error);
+      console.error("Error getting advance details:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get advance',
+        error: error instanceof Error ? error.message : "Failed to get advance",
       };
     }
   }
@@ -921,7 +964,7 @@ export class AdvanceContractService {
           farmer: { include: { user: true } },
           pool: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       const details: AdvanceContractDetails[] = advances.map((advance) => ({
@@ -942,7 +985,8 @@ export class AdvanceContractService {
         buyerFeePercentage: Number(advance.buyerFeePercentage),
         buyerFeeAmount: Number(advance.buyerFeeAmount),
         platformFeeTotal: Number(advance.platformFeeTotal),
-        netToFarmer: Number(advance.advanceAmount) - Number(advance.farmerFeeAmount),
+        netToFarmer:
+          Number(advance.advanceAmount) - Number(advance.farmerFeeAmount),
         amountRepaid: Number(advance.amountRepaid),
         remainingBalance: Number(advance.remainingBalance),
         requestedAt: advance.requestedAt,
@@ -963,10 +1007,11 @@ export class AdvanceContractService {
 
       return { success: true, data: details };
     } catch (error) {
-      console.error('Error getting farmer advances:', error);
+      console.error("Error getting farmer advances:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get advances',
+        error:
+          error instanceof Error ? error.message : "Failed to get advances",
       };
     }
   }
@@ -990,7 +1035,7 @@ export class AdvanceContractService {
       });
 
       if (!advance) {
-        return { success: false, error: 'Advance not found' };
+        return { success: false, error: "Advance not found" };
       }
 
       const currentStatus = advance.status as AdvanceStatus;
@@ -1050,10 +1095,13 @@ export class AdvanceContractService {
         },
       };
     } catch (error) {
-      console.error('Error transitioning status:', error);
+      console.error("Error transitioning status:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to transition status',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to transition status",
       };
     }
   }
@@ -1072,11 +1120,14 @@ export class AdvanceContractService {
       });
 
       if (!advance) {
-        return { success: false, error: 'Advance not found' };
+        return { success: false, error: "Advance not found" };
       }
 
       if (advance.status !== AdvanceStatus.APPROVED) {
-        return { success: false, error: 'Advance must be approved before disbursement' };
+        return {
+          success: false,
+          error: "Advance must be approved before disbursement",
+        };
       }
 
       await this.prisma.$transaction(async (tx) => {
@@ -1098,12 +1149,13 @@ export class AdvanceContractService {
           data: {
             transactionNumber: txnNumber,
             advanceId,
-            type: 'ADVANCE_DISBURSEMENT',
+            type: "ADVANCE_DISBURSEMENT",
             amount: advance.advanceAmount,
             paymentMethod: advance.disbursementMethod,
-            paymentProvider: advance.disbursementMethod === 'STRIPE' ? 'Stripe' : 'Bank',
+            paymentProvider:
+              advance.disbursementMethod === "STRIPE" ? "Stripe" : "Bank",
             paymentReference: disbursementReference,
-            paymentStatus: 'COMPLETED',
+            paymentStatus: "COMPLETED",
             balanceBefore: advance.remainingBalance,
             balanceAfter: advance.remainingBalance,
             description: `Advance disbursed to farmer`,
@@ -1117,14 +1169,19 @@ export class AdvanceContractService {
             advanceId,
             fromStatus: AdvanceStatus.APPROVED,
             toStatus: AdvanceStatus.DISBURSED,
-            changedBy: 'SYSTEM',
-            reason: 'Funds disbursed successfully',
+            changedBy: "SYSTEM",
+            reason: "Funds disbursed successfully",
           },
         });
       });
 
       // Transition to ACTIVE
-      await this.transitionStatus(advanceId, AdvanceStatus.ACTIVE, 'SYSTEM', 'Post-disbursement');
+      await this.transitionStatus(
+        advanceId,
+        AdvanceStatus.ACTIVE,
+        "SYSTEM",
+        "Post-disbursement",
+      );
 
       await this.invalidateAdvanceCache(advanceId);
 
@@ -1136,10 +1193,11 @@ export class AdvanceContractService {
         },
       };
     } catch (error) {
-      console.error('Error disbursing advance:', error);
+      console.error("Error disbursing advance:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to disburse advance',
+        error:
+          error instanceof Error ? error.message : "Failed to disburse advance",
       };
     }
   }
@@ -1151,19 +1209,21 @@ export class AdvanceContractService {
   /**
    * Process a repayment
    */
-  async processRepayment(input: RepaymentInput): Promise<ServiceResult<{
-    amountApplied: number;
-    remainingBalance: number;
-    isFullyRepaid: boolean;
-    feesCollected: number;
-  }>> {
+  async processRepayment(input: RepaymentInput): Promise<
+    ServiceResult<{
+      amountApplied: number;
+      remainingBalance: number;
+      isFullyRepaid: boolean;
+      feesCollected: number;
+    }>
+  > {
     try {
       const advance = await this.prisma.advanceContract.findUnique({
         where: { id: input.advanceId },
       });
 
       if (!advance) {
-        return { success: false, error: 'Advance not found' };
+        return { success: false, error: "Advance not found" };
       }
 
       // Validate status allows repayment
@@ -1217,12 +1277,13 @@ export class AdvanceContractService {
           data: {
             transactionNumber: repaymentTxnNumber,
             advanceId: input.advanceId,
-            type: isFullyRepaid ? 'FINAL_REPAYMENT' : 'PARTIAL_REPAYMENT',
+            type: isFullyRepaid ? "FINAL_REPAYMENT" : "PARTIAL_REPAYMENT",
             amount: new Prisma.Decimal(amountToApply),
             paymentMethod: input.paymentMethod,
-            paymentProvider: input.paymentMethod === 'STRIPE' ? 'Stripe' : 'Bank',
+            paymentProvider:
+              input.paymentMethod === "STRIPE" ? "Stripe" : "Bank",
             paymentReference: input.paymentReference,
-            paymentStatus: 'COMPLETED',
+            paymentStatus: "COMPLETED",
             balanceBefore: new Prisma.Decimal(currentBalance),
             balanceAfter: new Prisma.Decimal(newBalance),
             description: input.notes || `Repayment from ${input.source}`,
@@ -1236,7 +1297,7 @@ export class AdvanceContractService {
             advanceId: input.advanceId,
             fromStatus: advance.status,
             toStatus: newStatus,
-            changedBy: 'SYSTEM',
+            changedBy: "SYSTEM",
             reason: `Repayment of ${amountToApply} received`,
           },
         });
@@ -1247,7 +1308,7 @@ export class AdvanceContractService {
         advanceId: input.advanceId,
         poolId: advance.poolId,
         amount: amountToApply,
-        releaseType: isFullyRepaid ? 'FULL_REPAYMENT' : 'PARTIAL_REPAYMENT',
+        releaseType: isFullyRepaid ? "FULL_REPAYMENT" : "PARTIAL_REPAYMENT",
         source: input.source,
         paymentReference: input.paymentReference,
         feesCollected,
@@ -1272,10 +1333,13 @@ export class AdvanceContractService {
         },
       };
     } catch (error) {
-      console.error('Error processing repayment:', error);
+      console.error("Error processing repayment:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to process repayment',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process repayment",
       };
     }
   }
@@ -1294,7 +1358,7 @@ export class AdvanceContractService {
       });
 
       if (!advance) {
-        return { success: false, error: 'Advance not found' };
+        return { success: false, error: "Advance not found" };
       }
 
       const remainingBalance = Number(advance.remainingBalance);
@@ -1317,7 +1381,7 @@ export class AdvanceContractService {
             advanceId,
             fromStatus: advance.status,
             toStatus: AdvanceStatus.DEFAULTED,
-            changedBy: 'SYSTEM',
+            changedBy: "SYSTEM",
             reason,
           },
         });
@@ -1341,10 +1405,13 @@ export class AdvanceContractService {
         data: { lossAmount },
       };
     } catch (error) {
-      console.error('Error marking as defaulted:', error);
+      console.error("Error marking as defaulted:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to mark as defaulted',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to mark as defaulted",
       };
     }
   }
@@ -1382,7 +1449,7 @@ export class AdvanceContractService {
 
     let sequence = 1;
     if (result.length > 0 && result[0].contractNumber) {
-      const parts = result[0].contractNumber.split('-');
+      const parts = result[0].contractNumber.split("-");
       sequence = parseInt(parts[2], 10) + 1;
     }
 
@@ -1391,7 +1458,7 @@ export class AdvanceContractService {
       sequence = 1;
     }
 
-    return `${prefix}-${year}-${sequence.toString().padStart(5, '0')}`;
+    return `${prefix}-${year}-${sequence.toString().padStart(5, "0")}`;
   }
 
   /**

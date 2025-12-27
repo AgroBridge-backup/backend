@@ -1,5 +1,5 @@
-import { IProducerRepository } from '../../../domain/repositories/IProducerRepository.js';
-import { NotFoundError } from '../../../shared/errors/NotFoundError.js';
+import { IProducerRepository } from "../../../domain/repositories/IProducerRepository.js";
+import { NotFoundError } from "../../../shared/errors/NotFoundError.js";
 
 export class GetProducerByIdUseCase {
   constructor(private readonly producerRepository: IProducerRepository) {}
@@ -7,7 +7,7 @@ export class GetProducerByIdUseCase {
   async execute(dto: { producerId: string }): Promise<any> {
     const producer = await this.producerRepository.findById(dto.producerId);
     if (!producer) {
-      throw new NotFoundError('Producer not found');
+      throw new NotFoundError("Producer not found");
     }
     return producer;
   }

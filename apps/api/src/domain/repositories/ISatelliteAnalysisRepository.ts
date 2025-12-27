@@ -9,7 +9,7 @@ import {
   SatelliteComplianceStatus,
   SatelliteAnalysisStats,
   SatelliteCropType,
-} from '../entities/SatelliteAnalysis.js';
+} from "../entities/SatelliteAnalysis.js";
 
 /**
  * Create satellite analysis input
@@ -67,7 +67,9 @@ export interface ISatelliteAnalysisRepository {
   /**
    * Create new satellite analysis record
    */
-  create(input: CreateSatelliteAnalysisInput): Promise<SatelliteComplianceReport>;
+  create(
+    input: CreateSatelliteAnalysisInput,
+  ): Promise<SatelliteComplianceReport>;
 
   /**
    * Find analysis by ID
@@ -77,17 +79,25 @@ export interface ISatelliteAnalysisRepository {
   /**
    * Find latest analysis for a field
    */
-  findLatestByField(organicFieldId: string): Promise<SatelliteComplianceReport | null>;
+  findLatestByField(
+    organicFieldId: string,
+  ): Promise<SatelliteComplianceReport | null>;
 
   /**
    * Update analysis record
    */
-  update(id: string, input: UpdateSatelliteAnalysisInput): Promise<SatelliteComplianceReport>;
+  update(
+    id: string,
+    input: UpdateSatelliteAnalysisInput,
+  ): Promise<SatelliteComplianceReport>;
 
   /**
    * List analyses for a field
    */
-  listByField(organicFieldId: string, limit?: number): Promise<SatelliteComplianceReport[]>;
+  listByField(
+    organicFieldId: string,
+    limit?: number,
+  ): Promise<SatelliteComplianceReport[]>;
 
   /**
    * List analyses with filters

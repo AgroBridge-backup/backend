@@ -114,7 +114,7 @@ export class ResponseFormatter {
     page: number,
     limit: number,
     baseUrl: string,
-    queryParams?: Record<string, unknown>
+    queryParams?: Record<string, unknown>,
   ): SuccessResponse<T[]> {
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
@@ -136,7 +136,7 @@ export class ResponseFormatter {
         page,
         limit,
         totalPages,
-        queryParams
+        queryParams,
       ),
     };
   }
@@ -153,7 +153,7 @@ export class ResponseFormatter {
     message: string,
     details?: ErrorDetail[] | Record<string, unknown>,
     path?: string,
-    requestId?: string
+    requestId?: string,
   ): ErrorResponse {
     return {
       success: false,
@@ -174,65 +174,55 @@ export class ResponseFormatter {
    * @example
    * ResponseFormatter.validationError([{ field: 'email', message: 'Required' }])
    */
-  static validationError(
-    errors: ErrorDetail[],
-    path?: string
-  ): ErrorResponse {
+  static validationError(errors: ErrorDetail[], path?: string): ErrorResponse {
     return this.error(
-      'VALIDATION_ERROR',
-      'Request validation failed',
+      "VALIDATION_ERROR",
+      "Request validation failed",
       errors,
-      path
+      path,
     );
   }
 
   /**
    * Format not found error response
    */
-  static notFound(
-    resource: string,
-    id?: string,
-    path?: string
-  ): ErrorResponse {
+  static notFound(resource: string, id?: string, path?: string): ErrorResponse {
     const message = id
       ? `${resource} with ID '${id}' not found`
       : `${resource} not found`;
 
-    return this.error('NOT_FOUND', message, undefined, path);
+    return this.error("NOT_FOUND", message, undefined, path);
   }
 
   /**
    * Format unauthorized error response
    */
   static unauthorized(
-    message: string = 'Authentication required',
-    path?: string
+    message: string = "Authentication required",
+    path?: string,
   ): ErrorResponse {
-    return this.error('UNAUTHORIZED', message, undefined, path);
+    return this.error("UNAUTHORIZED", message, undefined, path);
   }
 
   /**
    * Format forbidden error response
    */
   static forbidden(
-    message: string = 'Access denied',
-    path?: string
+    message: string = "Access denied",
+    path?: string,
   ): ErrorResponse {
-    return this.error('FORBIDDEN', message, undefined, path);
+    return this.error("FORBIDDEN", message, undefined, path);
   }
 
   /**
    * Format rate limit error response
    */
-  static rateLimited(
-    retryAfter?: number,
-    path?: string
-  ): ErrorResponse {
+  static rateLimited(retryAfter?: number, path?: string): ErrorResponse {
     return this.error(
-      'RATE_LIMITED',
-      'Too many requests. Please try again later.',
+      "RATE_LIMITED",
+      "Too many requests. Please try again later.",
       retryAfter ? { retryAfter } : undefined,
-      path
+      path,
     );
   }
 
@@ -240,17 +230,11 @@ export class ResponseFormatter {
    * Format internal error response
    */
   static internalError(
-    message: string = 'An unexpected error occurred',
+    message: string = "An unexpected error occurred",
     path?: string,
-    requestId?: string
+    requestId?: string,
   ): ErrorResponse {
-    return this.error(
-      'INTERNAL_ERROR',
-      message,
-      undefined,
-      path,
-      requestId
-    );
+    return this.error("INTERNAL_ERROR", message, undefined, path, requestId);
   }
 
   /**
@@ -259,9 +243,9 @@ export class ResponseFormatter {
   static conflict(
     message: string,
     details?: Record<string, unknown>,
-    path?: string
+    path?: string,
   ): ErrorResponse {
-    return this.error('CONFLICT', message, details, path);
+    return this.error("CONFLICT", message, details, path);
   }
 
   /**
@@ -270,9 +254,9 @@ export class ResponseFormatter {
   static badRequest(
     message: string,
     details?: Record<string, unknown>,
-    path?: string
+    path?: string,
   ): ErrorResponse {
-    return this.error('BAD_REQUEST', message, details, path);
+    return this.error("BAD_REQUEST", message, details, path);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -287,7 +271,7 @@ export class ResponseFormatter {
     page: number,
     limit: number,
     totalPages: number,
-    queryParams?: Record<string, unknown>
+    queryParams?: Record<string, unknown>,
   ): PaginationLinks {
     const buildUrl = (p: number): string => {
       const params = new URLSearchParams();
@@ -295,21 +279,24 @@ export class ResponseFormatter {
       // Add existing query params (except page/limit)
       if (queryParams) {
         Object.entries(queryParams).forEach(([key, value]) => {
-          if (key !== 'page' && key !== 'limit' && value !== undefined) {
-            if (typeof value === 'object') {
+          if (key !== "page" && key !== "limit" && value !== undefined) {
+            if (typeof value === "object") {
               // Handle nested objects like filter[status]
               Object.entries(value as Record<string, unknown>).forEach(
                 ([nestedKey, nestedValue]) => {
-                  if (typeof nestedValue === 'object' && nestedValue !== null) {
-                    Object.entries(nestedValue as Record<string, unknown>).forEach(
-                      ([opKey, opValue]) => {
-                        params.append(`${key}[${nestedKey}][${opKey}]`, String(opValue));
-                      }
-                    );
+                  if (typeof nestedValue === "object" && nestedValue !== null) {
+                    Object.entries(
+                      nestedValue as Record<string, unknown>,
+                    ).forEach(([opKey, opValue]) => {
+                      params.append(
+                        `${key}[${nestedKey}][${opKey}]`,
+                        String(opValue),
+                      );
+                    });
                   } else {
                     params.append(`${key}[${nestedKey}]`, String(nestedValue));
                   }
-                }
+                },
               );
             } else {
               params.append(key, String(value));
@@ -318,8 +305,8 @@ export class ResponseFormatter {
         });
       }
 
-      params.set('page', p.toString());
-      params.set('limit', limit.toString());
+      params.set("page", p.toString());
+      params.set("limit", limit.toString());
 
       return `${baseUrl}?${params.toString()}`;
     };
@@ -339,7 +326,7 @@ export class ResponseFormatter {
    */
   static withStatus<T>(
     status: number,
-    response: ApiResponse<T>
+    response: ApiResponse<T>,
   ): { status: number; body: ApiResponse<T> } {
     return { status, body: response };
   }
@@ -356,33 +343,36 @@ export class ResponseFormatter {
    */
   static fromPrismaError(error: unknown, path?: string): ErrorResponse {
     // Handle Prisma known errors
-    if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as { code: string; meta?: { target?: string[] } };
+    if (error && typeof error === "object" && "code" in error) {
+      const prismaError = error as {
+        code: string;
+        meta?: { target?: string[] };
+      };
 
       switch (prismaError.code) {
-        case 'P2002': // Unique constraint violation
+        case "P2002": // Unique constraint violation
           return this.conflict(
-            'A record with this value already exists',
+            "A record with this value already exists",
             { fields: prismaError.meta?.target },
-            path
+            path,
           );
 
-        case 'P2025': // Record not found
-          return this.notFound('Record', undefined, path);
+        case "P2025": // Record not found
+          return this.notFound("Record", undefined, path);
 
-        case 'P2003': // Foreign key constraint violation
+        case "P2003": // Foreign key constraint violation
           return this.badRequest(
-            'Referenced record does not exist',
+            "Referenced record does not exist",
             { fields: prismaError.meta?.target },
-            path
+            path,
           );
 
         default:
-          return this.internalError('Database operation failed', path);
+          return this.internalError("Database operation failed", path);
       }
     }
 
-    return this.internalError('An unexpected error occurred', path);
+    return this.internalError("An unexpected error occurred", path);
   }
 }
 

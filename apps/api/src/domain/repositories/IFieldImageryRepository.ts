@@ -11,7 +11,7 @@ import {
   ImageryType,
   CreateFieldInput,
   GeoJsonPolygon,
-} from '../entities/FieldImagery.js';
+} from "../entities/FieldImagery.js";
 
 export interface IFieldRepository {
   /**
@@ -36,7 +36,7 @@ export interface IFieldRepository {
     minLat: number,
     minLng: number,
     maxLat: number,
-    maxLng: number
+    maxLng: number,
   ): Promise<Field[]>;
 
   /**
@@ -82,7 +82,7 @@ export interface IFieldImageryRepository {
   findByFieldIdAndDateRange(
     fieldId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<FieldImagery[]>;
 
   /**
@@ -91,7 +91,7 @@ export interface IFieldImageryRepository {
   findByFieldIdSourceAndType(
     fieldId: string,
     source: ImagerySource,
-    imageType: ImageryType
+    imageType: ImageryType,
   ): Promise<FieldImagery[]>;
 
   /**
@@ -104,18 +104,18 @@ export interface IFieldImageryRepository {
    */
   findByFieldIdWithMaxCloudCover(
     fieldId: string,
-    maxCloudCover: number
+    maxCloudCover: number,
   ): Promise<FieldImagery[]>;
 
   /**
    * Create new imagery record
    */
-  create(data: Omit<FieldImagery, 'id' | 'createdAt'>): Promise<FieldImagery>;
+  create(data: Omit<FieldImagery, "id" | "createdAt">): Promise<FieldImagery>;
 
   /**
    * Create multiple imagery records
    */
-  createMany(data: Omit<FieldImagery, 'id' | 'createdAt'>[]): Promise<number>;
+  createMany(data: Omit<FieldImagery, "id" | "createdAt">[]): Promise<number>;
 
   /**
    * Update imagery record
@@ -133,7 +133,7 @@ export interface IFieldImageryRepository {
   getNdviTimeSeries(
     fieldId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<{ date: Date; ndviValue: number | null }[]>;
 
   /**

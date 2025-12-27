@@ -3,11 +3,11 @@
  * Marks a referral as rewarded with optional blockchain transaction
  */
 
-import { IReferralRepository } from '../../../domain/repositories/IReferralRepository.js';
-import { Referral, ReferralStatus } from '../../../domain/entities/Referral.js';
-import { NotFoundError } from '../../../shared/errors/NotFoundError.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
-import { ILogger } from '../../../domain/services/ILogger.js';
+import { IReferralRepository } from "../../../domain/repositories/IReferralRepository.js";
+import { Referral, ReferralStatus } from "../../../domain/entities/Referral.js";
+import { NotFoundError } from "../../../shared/errors/NotFoundError.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
+import { ILogger } from "../../../domain/services/ILogger.js";
 
 export interface MarkReferralRewardedRequest {
   referralId: string;
@@ -22,26 +22,32 @@ export interface MarkReferralRewardedResponse {
 export class MarkReferralRewardedUseCase {
   constructor(
     private readonly referralRepository: IReferralRepository,
-    private readonly logger?: ILogger
+    private readonly logger?: ILogger,
   ) {}
 
-  async execute(request: MarkReferralRewardedRequest): Promise<MarkReferralRewardedResponse> {
+  async execute(
+    request: MarkReferralRewardedRequest,
+  ): Promise<MarkReferralRewardedResponse> {
     if (!request.referralId) {
-      throw new ValidationError('Referral ID is required');
+      throw new ValidationError("Referral ID is required");
     }
 
-    const existingReferral = await this.referralRepository.findById(request.referralId);
+    const existingReferral = await this.referralRepository.findById(
+      request.referralId,
+    );
 
     if (!existingReferral) {
-      throw new NotFoundError('Referral not found');
+      throw new NotFoundError("Referral not found");
     }
 
     // Idempotency check
     if (existingReferral.rewardGranted) {
-      this.logger?.info('Referral already rewarded', { referralId: request.referralId });
+      this.logger?.info("Referral already rewarded", {
+        referralId: request.referralId,
+      });
       return {
         referral: existingReferral,
-        message: 'Referral already rewarded',
+        message: "Referral already rewarded",
       };
     }
 
@@ -51,11 +57,11 @@ export class MarkReferralRewardedUseCase {
       existingReferral.status !== ReferralStatus.ACTIVE
     ) {
       throw new ValidationError(
-        `Cannot reward referral with status: ${existingReferral.status}. Status must be ACTIVE or COMPLETED.`
+        `Cannot reward referral with status: ${existingReferral.status}. Status must be ACTIVE or COMPLETED.`,
       );
     }
 
-    this.logger?.info('Marking referral as rewarded', {
+    this.logger?.info("Marking referral as rewarded", {
       referralId: request.referralId,
       rewardTxHash: request.rewardTxHash,
     });
@@ -63,24 +69,30 @@ export class MarkReferralRewardedUseCase {
     // Mark as rewarded
     const referral = await this.referralRepository.markRewarded(
       request.referralId,
-      request.rewardTxHash
+      request.rewardTxHash,
     );
 
     // Update referrer's reward stats
-    await this.referralRepository.updateUserReferralCodeStats(referral.referrerId, {
-      totalRewardsEarned: referral.rewardValue,
-      completedReferrals: 1,
-      activeReferrals: -1,
-    });
+    await this.referralRepository.updateUserReferralCodeStats(
+      referral.referrerId,
+      {
+        totalRewardsEarned: referral.rewardValue,
+        completedReferrals: 1,
+        activeReferrals: -1,
+      },
+    );
 
     // If blockchain verified, update on-chain count
     if (request.rewardTxHash) {
-      await this.referralRepository.updateUserReferralCodeStats(referral.referrerId, {
-        onChainReferrals: 1,
-      });
+      await this.referralRepository.updateUserReferralCodeStats(
+        referral.referrerId,
+        {
+          onChainReferrals: 1,
+        },
+      );
     }
 
-    this.logger?.info('Referral marked as rewarded successfully', {
+    this.logger?.info("Referral marked as rewarded successfully", {
       referralId: referral.id,
       referrerId: referral.referrerId,
       rewardValue: referral.rewardValue,
@@ -88,7 +100,7 @@ export class MarkReferralRewardedUseCase {
 
     return {
       referral,
-      message: 'Referral marked as rewarded successfully',
+      message: "Referral marked as rewarded successfully",
     };
   }
 }

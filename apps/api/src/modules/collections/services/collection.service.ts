@@ -4,10 +4,10 @@
  * @module collections/services
  */
 
-import { PrismaClient, AdvanceStatus } from '@prisma/client';
-import { logger } from '../../../infrastructure/logging/logger.js';
-import { whatsAppService } from '../../whatsapp-bot/whatsapp.service.js';
-import { getMessage } from '../../whatsapp-bot/templates/messages.js';
+import { PrismaClient, AdvanceStatus } from "@prisma/client";
+import { logger } from "../../../infrastructure/logging/logger.js";
+import { whatsAppService } from "../../whatsapp-bot/whatsapp.service.js";
+import { getMessage } from "../../whatsapp-bot/templates/messages.js";
 import {
   CollectionRule,
   CollectionStage,
@@ -16,7 +16,7 @@ import {
   CollectionSummary,
   LateFeeCalculation,
   CollectionChannel,
-} from '../types/index.js';
+} from "../types/index.js";
 
 const prisma = new PrismaClient();
 
@@ -26,71 +26,71 @@ const prisma = new PrismaClient();
 
 const COLLECTION_RULES: CollectionRule[] = [
   {
-    stage: 'FRIENDLY_REMINDER',
+    stage: "FRIENDLY_REMINDER",
     daysFromDue: -3,
-    channels: ['WHATSAPP', 'PUSH'],
-    priority: 'NORMAL',
-    templateKey: 'reminderFriendly',
+    channels: ["WHATSAPP", "PUSH"],
+    priority: "NORMAL",
+    templateKey: "reminderFriendly",
     requiresAck: false,
     escalateAfterHours: 0,
     maxAttempts: 1,
   },
   {
-    stage: 'FINAL_NOTICE',
+    stage: "FINAL_NOTICE",
     daysFromDue: 0,
-    channels: ['WHATSAPP', 'SMS', 'EMAIL'],
-    priority: 'HIGH',
-    templateKey: 'reminderDueToday',
+    channels: ["WHATSAPP", "SMS", "EMAIL"],
+    priority: "HIGH",
+    templateKey: "reminderDueToday",
     requiresAck: false,
     escalateAfterHours: 0,
     maxAttempts: 2,
   },
   {
-    stage: 'OVERDUE_1',
+    stage: "OVERDUE_1",
     daysFromDue: 1,
-    channels: ['WHATSAPP', 'SMS'],
-    priority: 'HIGH',
-    templateKey: 'reminderOverdue',
+    channels: ["WHATSAPP", "SMS"],
+    priority: "HIGH",
+    templateKey: "reminderOverdue",
     requiresAck: false,
     escalateAfterHours: 24,
     maxAttempts: 2,
   },
   {
-    stage: 'OVERDUE_3',
+    stage: "OVERDUE_3",
     daysFromDue: 3,
-    channels: ['WHATSAPP', 'SMS', 'EMAIL'],
-    priority: 'HIGH',
-    templateKey: 'reminderOverdue',
+    channels: ["WHATSAPP", "SMS", "EMAIL"],
+    priority: "HIGH",
+    templateKey: "reminderOverdue",
     requiresAck: true,
     escalateAfterHours: 48,
     maxAttempts: 2,
   },
   {
-    stage: 'LATE_FEE_WARNING',
+    stage: "LATE_FEE_WARNING",
     daysFromDue: 7,
-    channels: ['WHATSAPP', 'SMS', 'EMAIL', 'CALL'],
-    priority: 'CRITICAL',
-    templateKey: 'reminderOverdue',
+    channels: ["WHATSAPP", "SMS", "EMAIL", "CALL"],
+    priority: "CRITICAL",
+    templateKey: "reminderOverdue",
     requiresAck: true,
     escalateAfterHours: 24,
     maxAttempts: 3,
   },
   {
-    stage: 'ACCOUNT_REVIEW',
+    stage: "ACCOUNT_REVIEW",
     daysFromDue: 14,
-    channels: ['WHATSAPP', 'SMS', 'EMAIL', 'CALL'],
-    priority: 'CRITICAL',
-    templateKey: 'reminderOverdue',
+    channels: ["WHATSAPP", "SMS", "EMAIL", "CALL"],
+    priority: "CRITICAL",
+    templateKey: "reminderOverdue",
     requiresAck: true,
     escalateAfterHours: 24,
     maxAttempts: 3,
   },
   {
-    stage: 'COLLECTIONS_HANDOFF',
+    stage: "COLLECTIONS_HANDOFF",
     daysFromDue: 30,
-    channels: ['EMAIL', 'CALL'],
-    priority: 'CRITICAL',
-    templateKey: 'collectionsHandoff',
+    channels: ["EMAIL", "CALL"],
+    priority: "CRITICAL",
+    templateKey: "collectionsHandoff",
     requiresAck: true,
     escalateAfterHours: 0,
     maxAttempts: 1,
@@ -99,9 +99,9 @@ const COLLECTION_RULES: CollectionRule[] = [
 
 // Late fee configuration
 const LATE_FEE_CONFIG = {
-  percentagePerWeek: 5,      // 5% per week
-  maxPercentage: 20,         // Cap at 20%
-  gracePeriodDays: 0,        // No grace period
+  percentagePerWeek: 5, // 5% per week
+  maxPercentage: 20, // Cap at 20%
+  gracePeriodDays: 0, // No grace period
 };
 
 // ============================================================================
@@ -123,13 +123,13 @@ export class CollectionService {
       errors: [],
     };
 
-    logger.info('[Collections] Starting daily collection run');
+    logger.info("[Collections] Starting daily collection run");
 
     try {
       // 1. Get all advances that need attention
       const targets = await this.getCollectionTargets();
 
-      logger.info('[Collections] Found targets', { count: targets.length });
+      logger.info("[Collections] Found targets", { count: targets.length });
 
       // 2. Process each target
       for (const target of targets) {
@@ -138,14 +138,16 @@ export class CollectionService {
           summary.totalProcessed++;
 
           // Update summary counters
-          summary.byStage[result.stage] = (summary.byStage[result.stage] || 0) + 1;
-          summary.byStatus[result.status] = (summary.byStatus[result.status] || 0) + 1;
-          summary.byChannel[result.channel] = (summary.byChannel[result.channel] || 0) + 1;
-
+          summary.byStage[result.stage] =
+            (summary.byStage[result.stage] || 0) + 1;
+          summary.byStatus[result.status] =
+            (summary.byStatus[result.status] || 0) + 1;
+          summary.byChannel[result.channel] =
+            (summary.byChannel[result.channel] || 0) + 1;
         } catch (error) {
           const msg = `Error processing ${target.contractNumber}: ${(error as Error).message}`;
           summary.errors.push(msg);
-          logger.error('[Collections] Target error:', error);
+          logger.error("[Collections] Target error:", error);
         }
       }
 
@@ -156,14 +158,13 @@ export class CollectionService {
       await this.updateAdvanceStatuses();
 
       const duration = Date.now() - startTime;
-      logger.info('[Collections] Daily run completed', {
+      logger.info("[Collections] Daily run completed", {
         duration,
         processed: summary.totalProcessed,
         errors: summary.errors.length,
       });
-
     } catch (error) {
-      logger.error('[Collections] Fatal error:', error);
+      logger.error("[Collections] Fatal error:", error);
       summary.errors.push((error as Error).message);
     }
 
@@ -182,12 +183,12 @@ export class CollectionService {
       where: {
         status: {
           in: [
-            'DISBURSED',
-            'ACTIVE',
-            'DELIVERY_CONFIRMED',
-            'PARTIALLY_REPAID',
-            'OVERDUE',
-            'DEFAULT_WARNING',
+            "DISBURSED",
+            "ACTIVE",
+            "DELIVERY_CONFIRMED",
+            "PARTIALLY_REPAID",
+            "OVERDUE",
+            "DEFAULT_WARNING",
           ],
         },
         dueDate: {
@@ -212,11 +213,14 @@ export class CollectionService {
     for (const advance of advances) {
       // Check opt-out
       const prefs = advance.farmer.user.notificationPreferences;
-      const optedOut = prefs?.whatsappEnabled === false && prefs?.smsEnabled === false;
+      const optedOut =
+        prefs?.whatsappEnabled === false && prefs?.smsEnabled === false;
 
       // Calculate days from due
       const dueDate = new Date(advance.dueDate);
-      const daysFromDue = Math.floor((today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000));
+      const daysFromDue = Math.floor(
+        (today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000),
+      );
 
       // Determine current stage
       const stage = this.determineStage(daysFromDue);
@@ -229,7 +233,7 @@ export class CollectionService {
         contractNumber: advance.contractNumber,
         farmerId: advance.farmerId,
         farmerName: advance.farmer.businessName,
-        phoneNumber: prefs?.phoneNumber || '',
+        phoneNumber: prefs?.phoneNumber || "",
         email: advance.farmer.user.email,
         amount: advance.remainingBalance.toNumber(),
         dueDate: advance.dueDate,
@@ -247,20 +251,22 @@ export class CollectionService {
    * Determine collection stage based on days from due
    */
   private determineStage(daysFromDue: number): CollectionStage {
-    if (daysFromDue <= -3) return 'FRIENDLY_REMINDER';
-    if (daysFromDue <= 0) return 'FINAL_NOTICE';
-    if (daysFromDue <= 1) return 'OVERDUE_1';
-    if (daysFromDue <= 3) return 'OVERDUE_3';
-    if (daysFromDue <= 7) return 'LATE_FEE_WARNING';
-    if (daysFromDue <= 14) return 'ACCOUNT_REVIEW';
-    if (daysFromDue <= 30) return 'COLLECTIONS_HANDOFF';
-    return 'LEGAL_WARNING';
+    if (daysFromDue <= -3) return "FRIENDLY_REMINDER";
+    if (daysFromDue <= 0) return "FINAL_NOTICE";
+    if (daysFromDue <= 1) return "OVERDUE_1";
+    if (daysFromDue <= 3) return "OVERDUE_3";
+    if (daysFromDue <= 7) return "LATE_FEE_WARNING";
+    if (daysFromDue <= 14) return "ACCOUNT_REVIEW";
+    if (daysFromDue <= 30) return "COLLECTIONS_HANDOFF";
+    return "LEGAL_WARNING";
   }
 
   /**
    * Process a single collection target
    */
-  private async processTarget(target: CollectionTarget): Promise<CollectionAttempt> {
+  private async processTarget(
+    target: CollectionTarget,
+  ): Promise<CollectionAttempt> {
     const rule = COLLECTION_RULES.find((r) => r.stage === target.currentStage);
 
     if (!rule) {
@@ -268,14 +274,17 @@ export class CollectionService {
     }
 
     // Check if already attempted today
-    const alreadyAttempted = await this.hasAttemptedToday(target.advanceId, target.currentStage);
+    const alreadyAttempted = await this.hasAttemptedToday(
+      target.advanceId,
+      target.currentStage,
+    );
     if (alreadyAttempted) {
       return {
-        id: '',
+        id: "",
         advanceId: target.advanceId,
         stage: target.currentStage,
-        channel: 'WHATSAPP',
-        status: 'SKIPPED',
+        channel: "WHATSAPP",
+        status: "SKIPPED",
         sentAt: new Date(),
         attemptNumber: target.previousAttempts,
       };
@@ -283,15 +292,15 @@ export class CollectionService {
 
     // Check opt-out
     if (target.optedOut) {
-      logger.info('[Collections] Skipping opted-out user', {
+      logger.info("[Collections] Skipping opted-out user", {
         contract: target.contractNumber,
       });
       return {
-        id: '',
+        id: "",
         advanceId: target.advanceId,
         stage: target.currentStage,
-        channel: 'WHATSAPP',
-        status: 'SKIPPED',
+        channel: "WHATSAPP",
+        status: "SKIPPED",
         sentAt: new Date(),
         attemptNumber: target.previousAttempts,
       };
@@ -302,11 +311,11 @@ export class CollectionService {
       try {
         const result = await this.sendReminder(target, channel, rule);
 
-        if (result.status === 'SENT' || result.status === 'DELIVERED') {
+        if (result.status === "SENT" || result.status === "DELIVERED") {
           return result;
         }
       } catch (error) {
-        logger.warn('[Collections] Channel failed', {
+        logger.warn("[Collections] Channel failed", {
           channel,
           error: (error as Error).message,
         });
@@ -315,14 +324,14 @@ export class CollectionService {
 
     // All channels failed
     return {
-      id: '',
+      id: "",
       advanceId: target.advanceId,
       stage: target.currentStage,
       channel: rule.channels[0],
-      status: 'FAILED',
+      status: "FAILED",
       sentAt: new Date(),
       attemptNumber: target.previousAttempts + 1,
-      error: 'All channels failed',
+      error: "All channels failed",
     };
   }
 
@@ -332,20 +341,20 @@ export class CollectionService {
   private async sendReminder(
     target: CollectionTarget,
     channel: CollectionChannel,
-    rule: CollectionRule
+    rule: CollectionRule,
   ): Promise<CollectionAttempt> {
     const attempt: CollectionAttempt = {
       id: `col_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       advanceId: target.advanceId,
       stage: target.currentStage,
       channel,
-      status: 'PENDING',
+      status: "PENDING",
       sentAt: new Date(),
       attemptNumber: target.previousAttempts + 1,
     };
 
     // Calculate late fee if overdue
-    let lateFee = '$0';
+    let lateFee = "$0";
     if (target.daysFromDue > 0) {
       const fee = this.calculateLateFee({
         advanceId: target.advanceId,
@@ -359,81 +368,90 @@ export class CollectionService {
       lateFee = `$${fee.feeAmount.toLocaleString()} MXN`;
     }
 
-    const formatDate = (d: Date) => d.toLocaleDateString('es-MX');
+    const formatDate = (d: Date) => d.toLocaleDateString("es-MX");
     const formatMoney = (n: number) => `$${n.toLocaleString()} MXN`;
 
     switch (channel) {
-      case 'WHATSAPP': {
+      case "WHATSAPP": {
         if (!target.phoneNumber) {
-          throw new Error('No phone number');
+          throw new Error("No phone number");
         }
 
         let message: string;
         if (target.daysFromDue < 0) {
-          message = getMessage('reminderFriendly', 'es',
+          message = getMessage(
+            "reminderFriendly",
+            "es",
             target.farmerName,
             formatMoney(target.amount),
             formatDate(target.dueDate),
-            Math.abs(target.daysFromDue)
+            Math.abs(target.daysFromDue),
           );
         } else if (target.daysFromDue === 0) {
-          message = getMessage('reminderDueToday', 'es',
+          message = getMessage(
+            "reminderDueToday",
+            "es",
             target.farmerName,
-            formatMoney(target.amount)
+            formatMoney(target.amount),
           );
         } else {
-          message = getMessage('reminderOverdue', 'es',
+          message = getMessage(
+            "reminderOverdue",
+            "es",
             target.farmerName,
             formatMoney(target.amount),
             target.daysFromDue,
-            lateFee
+            lateFee,
           );
         }
 
-        const messageId = await whatsAppService.sendText(target.phoneNumber, message);
+        const messageId = await whatsAppService.sendText(
+          target.phoneNumber,
+          message,
+        );
 
         attempt.messageId = messageId || undefined;
-        attempt.status = messageId ? 'SENT' : 'FAILED';
+        attempt.status = messageId ? "SENT" : "FAILED";
         break;
       }
 
-      case 'SMS': {
+      case "SMS": {
         // Twilio SMS integration would go here
-        logger.info('[Collections] SMS would be sent', {
+        logger.info("[Collections] SMS would be sent", {
           to: target.phoneNumber,
           stage: target.currentStage,
         });
-        attempt.status = 'SENT'; // Mock for now
+        attempt.status = "SENT"; // Mock for now
         break;
       }
 
-      case 'EMAIL': {
+      case "EMAIL": {
         // SendGrid email integration would go here
-        logger.info('[Collections] Email would be sent', {
+        logger.info("[Collections] Email would be sent", {
           to: target.email,
           stage: target.currentStage,
         });
-        attempt.status = 'SENT'; // Mock for now
+        attempt.status = "SENT"; // Mock for now
         break;
       }
 
-      case 'PUSH': {
+      case "PUSH": {
         // Firebase push notification would go here
-        logger.info('[Collections] Push would be sent', {
+        logger.info("[Collections] Push would be sent", {
           userId: target.farmerId,
           stage: target.currentStage,
         });
-        attempt.status = 'SENT'; // Mock for now
+        attempt.status = "SENT"; // Mock for now
         break;
       }
 
-      case 'CALL': {
+      case "CALL": {
         // Twilio call or human agent trigger
-        logger.info('[Collections] Call scheduled', {
+        logger.info("[Collections] Call scheduled", {
           phone: target.phoneNumber,
           stage: target.currentStage,
         });
-        attempt.status = 'PENDING'; // Requires human action
+        attempt.status = "PENDING"; // Requires human action
         break;
       }
     }
@@ -447,10 +465,19 @@ export class CollectionService {
   /**
    * Calculate late fee for an advance
    */
-  calculateLateFee(input: Partial<LateFeeCalculation> & { advanceId: string; originalAmount: number; daysOverdue: number }): LateFeeCalculation {
+  calculateLateFee(
+    input: Partial<LateFeeCalculation> & {
+      advanceId: string;
+      originalAmount: number;
+      daysOverdue: number;
+    },
+  ): LateFeeCalculation {
     const weeksOverdue = Math.ceil(input.daysOverdue / 7);
     const uncappedPercentage = weeksOverdue * LATE_FEE_CONFIG.percentagePerWeek;
-    const feePercentage = Math.min(uncappedPercentage, LATE_FEE_CONFIG.maxPercentage);
+    const feePercentage = Math.min(
+      uncappedPercentage,
+      LATE_FEE_CONFIG.maxPercentage,
+    );
     const feeAmount = input.originalAmount * (feePercentage / 100);
     const totalDue = input.originalAmount + feeAmount;
 
@@ -473,14 +500,14 @@ export class CollectionService {
 
     const overdueAdvances = await prisma.advanceContract.findMany({
       where: {
-        status: { in: ['OVERDUE', 'DEFAULT_WARNING'] },
+        status: { in: ["OVERDUE", "DEFAULT_WARNING"] },
         dueDate: { lt: today },
       },
     });
 
     for (const advance of overdueAdvances) {
       const daysOverdue = Math.floor(
-        (today.getTime() - advance.dueDate.getTime()) / (24 * 60 * 60 * 1000)
+        (today.getTime() - advance.dueDate.getTime()) / (24 * 60 * 60 * 1000),
       );
 
       const fee = this.calculateLateFee({
@@ -490,7 +517,7 @@ export class CollectionService {
       });
 
       // Log late fee calculation (actual application would depend on business rules)
-      logger.debug('[Collections] Late fee calculated', {
+      logger.debug("[Collections] Late fee calculated", {
         contract: advance.contractNumber,
         daysOverdue,
         feePercentage: fee.feePercentage,
@@ -508,11 +535,13 @@ export class CollectionService {
     // Move to OVERDUE if past due
     await prisma.advanceContract.updateMany({
       where: {
-        status: { in: ['DISBURSED', 'ACTIVE', 'DELIVERY_CONFIRMED', 'PARTIALLY_REPAID'] },
+        status: {
+          in: ["DISBURSED", "ACTIVE", "DELIVERY_CONFIRMED", "PARTIALLY_REPAID"],
+        },
         dueDate: { lt: today },
       },
       data: {
-        status: 'OVERDUE',
+        status: "OVERDUE",
       },
     });
 
@@ -520,11 +549,11 @@ export class CollectionService {
     const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     await prisma.advanceContract.updateMany({
       where: {
-        status: 'OVERDUE',
+        status: "OVERDUE",
         dueDate: { lt: sevenDaysAgo },
       },
       data: {
-        status: 'DEFAULT_WARNING',
+        status: "DEFAULT_WARNING",
       },
     });
 
@@ -532,15 +561,15 @@ export class CollectionService {
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
     await prisma.advanceContract.updateMany({
       where: {
-        status: 'DEFAULT_WARNING',
+        status: "DEFAULT_WARNING",
         dueDate: { lt: thirtyDaysAgo },
       },
       data: {
-        status: 'DEFAULTED',
+        status: "DEFAULTED",
       },
     });
 
-    logger.info('[Collections] Advance statuses updated');
+    logger.info("[Collections] Advance statuses updated");
   }
 
   // ==========================================================================
@@ -553,7 +582,10 @@ export class CollectionService {
     return 0;
   }
 
-  private async hasAttemptedToday(advanceId: string, stage: CollectionStage): Promise<boolean> {
+  private async hasAttemptedToday(
+    advanceId: string,
+    stage: CollectionStage,
+  ): Promise<boolean> {
     // Would query collection_attempts table
     // For now, return false
     return false;
@@ -561,7 +593,7 @@ export class CollectionService {
 
   private async logAttempt(attempt: CollectionAttempt): Promise<void> {
     // Would insert into collection_attempts table
-    logger.info('[Collections] Attempt logged', {
+    logger.info("[Collections] Attempt logged", {
       id: attempt.id,
       advance: attempt.advanceId,
       stage: attempt.stage,

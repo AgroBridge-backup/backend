@@ -21,30 +21,30 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { Request, Response, NextFunction, Router } from 'express';
-import { z } from 'zod';
-import { PrismaClient, UserRole } from '@prisma/client';
-import type { Redis } from 'ioredis';
+import { Request, Response, NextFunction, Router } from "express";
+import { z } from "zod";
+import { PrismaClient, UserRole } from "@prisma/client";
+import type { Redis } from "ioredis";
 import {
   AdvanceContractService,
   createAdvanceContractService,
   AdvanceStatus,
   PaymentMethod,
-} from '../services/AdvanceContractService.js';
+} from "../services/AdvanceContractService.js";
 import {
   advanceCalculationLimiter,
   advanceRequestLimiter,
   financialOperationLimiter,
   requireAdminOrOperator,
   requireFarmerOwnershipOrAdmin,
-} from '../../../presentation/routes/cash-flow-bridge.routes.js';
-import logger from '../../../shared/utils/logger.js';
+} from "../../../presentation/routes/cash-flow-bridge.routes.js";
+import logger from "../../../shared/utils/logger.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
 // ════════════════════════════════════════════════════════════════════════════════
 
-const uuidSchema = z.string().uuid('Invalid UUID format');
+const uuidSchema = z.string().uuid("Invalid UUID format");
 
 const advanceIdParamSchema = z.object({
   advanceId: uuidSchema,
@@ -85,10 +85,16 @@ const disburseAdvanceSchema = z.object({
 });
 
 const repaymentSchema = z.object({
-  amount: z.number().positive('Amount must be positive'),
+  amount: z.number().positive("Amount must be positive"),
   paymentMethod: z.nativeEnum(PaymentMethod),
   paymentReference: z.string().min(1),
-  source: z.enum(['BUYER_PAYMENT', 'FARMER_PAYMENT', 'INSURANCE', 'COLLECTIONS', 'OTHER']),
+  source: z.enum([
+    "BUYER_PAYMENT",
+    "FARMER_PAYMENT",
+    "INSURANCE",
+    "COLLECTIONS",
+    "OTHER",
+  ]),
   notes: z.string().max(1000).optional(),
 });
 
@@ -99,9 +105,18 @@ const statusUpdateSchema = z.object({
 });
 
 const listAdvancesQuerySchema = z.object({
-  status: z.string().optional().transform((val) =>
-    val ? val.split(',').filter((s) => Object.values(AdvanceStatus).includes(s as AdvanceStatus)) as AdvanceStatus[] : undefined
-  ),
+  status: z
+    .string()
+    .optional()
+    .transform((val) =>
+      val
+        ? (val
+            .split(",")
+            .filter((s) =>
+              Object.values(AdvanceStatus).includes(s as AdvanceStatus),
+            ) as AdvanceStatus[])
+        : undefined,
+    ),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
@@ -140,7 +155,7 @@ export class AdvanceController {
 
     // Calculate advance terms (preview) - rate limited
     this.router.post(
-      '/calculate',
+      "/calculate",
       advanceCalculationLimiter,
       this.validateFarmerOwnership.bind(this),
       this.calculateAdvance.bind(this),
@@ -148,7 +163,7 @@ export class AdvanceController {
 
     // Request new advance - strictly rate limited
     this.router.post(
-      '/',
+      "/",
       advanceRequestLimiter,
       this.validateFarmerOwnership.bind(this),
       this.requestAdvance.bind(this),
@@ -156,16 +171,16 @@ export class AdvanceController {
 
     // Get advance by ID - ownership verified in handler
     this.router.get(
-      '/:advanceId',
+      "/:advanceId",
       this.validateAdvanceId,
       this.getAdvance.bind(this),
     );
 
     // Get farmer's advances - ownership verified
     this.router.get(
-      '/farmer/:farmerId',
+      "/farmer/:farmerId",
       this.validateFarmerId,
-      requireFarmerOwnershipOrAdmin('farmerId'),
+      requireFarmerOwnershipOrAdmin("farmerId"),
       this.getFarmerAdvances.bind(this),
     );
 
@@ -175,7 +190,7 @@ export class AdvanceController {
 
     // Approve advance - ADMIN/OPERATOR only
     this.router.post(
-      '/:advanceId/approve',
+      "/:advanceId/approve",
       requireAdminOrOperator,
       financialOperationLimiter,
       this.validateAdvanceId,
@@ -184,7 +199,7 @@ export class AdvanceController {
 
     // Reject advance - ADMIN/OPERATOR only
     this.router.post(
-      '/:advanceId/reject',
+      "/:advanceId/reject",
       requireAdminOrOperator,
       this.validateAdvanceId,
       this.rejectAdvance.bind(this),
@@ -192,7 +207,7 @@ export class AdvanceController {
 
     // Disburse advance - ADMIN/OPERATOR only, rate limited
     this.router.post(
-      '/:advanceId/disburse',
+      "/:advanceId/disburse",
       requireAdminOrOperator,
       financialOperationLimiter,
       this.validateAdvanceId,
@@ -201,7 +216,7 @@ export class AdvanceController {
 
     // Process repayment - rate limited (can be triggered by system or admin)
     this.router.post(
-      '/:advanceId/repay',
+      "/:advanceId/repay",
       financialOperationLimiter,
       this.validateAdvanceId,
       this.processRepayment.bind(this),
@@ -209,7 +224,7 @@ export class AdvanceController {
 
     // Update status - ADMIN/OPERATOR only
     this.router.post(
-      '/:advanceId/status',
+      "/:advanceId/status",
       requireAdminOrOperator,
       this.validateAdvanceId,
       this.updateStatus.bind(this),
@@ -217,14 +232,14 @@ export class AdvanceController {
 
     // Get status history - accessible to owner or admin
     this.router.get(
-      '/:advanceId/history',
+      "/:advanceId/history",
       this.validateAdvanceId,
       this.getStatusHistory.bind(this),
     );
 
     // Mark as defaulted - ADMIN/OPERATOR only
     this.router.post(
-      '/:advanceId/default',
+      "/:advanceId/default",
       requireAdminOrOperator,
       this.validateAdvanceId,
       this.markAsDefaulted.bind(this),
@@ -241,7 +256,9 @@ export class AdvanceController {
   ): void => {
     const user = req.user;
     if (!user) {
-      res.status(401).json({ success: false, error: 'Authentication required' });
+      res
+        .status(401)
+        .json({ success: false, error: "Authentication required" });
       return;
     }
 
@@ -250,15 +267,18 @@ export class AdvanceController {
     const isOwner = user.producerId === farmerId;
 
     if (!isAdmin && !isOwner) {
-      logger.warn(`[Authorization] Farmer ownership check failed in advance controller`, {
-        userId: user.userId,
-        producerId: user.producerId,
-        requestedFarmerId: farmerId,
-        path: req.path,
-      });
+      logger.warn(
+        `[Authorization] Farmer ownership check failed in advance controller`,
+        {
+          userId: user.userId,
+          producerId: user.producerId,
+          requestedFarmerId: farmerId,
+          path: req.path,
+        },
+      );
       res.status(403).json({
         success: false,
-        error: 'You can only request advances for your own account',
+        error: "You can only request advances for your own account",
       });
       return;
     }
@@ -283,7 +303,7 @@ export class AdvanceController {
     if (!result.success) {
       res.status(400).json({
         success: false,
-        error: 'Invalid advance ID',
+        error: "Invalid advance ID",
         details: result.error.flatten().fieldErrors,
       });
       return;
@@ -305,7 +325,7 @@ export class AdvanceController {
     if (!result.success) {
       res.status(400).json({
         success: false,
-        error: 'Invalid farmer ID',
+        error: "Invalid farmer ID",
         details: result.error.flatten().fieldErrors,
       });
       return;
@@ -329,7 +349,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -356,10 +376,10 @@ export class AdvanceController {
         data: result.data,
       });
     } catch (error) {
-      console.error('Error calculating advance:', error);
+      console.error("Error calculating advance:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -375,7 +395,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -394,13 +414,13 @@ export class AdvanceController {
       res.status(201).json({
         success: true,
         data: result.data,
-        message: 'Advance request created successfully',
+        message: "Advance request created successfully",
       });
     } catch (error) {
-      console.error('Error requesting advance:', error);
+      console.error("Error requesting advance:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -428,10 +448,10 @@ export class AdvanceController {
         data: result.data,
       });
     } catch (error) {
-      console.error('Error getting advance:', error);
+      console.error("Error getting advance:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -447,7 +467,10 @@ export class AdvanceController {
 
       const status = queryResult.success ? queryResult.data.status : undefined;
 
-      const result = await this.advanceService.getFarmerAdvances(farmerId, status);
+      const result = await this.advanceService.getFarmerAdvances(
+        farmerId,
+        status,
+      );
 
       if (!result.success) {
         res.status(400).json({
@@ -463,10 +486,10 @@ export class AdvanceController {
         count: result.data?.length || 0,
       });
     } catch (error) {
-      console.error('Error getting farmer advances:', error);
+      console.error("Error getting farmer advances:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -483,7 +506,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -493,7 +516,7 @@ export class AdvanceController {
         advanceId,
         AdvanceStatus.APPROVED,
         bodyResult.data.approvedBy,
-        bodyResult.data.notes || 'Manually approved',
+        bodyResult.data.notes || "Manually approved",
       );
 
       if (!result.success) {
@@ -507,13 +530,13 @@ export class AdvanceController {
       res.status(200).json({
         success: true,
         data: result.data,
-        message: 'Advance approved successfully',
+        message: "Advance approved successfully",
       });
     } catch (error) {
-      console.error('Error approving advance:', error);
+      console.error("Error approving advance:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -530,7 +553,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -554,13 +577,13 @@ export class AdvanceController {
       res.status(200).json({
         success: true,
         data: result.data,
-        message: 'Advance rejected',
+        message: "Advance rejected",
       });
     } catch (error) {
-      console.error('Error rejecting advance:', error);
+      console.error("Error rejecting advance:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -577,7 +600,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -600,13 +623,13 @@ export class AdvanceController {
       res.status(200).json({
         success: true,
         data: result.data,
-        message: 'Advance disbursed successfully',
+        message: "Advance disbursed successfully",
       });
     } catch (error) {
-      console.error('Error disbursing advance:', error);
+      console.error("Error disbursing advance:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -623,7 +646,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -646,14 +669,14 @@ export class AdvanceController {
         success: true,
         data: result.data,
         message: result.data?.isFullyRepaid
-          ? 'Advance fully repaid'
-          : 'Partial repayment processed',
+          ? "Advance fully repaid"
+          : "Partial repayment processed",
       });
     } catch (error) {
-      console.error('Error processing repayment:', error);
+      console.error("Error processing repayment:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -670,7 +693,7 @@ export class AdvanceController {
       if (!bodyResult.success) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request body',
+          error: "Invalid request body",
           details: bodyResult.error.flatten().fieldErrors,
         });
         return;
@@ -694,13 +717,13 @@ export class AdvanceController {
       res.status(200).json({
         success: true,
         data: result.data,
-        message: 'Status updated successfully',
+        message: "Status updated successfully",
       });
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error("Error updating status:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -717,7 +740,7 @@ export class AdvanceController {
       const prisma = new PrismaClient();
       const history = await prisma.advanceStatusHistory.findMany({
         where: { advanceId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       await prisma.$disconnect();
 
@@ -727,10 +750,10 @@ export class AdvanceController {
         count: history.length,
       });
     } catch (error) {
-      console.error('Error getting status history:', error);
+      console.error("Error getting status history:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }
@@ -744,10 +767,10 @@ export class AdvanceController {
       const { advanceId } = req.params;
       const { reason, recoveredAmount } = req.body;
 
-      if (!reason || typeof reason !== 'string') {
+      if (!reason || typeof reason !== "string") {
         res.status(400).json({
           success: false,
-          error: 'Reason is required',
+          error: "Reason is required",
         });
         return;
       }
@@ -769,13 +792,13 @@ export class AdvanceController {
       res.status(200).json({
         success: true,
         data: result.data,
-        message: 'Advance marked as defaulted',
+        message: "Advance marked as defaulted",
       });
     } catch (error) {
-      console.error('Error marking as defaulted:', error);
+      console.error("Error marking as defaulted:", error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
+        error: "Internal server error",
       });
     }
   }

@@ -3,9 +3,9 @@
  * Public verification of invoice authenticity via blockchain
  */
 
-import { IInvoiceRepository } from '../../../domain/repositories/IInvoiceRepository.js';
-import { Invoice, InvoiceStatus } from '../../../domain/entities/Invoice.js';
-import { NotFoundError } from '../../../shared/errors/NotFoundError.js';
+import { IInvoiceRepository } from "../../../domain/repositories/IInvoiceRepository.js";
+import { Invoice, InvoiceStatus } from "../../../domain/entities/Invoice.js";
+import { NotFoundError } from "../../../shared/errors/NotFoundError.js";
 
 export interface VerifyInvoiceRequest {
   uuid: string;
@@ -34,7 +34,7 @@ export interface VerifyInvoiceResponse {
   };
   verification: {
     isAuthentic: boolean;
-    status: 'VERIFIED' | 'PENDING' | 'NOT_REGISTERED';
+    status: "VERIFIED" | "PENDING" | "NOT_REGISTERED";
     message: string;
     verifiedAt: Date;
   };
@@ -44,24 +44,27 @@ export class VerifyInvoiceUseCase {
   constructor(private readonly invoiceRepository: IInvoiceRepository) {}
 
   async execute(request: VerifyInvoiceRequest): Promise<VerifyInvoiceResponse> {
-    const result = await this.invoiceRepository.findByUuidWithDetails(request.uuid);
+    const result = await this.invoiceRepository.findByUuidWithDetails(
+      request.uuid,
+    );
 
     if (!result) {
-      throw new NotFoundError('Invoice not found');
+      throw new NotFoundError("Invoice not found");
     }
 
     const { invoice, producer } = result;
 
     // Determine verification status
-    let verificationStatus: 'VERIFIED' | 'PENDING' | 'NOT_REGISTERED' = 'NOT_REGISTERED';
-    let message = 'Esta factura no está registrada en blockchain.';
+    let verificationStatus: "VERIFIED" | "PENDING" | "NOT_REGISTERED" =
+      "NOT_REGISTERED";
+    let message = "Esta factura no está registrada en blockchain.";
 
     if (invoice.blockchainVerified && invoice.blockchainHash) {
-      verificationStatus = 'VERIFIED';
-      message = 'Esta factura está verificada en blockchain y es auténtica.';
+      verificationStatus = "VERIFIED";
+      message = "Esta factura está verificada en blockchain y es auténtica.";
     } else if (invoice.status === InvoiceStatus.BLOCKCHAIN_PENDING) {
-      verificationStatus = 'PENDING';
-      message = 'Esta factura está pendiente de verificación en blockchain.';
+      verificationStatus = "PENDING";
+      message = "Esta factura está pendiente de verificación en blockchain.";
     }
 
     return {

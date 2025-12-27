@@ -4,12 +4,12 @@
  * Supports inspection creation, photo evidence, organic input tracking, and verification
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaFieldInspectionRepository } from '../../infrastructure/database/prisma/repositories/PrismaFieldInspectionRepository.js';
-import { PrismaOrganicFieldRepository } from '../../infrastructure/database/prisma/repositories/PrismaOrganicFieldRepository.js';
-import { FieldInspectionService } from '../../domain/services/FieldInspectionService.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaFieldInspectionRepository } from "../../infrastructure/database/prisma/repositories/PrismaFieldInspectionRepository.js";
+import { PrismaOrganicFieldRepository } from "../../infrastructure/database/prisma/repositories/PrismaOrganicFieldRepository.js";
+import { FieldInspectionService } from "../../domain/services/FieldInspectionService.js";
 import {
   CreateFieldInspectionUseCase,
   GetFieldInspectionUseCase,
@@ -22,17 +22,17 @@ import {
   AddFieldActivityUseCase,
   GetFieldInspectionStatsUseCase,
   GetInspectionDetailsUseCase,
-} from '../../application/use-cases/field-inspections/index.js';
+} from "../../application/use-cases/field-inspections/index.js";
 import {
   InspectionType,
   PHOTO_TYPES,
   INPUT_TYPES,
   ACTIVITY_TYPES,
   WEATHER_CONDITIONS,
-} from '../../domain/entities/FieldInspection.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../domain/entities/FieldInspection.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const createInspectionSchema = z.object({
@@ -45,7 +45,9 @@ const createInspectionSchema = z.object({
   inspectorLat: z.number().min(-90).max(90).optional(),
   inspectorLng: z.number().min(-180).max(180).optional(),
   gpsAccuracy: z.number().positive().optional(),
-  weatherCondition: z.enum(WEATHER_CONDITIONS as unknown as [string, ...string[]]).optional(),
+  weatherCondition: z
+    .enum(WEATHER_CONDITIONS as unknown as [string, ...string[]])
+    .optional(),
   temperature: z.number().optional(),
   notes: z.string().max(5000).optional(),
   issues: z.string().max(5000).optional(),
@@ -124,14 +126,24 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
   });
 
   // Initialize use cases
-  const createInspectionUseCase = new CreateFieldInspectionUseCase(inspectionService);
+  const createInspectionUseCase = new CreateFieldInspectionUseCase(
+    inspectionService,
+  );
   const getInspectionUseCase = new GetFieldInspectionUseCase(inspectionService);
-  const listInspectionsUseCase = new ListFieldInspectionsUseCase(inspectionService);
-  const updateNotesUseCase = new UpdateInspectionNotesUseCase(inspectionService);
-  const verifyInspectionUseCase = new VerifyFieldInspectionUseCase(inspectionService);
+  const listInspectionsUseCase = new ListFieldInspectionsUseCase(
+    inspectionService,
+  );
+  const updateNotesUseCase = new UpdateInspectionNotesUseCase(
+    inspectionService,
+  );
+  const verifyInspectionUseCase = new VerifyFieldInspectionUseCase(
+    inspectionService,
+  );
   const addPhotoUseCase = new AddInspectionPhotoUseCase(inspectionService);
   const addOrganicInputUseCase = new AddOrganicInputUseCase(inspectionService);
-  const verifyOrganicInputUseCase = new VerifyOrganicInputUseCase(inspectionService);
+  const verifyOrganicInputUseCase = new VerifyOrganicInputUseCase(
+    inspectionService,
+  );
   const addActivityUseCase = new AddFieldActivityUseCase(inspectionService);
   const getStatsUseCase = new GetFieldInspectionStatsUseCase(inspectionService);
   const getDetailsUseCase = new GetInspectionDetailsUseCase(inspectionService);
@@ -145,8 +157,8 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
    * Create a new inspection for a field
    */
   router.post(
-    '/:fieldId/inspections',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:fieldId/inspections",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -156,7 +168,7 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -169,7 +181,7 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
             : undefined,
         });
 
-        logger.info('Field inspection created via API', {
+        logger.info("Field inspection created via API", {
           inspectionId: result.inspection.id,
           fieldId,
           gpsVerified: result.gpsVerified,
@@ -184,7 +196,7 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -192,8 +204,8 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
    * List inspections for a field
    */
   router.get(
-    '/:fieldId/inspections',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:fieldId/inspections",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -203,7 +215,7 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -211,8 +223,12 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
         const result = await listInspectionsUseCase.execute({
           fieldId,
           ...validation.data,
-          fromDate: validation.data.fromDate ? new Date(validation.data.fromDate) : undefined,
-          toDate: validation.data.toDate ? new Date(validation.data.toDate) : undefined,
+          fromDate: validation.data.fromDate
+            ? new Date(validation.data.fromDate)
+            : undefined,
+          toDate: validation.data.toDate
+            ? new Date(validation.data.toDate)
+            : undefined,
         });
 
         res.json({
@@ -227,7 +243,7 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -235,8 +251,8 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
    * Get inspection statistics for a field
    */
   router.get(
-    '/:fieldId/inspections/stats',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:fieldId/inspections/stats",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -251,7 +267,7 @@ export function createFieldInspectionsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;
@@ -274,11 +290,17 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
 
   // Initialize use cases
   const getInspectionUseCase = new GetFieldInspectionUseCase(inspectionService);
-  const updateNotesUseCase = new UpdateInspectionNotesUseCase(inspectionService);
-  const verifyInspectionUseCase = new VerifyFieldInspectionUseCase(inspectionService);
+  const updateNotesUseCase = new UpdateInspectionNotesUseCase(
+    inspectionService,
+  );
+  const verifyInspectionUseCase = new VerifyFieldInspectionUseCase(
+    inspectionService,
+  );
   const addPhotoUseCase = new AddInspectionPhotoUseCase(inspectionService);
   const addOrganicInputUseCase = new AddOrganicInputUseCase(inspectionService);
-  const verifyOrganicInputUseCase = new VerifyOrganicInputUseCase(inspectionService);
+  const verifyOrganicInputUseCase = new VerifyOrganicInputUseCase(
+    inspectionService,
+  );
   const addActivityUseCase = new AddFieldActivityUseCase(inspectionService);
   const getDetailsUseCase = new GetInspectionDetailsUseCase(inspectionService);
 
@@ -291,13 +313,13 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Get inspection by ID with optional details
    */
   router.get(
-    '/:id',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
-        const includeDetails = req.query.details === 'true';
+        const includeDetails = req.query.details === "true";
 
         const result = await getInspectionUseCase.execute({
           inspectionId: id,
@@ -311,7 +333,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -319,8 +341,8 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Update inspection notes, issues, and recommendations
    */
   router.patch(
-    '/:id/notes',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id/notes",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -330,7 +352,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -340,7 +362,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
           ...validation.data,
         });
 
-        logger.info('Inspection notes updated via API', { inspectionId: id });
+        logger.info("Inspection notes updated via API", { inspectionId: id });
 
         res.json({
           success: true,
@@ -350,7 +372,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -358,20 +380,20 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Verify an inspection (supervisor/certifier only)
    */
   router.post(
-    '/:id/verify',
-    authenticate(['ADMIN', 'CERTIFIER']),
+    "/:id/verify",
+    authenticate(["ADMIN", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
-        const verifiedBy = req.user?.id || 'unknown';
+        const verifiedBy = req.user?.id || "unknown";
 
         const result = await verifyInspectionUseCase.execute({
           inspectionId: id,
           verifiedBy,
         });
 
-        logger.info('Inspection verified via API', {
+        logger.info("Inspection verified via API", {
           inspectionId: id,
           verifiedBy,
         });
@@ -384,7 +406,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -392,8 +414,8 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Get all details (photos, inputs, activities) for an inspection
    */
   router.get(
-    '/:id/details',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id/details",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -408,7 +430,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -420,8 +442,8 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Add photo to inspection
    */
   router.post(
-    '/:id/photos',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id/photos",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -431,7 +453,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -442,7 +464,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
           capturedAt: new Date(validation.data.capturedAt),
         });
 
-        logger.info('Inspection photo added via API', {
+        logger.info("Inspection photo added via API", {
           inspectionId: id,
           photoId: result.photo.id,
           withinBoundary: result.withinBoundary,
@@ -458,7 +480,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -470,8 +492,8 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Add organic input record to inspection
    */
   router.post(
-    '/:id/organic-inputs',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id/organic-inputs",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -481,7 +503,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -494,7 +516,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
             : undefined,
         });
 
-        logger.info('Organic input added via API', {
+        logger.info("Organic input added via API", {
           inspectionId: id,
           inputId: result.organicInput.id,
           productName: result.organicInput.productName,
@@ -508,7 +530,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -516,19 +538,19 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Verify organic input (approve or reject)
    */
   router.post(
-    '/organic-inputs/:inputId/verify',
-    authenticate(['ADMIN', 'CERTIFIER']),
+    "/organic-inputs/:inputId/verify",
+    authenticate(["ADMIN", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { inputId } = req.params;
-        const verifiedBy = req.user?.id || 'unknown';
+        const verifiedBy = req.user?.id || "unknown";
         const validation = verifyOrganicInputSchema.safeParse(req.body);
 
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -540,7 +562,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
           rejectionReason: validation.data.rejectionReason,
         });
 
-        logger.info('Organic input verified via API', {
+        logger.info("Organic input verified via API", {
           inputId,
           verifiedBy,
           approved: validation.data.approved,
@@ -554,7 +576,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -566,8 +588,8 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Add field activity record to inspection
    */
   router.post(
-    '/:id/activities',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id/activities",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -577,7 +599,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -588,7 +610,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
           activityDate: new Date(validation.data.activityDate),
         });
 
-        logger.info('Field activity added via API', {
+        logger.info("Field activity added via API", {
           inspectionId: id,
           activityId: result.activity.id,
           activityType: result.activity.activityType,
@@ -602,7 +624,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -614,7 +636,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
    * Get configuration options (photo types, input types, etc.)
    */
   router.get(
-    '/config/options',
+    "/config/options",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -632,7 +654,7 @@ export function createInspectionRoutes(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

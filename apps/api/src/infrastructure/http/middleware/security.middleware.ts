@@ -1,21 +1,25 @@
-import helmet from 'helmet';
-import { Request, Response, NextFunction } from 'express';
-import logger from '../../../shared/utils/logger.js';
+import helmet from "helmet";
+import { Request, Response, NextFunction } from "express";
+import logger from "../../../shared/utils/logger.js";
 
 /**
  * Force HTTPS in production
  * Redirects HTTP requests to HTTPS with 301 status code
  */
-export const forceHTTPS = (req: Request, res: Response, next: NextFunction): void => {
+export const forceHTTPS = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   // Only enforce in production
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     return next();
   }
 
   // Check if behind proxy (load balancer, CloudFront, etc.)
-  const proto = req.headers['x-forwarded-proto'] as string;
+  const proto = req.headers["x-forwarded-proto"] as string;
 
-  if (proto && proto !== 'https') {
+  if (proto && proto !== "https") {
     const secureUrl = `https://${req.hostname}${req.url}`;
     logger.debug(`[Security] Redirecting HTTP to HTTPS: ${secureUrl}`);
     return res.redirect(301, secureUrl);
@@ -54,7 +58,7 @@ export const securityHeadersMiddleware = helmet({
 
   // X-Frame-Options
   frameguard: {
-    action: 'deny',
+    action: "deny",
   },
 
   // X-Content-Type-Options
@@ -65,7 +69,7 @@ export const securityHeadersMiddleware = helmet({
 
   // Referrer-Policy
   referrerPolicy: {
-    policy: 'strict-origin-when-cross-origin',
+    policy: "strict-origin-when-cross-origin",
   },
 
   // Hide X-Powered-By
@@ -78,23 +82,26 @@ export const securityHeadersMiddleware = helmet({
 export const additionalSecurityHeaders = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   // Permissions Policy (formerly Feature-Policy)
   res.setHeader(
-    'Permissions-Policy',
-    'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()'
+    "Permissions-Policy",
+    "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
   );
 
   // X-DNS-Prefetch-Control
-  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader("X-DNS-Prefetch-Control", "off");
 
   // Cache-Control for API responses (prevent caching of sensitive data)
-  if (req.path.startsWith('/api/')) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
+  if (req.path.startsWith("/api/")) {
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
   }
 
   next();

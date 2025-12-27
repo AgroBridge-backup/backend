@@ -3,10 +3,14 @@
  * Upgrades an export company to a higher tier
  */
 
-import { ExportCompanyService } from '../../../domain/services/ExportCompanyService.js';
-import { ExportCompany, ExportCompanyTier, TIER_CONFIG } from '../../../domain/entities/ExportCompany.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
-import { ILogger } from '../../../domain/services/ILogger.js';
+import { ExportCompanyService } from "../../../domain/services/ExportCompanyService.js";
+import {
+  ExportCompany,
+  ExportCompanyTier,
+  TIER_CONFIG,
+} from "../../../domain/entities/ExportCompany.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
+import { ILogger } from "../../../domain/services/ILogger.js";
 
 export interface UpgradeTierRequest {
   companyId: string;
@@ -29,31 +33,38 @@ export interface UpgradeTierResponse {
 export class UpgradeTierUseCase {
   constructor(
     private readonly companyService: ExportCompanyService,
-    private readonly logger?: ILogger
+    private readonly logger?: ILogger,
   ) {}
 
   async execute(request: UpgradeTierRequest): Promise<UpgradeTierResponse> {
     if (!request.companyId) {
-      throw new ValidationError('Company ID is required');
+      throw new ValidationError("Company ID is required");
     }
     if (!request.newTier) {
-      throw new ValidationError('New tier is required');
+      throw new ValidationError("New tier is required");
     }
     if (!Object.values(ExportCompanyTier).includes(request.newTier)) {
-      throw new ValidationError('Invalid tier. Must be STARTER, PROFESSIONAL, or ENTERPRISE');
+      throw new ValidationError(
+        "Invalid tier. Must be STARTER, PROFESSIONAL, or ENTERPRISE",
+      );
     }
 
     // Get current company to determine previous tier
-    const currentCompany = await this.companyService.getCompany(request.companyId);
+    const currentCompany = await this.companyService.getCompany(
+      request.companyId,
+    );
     const previousTier = currentCompany.tier;
 
-    this.logger?.info('Upgrading company tier', {
+    this.logger?.info("Upgrading company tier", {
       companyId: request.companyId,
       from: previousTier,
       to: request.newTier,
     });
 
-    const company = await this.companyService.upgradeTier(request.companyId, request.newTier);
+    const company = await this.companyService.upgradeTier(
+      request.companyId,
+      request.newTier,
+    );
     const tierConfig = TIER_CONFIG[request.newTier];
 
     return {

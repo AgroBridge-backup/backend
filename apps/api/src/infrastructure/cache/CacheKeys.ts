@@ -38,13 +38,13 @@ export const CacheTTL = {
  * Cache key prefixes for different entity types
  */
 export const CachePrefix = {
-  BATCH: 'batch',
-  PRODUCER: 'producer',
-  EVENT: 'event',
-  USER: 'user',
-  STATS: 'stats',
-  LIST: 'list',
-  HEALTH: 'health',
+  BATCH: "batch",
+  PRODUCER: "producer",
+  EVENT: "event",
+  USER: "user",
+  STATS: "stats",
+  LIST: "list",
+  HEALTH: "health",
 } as const;
 
 /**
@@ -112,7 +112,7 @@ export class CacheKeys {
       parts.push(`limit:${options.limit}`);
     }
 
-    return parts.join(':');
+    return parts.join(":");
   }
 
   /**
@@ -184,7 +184,7 @@ export class CacheKeys {
       parts.push(`limit:${options.limit}`);
     }
 
-    return parts.join(':');
+    return parts.join(":");
   }
 
   /**

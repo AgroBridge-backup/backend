@@ -4,26 +4,31 @@
  */
 
 export type CollectionStage =
-  | 'FRIENDLY_REMINDER'    // 3 days before due
-  | 'FINAL_NOTICE'         // Due today
-  | 'OVERDUE_1'            // 1 day overdue
-  | 'OVERDUE_3'            // 3 days overdue
-  | 'LATE_FEE_WARNING'     // 7 days overdue
-  | 'ACCOUNT_REVIEW'       // 14 days overdue
-  | 'COLLECTIONS_HANDOFF'  // 30+ days, manual collections
-  | 'LEGAL_WARNING';       // 60+ days
+  | "FRIENDLY_REMINDER" // 3 days before due
+  | "FINAL_NOTICE" // Due today
+  | "OVERDUE_1" // 1 day overdue
+  | "OVERDUE_3" // 3 days overdue
+  | "LATE_FEE_WARNING" // 7 days overdue
+  | "ACCOUNT_REVIEW" // 14 days overdue
+  | "COLLECTIONS_HANDOFF" // 30+ days, manual collections
+  | "LEGAL_WARNING"; // 60+ days
 
-export type CollectionChannel = 'WHATSAPP' | 'SMS' | 'EMAIL' | 'PUSH' | 'CALL';
+export type CollectionChannel = "WHATSAPP" | "SMS" | "EMAIL" | "PUSH" | "CALL";
 
-export type CollectionStatus = 'PENDING' | 'SENT' | 'DELIVERED' | 'FAILED' | 'SKIPPED';
+export type CollectionStatus =
+  | "PENDING"
+  | "SENT"
+  | "DELIVERED"
+  | "FAILED"
+  | "SKIPPED";
 
 export interface CollectionRule {
   stage: CollectionStage;
-  daysFromDue: number;        // Negative = before due, positive = after due
+  daysFromDue: number; // Negative = before due, positive = after due
   channels: CollectionChannel[];
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
+  priority: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   templateKey: string;
-  requiresAck: boolean;       // Require acknowledgment
+  requiresAck: boolean; // Require acknowledgment
   escalateAfterHours: number; // Escalate if no response
   maxAttempts: number;
 }
@@ -75,5 +80,5 @@ export interface LateFeeCalculation {
   feePercentage: number;
   feeAmount: number;
   totalDue: number;
-  cappedAt: number;           // Max fee cap (e.g., 20%)
+  cappedAt: number; // Max fee cap (e.g., 20%)
 }

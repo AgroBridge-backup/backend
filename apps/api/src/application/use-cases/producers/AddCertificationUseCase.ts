@@ -3,6 +3,6 @@ import { IProducerRepository } from "../../../domain/repositories/IProducerRepos
 export class AddCertificationUseCase {
   constructor(private readonly producerRepository: IProducerRepository) {}
   async execute(dto: any): Promise<any> {
-    return { id: 'dummy-cert-id' };
+    return { id: "dummy-cert-id" };
   }
 }

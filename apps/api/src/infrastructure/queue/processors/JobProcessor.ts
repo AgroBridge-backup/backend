@@ -11,8 +11,8 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Job } from 'bull';
-import logger from '../../../shared/utils/logger.js';
+import { Job } from "bull";
+import logger from "../../../shared/utils/logger.js";
 
 /**
  * Job Processor Interface
@@ -71,7 +71,9 @@ export interface JobContext {
  * - Performance tracking
  * - Progress reporting
  */
-export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<TData, TResult> {
+export abstract class BaseJobProcessor<TData, TResult>
+  implements JobProcessor<TData, TResult>
+{
   /**
    * Queue name for logging context
    */
@@ -168,7 +170,7 @@ export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<T
   protected async reportProgress(
     job: Job<TData>,
     progress: number,
-    message?: string
+    message?: string,
   ): Promise<void> {
     await job.progress(progress);
 
@@ -206,7 +208,11 @@ export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<T
   /**
    * Log job success
    */
-  protected logJobSuccess(context: JobContext, duration: number, result: TResult): void {
+  protected logJobSuccess(
+    context: JobContext,
+    duration: number,
+    result: TResult,
+  ): void {
     logger.info(`[${this.queueName}] Job succeeded`, {
       jobId: context.jobId,
       duration: `${duration}ms`,
@@ -217,7 +223,11 @@ export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<T
   /**
    * Log job error
    */
-  protected logJobError(context: JobContext, duration: number, error: Error): void {
+  protected logJobError(
+    context: JobContext,
+    duration: number,
+    error: Error,
+  ): void {
     logger.error(`[${this.queueName}] Job error`, {
       jobId: context.jobId,
       attempt: `${context.attempt}/${context.maxAttempts}`,
@@ -232,17 +242,23 @@ export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<T
    * Override in subclasses for custom sanitization
    */
   protected sanitizeLogData<T>(data: T): T {
-    if (!data || typeof data !== 'object') {
+    if (!data || typeof data !== "object") {
       return data;
     }
 
     const sanitized = { ...data } as Record<string, unknown>;
 
     // Remove potentially sensitive fields
-    const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'privateKey'];
+    const sensitiveFields = [
+      "password",
+      "token",
+      "secret",
+      "apiKey",
+      "privateKey",
+    ];
     for (const field of sensitiveFields) {
       if (field in sanitized) {
-        sanitized[field] = '[REDACTED]';
+        sanitized[field] = "[REDACTED]";
       }
     }
 
@@ -262,14 +278,14 @@ export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<T
       /validation/i,
     ];
 
-    return !nonRetryablePatterns.some(pattern => pattern.test(error.message));
+    return !nonRetryablePatterns.some((pattern) => pattern.test(error.message));
   }
 
   /**
    * Delay helper for rate limiting
    */
   protected delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -280,7 +296,7 @@ export abstract class BaseJobProcessor<TData, TResult> implements JobProcessor<T
  * @returns Function suitable for Bull's process method
  */
 export function createProcessorFunction<TData, TResult>(
-  processor: BaseJobProcessor<TData, TResult>
+  processor: BaseJobProcessor<TData, TResult>,
 ): (job: Job<TData>) => Promise<TResult> {
   return async (job: Job<TData>) => {
     return processor.execute(job);

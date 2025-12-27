@@ -9,7 +9,7 @@ import {
   ReferralRewardType,
   UserReferralCode,
   ReferralStats,
-} from '../entities/Referral.js';
+} from "../entities/Referral.js";
 
 export interface CreateReferralData {
   id: string;
@@ -67,7 +67,10 @@ export interface IReferralRepository {
   /**
    * List referrals by referrer with status filter
    */
-  listByReferrerWithStatus(referrerId: string, status: ReferralStatus): Promise<Referral[]>;
+  listByReferrerWithStatus(
+    referrerId: string,
+    status: ReferralStatus,
+  ): Promise<Referral[]>;
 
   /**
    * Update referral
@@ -110,13 +113,16 @@ export interface IReferralRepository {
       completedReferrals?: number;
       totalRewardsEarned?: number;
       onChainReferrals?: number;
-    }
+    },
   ): Promise<UserReferralCode>;
 
   /**
    * Get leaderboard for a month
    */
-  getLeaderboard(monthYear: string, limit?: number): Promise<
+  getLeaderboard(
+    monthYear: string,
+    limit?: number,
+  ): Promise<
     Array<{
       rank: number;
       userId: string;
@@ -131,5 +137,8 @@ export interface IReferralRepository {
   /**
    * Count referrals by referrer for a specific month
    */
-  countByReferrerAndMonth(referrerId: string, monthYear: string): Promise<number>;
+  countByReferrerAndMonth(
+    referrerId: string,
+    monthYear: string,
+  ): Promise<number>;
 }

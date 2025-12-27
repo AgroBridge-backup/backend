@@ -5,8 +5,13 @@
  * @author AgroBridge Engineering Team
  */
 
-import { GraphQLContext, requireAuth, requireRole, isAdmin } from '../context.js';
-import { SafeUser } from '../dataloaders/UserLoader.js';
+import {
+  GraphQLContext,
+  requireAuth,
+  requireRole,
+  isAdmin,
+} from "../context.js";
+import { SafeUser } from "../dataloaders/UserLoader.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -22,7 +27,7 @@ interface PaginationInput {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function encodeCursor(id: string): string {
-  return Buffer.from(id).toString('base64');
+  return Buffer.from(id).toString("base64");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -33,7 +38,7 @@ export const userQueries = {
   me: async (
     _parent: unknown,
     _args: unknown,
-    context: GraphQLContext
+    context: GraphQLContext,
   ): Promise<SafeUser | null> => {
     if (!context.user) {
       return null;
@@ -44,13 +49,13 @@ export const userQueries = {
   user: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ): Promise<SafeUser | null> => {
     requireAuth(context);
 
     // Non-admin can only see their own profile
     if (!isAdmin(context) && args.id !== context.user.id) {
-      requireRole(context, ['ADMIN', 'CERTIFIER']);
+      requireRole(context, ["ADMIN", "CERTIFIER"]);
     }
 
     return context.loaders.user.load(args.id);
@@ -59,10 +64,10 @@ export const userQueries = {
   users: async (
     _parent: unknown,
     args: { pagination?: PaginationInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     const page = args.pagination?.page || 1;
     const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -84,7 +89,7 @@ export const userQueries = {
           createdAt: true,
           updatedAt: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -124,7 +129,11 @@ export const userFieldResolvers = {
       return `${parent.firstName} ${parent.lastName}`;
     },
 
-    producer: async (parent: SafeUser, _args: unknown, context: GraphQLContext) => {
+    producer: async (
+      parent: SafeUser,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.producerByUserId.load(parent.id);
     },
   },

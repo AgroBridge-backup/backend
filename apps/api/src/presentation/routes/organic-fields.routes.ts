@@ -4,11 +4,11 @@
  * Supports field registration, status tracking, and GPS verification
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaOrganicFieldRepository } from '../../infrastructure/database/prisma/repositories/PrismaOrganicFieldRepository.js';
-import { OrganicFieldService } from '../../domain/services/OrganicFieldService.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaOrganicFieldRepository } from "../../infrastructure/database/prisma/repositories/PrismaOrganicFieldRepository.js";
+import { OrganicFieldService } from "../../domain/services/OrganicFieldService.js";
 import {
   RegisterOrganicFieldUseCase,
   GetOrganicFieldUseCase,
@@ -17,11 +17,16 @@ import {
   CertifyFieldUseCase,
   VerifyLocationUseCase,
   GetProducerFieldStatsUseCase,
-} from '../../application/use-cases/organic-fields/index.js';
-import { OrganicFieldStatus, SUPPORTED_CROP_TYPES, WATER_SOURCES, IRRIGATION_TYPES } from '../../domain/entities/OrganicField.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../application/use-cases/organic-fields/index.js";
+import {
+  OrganicFieldStatus,
+  SUPPORTED_CROP_TYPES,
+  WATER_SOURCES,
+  IRRIGATION_TYPES,
+} from "../../domain/entities/OrganicField.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const registerFieldSchema = z.object({
@@ -37,8 +42,12 @@ const registerFieldSchema = z.object({
   altitude: z.number().optional(),
   organicSince: z.string().datetime().optional(),
   lastConventional: z.string().datetime().optional(),
-  waterSources: z.array(z.enum(WATER_SOURCES as unknown as [string, ...string[]])).optional(),
-  irrigationType: z.enum(IRRIGATION_TYPES as unknown as [string, ...string[]]).optional(),
+  waterSources: z
+    .array(z.enum(WATER_SOURCES as unknown as [string, ...string[]]))
+    .optional(),
+  irrigationType: z
+    .enum(IRRIGATION_TYPES as unknown as [string, ...string[]])
+    .optional(),
   soilType: z.string().max(100).optional(),
   lastSoilTestDate: z.string().datetime().optional(),
   certifiedStandards: z.array(z.string()).optional(),
@@ -47,7 +56,9 @@ const registerFieldSchema = z.object({
 const updateFieldSchema = z.object({
   name: z.string().min(2).max(255).optional(),
   localIdentifier: z.string().max(100).optional(),
-  cropType: z.enum(SUPPORTED_CROP_TYPES as unknown as [string, ...string[]]).optional(),
+  cropType: z
+    .enum(SUPPORTED_CROP_TYPES as unknown as [string, ...string[]])
+    .optional(),
   variety: z.string().max(100).optional(),
   areaHectares: z.number().positive().optional(),
   boundaryGeoJson: z.string().optional(),
@@ -69,7 +80,7 @@ const listFieldsSchema = z.object({
 });
 
 const certifyFieldSchema = z.object({
-  standards: z.array(z.enum(['ORGANIC_USDA', 'ORGANIC_EU', 'SENASICA'])).min(1),
+  standards: z.array(z.enum(["ORGANIC_USDA", "ORGANIC_EU", "SENASICA"])).min(1),
 });
 
 const verifyLocationSchema = z.object({
@@ -101,8 +112,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Register a new organic field for a producer
    */
   router.post(
-    '/:producerId/organic-fields',
-    authenticate(['PRODUCER', 'ADMIN']),
+    "/:producerId/organic-fields",
+    authenticate(["PRODUCER", "ADMIN"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -112,7 +123,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -120,12 +131,18 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         const result = await registerFieldUseCase.execute({
           producerId,
           ...validation.data,
-          organicSince: validation.data.organicSince ? new Date(validation.data.organicSince) : undefined,
-          lastConventional: validation.data.lastConventional ? new Date(validation.data.lastConventional) : undefined,
-          lastSoilTestDate: validation.data.lastSoilTestDate ? new Date(validation.data.lastSoilTestDate) : undefined,
+          organicSince: validation.data.organicSince
+            ? new Date(validation.data.organicSince)
+            : undefined,
+          lastConventional: validation.data.lastConventional
+            ? new Date(validation.data.lastConventional)
+            : undefined,
+          lastSoilTestDate: validation.data.lastSoilTestDate
+            ? new Date(validation.data.lastSoilTestDate)
+            : undefined,
         });
 
-        logger.info('Organic field registered via API', {
+        logger.info("Organic field registered via API", {
           fieldId: result.field.id,
           producerId,
         });
@@ -139,7 +156,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -147,8 +164,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * List organic fields for a producer
    */
   router.get(
-    '/:producerId/organic-fields',
-    authenticate(['PRODUCER', 'ADMIN', 'CERTIFIER']),
+    "/:producerId/organic-fields",
+    authenticate(["PRODUCER", "ADMIN", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -158,7 +175,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -180,7 +197,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -188,8 +205,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Get field statistics for a producer
    */
   router.get(
-    '/:producerId/organic-fields/stats',
-    authenticate(['PRODUCER', 'ADMIN']),
+    "/:producerId/organic-fields/stats",
+    authenticate(["PRODUCER", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -204,7 +221,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -212,8 +229,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Get organic field by ID with statistics
    */
   router.get(
-    '/:id',
-    authenticate(['PRODUCER', 'ADMIN', 'CERTIFIER', 'QA']),
+    "/:id",
+    authenticate(["PRODUCER", "ADMIN", "CERTIFIER", "QA"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -228,7 +245,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -236,8 +253,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Update organic field details
    */
   router.patch(
-    '/:id',
-    authenticate(['PRODUCER', 'ADMIN']),
+    "/:id",
+    authenticate(["PRODUCER", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -247,7 +264,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -255,10 +272,12 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         const result = await updateFieldUseCase.execute({
           fieldId: id,
           ...validation.data,
-          lastSoilTestDate: validation.data.lastSoilTestDate ? new Date(validation.data.lastSoilTestDate) : undefined,
+          lastSoilTestDate: validation.data.lastSoilTestDate
+            ? new Date(validation.data.lastSoilTestDate)
+            : undefined,
         });
 
-        logger.info('Organic field updated via API', { fieldId: id });
+        logger.info("Organic field updated via API", { fieldId: id });
 
         res.json({
           success: true,
@@ -268,7 +287,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -276,8 +295,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Certify an organic field with standards
    */
   router.post(
-    '/:id/certify',
-    authenticate(['CERTIFIER', 'ADMIN']),
+    "/:id/certify",
+    authenticate(["CERTIFIER", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -287,7 +306,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -297,7 +316,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
           standards: validation.data.standards,
         });
 
-        logger.info('Organic field certified via API', {
+        logger.info("Organic field certified via API", {
           fieldId: id,
           standards: validation.data.standards,
         });
@@ -310,7 +329,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -318,8 +337,8 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Verify if GPS coordinates are within field boundary
    */
   router.post(
-    '/:id/verify-location',
-    authenticate(['PRODUCER', 'ADMIN', 'QA', 'CERTIFIER']),
+    "/:id/verify-location",
+    authenticate(["PRODUCER", "ADMIN", "QA", "CERTIFIER"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -329,7 +348,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -351,7 +370,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -359,7 +378,7 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
    * Get configuration options (crop types, water sources, etc.)
    */
   router.get(
-    '/config/options',
+    "/config/options",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -371,14 +390,14 @@ export function createOrganicFieldsRouter(prisma: PrismaClient): Router {
             waterSources: WATER_SOURCES,
             irrigationTypes: IRRIGATION_TYPES,
             certificationStatuses: Object.values(OrganicFieldStatus),
-            certificationStandards: ['ORGANIC_USDA', 'ORGANIC_EU', 'SENASICA'],
+            certificationStandards: ["ORGANIC_USDA", "ORGANIC_EU", "SENASICA"],
             transitionPeriodMonths: 36,
           },
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

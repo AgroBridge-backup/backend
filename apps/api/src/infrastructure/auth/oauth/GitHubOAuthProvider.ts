@@ -11,7 +11,7 @@
  * @author AgroBridge Engineering Team
  */
 
-import logger from '../../../shared/utils/logger.js';
+import logger from "../../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -83,9 +83,9 @@ interface GitHubEmail {
 export class GitHubOAuthProvider {
   private static instance: GitHubOAuthProvider | null = null;
   private config: GitHubOAuthConfig | null = null;
-  private readonly authUrl = 'https://github.com/login/oauth/authorize';
-  private readonly tokenUrl = 'https://github.com/login/oauth/access_token';
-  private readonly apiUrl = 'https://api.github.com';
+  private readonly authUrl = "https://github.com/login/oauth/authorize";
+  private readonly tokenUrl = "https://github.com/login/oauth/access_token";
+  private readonly apiUrl = "https://api.github.com";
 
   private constructor() {
     this.initializeConfig();
@@ -116,11 +116,11 @@ export class GitHubOAuthProvider {
         redirectUri,
       };
 
-      logger.info('[GitHubOAuthProvider] Initialized', {
+      logger.info("[GitHubOAuthProvider] Initialized", {
         redirectUri,
       });
     } else {
-      logger.warn('[GitHubOAuthProvider] Not configured - missing credentials');
+      logger.warn("[GitHubOAuthProvider] Not configured - missing credentials");
     }
   }
 
@@ -140,18 +140,18 @@ export class GitHubOAuthProvider {
    */
   getAuthorizationUrl(
     state: string,
-    scopes: string[] = ['user:email', 'read:user']
+    scopes: string[] = ["user:email", "read:user"],
   ): string {
     if (!this.config) {
-      throw new Error('GitHub OAuth not configured');
+      throw new Error("GitHub OAuth not configured");
     }
 
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
-      scope: scopes.join(' '),
+      scope: scopes.join(" "),
       state,
-      allow_signup: 'true',
+      allow_signup: "true",
     });
 
     return `${this.authUrl}?${params.toString()}`;
@@ -167,17 +167,17 @@ export class GitHubOAuthProvider {
     if (!this.config) {
       return {
         success: false,
-        error: 'GitHub OAuth not configured',
-        errorCode: 'NOT_CONFIGURED',
+        error: "GitHub OAuth not configured",
+        errorCode: "NOT_CONFIGURED",
       };
     }
 
     try {
       const response = await fetch(this.tokenUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({
           client_id: this.config.clientId,
@@ -190,14 +190,14 @@ export class GitHubOAuthProvider {
       const data = await response.json();
 
       if (data.error) {
-        logger.error('[GitHubOAuthProvider] Token exchange failed', {
+        logger.error("[GitHubOAuthProvider] Token exchange failed", {
           error: data.error,
           description: data.error_description,
         });
 
         return {
           success: false,
-          error: data.error_description || 'Token exchange failed',
+          error: data.error_description || "Token exchange failed",
           errorCode: data.error,
         };
       }
@@ -214,12 +214,12 @@ export class GitHubOAuthProvider {
       if (!profile) {
         return {
           success: false,
-          error: 'Failed to retrieve user profile',
-          errorCode: 'PROFILE_ERROR',
+          error: "Failed to retrieve user profile",
+          errorCode: "PROFILE_ERROR",
         };
       }
 
-      logger.info('[GitHubOAuthProvider] Authentication successful', {
+      logger.info("[GitHubOAuthProvider] Authentication successful", {
         userId: profile.id,
         login: profile.login,
         email: profile.email,
@@ -232,14 +232,14 @@ export class GitHubOAuthProvider {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[GitHubOAuthProvider] Exchange error', {
+      logger.error("[GitHubOAuthProvider] Exchange error", {
         error: err.message,
       });
 
       return {
         success: false,
         error: err.message,
-        errorCode: 'EXCHANGE_ERROR',
+        errorCode: "EXCHANGE_ERROR",
       };
     }
   }
@@ -256,12 +256,12 @@ export class GitHubOAuthProvider {
       const userResponse = await fetch(`${this.apiUrl}/user`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
+          Accept: "application/vnd.github.v3+json",
         },
       });
 
       if (!userResponse.ok) {
-        logger.error('[GitHubOAuthProvider] User fetch failed', {
+        logger.error("[GitHubOAuthProvider] User fetch failed", {
           status: userResponse.status,
         });
         return null;
@@ -297,7 +297,7 @@ export class GitHubOAuthProvider {
         location: userData.location,
       };
     } catch (error) {
-      logger.error('[GitHubOAuthProvider] Profile error', {
+      logger.error("[GitHubOAuthProvider] Profile error", {
         error: (error as Error).message,
       });
       return null;
@@ -311,13 +311,13 @@ export class GitHubOAuthProvider {
    * @returns Primary email and verification status
    */
   private async getUserEmails(
-    accessToken: string
+    accessToken: string,
   ): Promise<{ email: string; verified: boolean } | null> {
     try {
       const response = await fetch(`${this.apiUrl}/user/emails`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
+          Accept: "application/vnd.github.v3+json",
         },
       });
 
@@ -347,7 +347,7 @@ export class GitHubOAuthProvider {
 
       return null;
     } catch (error) {
-      logger.error('[GitHubOAuthProvider] Email fetch error', {
+      logger.error("[GitHubOAuthProvider] Email fetch error", {
         error: (error as Error).message,
       });
       return null;
@@ -389,20 +389,20 @@ export class GitHubOAuthProvider {
       const response = await fetch(
         `${this.apiUrl}/applications/${this.config.clientId}/token`,
         {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
             Authorization: `Basic ${Buffer.from(
-              `${this.config.clientId}:${this.config.clientSecret}`
-            ).toString('base64')}`,
-            Accept: 'application/vnd.github.v3+json',
+              `${this.config.clientId}:${this.config.clientSecret}`,
+            ).toString("base64")}`,
+            Accept: "application/vnd.github.v3+json",
           },
           body: JSON.stringify({ access_token: accessToken }),
-        }
+        },
       );
 
       return response.ok || response.status === 204;
     } catch (error) {
-      logger.error('[GitHubOAuthProvider] Revoke error', {
+      logger.error("[GitHubOAuthProvider] Revoke error", {
         error: (error as Error).message,
       });
       return false;

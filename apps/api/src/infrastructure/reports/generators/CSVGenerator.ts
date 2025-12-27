@@ -12,9 +12,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import { stringify } from 'csv-stringify';
-import { Readable } from 'stream';
-import logger from '../../../shared/utils/logger.js';
+import { stringify } from "csv-stringify";
+import { Readable } from "stream";
+import logger from "../../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -31,7 +31,7 @@ export interface CSVGeneratorOptions {
   includeHeaders?: boolean;
   includeBOM?: boolean; // For Excel compatibility
   nullValue?: string;
-  dateFormat?: 'iso' | 'locale' | 'custom';
+  dateFormat?: "iso" | "locale" | "custom";
   customDateFormat?: (date: Date) => string;
 }
 
@@ -86,11 +86,11 @@ export class CSVGenerator {
 
   constructor(options: CSVGeneratorOptions = {}) {
     this.options = {
-      delimiter: ',',
+      delimiter: ",",
       includeHeaders: true,
       includeBOM: true,
-      nullValue: '',
-      dateFormat: 'iso',
+      nullValue: "",
+      dateFormat: "iso",
       customDateFormat: (date) => date.toISOString(),
       ...options,
     };
@@ -101,7 +101,7 @@ export class CSVGenerator {
    */
   async generate<T extends object>(
     data: T[],
-    columns: CSVColumn<T>[]
+    columns: CSVColumn<T>[],
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const rows: string[][] = [];
@@ -126,32 +126,38 @@ export class CSVGenerator {
       }
 
       // Generate CSV
-      stringify(rows, {
-        delimiter: this.options.delimiter,
-      }, (err, output) => {
-        if (err) {
-          logger.error('[CSVGenerator] Failed to generate CSV', { error: err.message });
-          reject(err);
-          return;
-        }
+      stringify(
+        rows,
+        {
+          delimiter: this.options.delimiter,
+        },
+        (err, output) => {
+          if (err) {
+            logger.error("[CSVGenerator] Failed to generate CSV", {
+              error: err.message,
+            });
+            reject(err);
+            return;
+          }
 
-        // Add BOM for Excel compatibility
-        let buffer: Buffer;
-        if (this.options.includeBOM) {
-          const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
-          buffer = Buffer.concat([bom, Buffer.from(output, 'utf8')]);
-        } else {
-          buffer = Buffer.from(output, 'utf8');
-        }
+          // Add BOM for Excel compatibility
+          let buffer: Buffer;
+          if (this.options.includeBOM) {
+            const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+            buffer = Buffer.concat([bom, Buffer.from(output, "utf8")]);
+          } else {
+            buffer = Buffer.from(output, "utf8");
+          }
 
-        logger.info('[CSVGenerator] CSV generated', {
-          rows: data.length,
-          columns: columns.length,
-          size: buffer.length,
-        });
+          logger.info("[CSVGenerator] CSV generated", {
+            rows: data.length,
+            columns: columns.length,
+            size: buffer.length,
+          });
 
-        resolve(buffer);
-      });
+          resolve(buffer);
+        },
+      );
     });
   }
 
@@ -160,17 +166,25 @@ export class CSVGenerator {
    */
   async generateBatchExport(data: BatchExportRow[]): Promise<Buffer> {
     const columns: CSVColumn<BatchExportRow>[] = [
-      { header: 'ID', key: 'id' },
-      { header: 'Variedad', key: 'variety' },
-      { header: 'Origen', key: 'origin' },
-      { header: 'Peso (kg)', key: 'weightKg' },
-      { header: 'Fecha Cosecha', key: 'harvestDate', format: (v) => this.formatDate(v as Date) },
-      { header: 'Estado', key: 'status' },
-      { header: 'Productor', key: 'producerName' },
-      { header: 'RFC Productor', key: 'producerRfc' },
-      { header: 'Hash Blockchain', key: 'blockchainHash' },
-      { header: 'Eventos', key: 'eventCount' },
-      { header: 'Creado', key: 'createdAt', format: (v) => this.formatDateTime(v as Date) },
+      { header: "ID", key: "id" },
+      { header: "Variedad", key: "variety" },
+      { header: "Origen", key: "origin" },
+      { header: "Peso (kg)", key: "weightKg" },
+      {
+        header: "Fecha Cosecha",
+        key: "harvestDate",
+        format: (v) => this.formatDate(v as Date),
+      },
+      { header: "Estado", key: "status" },
+      { header: "Productor", key: "producerName" },
+      { header: "RFC Productor", key: "producerRfc" },
+      { header: "Hash Blockchain", key: "blockchainHash" },
+      { header: "Eventos", key: "eventCount" },
+      {
+        header: "Creado",
+        key: "createdAt",
+        format: (v) => this.formatDateTime(v as Date),
+      },
     ];
 
     return this.generate(data, columns);
@@ -181,18 +195,30 @@ export class CSVGenerator {
    */
   async generateEventExport(data: EventExportRow[]): Promise<Buffer> {
     const columns: CSVColumn<EventExportRow>[] = [
-      { header: 'ID', key: 'id' },
-      { header: 'ID Lote', key: 'batchId' },
-      { header: 'Tipo Evento', key: 'eventType' },
-      { header: 'Fecha/Hora', key: 'timestamp', format: (v) => this.formatDateTime(v as Date) },
-      { header: 'Ubicacion', key: 'locationName' },
-      { header: 'Latitud', key: 'latitude' },
-      { header: 'Longitud', key: 'longitude' },
-      { header: 'Temperatura', key: 'temperature', format: (v) => v ? `${v}` : '' },
-      { header: 'Humedad', key: 'humidity', format: (v) => v ? `${v}%` : '' },
-      { header: 'Notas', key: 'notes' },
-      { header: 'Verificado', key: 'isVerified', format: (v) => v ? 'Si' : 'No' },
-      { header: 'Creado Por', key: 'createdById' },
+      { header: "ID", key: "id" },
+      { header: "ID Lote", key: "batchId" },
+      { header: "Tipo Evento", key: "eventType" },
+      {
+        header: "Fecha/Hora",
+        key: "timestamp",
+        format: (v) => this.formatDateTime(v as Date),
+      },
+      { header: "Ubicacion", key: "locationName" },
+      { header: "Latitud", key: "latitude" },
+      { header: "Longitud", key: "longitude" },
+      {
+        header: "Temperatura",
+        key: "temperature",
+        format: (v) => (v ? `${v}` : ""),
+      },
+      { header: "Humedad", key: "humidity", format: (v) => (v ? `${v}%` : "") },
+      { header: "Notas", key: "notes" },
+      {
+        header: "Verificado",
+        key: "isVerified",
+        format: (v) => (v ? "Si" : "No"),
+      },
+      { header: "Creado Por", key: "createdById" },
     ];
 
     return this.generate(data, columns);
@@ -203,16 +229,20 @@ export class CSVGenerator {
    */
   async generateAuditExport(data: AuditExportRow[]): Promise<Buffer> {
     const columns: CSVColumn<AuditExportRow>[] = [
-      { header: 'ID', key: 'id' },
-      { header: 'Fecha/Hora', key: 'timestamp', format: (v) => this.formatDateTime(v as Date) },
-      { header: 'Usuario', key: 'userId' },
-      { header: 'Accion', key: 'action' },
-      { header: 'Recurso', key: 'resource' },
-      { header: 'ID Recurso', key: 'resourceId' },
-      { header: 'Exito', key: 'success', format: (v) => v ? 'Si' : 'No' },
-      { header: 'IP', key: 'ipAddress' },
-      { header: 'User Agent', key: 'userAgent' },
-      { header: 'Duracion (ms)', key: 'durationMs' },
+      { header: "ID", key: "id" },
+      {
+        header: "Fecha/Hora",
+        key: "timestamp",
+        format: (v) => this.formatDateTime(v as Date),
+      },
+      { header: "Usuario", key: "userId" },
+      { header: "Accion", key: "action" },
+      { header: "Recurso", key: "resource" },
+      { header: "ID Recurso", key: "resourceId" },
+      { header: "Exito", key: "success", format: (v) => (v ? "Si" : "No") },
+      { header: "IP", key: "ipAddress" },
+      { header: "User Agent", key: "userAgent" },
+      { header: "Duracion (ms)", key: "durationMs" },
     ];
 
     return this.generate(data, columns);
@@ -221,23 +251,33 @@ export class CSVGenerator {
   /**
    * Generate inventory report CSV
    */
-  async generateInventoryExport(data: Array<{
-    variety: string;
-    totalBatches: number;
-    totalWeightKg: number;
-    avgWeightKg: number;
-    inTransit: number;
-    delivered: number;
-    producers: number;
-  }>): Promise<Buffer> {
-    const columns: CSVColumn<typeof data[0]>[] = [
-      { header: 'Variedad', key: 'variety' },
-      { header: 'Total Lotes', key: 'totalBatches' },
-      { header: 'Peso Total (kg)', key: 'totalWeightKg', format: (v) => (v as number).toLocaleString() },
-      { header: 'Peso Promedio (kg)', key: 'avgWeightKg', format: (v) => (v as number).toFixed(2) },
-      { header: 'En Transito', key: 'inTransit' },
-      { header: 'Entregados', key: 'delivered' },
-      { header: 'Productores', key: 'producers' },
+  async generateInventoryExport(
+    data: Array<{
+      variety: string;
+      totalBatches: number;
+      totalWeightKg: number;
+      avgWeightKg: number;
+      inTransit: number;
+      delivered: number;
+      producers: number;
+    }>,
+  ): Promise<Buffer> {
+    const columns: CSVColumn<(typeof data)[0]>[] = [
+      { header: "Variedad", key: "variety" },
+      { header: "Total Lotes", key: "totalBatches" },
+      {
+        header: "Peso Total (kg)",
+        key: "totalWeightKg",
+        format: (v) => (v as number).toLocaleString(),
+      },
+      {
+        header: "Peso Promedio (kg)",
+        key: "avgWeightKg",
+        format: (v) => (v as number).toFixed(2),
+      },
+      { header: "En Transito", key: "inTransit" },
+      { header: "Entregados", key: "delivered" },
+      { header: "Productores", key: "producers" },
     ];
 
     return this.generate(data, columns);
@@ -251,8 +291,10 @@ export class CSVGenerator {
    * Get nested value from object using dot notation
    */
   private getNestedValue(obj: object, path: string): unknown {
-    return path.split('.').reduce((current, key) => {
-      return current && typeof current === 'object' ? (current as Record<string, unknown>)[key] : undefined;
+    return path.split(".").reduce((current, key) => {
+      return current && typeof current === "object"
+        ? (current as Record<string, unknown>)[key]
+        : undefined;
     }, obj as unknown);
   }
 
@@ -268,15 +310,15 @@ export class CSVGenerator {
       return this.formatDate(value);
     }
 
-    if (typeof value === 'boolean') {
-      return value ? 'Si' : 'No';
+    if (typeof value === "boolean") {
+      return value ? "Si" : "No";
     }
 
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return value.toString();
     }
 
-    if (typeof value === 'object') {
+    if (typeof value === "object") {
       return JSON.stringify(value);
     }
 
@@ -292,14 +334,14 @@ export class CSVGenerator {
     }
 
     switch (this.options.dateFormat) {
-      case 'iso':
-        return date.toISOString().split('T')[0];
-      case 'locale':
-        return date.toLocaleDateString('es-MX');
-      case 'custom':
+      case "iso":
+        return date.toISOString().split("T")[0];
+      case "locale":
+        return date.toLocaleDateString("es-MX");
+      case "custom":
         return this.options.customDateFormat(date);
       default:
-        return date.toISOString().split('T')[0];
+        return date.toISOString().split("T")[0];
     }
   }
 
@@ -312,11 +354,11 @@ export class CSVGenerator {
     }
 
     switch (this.options.dateFormat) {
-      case 'iso':
+      case "iso":
         return date.toISOString();
-      case 'locale':
-        return date.toLocaleString('es-MX');
-      case 'custom':
+      case "locale":
+        return date.toLocaleString("es-MX");
+      case "custom":
         return this.options.customDateFormat(date);
       default:
         return date.toISOString();
@@ -325,6 +367,8 @@ export class CSVGenerator {
 }
 
 // Export factory function
-export function createCSVGenerator(options?: CSVGeneratorOptions): CSVGenerator {
+export function createCSVGenerator(
+  options?: CSVGeneratorOptions,
+): CSVGenerator {
   return new CSVGenerator(options);
 }

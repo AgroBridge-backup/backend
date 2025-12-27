@@ -1,11 +1,18 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import logger from '../../shared/utils/logger.js';
-import { redisCacheService, type CacheHealth, type CacheStats } from '../../infrastructure/cache/index.js';
-import { queueService, type QueueHealthStatus } from '../../infrastructure/queue/index.js';
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import logger from "../../shared/utils/logger.js";
+import {
+  redisCacheService,
+  type CacheHealth,
+  type CacheStats,
+} from "../../infrastructure/cache/index.js";
+import {
+  queueService,
+  type QueueHealthStatus,
+} from "../../infrastructure/queue/index.js";
 
 interface HealthCheckResult {
-  status: 'healthy' | 'unhealthy' | 'degraded';
+  status: "healthy" | "unhealthy" | "degraded";
   latency?: number;
   error?: string;
 }
@@ -28,12 +35,12 @@ export class HealthController {
    */
   async liveness(_req: Request, res: Response): Promise<void> {
     res.status(200).json({
-      status: 'healthy',
+      status: "healthy",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.npm_package_version || '2.0.0',
-      service: 'agrobridge-api',
+      environment: process.env.NODE_ENV || "development",
+      version: process.env.npm_package_version || "2.0.0",
+      service: "agrobridge-api",
     });
   }
 
@@ -52,10 +59,12 @@ export class HealthController {
     checks.redis = await this.checkRedis();
 
     // Determine overall status
-    const isReady = Object.values(checks).every((check) => check.status === 'healthy');
+    const isReady = Object.values(checks).every(
+      (check) => check.status === "healthy",
+    );
 
     res.status(isReady ? 200 : 503).json({
-      status: isReady ? 'ready' : 'not_ready',
+      status: isReady ? "ready" : "not_ready",
       timestamp: new Date().toISOString(),
       checks,
     });
@@ -71,23 +80,23 @@ export class HealthController {
       // Verify database is connected
       const dbCheck = await this.checkDatabase();
 
-      if (dbCheck.status === 'healthy') {
+      if (dbCheck.status === "healthy") {
         res.status(200).json({
-          status: 'started',
+          status: "started",
           timestamp: new Date().toISOString(),
         });
       } else {
         res.status(503).json({
-          status: 'starting',
+          status: "starting",
           timestamp: new Date().toISOString(),
-          error: 'Database not ready',
+          error: "Database not ready",
         });
       }
     } catch (error) {
       res.status(503).json({
-        status: 'starting',
+        status: "starting",
         timestamp: new Date().toISOString(),
-        error: 'Initialization in progress',
+        error: "Initialization in progress",
       });
     }
   }
@@ -109,7 +118,9 @@ export class HealthController {
         heapUsed: memoryUsage.heapUsed,
         external: memoryUsage.external,
         rss: memoryUsage.rss,
-        heapUsedPercent: ((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100).toFixed(2) + '%',
+        heapUsedPercent:
+          ((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100).toFixed(2) +
+          "%",
       },
       cpu: {
         user: cpuUsage.user,
@@ -132,15 +143,15 @@ export class HealthController {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       return {
-        status: 'healthy',
+        status: "healthy",
         latency: Date.now() - startTime,
       };
     } catch (error) {
       logger.error(`[HealthCheck] Database check failed: ${error}`);
       return {
-        status: 'unhealthy',
+        status: "unhealthy",
         latency: Date.now() - startTime,
-        error: 'Database connection failed',
+        error: "Database connection failed",
       };
     }
   }
@@ -152,15 +163,20 @@ export class HealthController {
     try {
       const health: CacheHealth = await redisCacheService.healthCheck();
       return {
-        status: health.status === 'healthy' ? 'healthy' : health.status === 'degraded' ? 'degraded' : 'unhealthy',
+        status:
+          health.status === "healthy"
+            ? "healthy"
+            : health.status === "degraded"
+              ? "degraded"
+              : "unhealthy",
         latency: health.latencyMs,
         error: health.errorMessage,
       };
     } catch (error) {
       logger.error(`[HealthCheck] Redis check failed: ${error}`);
       return {
-        status: 'unhealthy',
-        error: 'Redis connection failed',
+        status: "unhealthy",
+        error: "Redis connection failed",
       };
     }
   }
@@ -174,7 +190,7 @@ export class HealthController {
       const health: CacheHealth = await redisCacheService.healthCheck();
       const stats: CacheStats = await redisCacheService.getStats();
 
-      res.status(health.status === 'healthy' ? 200 : 503).json({
+      res.status(health.status === "healthy" ? 200 : 503).json({
         status: health.status,
         connected: health.connected,
         latencyMs: health.latencyMs,
@@ -182,9 +198,11 @@ export class HealthController {
           hits: stats.hits,
           misses: stats.misses,
           errors: stats.errors,
-          hitRate: stats.hits + stats.misses > 0
-            ? ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(2) + '%'
-            : '0%',
+          hitRate:
+            stats.hits + stats.misses > 0
+              ? ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(2) +
+                "%"
+              : "0%",
           keys: stats.keys,
           memoryUsage: stats.memoryUsage,
           uptime: stats.uptime,
@@ -194,8 +212,8 @@ export class HealthController {
     } catch (error) {
       logger.error(`[HealthCheck] Cache stats failed: ${error}`);
       res.status(503).json({
-        status: 'unhealthy',
-        error: 'Failed to retrieve cache statistics',
+        status: "unhealthy",
+        error: "Failed to retrieve cache statistics",
         timestamp: new Date().toISOString(),
       });
     }
@@ -209,10 +227,10 @@ export class HealthController {
     try {
       const health: QueueHealthStatus = await queueService.healthCheck();
 
-      const isHealthy = health.connected && health.redis.status === 'connected';
+      const isHealthy = health.connected && health.redis.status === "connected";
 
       res.status(isHealthy ? 200 : 503).json({
-        status: isHealthy ? 'healthy' : 'unhealthy',
+        status: isHealthy ? "healthy" : "unhealthy",
         connected: health.connected,
         redis: health.redis,
         queues: {
@@ -258,8 +276,8 @@ export class HealthController {
     } catch (error) {
       logger.error(`[HealthCheck] Queue stats failed: ${error}`);
       res.status(503).json({
-        status: 'unhealthy',
-        error: 'Failed to retrieve queue statistics',
+        status: "unhealthy",
+        error: "Failed to retrieve queue statistics",
         timestamp: new Date().toISOString(),
       });
     }

@@ -5,9 +5,14 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Certification, CertificationType } from '@prisma/client';
-import { GraphQLContext, requireAuth, requireRole, isAdmin } from '../context.js';
-import { NotFoundError, ForbiddenError } from '../errors.js';
+import { Certification, CertificationType } from "@prisma/client";
+import {
+  GraphQLContext,
+  requireAuth,
+  requireRole,
+  isAdmin,
+} from "../context.js";
+import { NotFoundError, ForbiddenError } from "../errors.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -30,19 +35,21 @@ export const certificationMutations = {
   addCertification: async (
     _parent: unknown,
     args: { input: AddCertificationInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
 
     // Verify producer exists
     const producer = await context.loaders.producer.load(args.input.producerId);
     if (!producer) {
-      throw new NotFoundError('Producer', args.input.producerId);
+      throw new NotFoundError("Producer", args.input.producerId);
     }
 
     // Check authorization - only admin or the producer themselves can add certifications
     if (!isAdmin(context) && producer.userId !== context.user.id) {
-      throw new ForbiddenError('You can only add certifications to your own producer profile');
+      throw new ForbiddenError(
+        "You can only add certifications to your own producer profile",
+      );
     }
 
     const certification = await context.prisma.certification.create({
@@ -58,7 +65,7 @@ export const certificationMutations = {
 
     return {
       success: true,
-      message: 'Certification added successfully',
+      message: "Certification added successfully",
       certification,
     };
   },
@@ -70,7 +77,11 @@ export const certificationMutations = {
 
 export const certificationFieldResolvers = {
   Certification: {
-    producer: async (parent: Certification, _args: unknown, context: GraphQLContext) => {
+    producer: async (
+      parent: Certification,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.producer.load(parent.producerId);
     },
   },

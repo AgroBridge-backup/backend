@@ -4,15 +4,15 @@
  * @module collections/jobs
  */
 
-import cron from 'node-cron';
-import { logger } from '../../../infrastructure/logging/logger.js';
-import { collectionService } from '../services/collection.service.js';
+import cron from "node-cron";
+import { logger } from "../../../infrastructure/logging/logger.js";
+import { collectionService } from "../services/collection.service.js";
 
 // Timezone: America/Mexico_City (CST/CDT)
-const TIMEZONE = 'America/Mexico_City';
+const TIMEZONE = "America/Mexico_City";
 
 // Schedule: 8:00 AM daily
-const SCHEDULE = '0 8 * * *';
+const SCHEDULE = "0 8 * * *";
 
 let isRunning = false;
 
@@ -20,7 +20,7 @@ let isRunning = false;
  * Initialize the collections cron job
  */
 export function initCollectionsCron(): void {
-  logger.info('[CollectionsCron] Initializing...', {
+  logger.info("[CollectionsCron] Initializing...", {
     schedule: SCHEDULE,
     timezone: TIMEZONE,
   });
@@ -29,7 +29,9 @@ export function initCollectionsCron(): void {
     SCHEDULE,
     async () => {
       if (isRunning) {
-        logger.warn('[CollectionsCron] Previous run still in progress, skipping');
+        logger.warn(
+          "[CollectionsCron] Previous run still in progress, skipping",
+        );
         return;
       }
 
@@ -37,13 +39,13 @@ export function initCollectionsCron(): void {
       const startTime = Date.now();
 
       try {
-        logger.info('[CollectionsCron] Starting daily collection run');
+        logger.info("[CollectionsCron] Starting daily collection run");
 
         const summary = await collectionService.runDailyCollections();
 
         const duration = Date.now() - startTime;
 
-        logger.info('[CollectionsCron] Completed', {
+        logger.info("[CollectionsCron] Completed", {
           duration,
           totalProcessed: summary.totalProcessed,
           errors: summary.errors.length,
@@ -52,23 +54,21 @@ export function initCollectionsCron(): void {
 
         // Send summary to Slack/monitoring if configured
         await sendSummaryNotification(summary);
-
       } catch (error) {
-        logger.error('[CollectionsCron] Failed:', error);
+        logger.error("[CollectionsCron] Failed:", error);
 
         // Alert on failure
         await sendErrorAlert(error as Error);
-
       } finally {
         isRunning = false;
       }
     },
     {
       timezone: TIMEZONE,
-    }
+    },
   );
 
-  logger.info('[CollectionsCron] Scheduled successfully');
+  logger.info("[CollectionsCron] Scheduled successfully");
 }
 
 /**
@@ -82,7 +82,7 @@ export async function runCollectionsManually(): Promise<{
   if (isRunning) {
     return {
       success: false,
-      error: 'Collection run already in progress',
+      error: "Collection run already in progress",
     };
   }
 
@@ -102,16 +102,19 @@ export async function runCollectionsManually(): Promise<{
  * Send summary notification (Slack, email, etc.)
  */
 async function sendSummaryNotification(
-  summary: Awaited<ReturnType<typeof collectionService.runDailyCollections>>
+  summary: Awaited<ReturnType<typeof collectionService.runDailyCollections>>,
 ): Promise<void> {
   // Check if >10% delivery failures
-  const totalAttempts = Object.values(summary.byStatus).reduce((a, b) => a + b, 0);
-  const failures = summary.byStatus['FAILED'] || 0;
+  const totalAttempts = Object.values(summary.byStatus).reduce(
+    (a, b) => a + b,
+    0,
+  );
+  const failures = summary.byStatus["FAILED"] || 0;
   const failureRate = totalAttempts > 0 ? (failures / totalAttempts) * 100 : 0;
 
   if (failureRate > 10) {
-    logger.warn('[CollectionsCron] High failure rate detected', {
-      failureRate: failureRate.toFixed(1) + '%',
+    logger.warn("[CollectionsCron] High failure rate detected", {
+      failureRate: failureRate.toFixed(1) + "%",
       failures,
       total: totalAttempts,
     });
@@ -124,7 +127,7 @@ async function sendSummaryNotification(
   }
 
   // Log summary for monitoring
-  logger.info('[CollectionsCron] Summary', {
+  logger.info("[CollectionsCron] Summary", {
     date: summary.date.toISOString(),
     processed: summary.totalProcessed,
     stages: summary.byStage,
@@ -138,7 +141,7 @@ async function sendSummaryNotification(
  * Send error alert
  */
 async function sendErrorAlert(error: Error): Promise<void> {
-  logger.error('[CollectionsCron] Critical error', {
+  logger.error("[CollectionsCron] Critical error", {
     message: error.message,
     stack: error.stack,
   });

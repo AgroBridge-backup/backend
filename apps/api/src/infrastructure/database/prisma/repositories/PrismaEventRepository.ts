@@ -1,6 +1,6 @@
-import * as Prisma from '@prisma/client';
-import { IEventRepository } from '../../../../domain/repositories/IEventRepository.js';
-import { TraceabilityEvent } from '../../../../domain/value-objects/TraceabilityEvent.js';
+import * as Prisma from "@prisma/client";
+import { IEventRepository } from "../../../../domain/repositories/IEventRepository.js";
+import { TraceabilityEvent } from "../../../../domain/value-objects/TraceabilityEvent.js";
 
 export class PrismaEventRepository implements IEventRepository {
   constructor(private readonly prisma: Prisma.PrismaClient) {}
@@ -23,14 +23,14 @@ export class PrismaEventRepository implements IEventRepository {
   async findByBatchId(batchId: string): Promise<TraceabilityEvent[]> {
     const events = await this.prisma.traceabilityEvent.findMany({
       where: { batchId },
-      orderBy: { timestamp: 'asc' },
+      orderBy: { timestamp: "asc" },
     });
     return events.map(this.toDomain);
   }
 
   async save(event: TraceabilityEvent): Promise<TraceabilityEvent> {
     const savedEvent = await this.prisma.traceabilityEvent.upsert({
-      where: { id: event.id || 'new-event' }, // Use a dummy ID for new events
+      where: { id: event.id || "new-event" }, // Use a dummy ID for new events
       update: {
         batchId: event.batchId,
         eventType: event.eventType,

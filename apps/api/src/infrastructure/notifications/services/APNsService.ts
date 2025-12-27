@@ -23,15 +23,15 @@
  * @see https://developer.apple.com/documentation/usernotifications
  */
 
-import apn from '@parse/node-apn';
-import * as fs from 'fs';
-import * as path from 'path';
-import logger from '../../../shared/utils/logger.js';
+import apn from "@parse/node-apn";
+import * as fs from "fs";
+import * as path from "path";
+import logger from "../../../shared/utils/logger.js";
 import type {
   APNsNotificationPayload,
   APNsSendResult,
   APNsBatchResult,
-} from '../types/index.js';
+} from "../types/index.js";
 
 /**
  * Apple Push Notification Service
@@ -47,8 +47,8 @@ export class APNsService {
   private initialized: boolean = false;
 
   private constructor() {
-    this.isProduction = process.env.APNS_PRODUCTION === 'true';
-    this.bundleId = process.env.APNS_BUNDLE_ID || 'com.agrobridge.app';
+    this.isProduction = process.env.APNS_PRODUCTION === "true";
+    this.bundleId = process.env.APNS_BUNDLE_ID || "com.agrobridge.app";
   }
 
   /**
@@ -75,20 +75,26 @@ export class APNsService {
 
       // Validate required credentials
       if (!keyPath || !keyId || !teamId) {
-        logger.warn('[APNsService] APNs credentials not configured. APNs will be disabled.', {
-          hasKeyPath: !!keyPath,
-          hasKeyId: !!keyId,
-          hasTeamId: !!teamId,
-        });
+        logger.warn(
+          "[APNsService] APNs credentials not configured. APNs will be disabled.",
+          {
+            hasKeyPath: !!keyPath,
+            hasKeyId: !!keyId,
+            hasTeamId: !!teamId,
+          },
+        );
         return;
       }
 
       // Resolve and verify key file path
       const fullKeyPath = path.resolve(keyPath);
       if (!fs.existsSync(fullKeyPath)) {
-        logger.warn('[APNsService] APNs key file not found. APNs will be disabled.', {
-          keyPath: fullKeyPath,
-        });
+        logger.warn(
+          "[APNsService] APNs key file not found. APNs will be disabled.",
+          {
+            keyPath: fullKeyPath,
+          },
+        );
         return;
       }
 
@@ -105,14 +111,14 @@ export class APNsService {
       this.provider = new apn.Provider(options);
       this.initialized = true;
 
-      logger.info('[APNsService] APNs provider initialized successfully', {
-        environment: this.isProduction ? 'production' : 'development',
+      logger.info("[APNsService] APNs provider initialized successfully", {
+        environment: this.isProduction ? "production" : "development",
         bundleId: this.bundleId,
         keyId,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[APNsService] Failed to initialize APNs provider', {
+      logger.error("[APNsService] Failed to initialize APNs provider", {
         error: err.message,
         stack: err.stack,
       });
@@ -136,15 +142,15 @@ export class APNsService {
    */
   async sendToDevice(
     deviceToken: string,
-    notification: APNsNotificationPayload
+    notification: APNsNotificationPayload,
   ): Promise<APNsSendResult> {
     this.initialize();
 
     if (!this.provider) {
       return {
         success: false,
-        error: 'APNs service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "APNs service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -152,8 +158,8 @@ export class APNsService {
     if (!this.isValidToken(deviceToken)) {
       return {
         success: false,
-        error: 'Invalid device token format. Expected 64 hex characters.',
-        errorCode: 'INVALID_TOKEN_FORMAT',
+        error: "Invalid device token format. Expected 64 hex characters.",
+        errorCode: "INVALID_TOKEN_FORMAT",
         invalidToken: true,
       };
     }
@@ -168,10 +174,10 @@ export class APNsService {
       // Check for failures
       if (result.failed.length > 0) {
         const failure = result.failed[0];
-        const errorReason = failure.response?.reason || 'Unknown error';
+        const errorReason = failure.response?.reason || "Unknown error";
         const errorStatus = failure.status;
 
-        logger.error('[APNsService] Send failed', {
+        logger.error("[APNsService] Send failed", {
           deviceToken: this.maskToken(deviceToken),
           reason: errorReason,
           status: errorStatus,
@@ -188,7 +194,7 @@ export class APNsService {
 
       const messageId = result.sent[0]?.device;
 
-      logger.info('[APNsService] Notification sent successfully', {
+      logger.info("[APNsService] Notification sent successfully", {
         deviceToken: this.maskToken(deviceToken),
         messageId,
         latency: `${latency}ms`,
@@ -201,7 +207,7 @@ export class APNsService {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[APNsService] Send error', {
+      logger.error("[APNsService] Send error", {
         error: err.message,
         deviceToken: this.maskToken(deviceToken),
       });
@@ -222,7 +228,7 @@ export class APNsService {
    */
   async sendToDevices(
     deviceTokens: string[],
-    notification: APNsNotificationPayload
+    notification: APNsNotificationPayload,
   ): Promise<APNsBatchResult> {
     this.initialize();
 
@@ -246,7 +252,9 @@ export class APNsService {
 
     // Filter valid tokens
     const validTokens = deviceTokens.filter((t) => this.isValidToken(t));
-    const invalidFormatTokens = deviceTokens.filter((t) => !this.isValidToken(t));
+    const invalidFormatTokens = deviceTokens.filter(
+      (t) => !this.isValidToken(t),
+    );
 
     if (validTokens.length === 0) {
       return {
@@ -274,7 +282,7 @@ export class APNsService {
         }
       });
 
-      logger.info('[APNsService] Batch send completed', {
+      logger.info("[APNsService] Batch send completed", {
         totalTokens: deviceTokens.length,
         successCount: result.sent.length,
         failureCount: result.failed.length,
@@ -286,11 +294,12 @@ export class APNsService {
         successCount: result.sent.length,
         failureCount: result.failed.length + invalidFormatTokens.length,
         invalidTokens,
-        avgLatency: validTokens.length > 0 ? totalLatency / validTokens.length : 0,
+        avgLatency:
+          validTokens.length > 0 ? totalLatency / validTokens.length : 0,
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[APNsService] Batch send error', {
+      logger.error("[APNsService] Batch send error", {
         error: err.message,
         tokenCount: validTokens.length,
       });
@@ -314,23 +323,23 @@ export class APNsService {
    */
   async sendSilentNotification(
     deviceToken: string,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Promise<APNsSendResult> {
     this.initialize();
 
     if (!this.provider) {
       return {
         success: false,
-        error: 'APNs service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "APNs service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
     if (!this.isValidToken(deviceToken)) {
       return {
         success: false,
-        error: 'Invalid device token format',
-        errorCode: 'INVALID_TOKEN_FORMAT',
+        error: "Invalid device token format",
+        errorCode: "INVALID_TOKEN_FORMAT",
         invalidToken: true,
       };
     }
@@ -340,7 +349,7 @@ export class APNsService {
 
       // Silent notification configuration
       notification.contentAvailable = true;
-      notification.pushType = 'background';
+      notification.pushType = "background";
       notification.priority = 5; // Lower priority for background
       notification.topic = this.bundleId;
       notification.payload = data;
@@ -354,13 +363,13 @@ export class APNsService {
         const failure = result.failed[0];
         return {
           success: false,
-          error: failure.response?.reason || 'Unknown error',
+          error: failure.response?.reason || "Unknown error",
           invalidToken: this.isInvalidTokenError(failure.response?.reason),
           latency,
         };
       }
 
-      logger.info('[APNsService] Silent notification sent', {
+      logger.info("[APNsService] Silent notification sent", {
         deviceToken: this.maskToken(deviceToken),
         latency: `${latency}ms`,
       });
@@ -371,7 +380,7 @@ export class APNsService {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[APNsService] Silent notification failed', {
+      logger.error("[APNsService] Silent notification failed", {
         error: err.message,
         deviceToken: this.maskToken(deviceToken),
       });
@@ -386,7 +395,9 @@ export class APNsService {
   /**
    * Build APNs notification from payload
    */
-  private buildNotification(payload: APNsNotificationPayload): apn.Notification {
+  private buildNotification(
+    payload: APNsNotificationPayload,
+  ): apn.Notification {
     const notification = new apn.Notification();
 
     // Alert content
@@ -396,7 +407,7 @@ export class APNsService {
     };
 
     // Sound
-    notification.sound = payload.sound || 'default';
+    notification.sound = payload.sound || "default";
 
     // Badge
     if (payload.badge !== undefined) {
@@ -419,7 +430,7 @@ export class APNsService {
     }
 
     // Push type (alert for visible notifications)
-    notification.pushType = 'alert';
+    notification.pushType = "alert";
 
     // Priority (10 = immediate, 5 = background)
     notification.priority = payload.priority || 10;
@@ -451,7 +462,7 @@ export class APNsService {
   private isValidToken(token: string): boolean {
     // APNs tokens are 64 hex characters (32 bytes)
     // Some formats might have spaces or dashes removed
-    const cleanToken = token.replace(/[\s-]/g, '');
+    const cleanToken = token.replace(/[\s-]/g, "");
     return /^[0-9a-f]{64}$/i.test(cleanToken);
   }
 
@@ -462,11 +473,11 @@ export class APNsService {
     if (!reason) return false;
 
     const invalidReasons = [
-      'BadDeviceToken',
-      'Unregistered',
-      'DeviceTokenNotForTopic',
-      'InvalidProviderToken',
-      'ExpiredProviderToken',
+      "BadDeviceToken",
+      "Unregistered",
+      "DeviceTokenNotForTopic",
+      "InvalidProviderToken",
+      "ExpiredProviderToken",
     ];
 
     return invalidReasons.includes(reason);
@@ -476,7 +487,7 @@ export class APNsService {
    * Mask token for logging (security)
    */
   private maskToken(token: string): string {
-    if (token.length < 20) return '***';
+    if (token.length < 20) return "***";
     return `${token.substring(0, 10)}...${token.substring(token.length - 6)}`;
   }
 
@@ -489,7 +500,7 @@ export class APNsService {
       this.provider.shutdown();
       this.provider = null;
       this.initialized = false;
-      logger.info('[APNsService] Provider shutdown complete');
+      logger.info("[APNsService] Provider shutdown complete");
     }
   }
 }

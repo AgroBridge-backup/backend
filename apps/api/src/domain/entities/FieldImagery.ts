@@ -4,27 +4,27 @@
  */
 
 export enum ImagerySource {
-  SENTINEL_2 = 'SENTINEL_2',       // ESA Copernicus (free, 10m resolution)
-  LANDSAT_8 = 'LANDSAT_8',         // NASA/USGS (free, 30m resolution)
-  PLANET = 'PLANET',               // Planet Labs (commercial, 3m resolution)
-  MAXAR = 'MAXAR',                 // Maxar (commercial, 30cm resolution)
-  DRONE = 'DRONE',                 // User-uploaded drone imagery
+  SENTINEL_2 = "SENTINEL_2", // ESA Copernicus (free, 10m resolution)
+  LANDSAT_8 = "LANDSAT_8", // NASA/USGS (free, 30m resolution)
+  PLANET = "PLANET", // Planet Labs (commercial, 3m resolution)
+  MAXAR = "MAXAR", // Maxar (commercial, 30cm resolution)
+  DRONE = "DRONE", // User-uploaded drone imagery
 }
 
 export enum ImageryType {
-  RGB = 'RGB',                     // True color
-  NDVI = 'NDVI',                   // Normalized Difference Vegetation Index
-  NDWI = 'NDWI',                   // Normalized Difference Water Index
-  EVI = 'EVI',                     // Enhanced Vegetation Index
-  SAVI = 'SAVI',                   // Soil Adjusted Vegetation Index
-  FALSE_COLOR = 'FALSE_COLOR',     // Near-infrared false color
+  RGB = "RGB", // True color
+  NDVI = "NDVI", // Normalized Difference Vegetation Index
+  NDWI = "NDWI", // Normalized Difference Water Index
+  EVI = "EVI", // Enhanced Vegetation Index
+  SAVI = "SAVI", // Soil Adjusted Vegetation Index
+  FALSE_COLOR = "FALSE_COLOR", // Near-infrared false color
 }
 
 export enum FieldStatus {
-  ACTIVE = 'ACTIVE',
-  FALLOW = 'FALLOW',
-  HARVESTED = 'HARVESTED',
-  PREPARING = 'PREPARING',
+  ACTIVE = "ACTIVE",
+  FALLOW = "FALLOW",
+  HARVESTED = "HARVESTED",
+  PREPARING = "PREPARING",
 }
 
 export interface Field {
@@ -49,7 +49,7 @@ export interface Field {
 }
 
 export interface GeoJsonPolygon {
-  type: 'Polygon';
+  type: "Polygon";
   coordinates: number[][][]; // [[[lng, lat], [lng, lat], ...]]
 }
 
@@ -60,12 +60,12 @@ export interface FieldImagery {
   imageType: ImageryType;
   captureDate: Date;
   cloudCoverPercent: number;
-  resolution: number;            // meters per pixel
+  resolution: number; // meters per pixel
   imageUrl: string;
   thumbnailUrl: string | null;
-  ndviValue: number | null;      // Average NDVI for field (-1 to 1)
-  ndwiValue: number | null;      // Average NDWI for field
-  healthScore: number | null;    // 0-100 computed health score
+  ndviValue: number | null; // Average NDVI for field (-1 to 1)
+  ndwiValue: number | null; // Average NDWI for field
+  healthScore: number | null; // 0-100 computed health score
   anomalyDetected: boolean;
   anomalyDetails: string | null;
   metadata: ImageryMetadata;
@@ -99,8 +99,8 @@ export interface TimeLapse {
   frames: TimeLapseFrame[];
   frameCount: number;
   averageNdvi: number | null;
-  ndviTrend: 'IMPROVING' | 'STABLE' | 'DECLINING' | 'UNKNOWN';
-  healthTrend: 'IMPROVING' | 'STABLE' | 'DECLINING' | 'UNKNOWN';
+  ndviTrend: "IMPROVING" | "STABLE" | "DECLINING" | "UNKNOWN";
+  healthTrend: "IMPROVING" | "STABLE" | "DECLINING" | "UNKNOWN";
 }
 
 export interface HealthAnalysis {
@@ -111,7 +111,7 @@ export interface HealthAnalysis {
   ndviMin: number;
   ndviMax: number;
   healthDistribution: {
-    excellent: number;  // % of field
+    excellent: number; // % of field
     good: number;
     fair: number;
     poor: number;
@@ -122,8 +122,14 @@ export interface HealthAnalysis {
 }
 
 export interface Anomaly {
-  type: 'WATER_STRESS' | 'PEST_DAMAGE' | 'NUTRIENT_DEFICIENCY' | 'DISEASE' | 'UNEVEN_GROWTH' | 'OTHER';
-  severity: 'LOW' | 'MEDIUM' | 'HIGH';
+  type:
+    | "WATER_STRESS"
+    | "PEST_DAMAGE"
+    | "NUTRIENT_DEFICIENCY"
+    | "DISEASE"
+    | "UNEVEN_GROWTH"
+    | "OTHER";
+  severity: "LOW" | "MEDIUM" | "HIGH";
   affectedAreaHectares: number;
   affectedAreaPercent: number;
   location: { latitude: number; longitude: number };
@@ -158,45 +164,48 @@ export interface FetchImageryInput {
 /**
  * Imagery source display information
  */
-export const IMAGERY_SOURCE_INFO: Record<ImagerySource, {
-  displayName: string;
-  description: string;
-  resolution: string;
-  revisitDays: number;
-  isFree: boolean;
-}> = {
+export const IMAGERY_SOURCE_INFO: Record<
+  ImagerySource,
+  {
+    displayName: string;
+    description: string;
+    resolution: string;
+    revisitDays: number;
+    isFree: boolean;
+  }
+> = {
   [ImagerySource.SENTINEL_2]: {
-    displayName: 'Sentinel-2',
-    description: 'ESA Copernicus satellite',
-    resolution: '10m',
+    displayName: "Sentinel-2",
+    description: "ESA Copernicus satellite",
+    resolution: "10m",
     revisitDays: 5,
     isFree: true,
   },
   [ImagerySource.LANDSAT_8]: {
-    displayName: 'Landsat-8',
-    description: 'NASA/USGS satellite',
-    resolution: '30m',
+    displayName: "Landsat-8",
+    description: "NASA/USGS satellite",
+    resolution: "30m",
     revisitDays: 16,
     isFree: true,
   },
   [ImagerySource.PLANET]: {
-    displayName: 'Planet',
-    description: 'Planet Labs constellation',
-    resolution: '3m',
+    displayName: "Planet",
+    description: "Planet Labs constellation",
+    resolution: "3m",
     revisitDays: 1,
     isFree: false,
   },
   [ImagerySource.MAXAR]: {
-    displayName: 'Maxar',
-    description: 'High-resolution commercial',
-    resolution: '30cm',
+    displayName: "Maxar",
+    description: "High-resolution commercial",
+    resolution: "30cm",
     revisitDays: 1,
     isFree: false,
   },
   [ImagerySource.DRONE]: {
-    displayName: 'Dron',
-    description: 'Imágenes de dron subidas',
-    resolution: 'Variable',
+    displayName: "Dron",
+    description: "Imágenes de dron subidas",
+    resolution: "Variable",
     revisitDays: 0,
     isFree: true,
   },
@@ -205,40 +214,43 @@ export const IMAGERY_SOURCE_INFO: Record<ImagerySource, {
 /**
  * Image type display information
  */
-export const IMAGE_TYPE_INFO: Record<ImageryType, {
-  displayName: string;
-  description: string;
-  useCases: string[];
-}> = {
+export const IMAGE_TYPE_INFO: Record<
+  ImageryType,
+  {
+    displayName: string;
+    description: string;
+    useCases: string[];
+  }
+> = {
   [ImageryType.RGB]: {
-    displayName: 'Color Real',
-    description: 'Vista de color verdadero',
-    useCases: ['Inspección visual', 'Documentación'],
+    displayName: "Color Real",
+    description: "Vista de color verdadero",
+    useCases: ["Inspección visual", "Documentación"],
   },
   [ImageryType.NDVI]: {
-    displayName: 'NDVI',
-    description: 'Índice de vegetación normalizado',
-    useCases: ['Salud de cultivos', 'Detección de estrés'],
+    displayName: "NDVI",
+    description: "Índice de vegetación normalizado",
+    useCases: ["Salud de cultivos", "Detección de estrés"],
   },
   [ImageryType.NDWI]: {
-    displayName: 'NDWI',
-    description: 'Índice de agua normalizado',
-    useCases: ['Contenido de agua', 'Detección de riego'],
+    displayName: "NDWI",
+    description: "Índice de agua normalizado",
+    useCases: ["Contenido de agua", "Detección de riego"],
   },
   [ImageryType.EVI]: {
-    displayName: 'EVI',
-    description: 'Índice de vegetación mejorado',
-    useCases: ['Biomasa', 'Cobertura vegetal densa'],
+    displayName: "EVI",
+    description: "Índice de vegetación mejorado",
+    useCases: ["Biomasa", "Cobertura vegetal densa"],
   },
   [ImageryType.SAVI]: {
-    displayName: 'SAVI',
-    description: 'Índice ajustado por suelo',
-    useCases: ['Cultivos jóvenes', 'Cobertura escasa'],
+    displayName: "SAVI",
+    description: "Índice ajustado por suelo",
+    useCases: ["Cultivos jóvenes", "Cobertura escasa"],
   },
   [ImageryType.FALSE_COLOR]: {
-    displayName: 'Falso Color',
-    description: 'Infrarrojo cercano',
-    useCases: ['Detección de vegetación', 'Límites de campo'],
+    displayName: "Falso Color",
+    description: "Infrarrojo cercano",
+    useCases: ["Detección de vegetación", "Límites de campo"],
   },
 };
 
@@ -264,10 +276,14 @@ export function calculateNdwi(greenBand: number, nirBand: number): number {
  * Calculate EVI from blue, red, and NIR bands
  * EVI = 2.5 * (NIR - Red) / (NIR + 6*Red - 7.5*Blue + 1)
  */
-export function calculateEvi(blueBand: number, redBand: number, nirBand: number): number {
+export function calculateEvi(
+  blueBand: number,
+  redBand: number,
+  nirBand: number,
+): number {
   const denominator = nirBand + 6 * redBand - 7.5 * blueBand + 1;
   if (denominator === 0) return 0;
-  return 2.5 * (nirBand - redBand) / denominator;
+  return (2.5 * (nirBand - redBand)) / denominator;
 }
 
 /**
@@ -285,19 +301,23 @@ export function ndviToHealthScore(ndvi: number): number {
 /**
  * Get health category from score
  */
-export function getHealthCategory(score: number): 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'CRITICAL' {
-  if (score >= 80) return 'EXCELLENT';
-  if (score >= 60) return 'GOOD';
-  if (score >= 40) return 'FAIR';
-  if (score >= 20) return 'POOR';
-  return 'CRITICAL';
+export function getHealthCategory(
+  score: number,
+): "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "CRITICAL" {
+  if (score >= 80) return "EXCELLENT";
+  if (score >= 60) return "GOOD";
+  if (score >= 40) return "FAIR";
+  if (score >= 20) return "POOR";
+  return "CRITICAL";
 }
 
 /**
  * Determine NDVI trend from time series
  */
-export function calculateNdviTrend(values: number[]): 'IMPROVING' | 'STABLE' | 'DECLINING' | 'UNKNOWN' {
-  if (values.length < 3) return 'UNKNOWN';
+export function calculateNdviTrend(
+  values: number[],
+): "IMPROVING" | "STABLE" | "DECLINING" | "UNKNOWN" {
+  if (values.length < 3) return "UNKNOWN";
 
   // Simple linear regression
   const n = values.length;
@@ -308,17 +328,18 @@ export function calculateNdviTrend(values: number[]): 'IMPROVING' | 'STABLE' | '
 
   const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
 
-  if (slope > 0.01) return 'IMPROVING';
-  if (slope < -0.01) return 'DECLINING';
-  return 'STABLE';
+  if (slope > 0.01) return "IMPROVING";
+  if (slope < -0.01) return "DECLINING";
+  return "STABLE";
 }
 
 /**
  * Validate GeoJSON polygon
  */
 export function isValidGeoJsonPolygon(geoJson: GeoJsonPolygon): boolean {
-  if (geoJson.type !== 'Polygon') return false;
-  if (!Array.isArray(geoJson.coordinates) || geoJson.coordinates.length === 0) return false;
+  if (geoJson.type !== "Polygon") return false;
+  if (!Array.isArray(geoJson.coordinates) || geoJson.coordinates.length === 0)
+    return false;
 
   const ring = geoJson.coordinates[0];
   if (!Array.isArray(ring) || ring.length < 4) return false; // Minimum 3 points + closing
@@ -341,7 +362,10 @@ export function isValidGeoJsonPolygon(geoJson: GeoJsonPolygon): boolean {
 /**
  * Calculate centroid of polygon
  */
-export function calculateCentroid(polygon: GeoJsonPolygon): { latitude: number; longitude: number } {
+export function calculateCentroid(polygon: GeoJsonPolygon): {
+  latitude: number;
+  longitude: number;
+} {
   const ring = polygon.coordinates[0];
   let sumLat = 0;
   let sumLng = 0;
@@ -373,7 +397,7 @@ export function calculateAreaHectares(polygon: GeoJsonPolygon): number {
 
   // Convert to approximate meters using latitude correction
   const metersPerDegreeLat = 111320;
-  const metersPerDegreeLng = 111320 * Math.cos(latitude * Math.PI / 180);
+  const metersPerDegreeLng = 111320 * Math.cos((latitude * Math.PI) / 180);
 
   let area = 0;
   const n = ring.length - 1; // Exclude closing point (same as first)

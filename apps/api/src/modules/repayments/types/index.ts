@@ -11,4 +11,4 @@ export type {
   Installment,
   PaymentHistory,
   PaymentRecord,
-} from '../services/repayment.service.js';
+} from "../services/repayment.service.js";

@@ -6,7 +6,7 @@
 import {
   TemperatureReading,
   CreateTemperatureReadingInput,
-} from '../entities/TemperatureReading.js';
+} from "../entities/TemperatureReading.js";
 
 export interface ITemperatureReadingRepository {
   /**
@@ -24,7 +24,7 @@ export interface ITemperatureReadingRepository {
    */
   findByBatchIdPaginated(
     batchId: string,
-    options?: { limit?: number; offset?: number; orderBy?: 'asc' | 'desc' }
+    options?: { limit?: number; offset?: number; orderBy?: "asc" | "desc" },
   ): Promise<TemperatureReading[]>;
 
   /**
@@ -33,7 +33,7 @@ export interface ITemperatureReadingRepository {
   findByBatchIdAndTimeRange(
     batchId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<TemperatureReading[]>;
 
   /**

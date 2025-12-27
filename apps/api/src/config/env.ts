@@ -3,7 +3,7 @@
  * P1-6 FIX: Validate all critical env vars on startup to fail fast
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Environment schema with validation rules
@@ -11,27 +11,34 @@ import { z } from 'zod';
  */
 const envSchema = z.object({
   // Application
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.string().default('3000'),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
+  PORT: z.string().default("3000"),
 
   // Database (CRITICAL)
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
   // JWT (CRITICAL)
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().default('15m'),
-  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+  JWT_EXPIRES_IN: z.string().default("15m"),
+  JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
   // Blockchain (OPTIONAL but validated if enabled)
   BLOCKCHAIN_ENABLED: z
     .string()
-    .transform((val) => val === 'true')
-    .default('false'),
-  BLOCKCHAIN_RPC_URL: z.string().url('BLOCKCHAIN_RPC_URL must be a valid URL').optional(),
+    .transform((val) => val === "true")
+    .default("false"),
+  BLOCKCHAIN_RPC_URL: z
+    .string()
+    .url("BLOCKCHAIN_RPC_URL must be a valid URL")
+    .optional(),
   BLOCKCHAIN_PRIVATE_KEY: z.string().optional(),
-  BLOCKCHAIN_NETWORK: z.string().default('polygon'),
-  BLOCKCHAIN_EXPLORER_URL: z.string().url().default('https://polygonscan.com'),
+  BLOCKCHAIN_NETWORK: z.string().default("polygon"),
+  BLOCKCHAIN_EXPLORER_URL: z.string().url().default("https://polygonscan.com"),
   INVOICE_REGISTRY_CONTRACT_ADDRESS: z.string().optional(),
   REFERRAL_PROGRAM_CONTRACT_ADDRESS: z.string().optional(),
 
@@ -41,8 +48,8 @@ const envSchema = z.object({
   META_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
 
   // URLs
-  VERIFY_BASE_URL: z.string().url().default('https://verify.agrobridge.io'),
-  APP_BASE_URL: z.string().url().default('https://api.agrobridge.io'),
+  VERIFY_BASE_URL: z.string().url().default("https://verify.agrobridge.io"),
+  APP_BASE_URL: z.string().url().default("https://api.agrobridge.io"),
   FRONTEND_URL: z.string().url().optional(),
 
   // External Services (OPTIONAL)
@@ -85,21 +92,27 @@ export function validateEnv(): Env {
     // Additional conditional validation
     if (parsed.BLOCKCHAIN_ENABLED) {
       if (!parsed.BLOCKCHAIN_RPC_URL) {
-        throw new Error('BLOCKCHAIN_RPC_URL is required when BLOCKCHAIN_ENABLED=true');
+        throw new Error(
+          "BLOCKCHAIN_RPC_URL is required when BLOCKCHAIN_ENABLED=true",
+        );
       }
       if (!parsed.BLOCKCHAIN_PRIVATE_KEY) {
-        throw new Error('BLOCKCHAIN_PRIVATE_KEY is required when BLOCKCHAIN_ENABLED=true');
+        throw new Error(
+          "BLOCKCHAIN_PRIVATE_KEY is required when BLOCKCHAIN_ENABLED=true",
+        );
       }
     }
 
     return parsed;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('\n❌ Environment validation failed:\n');
+      console.error("\n❌ Environment validation failed:\n");
       error.errors.forEach((err) => {
-        console.error(`   • ${err.path.join('.')}: ${err.message}`);
+        console.error(`   • ${err.path.join(".")}: ${err.message}`);
       });
-      console.error('\n   Please check your .env file and restart the server.\n');
+      console.error(
+        "\n   Please check your .env file and restart the server.\n",
+      );
       process.exit(1);
     }
 
@@ -128,15 +141,17 @@ export function getEnv(): Env {
 /**
  * Check if a feature is enabled
  */
-export function isFeatureEnabled(feature: 'blockchain' | 'whatsapp' | 'stripe'): boolean {
+export function isFeatureEnabled(
+  feature: "blockchain" | "whatsapp" | "stripe",
+): boolean {
   const env = getEnv();
 
   switch (feature) {
-    case 'blockchain':
+    case "blockchain":
       return env.BLOCKCHAIN_ENABLED && !!env.BLOCKCHAIN_RPC_URL;
-    case 'whatsapp':
+    case "whatsapp":
       return !!env.META_WHATSAPP_TOKEN && !!env.META_WHATSAPP_PHONE_NUMBER_ID;
-    case 'stripe':
+    case "stripe":
       return !!env.STRIPE_SECRET_KEY;
     default:
       return false;

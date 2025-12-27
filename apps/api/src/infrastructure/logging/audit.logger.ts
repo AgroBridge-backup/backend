@@ -1,6 +1,6 @@
-import { PrismaClient, AuditAction } from '@prisma/client';
-import { Request } from 'express';
-import logger from '../../shared/utils/logger.js';
+import { PrismaClient, AuditAction } from "@prisma/client";
+import { Request } from "express";
+import logger from "../../shared/utils/logger.js";
 
 export { AuditAction };
 
@@ -55,7 +55,9 @@ export class AuditLogger {
           action: entry.action,
           resource: entry.resource,
           resourceId: entry.resourceId,
-          details: entry.details ? JSON.parse(JSON.stringify(entry.details)) : undefined,
+          details: entry.details
+            ? JSON.parse(JSON.stringify(entry.details))
+            : undefined,
           ipAddress: entry.ipAddress,
           userAgent: entry.userAgent,
           correlationId: entry.correlationId,
@@ -83,7 +85,9 @@ export class AuditLogger {
           action: entry.action,
           resource: entry.resource,
           resourceId: entry.resourceId,
-          details: entry.details ? JSON.parse(JSON.stringify(entry.details)) : undefined,
+          details: entry.details
+            ? JSON.parse(JSON.stringify(entry.details))
+            : undefined,
           ipAddress: entry.ipAddress,
           userAgent: entry.userAgent,
           correlationId: entry.correlationId,
@@ -95,7 +99,9 @@ export class AuditLogger {
       });
       return result.id;
     } catch (error) {
-      logger.error(`[AuditLogger] Failed to create audit log entry (sync): ${error}`);
+      logger.error(
+        `[AuditLogger] Failed to create audit log entry (sync): ${error}`,
+      );
       return null;
     }
   }
@@ -103,11 +109,19 @@ export class AuditLogger {
   /**
    * Extract request information from Express request
    */
-  static extractRequestInfo(req: Request): Pick<AuditLogEntry, 'ipAddress' | 'userAgent' | 'correlationId' | 'requestId'> {
+  static extractRequestInfo(
+    req: Request,
+  ): Pick<
+    AuditLogEntry,
+    "ipAddress" | "userAgent" | "correlationId" | "requestId"
+  > {
     return {
       ipAddress: req.ip || req.socket?.remoteAddress || undefined,
-      userAgent: req.headers['user-agent']?.substring(0, 500),
-      correlationId: (req.headers['x-correlation-id'] as string)?.substring(0, 100),
+      userAgent: req.headers["user-agent"]?.substring(0, 500),
+      correlationId: (req.headers["x-correlation-id"] as string)?.substring(
+        0,
+        100,
+      ),
       requestId: (req as any).requestId?.substring(0, 100),
     };
   }
@@ -128,7 +142,7 @@ export class AuditLogger {
           lte: filters.endDate,
         },
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: filters.limit || 100,
       skip: filters.offset || 0,
     });
@@ -165,7 +179,7 @@ export class AuditLogger {
           lte: endDate,
         },
       },
-      orderBy: { timestamp: 'asc' },
+      orderBy: { timestamp: "asc" },
     });
   }
 
@@ -177,7 +191,7 @@ export class AuditLogger {
     startDate.setDate(startDate.getDate() - days);
 
     const logs = await this.prisma.auditLog.groupBy({
-      by: ['action'],
+      by: ["action"],
       where: {
         userId,
         timestamp: { gte: startDate },
@@ -226,8 +240,10 @@ export class AuditLogger {
    * CAUTION: This should only be used in development/testing
    */
   async cleanupOldLogs(olderThanDays: number): Promise<number> {
-    if (process.env.NODE_ENV === 'production') {
-      logger.warn('[AuditLogger] Attempted to cleanup audit logs in production - operation denied');
+    if (process.env.NODE_ENV === "production") {
+      logger.warn(
+        "[AuditLogger] Attempted to cleanup audit logs in production - operation denied",
+      );
       return 0;
     }
 
@@ -240,7 +256,9 @@ export class AuditLogger {
       },
     });
 
-    logger.info(`[AuditLogger] Cleaned up old audit logs: ${result.count} deleted`);
+    logger.info(
+      `[AuditLogger] Cleaned up old audit logs: ${result.count} deleted`,
+    );
     return result.count;
   }
 }

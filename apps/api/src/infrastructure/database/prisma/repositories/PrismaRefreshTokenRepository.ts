@@ -1,10 +1,14 @@
-import * as Prisma from '@prisma/client';
-import { IRefreshTokenRepository } from '../../../../domain/repositories/IRefreshTokenRepository.js';
+import * as Prisma from "@prisma/client";
+import { IRefreshTokenRepository } from "../../../../domain/repositories/IRefreshTokenRepository.js";
 
 export class PrismaRefreshTokenRepository implements IRefreshTokenRepository {
   constructor(private prisma: Prisma.PrismaClient) {}
 
-  async create(userId: string, token: string, expiresAt: Date): Promise<Prisma.RefreshToken> {
+  async create(
+    userId: string,
+    token: string,
+    expiresAt: Date,
+  ): Promise<Prisma.RefreshToken> {
     return this.prisma.refreshToken.create({
       data: {
         userId,

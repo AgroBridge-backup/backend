@@ -21,7 +21,7 @@ export interface InvoiceRegistrationResult {
   timestamp: Date;
   gasUsed?: string | null;
   status?: string; // P1-7 FIX: BLOCKCHAIN_UNAVAILABLE when fallback
-  error?: string;  // P1-7 FIX: Error message when fallback
+  error?: string; // P1-7 FIX: Error message when fallback
 }
 
 export interface InvoiceVerificationResult {
@@ -41,12 +41,17 @@ export interface IInvoiceBlockchainService {
   /**
    * Register an invoice on the blockchain
    */
-  registerInvoice(data: InvoiceBlockchainData): Promise<InvoiceRegistrationResult>;
+  registerInvoice(
+    data: InvoiceBlockchainData,
+  ): Promise<InvoiceRegistrationResult>;
 
   /**
    * Verify if an invoice is registered on blockchain
    */
-  verifyInvoice(uuid: string, expectedHash: string): Promise<InvoiceVerificationResult>;
+  verifyInvoice(
+    uuid: string,
+    expectedHash: string,
+  ): Promise<InvoiceVerificationResult>;
 
   /**
    * Check if the blockchain service is healthy

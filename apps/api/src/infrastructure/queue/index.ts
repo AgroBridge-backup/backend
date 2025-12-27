@@ -42,7 +42,7 @@ import {
   type ReportJobResult,
   type QueueHealthStatus,
   type QueueStats,
-} from './QueueService.js';
+} from "./QueueService.js";
 
 // Re-export with explicit names
 export {
@@ -69,22 +69,19 @@ export const queueService = queueServiceInstance;
 export {
   QRCodeGenerationJob,
   qrCodeGenerationJob,
-} from './jobs/QRCodeGenerationJob.js';
+} from "./jobs/QRCodeGenerationJob.js";
 
 export {
   BlockchainTransactionJob,
   blockchainTransactionJob,
-} from './jobs/BlockchainTransactionJob.js';
+} from "./jobs/BlockchainTransactionJob.js";
 
-export {
-  EmailJob,
-  emailJob,
-} from './jobs/EmailJob.js';
+export { EmailJob, emailJob } from "./jobs/EmailJob.js";
 
 export {
   ReportGenerationJob,
   reportGenerationJob,
-} from './jobs/ReportGenerationJob.js';
+} from "./jobs/ReportGenerationJob.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BASE PROCESSOR
@@ -95,7 +92,7 @@ export {
   createProcessorFunction,
   type JobProcessor,
   type JobContext,
-} from './processors/JobProcessor.js';
+} from "./processors/JobProcessor.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DEFAULT EXPORT

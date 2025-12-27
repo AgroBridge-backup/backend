@@ -8,7 +8,7 @@ import {
   OrganicCertificateStatus,
   CertificateFilter,
   CertificateVerification,
-} from '../entities/OrganicCertificate.js';
+} from "../entities/OrganicCertificate.js";
 
 /**
  * Create certificate data
@@ -87,12 +87,17 @@ export interface IOrganicCertificateRepository {
   /**
    * Find certificate by certificate number
    */
-  findByCertificateNumber(certificateNumber: string): Promise<OrganicCertificate | null>;
+  findByCertificateNumber(
+    certificateNumber: string,
+  ): Promise<OrganicCertificate | null>;
 
   /**
    * Update certificate
    */
-  update(id: string, data: UpdateOrganicCertificateData): Promise<OrganicCertificate>;
+  update(
+    id: string,
+    data: UpdateOrganicCertificateData,
+  ): Promise<OrganicCertificate>;
 
   /**
    * List certificates with filtering
@@ -102,27 +107,40 @@ export interface IOrganicCertificateRepository {
   /**
    * List certificates by farmer
    */
-  listByFarmer(farmerId: string, filter?: Omit<CertificateFilter, 'farmerId'>): Promise<OrganicCertificateListResult>;
+  listByFarmer(
+    farmerId: string,
+    filter?: Omit<CertificateFilter, "farmerId">,
+  ): Promise<OrganicCertificateListResult>;
 
   /**
    * List certificates by export company
    */
-  listByExportCompany(exportCompanyId: string, filter?: Omit<CertificateFilter, 'exportCompanyId'>): Promise<OrganicCertificateListResult>;
+  listByExportCompany(
+    exportCompanyId: string,
+    filter?: Omit<CertificateFilter, "exportCompanyId">,
+  ): Promise<OrganicCertificateListResult>;
 
   /**
    * Get certificate with farmer and export company details
    */
-  findByIdWithDetails(id: string): Promise<OrganicCertificateWithDetails | null>;
+  findByIdWithDetails(
+    id: string,
+  ): Promise<OrganicCertificateWithDetails | null>;
 
   /**
    * Get certificate by number with details (for public verification)
    */
-  findByCertificateNumberWithDetails(certificateNumber: string): Promise<OrganicCertificateWithDetails | null>;
+  findByCertificateNumberWithDetails(
+    certificateNumber: string,
+  ): Promise<OrganicCertificateWithDetails | null>;
 
   /**
    * Check if farmer has pending certificate for fields
    */
-  hasPendingCertificateForFields(farmerId: string, fieldIds: string[]): Promise<boolean>;
+  hasPendingCertificateForFields(
+    farmerId: string,
+    fieldIds: string[],
+  ): Promise<boolean>;
 
   /**
    * Get next certificate sequence number for a given year
@@ -137,7 +155,9 @@ export interface IOrganicCertificateRepository {
   /**
    * Log verification (QR scan)
    */
-  logVerification(data: CreateVerificationLogData): Promise<CertificateVerification>;
+  logVerification(
+    data: CreateVerificationLogData,
+  ): Promise<CertificateVerification>;
 
   /**
    * Get verification count for certificate
@@ -167,7 +187,9 @@ export interface IOrganicCertificateRepository {
   /**
    * Get certificates pending review for export company
    */
-  getPendingReviewForExportCompany(exportCompanyId: string): Promise<OrganicCertificate[]>;
+  getPendingReviewForExportCompany(
+    exportCompanyId: string,
+  ): Promise<OrganicCertificate[]>;
 
   /**
    * Get certificates with blockchain failed status (for retry)

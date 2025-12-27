@@ -5,11 +5,11 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Request, Response } from 'express';
-import { PrismaClient, User, UserRole } from '@prisma/client';
-import { createDataLoaders, DataLoaders } from './dataloaders/index.js';
-import { AuthenticationError } from './errors.js';
-import jwt from 'jsonwebtoken';
+import { Request, Response } from "express";
+import { PrismaClient, User, UserRole } from "@prisma/client";
+import { createDataLoaders, DataLoaders } from "./dataloaders/index.js";
+import { AuthenticationError } from "./errors.js";
+import jwt from "jsonwebtoken";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -65,14 +65,14 @@ export interface AuthenticatedContext extends GraphQLContext {
 function extractUserFromToken(req: Request): ContextUser | null {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
 
   const token = authHeader.substring(7);
 
   try {
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+    const jwtSecret = process.env.JWT_SECRET || "fallback-secret-key";
     const payload = jwt.verify(token, jwtSecret) as JWTPayload;
 
     return {
@@ -98,11 +98,12 @@ function generateRequestId(): string {
  * Creates fresh DataLoaders per request for proper request-scoped caching.
  */
 export function createContext(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): (params: { req: Request; res: Response }) => GraphQLContext {
   return ({ req, res }) => {
     const user = extractUserFromToken(req);
-    const requestId = (req.headers['x-request-id'] as string) || generateRequestId();
+    const requestId =
+      (req.headers["x-request-id"] as string) || generateRequestId();
     const startTime = Date.now();
 
     return {
@@ -125,9 +126,11 @@ export function createContext(
  * Require authentication
  * @throws AuthenticationError if not authenticated
  */
-export function requireAuth(context: GraphQLContext): asserts context is AuthenticatedContext {
+export function requireAuth(
+  context: GraphQLContext,
+): asserts context is AuthenticatedContext {
   if (!context.user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AuthenticationError("Authentication required");
   }
 }
 
@@ -138,13 +141,13 @@ export function requireAuth(context: GraphQLContext): asserts context is Authent
  */
 export function requireRole(
   context: GraphQLContext,
-  allowedRoles: UserRole[]
+  allowedRoles: UserRole[],
 ): asserts context is AuthenticatedContext {
   requireAuth(context);
 
   if (!allowedRoles.includes(context.user.role)) {
     throw new AuthenticationError(
-      `Access denied. Required roles: ${allowedRoles.join(', ')}`
+      `Access denied. Required roles: ${allowedRoles.join(", ")}`,
     );
   }
 }
@@ -160,14 +163,14 @@ export function hasRole(context: GraphQLContext, roles: UserRole[]): boolean {
  * Check if user is admin
  */
 export function isAdmin(context: GraphQLContext): boolean {
-  return context.user?.role === 'ADMIN';
+  return context.user?.role === "ADMIN";
 }
 
 /**
  * Check if user is admin or certifier (has elevated read access)
  */
 export function isAdminOrAuditor(context: GraphQLContext): boolean {
-  return context.user?.role === 'ADMIN' || context.user?.role === 'CERTIFIER';
+  return context.user?.role === "ADMIN" || context.user?.role === "CERTIFIER";
 }
 
 /**

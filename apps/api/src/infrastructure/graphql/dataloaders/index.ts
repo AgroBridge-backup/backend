@@ -8,38 +8,44 @@
  * @author AgroBridge Engineering Team
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
-import { createBatchLoader, createBatchesByProducerLoader } from './BatchLoader.js';
-import type { BatchLoaderType, BatchesByProducerLoaderType } from './BatchLoader.js';
+import {
+  createBatchLoader,
+  createBatchesByProducerLoader,
+} from "./BatchLoader.js";
+import type {
+  BatchLoaderType,
+  BatchesByProducerLoaderType,
+} from "./BatchLoader.js";
 
 import {
   createProducerLoader,
   createProducerByUserIdLoader,
   createProducerBatchCountLoader,
   createProducerActiveBatchCountLoader,
-} from './ProducerLoader.js';
+} from "./ProducerLoader.js";
 import type {
   ProducerLoaderType,
   ProducerByUserIdLoaderType,
   ProducerBatchCountLoaderType,
-} from './ProducerLoader.js';
+} from "./ProducerLoader.js";
 
 import {
   createEventLoader,
   createEventsByBatchLoader,
   createEventCountByBatchLoader,
   createLatestEventByBatchLoader,
-} from './EventLoader.js';
+} from "./EventLoader.js";
 import type {
   EventLoaderType,
   EventsByBatchLoaderType,
   EventCountByBatchLoaderType,
   LatestEventByBatchLoaderType,
-} from './EventLoader.js';
+} from "./EventLoader.js";
 
-import { createUserLoader, createUserByEmailLoader } from './UserLoader.js';
-import type { UserLoaderType } from './UserLoader.js';
+import { createUserLoader, createUserByEmailLoader } from "./UserLoader.js";
+import type { UserLoaderType } from "./UserLoader.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOADER TYPES
@@ -111,33 +117,39 @@ export function createDataLoaders(prisma: PrismaClient): DataLoaders {
 // EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export { createBatchLoader, createBatchesByProducerLoader } from './BatchLoader.js';
-export type { BatchLoaderType, BatchesByProducerLoaderType } from './BatchLoader.js';
+export {
+  createBatchLoader,
+  createBatchesByProducerLoader,
+} from "./BatchLoader.js";
+export type {
+  BatchLoaderType,
+  BatchesByProducerLoaderType,
+} from "./BatchLoader.js";
 
 export {
   createProducerLoader,
   createProducerByUserIdLoader,
   createProducerBatchCountLoader,
   createProducerActiveBatchCountLoader,
-} from './ProducerLoader.js';
+} from "./ProducerLoader.js";
 export type {
   ProducerLoaderType,
   ProducerByUserIdLoaderType,
   ProducerBatchCountLoaderType,
-} from './ProducerLoader.js';
+} from "./ProducerLoader.js";
 
 export {
   createEventLoader,
   createEventsByBatchLoader,
   createEventCountByBatchLoader,
   createLatestEventByBatchLoader,
-} from './EventLoader.js';
+} from "./EventLoader.js";
 export type {
   EventLoaderType,
   EventsByBatchLoaderType,
   EventCountByBatchLoaderType,
   LatestEventByBatchLoaderType,
-} from './EventLoader.js';
+} from "./EventLoader.js";
 
-export { createUserLoader, createUserByEmailLoader } from './UserLoader.js';
-export type { UserLoaderType, SafeUser } from './UserLoader.js';
+export { createUserLoader, createUserByEmailLoader } from "./UserLoader.js";
+export type { UserLoaderType, SafeUser } from "./UserLoader.js";

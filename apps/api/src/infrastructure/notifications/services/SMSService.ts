@@ -29,14 +29,14 @@
  * @see https://www.twilio.com/docs/sms
  */
 
-import twilio from 'twilio';
-import logger from '../../../shared/utils/logger.js';
+import twilio from "twilio";
+import logger from "../../../shared/utils/logger.js";
 import type {
   SMSSendResult,
   SMSBatchResult,
   SensorAlertDetails,
   OrderNotificationDetails,
-} from '../types/index.js';
+} from "../types/index.js";
 
 /**
  * SMS Service using Twilio
@@ -53,9 +53,9 @@ export class SMSService {
   private appUrl: string;
 
   private constructor() {
-    this.fromNumber = process.env.TWILIO_PHONE_NUMBER || '';
+    this.fromNumber = process.env.TWILIO_PHONE_NUMBER || "";
     this.whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER || null;
-    this.appUrl = process.env.APP_URL || 'https://app.agrobridge.io';
+    this.appUrl = process.env.APP_URL || "https://app.agrobridge.io";
   }
 
   /**
@@ -79,29 +79,34 @@ export class SMSService {
       const authToken = process.env.TWILIO_AUTH_TOKEN;
 
       if (!accountSid || !authToken) {
-        logger.warn('[SMSService] Twilio credentials not configured. SMS will be disabled.', {
-          hasAccountSid: !!accountSid,
-          hasAuthToken: !!authToken,
-        });
+        logger.warn(
+          "[SMSService] Twilio credentials not configured. SMS will be disabled.",
+          {
+            hasAccountSid: !!accountSid,
+            hasAuthToken: !!authToken,
+          },
+        );
         return;
       }
 
       if (!this.fromNumber) {
-        logger.warn('[SMSService] TWILIO_PHONE_NUMBER not configured. SMS will be disabled.');
+        logger.warn(
+          "[SMSService] TWILIO_PHONE_NUMBER not configured. SMS will be disabled.",
+        );
         return;
       }
 
       this.client = twilio(accountSid, authToken);
       this.initialized = true;
 
-      logger.info('[SMSService] Twilio client initialized successfully', {
+      logger.info("[SMSService] Twilio client initialized successfully", {
         accountSid: this.maskAccountSid(accountSid),
         fromNumber: this.maskPhoneNumber(this.fromNumber),
         whatsappEnabled: !!this.whatsappNumber,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[SMSService] Failed to initialize Twilio client', {
+      logger.error("[SMSService] Failed to initialize Twilio client", {
         error: err.message,
       });
     }
@@ -135,8 +140,8 @@ export class SMSService {
     if (!this.client) {
       return {
         success: false,
-        error: 'SMS service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "SMS service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -144,13 +149,14 @@ export class SMSService {
     if (!this.isValidPhoneNumber(to)) {
       return {
         success: false,
-        error: 'Invalid phone number format. Use E.164 format (+521234567890)',
-        errorCode: 'INVALID_PHONE_NUMBER',
+        error: "Invalid phone number format. Use E.164 format (+521234567890)",
+        errorCode: "INVALID_PHONE_NUMBER",
       };
     }
 
     // Truncate message if too long (SMS can be up to 1600 chars but expensive)
-    const truncatedBody = body.length > 1600 ? body.substring(0, 1597) + '...' : body;
+    const truncatedBody =
+      body.length > 1600 ? body.substring(0, 1597) + "..." : body;
 
     try {
       const startTime = Date.now();
@@ -161,7 +167,7 @@ export class SMSService {
       });
       const latency = Date.now() - startTime;
 
-      logger.info('[SMSService] SMS sent successfully', {
+      logger.info("[SMSService] SMS sent successfully", {
         to: this.maskPhoneNumber(to),
         messageId: message.sid,
         status: message.status,
@@ -176,7 +182,7 @@ export class SMSService {
         latency,
       };
     } catch (error: any) {
-      logger.error('[SMSService] SMS send failed', {
+      logger.error("[SMSService] SMS send failed", {
         error: error.message,
         code: error.code,
         to: this.maskPhoneNumber(to),
@@ -204,21 +210,23 @@ export class SMSService {
     if (!this.client) {
       return {
         success: false,
-        error: 'SMS service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "SMS service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
     if (!this.whatsappNumber) {
-      logger.warn('[SMSService] WhatsApp number not configured, falling back to SMS');
+      logger.warn(
+        "[SMSService] WhatsApp number not configured, falling back to SMS",
+      );
       return await this.sendSMS(to, body);
     }
 
     if (!this.isValidPhoneNumber(to)) {
       return {
         success: false,
-        error: 'Invalid phone number format',
-        errorCode: 'INVALID_PHONE_NUMBER',
+        error: "Invalid phone number format",
+        errorCode: "INVALID_PHONE_NUMBER",
       };
     }
 
@@ -231,7 +239,7 @@ export class SMSService {
       });
       const latency = Date.now() - startTime;
 
-      logger.info('[SMSService] WhatsApp message sent successfully', {
+      logger.info("[SMSService] WhatsApp message sent successfully", {
         to: this.maskPhoneNumber(to),
         messageId: message.sid,
         status: message.status,
@@ -245,13 +253,13 @@ export class SMSService {
         latency,
       };
     } catch (error: any) {
-      logger.error('[SMSService] WhatsApp send failed', {
+      logger.error("[SMSService] WhatsApp send failed", {
         error: error.message,
         to: this.maskPhoneNumber(to),
       });
 
       // Fallback to SMS if WhatsApp fails
-      logger.info('[SMSService] Falling back to SMS');
+      logger.info("[SMSService] Falling back to SMS");
       return await this.sendSMS(to, body);
     }
   }
@@ -263,7 +271,10 @@ export class SMSService {
    * @param body - Message body
    * @returns Promise with batch results
    */
-  async sendBatchSMS(recipients: string[], body: string): Promise<SMSBatchResult> {
+  async sendBatchSMS(
+    recipients: string[],
+    body: string,
+  ): Promise<SMSBatchResult> {
     if (recipients.length === 0) {
       return {
         successCount: 0,
@@ -275,14 +286,14 @@ export class SMSService {
 
     // Send all messages in parallel with rate limiting
     const results = await Promise.all(
-      recipients.map((to) => this.sendSMS(to, body))
+      recipients.map((to) => this.sendSMS(to, body)),
     );
 
     const successCount = results.filter((r) => r.success).length;
     const failureCount = results.filter((r) => !r.success).length;
     const totalLatency = results.reduce((sum, r) => sum + (r.latency || 0), 0);
 
-    logger.info('[SMSService] Batch SMS send completed', {
+    logger.info("[SMSService] Batch SMS send completed", {
       totalRecipients: recipients.length,
       successCount,
       failureCount,
@@ -307,18 +318,18 @@ export class SMSService {
    */
   async sendSensorAlert(
     phoneNumber: string,
-    details: SensorAlertDetails
+    details: SensorAlertDetails,
   ): Promise<SMSSendResult> {
     const message = `🚨 ALERTA AGROBRIDGE
 
 ${details.sensorType.toUpperCase()} excedió el umbral:
 Valor actual: ${details.currentValue}${details.unit}
 Umbral: ${details.threshold}${details.unit}
-${details.location ? `Ubicación: ${details.location}` : ''}
+${details.location ? `Ubicación: ${details.location}` : ""}
 
 Revisa tu app inmediatamente.
 
-${this.appUrl}/sensors${details.batchId ? `?batchId=${details.batchId}` : ''}`;
+${this.appUrl}/sensors${details.batchId ? `?batchId=${details.batchId}` : ""}`;
 
     // Use WhatsApp for alerts (more reliable for critical messages)
     return await this.sendWhatsApp(phoneNumber, message);
@@ -333,19 +344,19 @@ ${this.appUrl}/sensors${details.batchId ? `?batchId=${details.batchId}` : ''}`;
    */
   async sendOrderConfirmation(
     phoneNumber: string,
-    details: OrderNotificationDetails
+    details: OrderNotificationDetails,
   ): Promise<SMSSendResult> {
     const total = details.total
-      ? new Intl.NumberFormat('es-MX', {
-          style: 'currency',
-          currency: details.currency || 'MXN',
+      ? new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: details.currency || "MXN",
         }).format(details.total)
-      : '';
+      : "";
 
     const message = `✅ Orden confirmada - AgroBridge
 
 Orden #${details.orderId}
-${total ? `Total: ${total}` : ''}
+${total ? `Total: ${total}` : ""}
 Estado: ${details.status}
 
 Rastrear: ${details.trackingUrl || `${this.appUrl}/orders/${details.orderId}`}`;
@@ -359,12 +370,12 @@ Rastrear: ${details.trackingUrl || `${this.appUrl}/orders/${details.orderId}`}`;
   async sendBatchCreatedSMS(
     phoneNumber: string,
     batchId: string,
-    variety?: string
+    variety?: string,
   ): Promise<SMSSendResult> {
     const message = `✅ Lote registrado - AgroBridge
 
 Lote: ${batchId}
-${variety ? `Variedad: ${variety}` : ''}
+${variety ? `Variedad: ${variety}` : ""}
 
 Tu lote ha sido registrado en la blockchain.
 
@@ -378,7 +389,7 @@ Ver: ${this.appUrl}/batches/${batchId}`;
    */
   async sendCertificateReadySMS(
     phoneNumber: string,
-    batchId: string
+    batchId: string,
   ): Promise<SMSSendResult> {
     const message = `🏆 Certificado listo - AgroBridge
 
@@ -395,7 +406,7 @@ Descargar: ${this.appUrl}/certificates/${batchId}`;
   async sendVerificationCode(
     phoneNumber: string,
     code: string,
-    expiresInMinutes: number = 10
+    expiresInMinutes: number = 10,
   ): Promise<SMSSendResult> {
     const message = `Tu código de verificación AgroBridge es: ${code}
 
@@ -416,18 +427,18 @@ No compartas este código con nadie.`;
     this.initialize();
 
     if (!this.client) {
-      return 'unknown';
+      return "unknown";
     }
 
     try {
       const message = await this.client.messages(messageId).fetch();
       return message.status;
     } catch (error: any) {
-      logger.error('[SMSService] Failed to fetch message status', {
+      logger.error("[SMSService] Failed to fetch message status", {
         error: error.message,
         messageId,
       });
-      return 'unknown';
+      return "unknown";
     }
   }
 
@@ -445,7 +456,7 @@ No compartas este código con nadie.`;
    * Mask phone number for logging (security)
    */
   private maskPhoneNumber(phoneNumber: string): string {
-    if (phoneNumber.length < 8) return '***';
+    if (phoneNumber.length < 8) return "***";
     return `${phoneNumber.substring(0, 4)}***${phoneNumber.substring(phoneNumber.length - 2)}`;
   }
 
@@ -453,7 +464,7 @@ No compartas este código con nadie.`;
    * Mask account SID for logging (security)
    */
   private maskAccountSid(accountSid: string): string {
-    if (accountSid.length < 10) return '***';
+    if (accountSid.length < 10) return "***";
     return `${accountSid.substring(0, 6)}...${accountSid.substring(accountSid.length - 4)}`;
   }
 }

@@ -7,14 +7,17 @@
  * @module satellite-analysis.routes
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient, UserRole } from '@prisma/client';
-import { z } from 'zod';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { SatelliteAnalysisService } from '../../domain/services/SatelliteAnalysisService.js';
-import { createSentinelHubService } from '../../infrastructure/services/SentinelHubService.js';
-import { SatelliteCropType, SENTINEL_HUB_LIMITS } from '../../domain/entities/SatelliteAnalysis.js';
-import logger from '../../shared/utils/logger.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { PrismaClient, UserRole } from "@prisma/client";
+import { z } from "zod";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { SatelliteAnalysisService } from "../../domain/services/SatelliteAnalysisService.js";
+import { createSentinelHubService } from "../../infrastructure/services/SentinelHubService.js";
+import {
+  SatelliteCropType,
+  SENTINEL_HUB_LIMITS,
+} from "../../domain/entities/SatelliteAnalysis.js";
+import logger from "../../shared/utils/logger.js";
 
 /**
  * Request validation schemas
@@ -26,13 +29,13 @@ const AnalyzeFieldSchema = z.object({
 });
 
 const CropTypeSchema = z.enum([
-  'AVOCADO',
-  'BLUEBERRY',
-  'STRAWBERRY',
-  'RASPBERRY',
-  'BLACKBERRY',
-  'COFFEE',
-  'CACAO',
+  "AVOCADO",
+  "BLUEBERRY",
+  "STRAWBERRY",
+  "RASPBERRY",
+  "BLACKBERRY",
+  "COFFEE",
+  "CACAO",
 ]);
 
 /**
@@ -44,10 +47,7 @@ const ANALYSIS_ROLES: UserRole[] = [
   UserRole.CERTIFIER,
 ];
 
-const VIEW_ROLES: UserRole[] = [
-  ...ANALYSIS_ROLES,
-  UserRole.PRODUCER,
-];
+const VIEW_ROLES: UserRole[] = [...ANALYSIS_ROLES, UserRole.PRODUCER];
 
 /**
  * Create satellite analysis router
@@ -66,7 +66,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
    * @access ADMIN, EXPORT_COMPANY_ADMIN, CERTIFIER
    */
   router.post(
-    '/:fieldId/satellite-compliance',
+    "/:fieldId/satellite-compliance",
     authenticate(ANALYSIS_ROLES),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -76,7 +76,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -86,14 +86,15 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
           return res.status(400).json({
             success: false,
             error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Invalid request parameters',
+              code: "VALIDATION_ERROR",
+              message: "Invalid request parameters",
               details: parseResult.error.errors,
             },
           });
         }
 
-        const { analysisYears, intervalDays, maxCloudCoverage } = parseResult.data;
+        const { analysisYears, intervalDays, maxCloudCoverage } =
+          parseResult.data;
 
         // Get field to determine crop type
         const field = await prisma.organicField.findUnique({
@@ -104,7 +105,10 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
         if (!field) {
           return res.status(404).json({
             success: false,
-            error: { code: 'FIELD_NOT_FOUND', message: `Campo ${fieldId} no encontrado` },
+            error: {
+              code: "FIELD_NOT_FOUND",
+              message: `Campo ${fieldId} no encontrado`,
+            },
           });
         }
 
@@ -114,13 +118,13 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
           return res.status(400).json({
             success: false,
             error: {
-              code: 'UNSUPPORTED_CROP',
+              code: "UNSUPPORTED_CROP",
               message: `Tipo de cultivo no soportado: ${field.cropType}`,
             },
           });
         }
 
-        logger.info('[SatelliteRoutes] Starting satellite analysis', {
+        logger.info("[SatelliteRoutes] Starting satellite analysis", {
           fieldId,
           fieldName: field.name,
           cropType: field.cropType,
@@ -141,17 +145,20 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
         // Determine response message based on status
         let message: string;
         switch (report.complianceStatus) {
-          case 'ELIGIBLE':
-            message = 'Campo elegible para certificación orgánica. No se detectaron violaciones.';
+          case "ELIGIBLE":
+            message =
+              "Campo elegible para certificación orgánica. No se detectaron violaciones.";
             break;
-          case 'INELIGIBLE':
-            message = 'Campo NO elegible - se detectaron violaciones de prácticas orgánicas.';
+          case "INELIGIBLE":
+            message =
+              "Campo NO elegible - se detectaron violaciones de prácticas orgánicas.";
             break;
-          case 'NEEDS_REVIEW':
-            message = 'Requiere revisión manual por posibles anomalías detectadas.';
+          case "NEEDS_REVIEW":
+            message =
+              "Requiere revisión manual por posibles anomalías detectadas.";
             break;
           default:
-            message = 'Análisis completado.';
+            message = "Análisis completado.";
         }
 
         return res.status(200).json({
@@ -160,17 +167,21 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
           data: report,
         });
       } catch (error) {
-        logger.error('[SatelliteRoutes] Analysis failed', {
+        logger.error("[SatelliteRoutes] Analysis failed", {
           fieldId: req.params.fieldId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
 
-        if (error instanceof Error && error.message.includes('quota exceeded')) {
+        if (
+          error instanceof Error &&
+          error.message.includes("quota exceeded")
+        ) {
           return res.status(429).json({
             success: false,
             error: {
-              code: 'QUOTA_EXCEEDED',
-              message: 'Límite mensual de Sentinel Hub alcanzado. Inténtalo el próximo mes.',
+              code: "QUOTA_EXCEEDED",
+              message:
+                "Límite mensual de Sentinel Hub alcanzado. Inténtalo el próximo mes.",
               quotaLimit: SENTINEL_HUB_LIMITS.monthlyProcessingUnits,
             },
           });
@@ -178,7 +189,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
 
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -189,7 +200,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
    * @access ADMIN, EXPORT_COMPANY_ADMIN, CERTIFIER, PRODUCER
    */
   router.get(
-    '/:fieldId/satellite-analyses',
+    "/:fieldId/satellite-analyses",
     authenticate(VIEW_ROLES),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -205,7 +216,10 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
         if (!field) {
           return res.status(404).json({
             success: false,
-            error: { code: 'FIELD_NOT_FOUND', message: `Campo ${fieldId} no encontrado` },
+            error: {
+              code: "FIELD_NOT_FOUND",
+              message: `Campo ${fieldId} no encontrado`,
+            },
           });
         }
 
@@ -219,7 +233,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -230,7 +244,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
    * @access ADMIN, EXPORT_COMPANY_ADMIN, CERTIFIER, PRODUCER
    */
   router.get(
-    '/:fieldId/satellite-analyses/latest',
+    "/:fieldId/satellite-analyses/latest",
     authenticate(VIEW_ROLES),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -242,8 +256,9 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
           return res.status(404).json({
             success: false,
             error: {
-              code: 'NO_ANALYSIS_FOUND',
-              message: 'No hay análisis satelital para este campo. Ejecute uno primero.',
+              code: "NO_ANALYSIS_FOUND",
+              message:
+                "No hay análisis satelital para este campo. Ejecute uno primero.",
             },
           });
         }
@@ -255,7 +270,7 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;
@@ -264,7 +279,9 @@ export function createSatelliteAnalysisRouter(prisma: PrismaClient): Router {
 /**
  * Create satellite analysis direct routes (for /satellite-analyses/:id access)
  */
-export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Router {
+export function createSatelliteAnalysisDirectRouter(
+  prisma: PrismaClient,
+): Router {
   const router = Router();
   const sentinelHub = createSentinelHubService();
   const service = new SatelliteAnalysisService(prisma, sentinelHub);
@@ -277,7 +294,7 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
    * @access ADMIN, EXPORT_COMPANY_ADMIN, CERTIFIER, PRODUCER
    */
   router.get(
-    '/:id',
+    "/:id",
     authenticate(VIEW_ROLES),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -288,7 +305,10 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
         if (!analysis) {
           return res.status(404).json({
             success: false,
-            error: { code: 'ANALYSIS_NOT_FOUND', message: 'Análisis satelital no encontrado' },
+            error: {
+              code: "ANALYSIS_NOT_FOUND",
+              message: "Análisis satelital no encontrado",
+            },
           });
         }
 
@@ -299,7 +319,7 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -310,7 +330,7 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
    * @access ADMIN, EXPORT_COMPANY_ADMIN
    */
   router.get(
-    '/stats',
+    "/stats",
     authenticate([UserRole.ADMIN, UserRole.EXPORT_COMPANY_ADMIN]),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -323,7 +343,7 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -334,7 +354,7 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
    * @access ADMIN
    */
   router.get(
-    '/health',
+    "/health",
     authenticate([UserRole.ADMIN]),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -350,7 +370,7 @@ export function createSatelliteAnalysisDirectRouter(prisma: PrismaClient): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

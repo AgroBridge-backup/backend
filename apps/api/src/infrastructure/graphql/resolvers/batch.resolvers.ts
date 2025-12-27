@@ -5,9 +5,21 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Batch, BatchStatus, TraceabilityEvent, Variety, Prisma } from '@prisma/client';
-import { GraphQLContext, requireAuth, requireRole, isAdmin, isAdminOrAuditor } from '../context.js';
-import { NotFoundError, ForbiddenError } from '../errors.js';
+import {
+  Batch,
+  BatchStatus,
+  TraceabilityEvent,
+  Variety,
+  Prisma,
+} from "@prisma/client";
+import {
+  GraphQLContext,
+  requireAuth,
+  requireRole,
+  isAdmin,
+  isAdminOrAuditor,
+} from "../context.js";
+import { NotFoundError, ForbiddenError } from "../errors.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -31,7 +43,7 @@ interface BatchFilterInput {
 
 interface BatchSortInput {
   field: string;
-  direction: 'ASC' | 'DESC';
+  direction: "ASC" | "DESC";
 }
 
 interface CreateBatchInput {
@@ -52,7 +64,7 @@ interface UpdateBatchStatusInput {
 
 function buildBatchWhere(
   filter?: BatchFilterInput,
-  context?: GraphQLContext
+  context?: GraphQLContext,
 ): Prisma.BatchWhereInput {
   const where: Prisma.BatchWhereInput = {};
 
@@ -64,7 +76,7 @@ function buildBatchWhere(
       where.producerId = filter.producerId;
     }
     if (filter.origin) {
-      where.origin = { contains: filter.origin, mode: 'insensitive' };
+      where.origin = { contains: filter.origin, mode: "insensitive" };
     }
     if (filter.variety) {
       where.variety = filter.variety;
@@ -79,16 +91,22 @@ function buildBatchWhere(
       }
     }
     if (filter.weightKgMin !== undefined) {
-      where.weightKg = { ...(where.weightKg as object || {}), gte: filter.weightKgMin };
+      where.weightKg = {
+        ...((where.weightKg as object) || {}),
+        gte: filter.weightKgMin,
+      };
     }
     if (filter.weightKgMax !== undefined) {
-      where.weightKg = { ...(where.weightKg as object || {}), lte: filter.weightKgMax };
+      where.weightKg = {
+        ...((where.weightKg as object) || {}),
+        lte: filter.weightKgMax,
+      };
     }
   }
 
   // Role-based filtering
   if (context?.user && !isAdminOrAuditor(context)) {
-    if (context.user.role === 'PRODUCER') {
+    if (context.user.role === "PRODUCER") {
       where.producer = { userId: context.user.id };
     }
   }
@@ -96,15 +114,17 @@ function buildBatchWhere(
   return where;
 }
 
-function buildBatchOrderBy(sort?: BatchSortInput): Prisma.BatchOrderByWithRelationInput {
+function buildBatchOrderBy(
+  sort?: BatchSortInput,
+): Prisma.BatchOrderByWithRelationInput {
   if (!sort) {
-    return { createdAt: 'desc' };
+    return { createdAt: "desc" };
   }
-  return { [sort.field]: sort.direction.toLowerCase() as 'asc' | 'desc' };
+  return { [sort.field]: sort.direction.toLowerCase() as "asc" | "desc" };
 }
 
 function encodeCursor(id: string): string {
-  return Buffer.from(id).toString('base64');
+  return Buffer.from(id).toString("base64");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -115,7 +135,7 @@ export const batchQueries = {
   batch: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ): Promise<Batch | null> => {
     return context.loaders.batch.load(args.id);
   },
@@ -127,7 +147,7 @@ export const batchQueries = {
       filter?: BatchFilterInput;
       sort?: BatchSortInput;
     },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     const page = args.pagination?.page || 1;
     const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -177,20 +197,24 @@ export const batchMutations = {
   createBatch: async (
     _parent: unknown,
     args: { input: CreateBatchInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'PRODUCER']);
+    requireRole(context, ["ADMIN", "PRODUCER"]);
 
     // Get producer for current user
-    const producer = await context.loaders.producerByUserId.load(context.user.id);
-    if (!producer && context.user.role === 'PRODUCER') {
-      throw new ForbiddenError('You must have a producer profile to create batches');
+    const producer = await context.loaders.producerByUserId.load(
+      context.user.id,
+    );
+    if (!producer && context.user.role === "PRODUCER") {
+      throw new ForbiddenError(
+        "You must have a producer profile to create batches",
+      );
     }
 
     const producerId = producer?.id;
     if (!producerId) {
-      throw new ForbiddenError('Producer ID required');
+      throw new ForbiddenError("Producer ID required");
     }
 
     const batch = await context.prisma.batch.create({
@@ -201,13 +225,13 @@ export const batchMutations = {
         harvestDate: args.input.harvestDate,
         weightKg: args.input.weightKg,
         blockchainHash: args.input.blockchainHash,
-        status: 'REGISTERED',
+        status: "REGISTERED",
       },
     });
 
     return {
       success: true,
-      message: 'Batch created successfully',
+      message: "Batch created successfully",
       batch,
     };
   },
@@ -215,19 +239,19 @@ export const batchMutations = {
   updateBatchStatus: async (
     _parent: unknown,
     args: { id: string; input: UpdateBatchStatusInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
 
     const batch = await context.loaders.batch.load(args.id);
     if (!batch) {
-      throw new NotFoundError('Batch', args.id);
+      throw new NotFoundError("Batch", args.id);
     }
 
     // Check ownership or admin
     const producer = await context.loaders.producer.load(batch.producerId);
     if (!isAdmin(context) && producer?.userId !== context.user.id) {
-      throw new ForbiddenError('You can only update your own batches');
+      throw new ForbiddenError("You can only update your own batches");
     }
 
     const updatedBatch = await context.prisma.batch.update({
@@ -247,14 +271,14 @@ export const batchMutations = {
   deleteBatch: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN']);
+    requireRole(context, ["ADMIN"]);
 
     const batch = await context.loaders.batch.load(args.id);
     if (!batch) {
-      throw new NotFoundError('Batch', args.id);
+      throw new NotFoundError("Batch", args.id);
     }
 
     await context.prisma.batch.delete({
@@ -263,7 +287,7 @@ export const batchMutations = {
 
     return {
       success: true,
-      message: 'Batch deleted successfully',
+      message: "Batch deleted successfully",
       deletedId: args.id,
     };
   },
@@ -275,14 +299,18 @@ export const batchMutations = {
 
 export const batchFieldResolvers = {
   Batch: {
-    producer: async (parent: Batch, _args: unknown, context: GraphQLContext) => {
+    producer: async (
+      parent: Batch,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.producer.load(parent.producerId);
     },
 
     events: async (
       parent: Batch,
       args: { pagination?: PaginationInput },
-      context: GraphQLContext
+      context: GraphQLContext,
     ) => {
       const page = args.pagination?.page || 1;
       const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -291,11 +319,13 @@ export const batchFieldResolvers = {
       const [events, totalCount] = await Promise.all([
         context.prisma.traceabilityEvent.findMany({
           where: { batchId: parent.id },
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           skip,
           take: limit,
         }),
-        context.prisma.traceabilityEvent.count({ where: { batchId: parent.id } }),
+        context.prisma.traceabilityEvent.count({
+          where: { batchId: parent.id },
+        }),
       ]);
 
       const totalPages = Math.ceil(totalCount / limit);
@@ -320,15 +350,27 @@ export const batchFieldResolvers = {
       };
     },
 
-    eventCount: async (parent: Batch, _args: unknown, context: GraphQLContext) => {
+    eventCount: async (
+      parent: Batch,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.eventCountByBatch.load(parent.id);
     },
 
-    latestEvent: async (parent: Batch, _args: unknown, context: GraphQLContext) => {
+    latestEvent: async (
+      parent: Batch,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.latestEventByBatch.load(parent.id);
     },
 
-    timeline: async (parent: Batch, _args: unknown, context: GraphQLContext) => {
+    timeline: async (
+      parent: Batch,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       const events = await context.loaders.eventsByBatch.load(parent.id);
 
       return events.map((event: TraceabilityEvent) => ({
@@ -343,7 +385,11 @@ export const batchFieldResolvers = {
   },
 
   TimelineEntry: {
-    createdBy: async (parent: { createdById: string }, _args: unknown, context: GraphQLContext) => {
+    createdBy: async (
+      parent: { createdById: string },
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.user.load(parent.createdById);
     },
   },
@@ -351,14 +397,14 @@ export const batchFieldResolvers = {
 
 function formatEventTitle(eventType: string): string {
   const titles: Record<string, string> = {
-    HARVEST: 'Harvest',
-    PROCESSING: 'Processing',
-    QUALITY_INSPECTION: 'Quality Inspection',
-    PACKAGING: 'Packaging',
-    TRANSPORT_START: 'Transport Started',
-    TRANSPORT_ARRIVAL: 'Transport Arrived',
-    CUSTOMS_CLEARANCE: 'Customs Clearance',
-    DELIVERY: 'Delivery',
+    HARVEST: "Harvest",
+    PROCESSING: "Processing",
+    QUALITY_INSPECTION: "Quality Inspection",
+    PACKAGING: "Packaging",
+    TRANSPORT_START: "Transport Started",
+    TRANSPORT_ARRIVAL: "Transport Arrived",
+    CUSTOMS_CLEARANCE: "Customs Clearance",
+    DELIVERY: "Delivery",
   };
   return titles[eventType] || eventType;
 }

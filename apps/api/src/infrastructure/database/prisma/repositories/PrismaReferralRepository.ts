@@ -3,20 +3,23 @@
  * Implements IReferralRepository using Prisma ORM
  */
 
-import { PrismaClient, ReferralStatus as PrismaReferralStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  ReferralStatus as PrismaReferralStatus,
+} from "@prisma/client";
 import {
   IReferralRepository,
   CreateReferralData,
   UpdateReferralData,
-} from '../../../../domain/repositories/IReferralRepository.js';
+} from "../../../../domain/repositories/IReferralRepository.js";
 import {
   Referral,
   ReferralStatus,
   ReferralRewardType,
   UserReferralCode,
   ReferralStats,
-} from '../../../../domain/entities/Referral.js';
-import { randomBytes } from 'crypto';
+} from "../../../../domain/entities/Referral.js";
+import { randomBytes } from "crypto";
 
 export class PrismaReferralRepository implements IReferralRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -80,7 +83,7 @@ export class PrismaReferralRepository implements IReferralRepository {
         monthYear: data.monthYear,
         ipAddress: data.ipAddress,
         deviceFingerprint: data.deviceFingerprint,
-        rewardType: data.rewardType || 'PREMIUM_DAYS',
+        rewardType: data.rewardType || "PREMIUM_DAYS",
         rewardValue: data.rewardValue || 30,
       },
     });
@@ -104,18 +107,21 @@ export class PrismaReferralRepository implements IReferralRepository {
   async listByReferrer(referrerId: string): Promise<Referral[]> {
     const referrals = await this.prisma.referral.findMany({
       where: { referrerId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return referrals.map(this.mapToDomain.bind(this));
   }
 
-  async listByReferrerWithStatus(referrerId: string, status: ReferralStatus): Promise<Referral[]> {
+  async listByReferrerWithStatus(
+    referrerId: string,
+    status: ReferralStatus,
+  ): Promise<Referral[]> {
     const referrals = await this.prisma.referral.findMany({
       where: {
         referrerId,
         status: status as PrismaReferralStatus,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return referrals.map(this.mapToDomain.bind(this));
   }
@@ -125,21 +131,49 @@ export class PrismaReferralRepository implements IReferralRepository {
       where: { id },
       data: {
         ...(data.referredId !== undefined && { referredId: data.referredId }),
-        ...(data.status !== undefined && { status: data.status as PrismaReferralStatus }),
-        ...(data.activityScore !== undefined && { activityScore: data.activityScore }),
-        ...(data.batchesCreated !== undefined && { batchesCreated: data.batchesCreated }),
+        ...(data.status !== undefined && {
+          status: data.status as PrismaReferralStatus,
+        }),
+        ...(data.activityScore !== undefined && {
+          activityScore: data.activityScore,
+        }),
+        ...(data.batchesCreated !== undefined && {
+          batchesCreated: data.batchesCreated,
+        }),
         ...(data.loginCount !== undefined && { loginCount: data.loginCount }),
-        ...(data.lastActivityAt !== undefined && { lastActivityAt: data.lastActivityAt }),
-        ...(data.rewardGranted !== undefined && { rewardGranted: data.rewardGranted }),
-        ...(data.rewardGrantedAt !== undefined && { rewardGrantedAt: data.rewardGrantedAt }),
-        ...(data.blockchainTxHash !== undefined && { blockchainTxHash: data.blockchainTxHash }),
-        ...(data.blockchainEventId !== undefined && { blockchainEventId: data.blockchainEventId }),
-        ...(data.blockchainVerified !== undefined && { blockchainVerified: data.blockchainVerified }),
-        ...(data.blockchainNetwork !== undefined && { blockchainNetwork: data.blockchainNetwork }),
-        ...(data.registeredAt !== undefined && { registeredAt: data.registeredAt }),
-        ...(data.completedAt !== undefined && { completedAt: data.completedAt }),
-        ...(data.isSuspicious !== undefined && { isSuspicious: data.isSuspicious }),
-        ...(data.suspicionReasons !== undefined && { suspicionReasons: data.suspicionReasons }),
+        ...(data.lastActivityAt !== undefined && {
+          lastActivityAt: data.lastActivityAt,
+        }),
+        ...(data.rewardGranted !== undefined && {
+          rewardGranted: data.rewardGranted,
+        }),
+        ...(data.rewardGrantedAt !== undefined && {
+          rewardGrantedAt: data.rewardGrantedAt,
+        }),
+        ...(data.blockchainTxHash !== undefined && {
+          blockchainTxHash: data.blockchainTxHash,
+        }),
+        ...(data.blockchainEventId !== undefined && {
+          blockchainEventId: data.blockchainEventId,
+        }),
+        ...(data.blockchainVerified !== undefined && {
+          blockchainVerified: data.blockchainVerified,
+        }),
+        ...(data.blockchainNetwork !== undefined && {
+          blockchainNetwork: data.blockchainNetwork,
+        }),
+        ...(data.registeredAt !== undefined && {
+          registeredAt: data.registeredAt,
+        }),
+        ...(data.completedAt !== undefined && {
+          completedAt: data.completedAt,
+        }),
+        ...(data.isSuspicious !== undefined && {
+          isSuspicious: data.isSuspicious,
+        }),
+        ...(data.suspicionReasons !== undefined && {
+          suspicionReasons: data.suspicionReasons,
+        }),
       },
     });
     return this.mapToDomain(referral);
@@ -236,16 +270,18 @@ export class PrismaReferralRepository implements IReferralRepository {
   private generateReferralCode(): string {
     // Generate a 8-character alphanumeric code using crypto-secure random
     // P1 FIX: Using randomBytes instead of Math.random() for security
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding confusing chars
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding confusing chars
     const bytes = randomBytes(6);
-    let code = 'AB-'; // Prefix for AgroBridge
+    let code = "AB-"; // Prefix for AgroBridge
     for (let i = 0; i < 6; i++) {
       code += chars[bytes[i] % chars.length];
     }
     return code;
   }
 
-  async findUserReferralCodeByCode(code: string): Promise<UserReferralCode | null> {
+  async findUserReferralCodeByCode(
+    code: string,
+  ): Promise<UserReferralCode | null> {
     const referralCode = await this.prisma.userReferralCode.findFirst({
       where: { code: code.toUpperCase() },
     });
@@ -260,7 +296,7 @@ export class PrismaReferralRepository implements IReferralRepository {
       completedReferrals?: number;
       totalRewardsEarned?: number;
       onChainReferrals?: number;
-    }
+    },
   ): Promise<UserReferralCode> {
     const code = await this.prisma.userReferralCode.update({
       where: { userId },
@@ -287,7 +323,7 @@ export class PrismaReferralRepository implements IReferralRepository {
 
   async getLeaderboard(
     monthYear: string,
-    limit = 50
+    limit = 50,
   ): Promise<
     Array<{
       rank: number;
@@ -302,7 +338,7 @@ export class PrismaReferralRepository implements IReferralRepository {
     // Get from cached leaderboard first
     const cached = await this.prisma.referralLeaderboard.findMany({
       where: { monthYear },
-      orderBy: { rank: 'asc' },
+      orderBy: { rank: "asc" },
       take: limit,
     });
 
@@ -321,7 +357,7 @@ export class PrismaReferralRepository implements IReferralRepository {
     // Calculate on-the-fly if no cache
     const codes = await this.prisma.userReferralCode.findMany({
       where: { activeReferrals: { gt: 0 } },
-      orderBy: { activeReferrals: 'desc' },
+      orderBy: { activeReferrals: "desc" },
       take: limit,
     });
 
@@ -335,19 +371,25 @@ export class PrismaReferralRepository implements IReferralRepository {
         return {
           rank: index + 1,
           userId: code.userId,
-          userName: user ? `${user.firstName} ${user.lastName.charAt(0)}.` : 'Anonymous',
+          userName: user
+            ? `${user.firstName} ${user.lastName.charAt(0)}.`
+            : "Anonymous",
           activeReferrals: code.activeReferrals,
           completedReferrals: code.completedReferrals,
-          totalPoints: code.activeReferrals * 100 + code.completedReferrals * 50,
+          totalPoints:
+            code.activeReferrals * 100 + code.completedReferrals * 50,
           blockchainVerified: !!code.walletAddress,
         };
-      })
+      }),
     );
 
     return results;
   }
 
-  async countByReferrerAndMonth(referrerId: string, monthYear: string): Promise<number> {
+  async countByReferrerAndMonth(
+    referrerId: string,
+    monthYear: string,
+  ): Promise<number> {
     return this.prisma.referral.count({
       where: { referrerId, monthYear },
     });

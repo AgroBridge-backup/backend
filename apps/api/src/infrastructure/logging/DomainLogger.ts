@@ -3,14 +3,14 @@
  * Wraps infrastructure logger to implement ILogger interface
  */
 
-import { ILogger, LogContext } from '../../domain/services/ILogger.js';
-import { logger } from './logger.js';
+import { ILogger, LogContext } from "../../domain/services/ILogger.js";
+import { logger } from "./logger.js";
 
 export class DomainLogger implements ILogger {
   private readonly prefix: string;
 
   constructor(prefix?: string) {
-    this.prefix = prefix || '';
+    this.prefix = prefix || "";
   }
 
   info(message: string, context?: LogContext): void {

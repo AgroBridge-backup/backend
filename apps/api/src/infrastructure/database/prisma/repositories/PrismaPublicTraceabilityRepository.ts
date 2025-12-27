@@ -6,18 +6,20 @@
  * may not be immediately available. Uses raw SQL for new tables.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { IPublicTraceabilityRepository } from '../../../../domain/repositories/IPublicTraceabilityRepository.js';
+import { PrismaClient } from "@prisma/client";
+import { IPublicTraceabilityRepository } from "../../../../domain/repositories/IPublicTraceabilityRepository.js";
 import {
   PublicTraceabilityLink,
   CreatePublicLinkInput,
   QrScanEvent,
   ScanAnalytics,
   DeviceType,
-} from '../../../../domain/entities/PublicTraceability.js';
-import logger from '../../../../shared/utils/logger.js';
+} from "../../../../domain/entities/PublicTraceability.js";
+import logger from "../../../../shared/utils/logger.js";
 
-export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRepository {
+export class PrismaPublicTraceabilityRepository
+  implements IPublicTraceabilityRepository
+{
   private initialized = false;
 
   constructor(private prisma: PrismaClient) {}
@@ -73,7 +75,7 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
       `);
 
       this.initialized = true;
-      logger.info('PublicTraceability tables initialized');
+      logger.info("PublicTraceability tables initialized");
     } catch (error) {
       // Tables might already exist, that's fine
       this.initialized = true;
@@ -84,12 +86,17 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
   // PUBLIC TRACEABILITY LINKS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  async findByShortCode(shortCode: string): Promise<PublicTraceabilityLink | null> {
+  async findByShortCode(
+    shortCode: string,
+  ): Promise<PublicTraceabilityLink | null> {
     await this.ensureTablesExist();
 
-    const results = await this.prisma.$queryRawUnsafe<any[]>(`
+    const results = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT * FROM "PublicTraceabilityLink" WHERE "shortCode" = $1 LIMIT 1
-    `, shortCode);
+    `,
+      shortCode,
+    );
 
     return results[0] ? this.mapToLink(results[0]) : null;
   }
@@ -97,26 +104,37 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
   async findByBatchId(batchId: string): Promise<PublicTraceabilityLink | null> {
     await this.ensureTablesExist();
 
-    const results = await this.prisma.$queryRawUnsafe<any[]>(`
+    const results = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT * FROM "PublicTraceabilityLink" WHERE "batchId" = $1 LIMIT 1
-    `, batchId);
+    `,
+      batchId,
+    );
 
     return results[0] ? this.mapToLink(results[0]) : null;
   }
 
   async create(
-    input: CreatePublicLinkInput & { shortCode: string; publicUrl: string }
+    input: CreatePublicLinkInput & { shortCode: string; publicUrl: string },
   ): Promise<PublicTraceabilityLink> {
     await this.ensureTablesExist();
 
     const id = crypto.randomUUID();
     const now = new Date();
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       INSERT INTO "PublicTraceabilityLink"
       ("id", "batchId", "shortCode", "publicUrl", "isActive", "viewCount", "createdAt", "updatedAt", "expiresAt")
       VALUES ($1, $2, $3, $4, true, 0, $5, $5, $6)
-    `, id, input.batchId, input.shortCode, input.publicUrl, now, input.expiresAt || null);
+    `,
+      id,
+      input.batchId,
+      input.shortCode,
+      input.publicUrl,
+      now,
+      input.expiresAt || null,
+    );
 
     return {
       id,
@@ -132,7 +150,10 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
     };
   }
 
-  async update(id: string, data: Partial<PublicTraceabilityLink>): Promise<PublicTraceabilityLink> {
+  async update(
+    id: string,
+    data: Partial<PublicTraceabilityLink>,
+  ): Promise<PublicTraceabilityLink> {
     await this.ensureTablesExist();
 
     const updates: string[] = [];
@@ -153,15 +174,21 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
 
     values.push(id);
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       UPDATE "PublicTraceabilityLink"
-      SET ${updates.join(', ')}
+      SET ${updates.join(", ")}
       WHERE "id" = $${paramIndex}
-    `, ...values);
+    `,
+      ...values,
+    );
 
-    const result = await this.prisma.$queryRawUnsafe<any[]>(`
+    const result = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT * FROM "PublicTraceabilityLink" WHERE "id" = $1
-    `, id);
+    `,
+      id,
+    );
 
     return this.mapToLink(result[0]);
   }
@@ -169,21 +196,29 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
   async incrementViewCount(shortCode: string): Promise<void> {
     await this.ensureTablesExist();
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       UPDATE "PublicTraceabilityLink"
       SET "viewCount" = "viewCount" + 1, "updatedAt" = $1
       WHERE "shortCode" = $2
-    `, new Date(), shortCode);
+    `,
+      new Date(),
+      shortCode,
+    );
   }
 
   async deactivate(id: string): Promise<void> {
     await this.ensureTablesExist();
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       UPDATE "PublicTraceabilityLink"
       SET "isActive" = false, "updatedAt" = $1
       WHERE "id" = $2
-    `, new Date(), id);
+    `,
+      new Date(),
+      id,
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -193,7 +228,8 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
   async recordScan(input: QrScanEvent): Promise<QrScanEvent> {
     await this.ensureTablesExist();
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       INSERT INTO "QrScanEvent"
       ("id", "shortCode", "timestamp", "country", "city", "deviceType", "browser", "referrer", "userAgent")
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -206,13 +242,16 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
       input.deviceType,
       input.browser,
       input.referrer,
-      input.userAgent
+      input.userAgent,
     );
 
     return input;
   }
 
-  async getAnalytics(shortCode: string, days: number = 30): Promise<ScanAnalytics> {
+  async getAnalytics(
+    shortCode: string,
+    days: number = 30,
+  ): Promise<ScanAnalytics> {
     await this.ensureTablesExist();
 
     const cutoffDate = new Date();
@@ -222,68 +261,88 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
     const link = await this.findByShortCode(shortCode);
 
     // Total scans
-    const totalResult = await this.prisma.$queryRawUnsafe<any[]>(`
+    const totalResult = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT COUNT(*)::int as count FROM "QrScanEvent" WHERE "shortCode" = $1
-    `, shortCode);
+    `,
+      shortCode,
+    );
     const totalScans = totalResult[0]?.count || 0;
 
     // Scans in last N days
-    const recentResult = await this.prisma.$queryRawUnsafe<any[]>(`
+    const recentResult = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT COUNT(*)::int as count FROM "QrScanEvent"
       WHERE "shortCode" = $1 AND "timestamp" >= $2
-    `, shortCode, cutoffDate);
+    `,
+      shortCode,
+      cutoffDate,
+    );
     const last30DaysScans = recentResult[0]?.count || 0;
 
     // Scans by country
-    const countryResults = await this.prisma.$queryRawUnsafe<any[]>(`
+    const countryResults = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT "country", COUNT(*)::int as count
       FROM "QrScanEvent"
       WHERE "shortCode" = $1 AND "country" IS NOT NULL
       GROUP BY "country"
       ORDER BY count DESC
       LIMIT 10
-    `, shortCode);
+    `,
+      shortCode,
+    );
 
     // Scans by device
-    const deviceResults = await this.prisma.$queryRawUnsafe<any[]>(`
+    const deviceResults = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT "deviceType", COUNT(*)::int as count
       FROM "QrScanEvent"
       WHERE "shortCode" = $1
       GROUP BY "deviceType"
-    `, shortCode);
+    `,
+      shortCode,
+    );
 
     // Scans by day (last 30 days)
-    const dailyResults = await this.prisma.$queryRawUnsafe<any[]>(`
+    const dailyResults = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT DATE("timestamp") as date, COUNT(*)::int as count
       FROM "QrScanEvent"
       WHERE "shortCode" = $1 AND "timestamp" >= $2
       GROUP BY DATE("timestamp")
       ORDER BY date DESC
-    `, shortCode, cutoffDate);
+    `,
+      shortCode,
+      cutoffDate,
+    );
 
     // Last scan
-    const lastScanResult = await this.prisma.$queryRawUnsafe<any[]>(`
+    const lastScanResult = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT "timestamp" FROM "QrScanEvent"
       WHERE "shortCode" = $1
       ORDER BY "timestamp" DESC
       LIMIT 1
-    `, shortCode);
+    `,
+      shortCode,
+    );
 
     return {
       shortCode,
-      batchId: link?.batchId || '',
+      batchId: link?.batchId || "",
       totalScans,
       uniqueCountries: countryResults.length,
-      scansByCountry: countryResults.map(r => ({
+      scansByCountry: countryResults.map((r) => ({
         country: r.country,
         count: r.count,
       })),
-      scansByDevice: deviceResults.map(r => ({
+      scansByDevice: deviceResults.map((r) => ({
         device: r.deviceType as DeviceType,
         count: r.count,
       })),
-      scansByDay: dailyResults.map(r => ({
-        date: r.date.toISOString().split('T')[0],
+      scansByDay: dailyResults.map((r) => ({
+        date: r.date.toISOString().split("T")[0],
         count: r.count,
       })),
       last30DaysScans,
@@ -291,17 +350,24 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
     };
   }
 
-  async getRecentScans(shortCode: string, limit: number = 10): Promise<QrScanEvent[]> {
+  async getRecentScans(
+    shortCode: string,
+    limit: number = 10,
+  ): Promise<QrScanEvent[]> {
     await this.ensureTablesExist();
 
-    const results = await this.prisma.$queryRawUnsafe<any[]>(`
+    const results = await this.prisma.$queryRawUnsafe<any[]>(
+      `
       SELECT * FROM "QrScanEvent"
       WHERE "shortCode" = $1
       ORDER BY "timestamp" DESC
       LIMIT $2
-    `, shortCode, limit);
+    `,
+      shortCode,
+      limit,
+    );
 
-    return results.map(r => ({
+    return results.map((r) => ({
       id: r.id,
       shortCode: r.shortCode,
       timestamp: r.timestamp,
@@ -334,4 +400,4 @@ export class PrismaPublicTraceabilityRepository implements IPublicTraceabilityRe
   }
 }
 
-import crypto from 'crypto';
+import crypto from "crypto";

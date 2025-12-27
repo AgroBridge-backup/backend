@@ -7,9 +7,9 @@
  * @module QualityMetricsService
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import { AppError } from '../../shared/errors/AppError.js';
-import logger from '../../shared/utils/logger.js';
+import { PrismaClient, Prisma } from "@prisma/client";
+import { AppError } from "../../shared/errors/AppError.js";
+import logger from "../../shared/utils/logger.js";
 import {
   CropType,
   QualityGradeType,
@@ -18,7 +18,7 @@ import {
   gradeBrixLevel,
   gradePhLevel,
   estimateMarketPrice,
-} from '../entities/SmartColdChain.js';
+} from "../entities/SmartColdChain.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -92,19 +92,29 @@ export class QualityMetricsService {
     const phGrade = gradePhLevel(input.cropType, input.phLevel);
 
     // Check compliance
-    const brixCompliant = input.brixLevel >= thresholds.brixMin && input.brixLevel <= thresholds.brixMax;
-    const phCompliant = input.phLevel >= thresholds.phMin && input.phLevel <= thresholds.phMax;
+    const brixCompliant =
+      input.brixLevel >= thresholds.brixMin &&
+      input.brixLevel <= thresholds.brixMax;
+    const phCompliant =
+      input.phLevel >= thresholds.phMin && input.phLevel <= thresholds.phMax;
 
     // Calculate overall quality
-    const overallQuality = calculateQualityGrade(input.cropType, input.brixLevel, input.phLevel);
+    const overallQuality = calculateQualityGrade(
+      input.cropType,
+      input.brixLevel,
+      input.phLevel,
+    );
 
     // Determine export eligibility
-    const exportEligible = overallQuality === QualityGradeType.PREMIUM || overallQuality === QualityGradeType.EXPORT;
+    const exportEligible =
+      overallQuality === QualityGradeType.PREMIUM ||
+      overallQuality === QualityGradeType.EXPORT;
 
     // Calculate defect percentage
-    const defectPercentage = input.sampleSize && input.defectCount
-      ? (input.defectCount / input.sampleSize) * 100
-      : null;
+    const defectPercentage =
+      input.sampleSize && input.defectCount
+        ? (input.defectCount / input.sampleSize) * 100
+        : null;
 
     // Adjust quality if defects are high
     let finalQuality = overallQuality;
@@ -145,7 +155,9 @@ export class QualityMetricsService {
         defectTypes: input.defectTypes || [],
         defectPercentage,
         overallQuality: finalQuality as any,
-        exportEligible: finalQuality === QualityGradeType.PREMIUM || finalQuality === QualityGradeType.EXPORT,
+        exportEligible:
+          finalQuality === QualityGradeType.PREMIUM ||
+          finalQuality === QualityGradeType.EXPORT,
         marketPrice,
         measurementDevice: input.measurementDevice,
         measurementMethod: input.measurementMethod,
@@ -153,7 +165,7 @@ export class QualityMetricsService {
       },
     });
 
-    logger.info('[QualityMetrics] Quality recorded', {
+    logger.info("[QualityMetrics] Quality recorded", {
       metricsId: metrics.id,
       cropType: input.cropType,
       brixLevel: input.brixLevel,
@@ -165,7 +177,11 @@ export class QualityMetricsService {
     return {
       ...metrics,
       thresholds: {
-        brix: { min: thresholds.brixMin, max: thresholds.brixMax, premium: thresholds.brixPremium },
+        brix: {
+          min: thresholds.brixMin,
+          max: thresholds.brixMax,
+          premium: thresholds.brixPremium,
+        },
         ph: { min: thresholds.phMin, max: thresholds.phMax },
       },
     };
@@ -183,7 +199,7 @@ export class QualityMetricsService {
     });
 
     if (!metrics) {
-      throw new AppError('Quality metrics not found', 404);
+      throw new AppError("Quality metrics not found", 404);
     }
 
     return metrics;
@@ -192,24 +208,29 @@ export class QualityMetricsService {
   /**
    * List quality metrics for an export company
    */
-  async listMetrics(exportCompanyId: string, options?: {
-    fieldId?: string;
-    batchId?: string;
-    cropType?: string;
-    overallQuality?: string;
-    exportEligible?: boolean;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-    offset?: number;
-  }) {
+  async listMetrics(
+    exportCompanyId: string,
+    options?: {
+      fieldId?: string;
+      batchId?: string;
+      cropType?: string;
+      overallQuality?: string;
+      exportEligible?: boolean;
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+      offset?: number;
+    },
+  ) {
     const where: Prisma.HarvestQualityMetricsWhereInput = { exportCompanyId };
 
     if (options?.fieldId) where.fieldId = options.fieldId;
     if (options?.batchId) where.batchId = options.batchId;
     if (options?.cropType) where.cropType = options.cropType as any;
-    if (options?.overallQuality) where.overallQuality = options.overallQuality as any;
-    if (options?.exportEligible !== undefined) where.exportEligible = options.exportEligible;
+    if (options?.overallQuality)
+      where.overallQuality = options.overallQuality as any;
+    if (options?.exportEligible !== undefined)
+      where.exportEligible = options.exportEligible;
 
     if (options?.startDate || options?.endDate) {
       where.harvestDate = {};
@@ -222,7 +243,7 @@ export class QualityMetricsService {
         where,
         take: options?.limit || 50,
         skip: options?.offset || 0,
-        orderBy: { harvestDate: 'desc' },
+        orderBy: { harvestDate: "desc" },
       }),
       this.prisma.harvestQualityMetrics.count({ where }),
     ]);
@@ -239,11 +260,11 @@ export class QualityMetricsService {
     });
 
     if (!metrics) {
-      throw new AppError('Quality metrics not found', 404);
+      throw new AppError("Quality metrics not found", 404);
     }
 
     if (metrics.labVerified) {
-      throw new AppError('Quality metrics already verified', 400);
+      throw new AppError("Quality metrics already verified", 400);
     }
 
     const updated = await this.prisma.harvestQualityMetrics.update({
@@ -256,7 +277,7 @@ export class QualityMetricsService {
       },
     });
 
-    logger.info('[QualityMetrics] Lab verification recorded', {
+    logger.info("[QualityMetrics] Lab verification recorded", {
       metricsId: input.metricsId,
       verifiedBy: input.verifiedBy,
     });
@@ -267,11 +288,14 @@ export class QualityMetricsService {
   /**
    * Get quality statistics for an export company
    */
-  async getStats(exportCompanyId: string, options?: {
-    startDate?: Date;
-    endDate?: Date;
-    cropType?: string;
-  }): Promise<QualityStats> {
+  async getStats(
+    exportCompanyId: string,
+    options?: {
+      startDate?: Date;
+      endDate?: Date;
+      cropType?: string;
+    },
+  ): Promise<QualityStats> {
     const where: Prisma.HarvestQualityMetricsWhereInput = { exportCompanyId };
 
     if (options?.cropType) where.cropType = options.cropType as any;
@@ -292,20 +316,31 @@ export class QualityMetricsService {
       labVerifiedCount,
     ] = await Promise.all([
       this.prisma.harvestQualityMetrics.count({ where }),
-      this.prisma.harvestQualityMetrics.count({ where: { ...where, overallQuality: 'PREMIUM' } }),
-      this.prisma.harvestQualityMetrics.count({ where: { ...where, overallQuality: 'EXPORT' } }),
-      this.prisma.harvestQualityMetrics.count({ where: { ...where, overallQuality: 'DOMESTIC' } }),
-      this.prisma.harvestQualityMetrics.count({ where: { ...where, overallQuality: 'REJECT' } }),
+      this.prisma.harvestQualityMetrics.count({
+        where: { ...where, overallQuality: "PREMIUM" },
+      }),
+      this.prisma.harvestQualityMetrics.count({
+        where: { ...where, overallQuality: "EXPORT" },
+      }),
+      this.prisma.harvestQualityMetrics.count({
+        where: { ...where, overallQuality: "DOMESTIC" },
+      }),
+      this.prisma.harvestQualityMetrics.count({
+        where: { ...where, overallQuality: "REJECT" },
+      }),
       this.prisma.harvestQualityMetrics.aggregate({
         where,
         _avg: { brixLevel: true, phLevel: true },
       }),
-      this.prisma.harvestQualityMetrics.count({ where: { ...where, labVerified: true } }),
+      this.prisma.harvestQualityMetrics.count({
+        where: { ...where, labVerified: true },
+      }),
     ]);
 
-    const exportEligibilityRate = totalMeasurements > 0
-      ? ((premiumCount + exportCount) / totalMeasurements) * 100
-      : 0;
+    const exportEligibilityRate =
+      totalMeasurements > 0
+        ? ((premiumCount + exportCount) / totalMeasurements) * 100
+        : 0;
 
     return {
       totalMeasurements,
@@ -313,8 +348,12 @@ export class QualityMetricsService {
       exportCount,
       domesticCount,
       rejectCount,
-      avgBrixLevel: avgMetrics._avg.brixLevel ? Number(avgMetrics._avg.brixLevel) : null,
-      avgPhLevel: avgMetrics._avg.phLevel ? Number(avgMetrics._avg.phLevel) : null,
+      avgBrixLevel: avgMetrics._avg.brixLevel
+        ? Number(avgMetrics._avg.brixLevel)
+        : null,
+      avgPhLevel: avgMetrics._avg.phLevel
+        ? Number(avgMetrics._avg.phLevel)
+        : null,
       exportEligibilityRate: Math.round(exportEligibilityRate * 10) / 10,
       labVerifiedCount,
     };
@@ -355,25 +394,27 @@ export class QualityMetricsService {
    * Get all crop thresholds
    */
   getAllThresholds() {
-    return Object.entries(COLD_CHAIN_THRESHOLDS).map(([cropType, thresholds]) => ({
-      cropType,
-      brix: {
-        min: thresholds.brixMin,
-        max: thresholds.brixMax,
-        premium: thresholds.brixPremium,
-      },
-      ph: {
-        min: thresholds.phMin,
-        max: thresholds.phMax,
-      },
-      coldChain: {
-        minTemperature: thresholds.minTemp,
-        maxTemperature: thresholds.maxTemp,
-        targetHumidity: thresholds.targetHumidity,
-        maxTransitHours: thresholds.maxTransitHours,
-        shelfLifeDays: thresholds.shelfLifeDays,
-      },
-    }));
+    return Object.entries(COLD_CHAIN_THRESHOLDS).map(
+      ([cropType, thresholds]) => ({
+        cropType,
+        brix: {
+          min: thresholds.brixMin,
+          max: thresholds.brixMax,
+          premium: thresholds.brixPremium,
+        },
+        ph: {
+          min: thresholds.phMin,
+          max: thresholds.phMax,
+        },
+        coldChain: {
+          minTemperature: thresholds.minTemp,
+          maxTemperature: thresholds.maxTemp,
+          targetHumidity: thresholds.targetHumidity,
+          maxTransitHours: thresholds.maxTransitHours,
+          shelfLifeDays: thresholds.shelfLifeDays,
+        },
+      }),
+    );
   }
 
   /**
@@ -401,19 +442,22 @@ export class QualityMetricsService {
 
     const metrics = await this.prisma.harvestQualityMetrics.findMany({
       where,
-      orderBy: { harvestDate: 'asc' },
+      orderBy: { harvestDate: "asc" },
     });
 
     // Group by month
-    const monthlyData: Record<string, {
-      month: string;
-      count: number;
-      avgBrix: number;
-      avgPh: number;
-      exportEligibleCount: number;
-    }> = {};
+    const monthlyData: Record<
+      string,
+      {
+        month: string;
+        count: number;
+        avgBrix: number;
+        avgPh: number;
+        exportEligibleCount: number;
+      }
+    > = {};
 
-    metrics.forEach(m => {
+    metrics.forEach((m) => {
       const month = m.harvestDate.toISOString().slice(0, 7);
       if (!monthlyData[month]) {
         monthlyData[month] = {
@@ -433,33 +477,41 @@ export class QualityMetricsService {
     });
 
     // Calculate averages
-    const trend = Object.values(monthlyData).map(m => ({
+    const trend = Object.values(monthlyData).map((m) => ({
       month: m.month,
       count: m.count,
       avgBrix: Math.round((m.avgBrix / m.count) * 100) / 100,
       avgPh: Math.round((m.avgPh / m.count) * 100) / 100,
-      exportEligibilityRate: Math.round((m.exportEligibleCount / m.count) * 1000) / 10,
+      exportEligibilityRate:
+        Math.round((m.exportEligibleCount / m.count) * 1000) / 10,
     }));
 
     // Calculate trend direction
-    let brixTrend: 'IMPROVING' | 'STABLE' | 'DECLINING' = 'STABLE';
-    let exportTrend: 'IMPROVING' | 'STABLE' | 'DECLINING' = 'STABLE';
+    let brixTrend: "IMPROVING" | "STABLE" | "DECLINING" = "STABLE";
+    let exportTrend: "IMPROVING" | "STABLE" | "DECLINING" = "STABLE";
 
     if (trend.length >= 2) {
       const firstHalf = trend.slice(0, Math.floor(trend.length / 2));
       const secondHalf = trend.slice(Math.floor(trend.length / 2));
 
-      const firstHalfBrix = firstHalf.reduce((sum, m) => sum + m.avgBrix, 0) / firstHalf.length;
-      const secondHalfBrix = secondHalf.reduce((sum, m) => sum + m.avgBrix, 0) / secondHalf.length;
+      const firstHalfBrix =
+        firstHalf.reduce((sum, m) => sum + m.avgBrix, 0) / firstHalf.length;
+      const secondHalfBrix =
+        secondHalf.reduce((sum, m) => sum + m.avgBrix, 0) / secondHalf.length;
 
-      if (secondHalfBrix > firstHalfBrix + 0.5) brixTrend = 'IMPROVING';
-      else if (secondHalfBrix < firstHalfBrix - 0.5) brixTrend = 'DECLINING';
+      if (secondHalfBrix > firstHalfBrix + 0.5) brixTrend = "IMPROVING";
+      else if (secondHalfBrix < firstHalfBrix - 0.5) brixTrend = "DECLINING";
 
-      const firstHalfExport = firstHalf.reduce((sum, m) => sum + m.exportEligibilityRate, 0) / firstHalf.length;
-      const secondHalfExport = secondHalf.reduce((sum, m) => sum + m.exportEligibilityRate, 0) / secondHalf.length;
+      const firstHalfExport =
+        firstHalf.reduce((sum, m) => sum + m.exportEligibilityRate, 0) /
+        firstHalf.length;
+      const secondHalfExport =
+        secondHalf.reduce((sum, m) => sum + m.exportEligibilityRate, 0) /
+        secondHalf.length;
 
-      if (secondHalfExport > firstHalfExport + 5) exportTrend = 'IMPROVING';
-      else if (secondHalfExport < firstHalfExport - 5) exportTrend = 'DECLINING';
+      if (secondHalfExport > firstHalfExport + 5) exportTrend = "IMPROVING";
+      else if (secondHalfExport < firstHalfExport - 5)
+        exportTrend = "DECLINING";
     }
 
     return {
@@ -470,15 +522,30 @@ export class QualityMetricsService {
       },
       summary: {
         totalMeasurements: metrics.length,
-        avgBrix: metrics.length > 0
-          ? Math.round((metrics.reduce((sum, m) => sum + Number(m.brixLevel), 0) / metrics.length) * 100) / 100
-          : null,
-        avgPh: metrics.length > 0
-          ? Math.round((metrics.reduce((sum, m) => sum + Number(m.phLevel), 0) / metrics.length) * 100) / 100
-          : null,
-        overallExportRate: metrics.length > 0
-          ? Math.round((metrics.filter(m => m.exportEligible).length / metrics.length) * 1000) / 10
-          : 0,
+        avgBrix:
+          metrics.length > 0
+            ? Math.round(
+                (metrics.reduce((sum, m) => sum + Number(m.brixLevel), 0) /
+                  metrics.length) *
+                  100,
+              ) / 100
+            : null,
+        avgPh:
+          metrics.length > 0
+            ? Math.round(
+                (metrics.reduce((sum, m) => sum + Number(m.phLevel), 0) /
+                  metrics.length) *
+                  100,
+              ) / 100
+            : null,
+        overallExportRate:
+          metrics.length > 0
+            ? Math.round(
+                (metrics.filter((m) => m.exportEligible).length /
+                  metrics.length) *
+                  1000,
+              ) / 10
+            : 0,
       },
     };
   }

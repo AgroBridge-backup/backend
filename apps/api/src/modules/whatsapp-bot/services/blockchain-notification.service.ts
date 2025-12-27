@@ -11,8 +11,8 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { PrismaClient } from '@prisma/client';
-import { whatsAppService } from '../whatsapp.service.js';
+import { PrismaClient } from "@prisma/client";
+import { whatsAppService } from "../whatsapp.service.js";
 import {
   messages,
   BatchVerifiedData,
@@ -22,8 +22,8 @@ import {
   QualityInspectionData,
   ReferralSuccessData,
   ReferralActivatedData,
-} from '../templates/messages.js';
-import { logger } from '../../../infrastructure/logging/logger.js';
+} from "../templates/messages.js";
+import { logger } from "../../../infrastructure/logging/logger.js";
 
 const prisma = new PrismaClient();
 
@@ -32,9 +32,9 @@ const prisma = new PrismaClient();
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const config = {
-  baseUrl: process.env.APP_BASE_URL || 'https://api.agrobridge.io',
-  verifyBaseUrl: process.env.VERIFY_BASE_URL || 'https://verify.agrobridge.io',
-  appDeepLinkUrl: process.env.APP_DEEPLINK_URL || 'agrobridge://app',
+  baseUrl: process.env.APP_BASE_URL || "https://api.agrobridge.io",
+  verifyBaseUrl: process.env.VERIFY_BASE_URL || "https://verify.agrobridge.io",
+  appDeepLinkUrl: process.env.APP_DEEPLINK_URL || "agrobridge://app",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -42,7 +42,6 @@ const config = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export class BlockchainNotificationService {
-
   /**
    * Generate verification URL for a batch
    */
@@ -95,7 +94,7 @@ export class BlockchainNotificationService {
   async sendBatchVerifiedNotification(
     batchId: string,
     phoneNumber: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const batch = await prisma.batch.findUnique({
@@ -108,7 +107,7 @@ export class BlockchainNotificationService {
       });
 
       if (!batch) {
-        logger.warn('Batch not found for notification', { batchId });
+        logger.warn("Batch not found for notification", { batchId });
         return null;
       }
 
@@ -124,7 +123,7 @@ export class BlockchainNotificationService {
       const message = messages.batchVerified[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Batch verified notification sent', {
+      logger.info("Batch verified notification sent", {
         batchId,
         phoneNumber: phoneNumber.substring(-4),
         messageId,
@@ -132,7 +131,10 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send batch verified notification', { error, batchId });
+      logger.error("Failed to send batch verified notification", {
+        error,
+        batchId,
+      });
       return null;
     }
   }
@@ -148,7 +150,7 @@ export class BlockchainNotificationService {
     certificateId: string,
     phoneNumber: string,
     pdfUrl: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const certificate = await prisma.certification.findUnique({
@@ -158,7 +160,7 @@ export class BlockchainNotificationService {
             include: {
               batches: {
                 take: 1,
-                orderBy: { createdAt: 'desc' },
+                orderBy: { createdAt: "desc" },
               },
             },
           },
@@ -166,7 +168,9 @@ export class BlockchainNotificationService {
       });
 
       if (!certificate) {
-        logger.warn('Certificate not found for notification', { certificateId });
+        logger.warn("Certificate not found for notification", {
+          certificateId,
+        });
         return null;
       }
 
@@ -174,9 +178,9 @@ export class BlockchainNotificationService {
 
       const data: CertificateIssuedData = {
         certType: certificate.type,
-        batchId: latestBatch?.id?.substring(0, 8) || 'N/A',
+        batchId: latestBatch?.id?.substring(0, 8) || "N/A",
         issuer: certificate.certifier,
-        txHash: certificate.ipfsHash || 'pending',
+        txHash: certificate.ipfsHash || "pending",
         pdfUrl,
         blockchainUrl: this.generateCertificateVerifyUrl(certificateId),
       };
@@ -184,7 +188,7 @@ export class BlockchainNotificationService {
       const message = messages.certificateIssued[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Certificate issued notification sent', {
+      logger.info("Certificate issued notification sent", {
         certificateId,
         phoneNumber: phoneNumber.substring(-4),
         messageId,
@@ -192,7 +196,10 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send certificate notification', { error, certificateId });
+      logger.error("Failed to send certificate notification", {
+        error,
+        certificateId,
+      });
       return null;
     }
   }
@@ -213,7 +220,7 @@ export class BlockchainNotificationService {
       pdfUrl: string;
     },
     phoneNumber: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const data: InvoiceBlockchainData = {
@@ -228,7 +235,7 @@ export class BlockchainNotificationService {
       const message = messages.invoiceWithBlockchain[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Invoice blockchain notification sent', {
+      logger.info("Invoice blockchain notification sent", {
         folio: invoiceData.folio,
         phoneNumber: phoneNumber.substring(-4),
         messageId,
@@ -236,7 +243,10 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send invoice notification', { error, folio: invoiceData.folio });
+      logger.error("Failed to send invoice notification", {
+        error,
+        folio: invoiceData.folio,
+      });
       return null;
     }
   }
@@ -254,7 +264,7 @@ export class BlockchainNotificationService {
     docCount: number,
     downloadUrl: string,
     phoneNumber: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const data: ExportReadyData = {
@@ -268,7 +278,7 @@ export class BlockchainNotificationService {
       const message = messages.exportReadyBlockchain[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Export ready notification sent', {
+      logger.info("Export ready notification sent", {
         batchId,
         destination,
         phoneNumber: phoneNumber.substring(-4),
@@ -277,7 +287,7 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send export notification', { error, batchId });
+      logger.error("Failed to send export notification", { error, batchId });
       return null;
     }
   }
@@ -297,7 +307,7 @@ export class BlockchainNotificationService {
     inspectorName: string,
     reportUrl: string,
     phoneNumber: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const data: QualityInspectionData = {
@@ -312,7 +322,7 @@ export class BlockchainNotificationService {
       const message = messages.qualityInspectionComplete[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Quality inspection notification sent', {
+      logger.info("Quality inspection notification sent", {
         eventId,
         batchId,
         score,
@@ -322,7 +332,10 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send quality inspection notification', { error, eventId });
+      logger.error("Failed to send quality inspection notification", {
+        error,
+        eventId,
+      });
       return null;
     }
   }
@@ -339,7 +352,7 @@ export class BlockchainNotificationService {
     referredName: string,
     reward: string,
     phoneNumber: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const data: ReferralSuccessData = {
@@ -351,7 +364,7 @@ export class BlockchainNotificationService {
       const message = messages.referralSuccessBlockchain[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Referral success notification sent', {
+      logger.info("Referral success notification sent", {
         referralId,
         phoneNumber: phoneNumber.substring(-4),
         messageId,
@@ -359,7 +372,10 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send referral success notification', { error, referralId });
+      logger.error("Failed to send referral success notification", {
+        error,
+        referralId,
+      });
       return null;
     }
   }
@@ -372,7 +388,7 @@ export class BlockchainNotificationService {
     totalActive: number,
     leaderboardRank: number,
     phoneNumber: string,
-    language: 'es' | 'en' = 'es'
+    language: "es" | "en" = "es",
   ): Promise<string | null> {
     try {
       const data: ReferralActivatedData = {
@@ -384,7 +400,7 @@ export class BlockchainNotificationService {
       const message = messages.referralActivated[language](data);
       const messageId = await whatsAppService.sendText(phoneNumber, message);
 
-      logger.info('Referral activated notification sent', {
+      logger.info("Referral activated notification sent", {
         totalActive,
         leaderboardRank,
         phoneNumber: phoneNumber.substring(-4),
@@ -393,7 +409,7 @@ export class BlockchainNotificationService {
 
       return messageId;
     } catch (error) {
-      logger.error('Failed to send referral activated notification', { error });
+      logger.error("Failed to send referral activated notification", { error });
       return null;
     }
   }
@@ -443,10 +459,10 @@ export class BlockchainNotificationService {
   /**
    * Get user's preferred language
    */
-  async getUserLanguage(userId: string): Promise<'es' | 'en'> {
+  async getUserLanguage(userId: string): Promise<"es" | "en"> {
     // Default to Spanish for Mexican farmers
     // In future, could be stored in user preferences
-    return 'es';
+    return "es";
   }
 
   /**
@@ -462,7 +478,7 @@ export class BlockchainNotificationService {
 
     const phoneNumber = await this.getProducerPhoneNumber(batch.producerId);
     if (!phoneNumber) {
-      logger.info('Producer has no WhatsApp number configured', {
+      logger.info("Producer has no WhatsApp number configured", {
         batchId,
         producerId: batch.producerId,
       });
@@ -474,4 +490,5 @@ export class BlockchainNotificationService {
 }
 
 // Export singleton instance
-export const blockchainNotificationService = new BlockchainNotificationService();
+export const blockchainNotificationService =
+  new BlockchainNotificationService();

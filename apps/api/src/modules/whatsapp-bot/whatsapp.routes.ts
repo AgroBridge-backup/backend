@@ -4,12 +4,12 @@
  * @module whatsapp-bot/routes
  */
 
-import { Router, Request, Response } from 'express';
-import { logger } from '../../infrastructure/logging/logger.js';
-import { whatsAppService } from './whatsapp.service.js';
-import { messageHandler } from './handlers/message.handler.js';
-import { sessionManager } from './handlers/session.manager.js';
-import { WhatsAppWebhookPayload } from './types/index.js';
+import { Router, Request, Response } from "express";
+import { logger } from "../../infrastructure/logging/logger.js";
+import { whatsAppService } from "./whatsapp.service.js";
+import { messageHandler } from "./handlers/message.handler.js";
+import { sessionManager } from "./handlers/session.manager.js";
+import { WhatsAppWebhookPayload } from "./types/index.js";
 
 const router = Router();
 
@@ -17,19 +17,22 @@ const router = Router();
 // WEBHOOK VERIFICATION (GET) - Required by Meta
 // ============================================================================
 
-router.get('/webhook/whatsapp', (req: Request, res: Response) => {
-  const mode = req.query['hub.mode'] as string;
-  const token = req.query['hub.verify_token'] as string;
-  const challenge = req.query['hub.challenge'] as string;
+router.get("/webhook/whatsapp", (req: Request, res: Response) => {
+  const mode = req.query["hub.mode"] as string;
+  const token = req.query["hub.verify_token"] as string;
+  const challenge = req.query["hub.challenge"] as string;
 
-  logger.info('[WhatsApp Webhook] Verification request', { mode, hasToken: !!token });
+  logger.info("[WhatsApp Webhook] Verification request", {
+    mode,
+    hasToken: !!token,
+  });
 
   const result = whatsAppService.verifyWebhook(mode, token, challenge);
 
   if (result) {
     res.status(200).send(result);
   } else {
-    res.status(403).send('Verification failed');
+    res.status(403).send("Verification failed");
   }
 });
 
@@ -37,13 +40,13 @@ router.get('/webhook/whatsapp', (req: Request, res: Response) => {
 // WEBHOOK HANDLER (POST) - Receives messages
 // ============================================================================
 
-router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
+router.post("/webhook/whatsapp", async (req: Request, res: Response) => {
   try {
     const payload = req.body as WhatsAppWebhookPayload;
 
     // Validate payload structure
-    if (payload.object !== 'whatsapp_business_account') {
-      logger.warn('[WhatsApp Webhook] Invalid payload object:', payload.object);
+    if (payload.object !== "whatsapp_business_account") {
+      logger.warn("[WhatsApp Webhook] Invalid payload object:", payload.object);
       return res.sendStatus(400);
     }
 
@@ -53,7 +56,7 @@ router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
     // Process entries asynchronously
     for (const entry of payload.entry || []) {
       for (const change of entry.changes || []) {
-        if (change.field !== 'messages') continue;
+        if (change.field !== "messages") continue;
 
         const value = change.value;
 
@@ -62,7 +65,7 @@ router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
           const contact = value.contacts?.[0];
 
           for (const message of value.messages) {
-            logger.info('[WhatsApp Webhook] Incoming message', {
+            logger.info("[WhatsApp Webhook] Incoming message", {
               from: message.from.slice(-4),
               type: message.type,
               timestamp: message.timestamp,
@@ -70,7 +73,7 @@ router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
 
             // Process message (fire and forget, already acknowledged)
             messageHandler.handleIncoming(message, contact!).catch((err) => {
-              logger.error('[WhatsApp Webhook] Handler error:', err);
+              logger.error("[WhatsApp Webhook] Handler error:", err);
             });
           }
         }
@@ -78,7 +81,7 @@ router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
         // Handle status updates (sent, delivered, read)
         if (value.statuses && value.statuses.length > 0) {
           for (const status of value.statuses) {
-            logger.debug('[WhatsApp Webhook] Status update', {
+            logger.debug("[WhatsApp Webhook] Status update", {
               messageId: status.id,
               status: status.status,
               recipient: status.recipient_id.slice(-4),
@@ -89,9 +92,8 @@ router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
         }
       }
     }
-
   } catch (error) {
-    logger.error('[WhatsApp Webhook] Error:', error);
+    logger.error("[WhatsApp Webhook] Error:", error);
     // Still return 200 to prevent Meta retries
     if (!res.headersSent) {
       res.sendStatus(200);
@@ -106,12 +108,12 @@ router.post('/webhook/whatsapp', async (req: Request, res: Response) => {
 /**
  * Health check and stats
  */
-router.get('/webhook/whatsapp/health', (req: Request, res: Response) => {
+router.get("/webhook/whatsapp/health", (req: Request, res: Response) => {
   const stats = sessionManager.getStats();
   const config = whatsAppService.getConfig();
 
   res.json({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
     config,
     stats,
@@ -121,11 +123,11 @@ router.get('/webhook/whatsapp/health', (req: Request, res: Response) => {
 /**
  * Send test message (admin only)
  */
-router.post('/webhook/whatsapp/test', async (req: Request, res: Response) => {
+router.post("/webhook/whatsapp/test", async (req: Request, res: Response) => {
   const { to, message } = req.body;
 
   if (!to || !message) {
-    return res.status(400).json({ error: 'Missing to or message' });
+    return res.status(400).json({ error: "Missing to or message" });
   }
 
   try {
@@ -143,11 +145,11 @@ router.post('/webhook/whatsapp/test', async (req: Request, res: Response) => {
 /**
  * Trigger payment reminder (for testing collections)
  */
-router.post('/webhook/whatsapp/remind', async (req: Request, res: Response) => {
+router.post("/webhook/whatsapp/remind", async (req: Request, res: Response) => {
   const { advanceId } = req.body;
 
   // This would normally be called by the collections cron
-  res.json({ status: 'scheduled', advanceId });
+  res.json({ status: "scheduled", advanceId });
 });
 
 export default router;

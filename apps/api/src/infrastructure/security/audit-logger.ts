@@ -3,10 +3,10 @@
  * Tracks security events, user actions, and system changes for compliance
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { Redis } from 'ioredis';
-import { logger } from '../logging/logger.js';
+import { Request, Response, NextFunction } from "express";
+import { PrismaClient } from "@prisma/client";
+import { Redis } from "ioredis";
+import { logger } from "../logging/logger.js";
 
 // Database and Redis clients
 let prisma: PrismaClient | null = null;
@@ -15,10 +15,13 @@ let redis: Redis | null = null;
 /**
  * Initialize audit logger dependencies
  */
-export function initAuditLogger(prismaClient: PrismaClient, redisClient?: Redis): void {
+export function initAuditLogger(
+  prismaClient: PrismaClient,
+  redisClient?: Redis,
+): void {
   prisma = prismaClient;
   redis = redisClient || null;
-  logger.info('Audit logger initialized');
+  logger.info("Audit logger initialized");
 }
 
 /**
@@ -26,72 +29,72 @@ export function initAuditLogger(prismaClient: PrismaClient, redisClient?: Redis)
  */
 export enum AuditEventType {
   // Authentication events
-  AUTH_LOGIN_SUCCESS = 'AUTH_LOGIN_SUCCESS',
-  AUTH_LOGIN_FAILURE = 'AUTH_LOGIN_FAILURE',
-  AUTH_LOGOUT = 'AUTH_LOGOUT',
-  AUTH_TOKEN_REFRESH = 'AUTH_TOKEN_REFRESH',
-  AUTH_PASSWORD_CHANGE = 'AUTH_PASSWORD_CHANGE',
-  AUTH_PASSWORD_RESET_REQUEST = 'AUTH_PASSWORD_RESET_REQUEST',
-  AUTH_PASSWORD_RESET_COMPLETE = 'AUTH_PASSWORD_RESET_COMPLETE',
-  AUTH_2FA_ENABLED = 'AUTH_2FA_ENABLED',
-  AUTH_2FA_DISABLED = 'AUTH_2FA_DISABLED',
-  AUTH_2FA_VERIFIED = 'AUTH_2FA_VERIFIED',
-  AUTH_SESSION_INVALIDATED = 'AUTH_SESSION_INVALIDATED',
+  AUTH_LOGIN_SUCCESS = "AUTH_LOGIN_SUCCESS",
+  AUTH_LOGIN_FAILURE = "AUTH_LOGIN_FAILURE",
+  AUTH_LOGOUT = "AUTH_LOGOUT",
+  AUTH_TOKEN_REFRESH = "AUTH_TOKEN_REFRESH",
+  AUTH_PASSWORD_CHANGE = "AUTH_PASSWORD_CHANGE",
+  AUTH_PASSWORD_RESET_REQUEST = "AUTH_PASSWORD_RESET_REQUEST",
+  AUTH_PASSWORD_RESET_COMPLETE = "AUTH_PASSWORD_RESET_COMPLETE",
+  AUTH_2FA_ENABLED = "AUTH_2FA_ENABLED",
+  AUTH_2FA_DISABLED = "AUTH_2FA_DISABLED",
+  AUTH_2FA_VERIFIED = "AUTH_2FA_VERIFIED",
+  AUTH_SESSION_INVALIDATED = "AUTH_SESSION_INVALIDATED",
 
   // User management events
-  USER_CREATED = 'USER_CREATED',
-  USER_UPDATED = 'USER_UPDATED',
-  USER_DELETED = 'USER_DELETED',
-  USER_ROLE_CHANGED = 'USER_ROLE_CHANGED',
-  USER_PERMISSIONS_CHANGED = 'USER_PERMISSIONS_CHANGED',
-  USER_SUSPENDED = 'USER_SUSPENDED',
-  USER_REACTIVATED = 'USER_REACTIVATED',
+  USER_CREATED = "USER_CREATED",
+  USER_UPDATED = "USER_UPDATED",
+  USER_DELETED = "USER_DELETED",
+  USER_ROLE_CHANGED = "USER_ROLE_CHANGED",
+  USER_PERMISSIONS_CHANGED = "USER_PERMISSIONS_CHANGED",
+  USER_SUSPENDED = "USER_SUSPENDED",
+  USER_REACTIVATED = "USER_REACTIVATED",
 
   // Data access events
-  DATA_READ = 'DATA_READ',
-  DATA_CREATED = 'DATA_CREATED',
-  DATA_UPDATED = 'DATA_UPDATED',
-  DATA_DELETED = 'DATA_DELETED',
-  DATA_EXPORTED = 'DATA_EXPORTED',
-  DATA_BULK_OPERATION = 'DATA_BULK_OPERATION',
+  DATA_READ = "DATA_READ",
+  DATA_CREATED = "DATA_CREATED",
+  DATA_UPDATED = "DATA_UPDATED",
+  DATA_DELETED = "DATA_DELETED",
+  DATA_EXPORTED = "DATA_EXPORTED",
+  DATA_BULK_OPERATION = "DATA_BULK_OPERATION",
 
   // Security events
-  SECURITY_RATE_LIMIT_EXCEEDED = 'SECURITY_RATE_LIMIT_EXCEEDED',
-  SECURITY_INVALID_TOKEN = 'SECURITY_INVALID_TOKEN',
-  SECURITY_UNAUTHORIZED_ACCESS = 'SECURITY_UNAUTHORIZED_ACCESS',
-  SECURITY_SUSPICIOUS_ACTIVITY = 'SECURITY_SUSPICIOUS_ACTIVITY',
-  SECURITY_INJECTION_ATTEMPT = 'SECURITY_INJECTION_ATTEMPT',
-  SECURITY_XSS_ATTEMPT = 'SECURITY_XSS_ATTEMPT',
-  SECURITY_CSRF_ATTEMPT = 'SECURITY_CSRF_ATTEMPT',
+  SECURITY_RATE_LIMIT_EXCEEDED = "SECURITY_RATE_LIMIT_EXCEEDED",
+  SECURITY_INVALID_TOKEN = "SECURITY_INVALID_TOKEN",
+  SECURITY_UNAUTHORIZED_ACCESS = "SECURITY_UNAUTHORIZED_ACCESS",
+  SECURITY_SUSPICIOUS_ACTIVITY = "SECURITY_SUSPICIOUS_ACTIVITY",
+  SECURITY_INJECTION_ATTEMPT = "SECURITY_INJECTION_ATTEMPT",
+  SECURITY_XSS_ATTEMPT = "SECURITY_XSS_ATTEMPT",
+  SECURITY_CSRF_ATTEMPT = "SECURITY_CSRF_ATTEMPT",
 
   // API events
-  API_REQUEST = 'API_REQUEST',
-  API_ERROR = 'API_ERROR',
-  API_KEY_CREATED = 'API_KEY_CREATED',
-  API_KEY_REVOKED = 'API_KEY_REVOKED',
+  API_REQUEST = "API_REQUEST",
+  API_ERROR = "API_ERROR",
+  API_KEY_CREATED = "API_KEY_CREATED",
+  API_KEY_REVOKED = "API_KEY_REVOKED",
 
   // System events
-  SYSTEM_CONFIG_CHANGED = 'SYSTEM_CONFIG_CHANGED',
-  SYSTEM_MAINTENANCE_MODE = 'SYSTEM_MAINTENANCE_MODE',
-  SYSTEM_BACKUP_CREATED = 'SYSTEM_BACKUP_CREATED',
-  SYSTEM_BACKUP_RESTORED = 'SYSTEM_BACKUP_RESTORED',
+  SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED",
+  SYSTEM_MAINTENANCE_MODE = "SYSTEM_MAINTENANCE_MODE",
+  SYSTEM_BACKUP_CREATED = "SYSTEM_BACKUP_CREATED",
+  SYSTEM_BACKUP_RESTORED = "SYSTEM_BACKUP_RESTORED",
 
   // GDPR/Compliance events
-  GDPR_DATA_ACCESS_REQUEST = 'GDPR_DATA_ACCESS_REQUEST',
-  GDPR_DATA_DELETION_REQUEST = 'GDPR_DATA_DELETION_REQUEST',
-  GDPR_DATA_EXPORT_REQUEST = 'GDPR_DATA_EXPORT_REQUEST',
-  GDPR_CONSENT_GIVEN = 'GDPR_CONSENT_GIVEN',
-  GDPR_CONSENT_WITHDRAWN = 'GDPR_CONSENT_WITHDRAWN',
+  GDPR_DATA_ACCESS_REQUEST = "GDPR_DATA_ACCESS_REQUEST",
+  GDPR_DATA_DELETION_REQUEST = "GDPR_DATA_DELETION_REQUEST",
+  GDPR_DATA_EXPORT_REQUEST = "GDPR_DATA_EXPORT_REQUEST",
+  GDPR_CONSENT_GIVEN = "GDPR_CONSENT_GIVEN",
+  GDPR_CONSENT_WITHDRAWN = "GDPR_CONSENT_WITHDRAWN",
 }
 
 /**
  * Audit event severity levels
  */
 export enum AuditSeverity {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
 }
 
 /**
@@ -171,64 +174,74 @@ const EVENT_SEVERITY_MAP: Record<AuditEventType, AuditSeverity> = {
 /**
  * Create an audit log entry
  */
-export async function createAuditLog(entry: Partial<AuditLogEntry>): Promise<void> {
+export async function createAuditLog(
+  entry: Partial<AuditLogEntry>,
+): Promise<void> {
   const timestamp = new Date();
-  const severity = entry.eventType ? EVENT_SEVERITY_MAP[entry.eventType] : AuditSeverity.LOW;
+  const severity = entry.eventType
+    ? EVENT_SEVERITY_MAP[entry.eventType]
+    : AuditSeverity.LOW;
 
   const fullEntry: AuditLogEntry = {
     timestamp,
     eventType: entry.eventType || AuditEventType.API_REQUEST,
     severity,
-    action: entry.action || 'unknown',
-    description: entry.description || '',
+    action: entry.action || "unknown",
+    description: entry.description || "",
     success: entry.success ?? true,
     ...entry,
   };
 
   try {
     // Log to structured logger
-    logger.info('Audit event', {
+    logger.info("Audit event", {
       audit: true,
       ...fullEntry,
-      metadata: fullEntry.metadata ? JSON.stringify(fullEntry.metadata) : undefined,
+      metadata: fullEntry.metadata
+        ? JSON.stringify(fullEntry.metadata)
+        : undefined,
     });
 
     // Store in Redis for real-time monitoring (if available)
     if (redis) {
-      const key = `audit:${timestamp.toISOString().split('T')[0]}`;
+      const key = `audit:${timestamp.toISOString().split("T")[0]}`;
       await redis.lpush(key, JSON.stringify(fullEntry));
       await redis.expire(key, 90 * 24 * 60 * 60); // 90 days retention
     }
 
     // Store in database for long-term retention
     if (prisma) {
-      await (prisma as any).auditLog?.create({
-        data: {
-          eventType: fullEntry.eventType,
-          severity: fullEntry.severity,
-          userId: fullEntry.userId,
-          userEmail: fullEntry.userEmail,
-          userRole: fullEntry.userRole,
-          ipAddress: fullEntry.ipAddress,
-          userAgent: fullEntry.userAgent,
-          resourceType: fullEntry.resourceType,
-          resourceId: fullEntry.resourceId,
-          action: fullEntry.action,
-          description: fullEntry.description,
-          metadata: fullEntry.metadata ? JSON.stringify(fullEntry.metadata) : null,
-          requestId: fullEntry.requestId,
-          sessionId: fullEntry.sessionId,
-          success: fullEntry.success,
-          errorMessage: fullEntry.errorMessage,
-          timestamp: fullEntry.timestamp,
-        },
-      }).catch(() => {
-        // Silently fail if AuditLog model doesn't exist
-      });
+      await (prisma as any).auditLog
+        ?.create({
+          data: {
+            eventType: fullEntry.eventType,
+            severity: fullEntry.severity,
+            userId: fullEntry.userId,
+            userEmail: fullEntry.userEmail,
+            userRole: fullEntry.userRole,
+            ipAddress: fullEntry.ipAddress,
+            userAgent: fullEntry.userAgent,
+            resourceType: fullEntry.resourceType,
+            resourceId: fullEntry.resourceId,
+            action: fullEntry.action,
+            description: fullEntry.description,
+            metadata: fullEntry.metadata
+              ? JSON.stringify(fullEntry.metadata)
+              : null,
+            requestId: fullEntry.requestId,
+            sessionId: fullEntry.sessionId,
+            success: fullEntry.success,
+            errorMessage: fullEntry.errorMessage,
+            timestamp: fullEntry.timestamp,
+          },
+        })
+        .catch(() => {
+          // Silently fail if AuditLog model doesn't exist
+        });
     }
   } catch (error) {
     // Never let audit logging failure break the application
-    logger.error('Failed to create audit log', { error, entry: fullEntry });
+    logger.error("Failed to create audit log", { error, entry: fullEntry });
   }
 }
 
@@ -252,8 +265,8 @@ export class AuditLogger {
 
   request(req: Request): this {
     this.entry.ipAddress = req.ip || req.socket.remoteAddress;
-    this.entry.userAgent = req.headers['user-agent'];
-    this.entry.requestId = req.headers['x-request-id'] as string;
+    this.entry.userAgent = req.headers["user-agent"];
+    this.entry.requestId = req.headers["x-request-id"] as string;
     if (req.user) {
       this.entry.userId = req.user.id || req.user.userId;
       this.entry.userEmail = req.user.email;
@@ -319,12 +332,12 @@ export function auditMiddleware(
     logAllRequests?: boolean;
     excludePaths?: string[];
     sensitiveFields?: string[];
-  } = {}
+  } = {},
 ): (req: Request, res: Response, next: NextFunction) => void {
   const {
     logAllRequests = false,
-    excludePaths = ['/health', '/metrics', '/favicon.ico'],
-    sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'refreshToken'],
+    excludePaths = ["/health", "/metrics", "/favicon.ico"],
+    sensitiveFields = ["password", "token", "secret", "apiKey", "refreshToken"],
   } = options;
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -343,16 +356,20 @@ export function auditMiddleware(
       const duration = Date.now() - startTime;
 
       // Determine if we should log
-      const shouldLog = logAllRequests ||
+      const shouldLog =
+        logAllRequests ||
         res.statusCode >= 400 ||
-        ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+        ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
 
       if (shouldLog) {
         const entry: Partial<AuditLogEntry> = {
-          eventType: res.statusCode >= 400 ? AuditEventType.API_ERROR : AuditEventType.API_REQUEST,
+          eventType:
+            res.statusCode >= 400
+              ? AuditEventType.API_ERROR
+              : AuditEventType.API_REQUEST,
           ipAddress: req.ip || req.socket.remoteAddress,
-          userAgent: req.headers['user-agent'],
-          requestId: req.headers['x-request-id'] as string,
+          userAgent: req.headers["user-agent"],
+          requestId: req.headers["x-request-id"] as string,
           action: `${req.method} ${req.path}`,
           description: `${req.method} ${req.originalUrl}`,
           success: res.statusCode < 400,
@@ -388,17 +405,21 @@ export function auditMiddleware(
  */
 function sanitizeMetadata(
   data: unknown,
-  sensitiveFields: string[]
+  sensitiveFields: string[],
 ): Record<string, unknown> | undefined {
-  if (!data || typeof data !== 'object') {
+  if (!data || typeof data !== "object") {
     return undefined;
   }
 
   const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-    if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
-      sanitized[key] = '[REDACTED]';
-    } else if (typeof value === 'object' && value !== null) {
+    if (
+      sensitiveFields.some((field) =>
+        key.toLowerCase().includes(field.toLowerCase()),
+      )
+    ) {
+      sanitized[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null) {
       sanitized[key] = sanitizeMetadata(value, sensitiveFields);
     } else {
       sanitized[key] = value;
@@ -440,30 +461,31 @@ export async function queryAuditLogs(filters: {
   } = filters;
 
   try {
-    const logs = await (prisma as any).auditLog?.findMany({
-      where: {
-        timestamp: {
-          gte: startDate,
-          lte: endDate,
+    const logs =
+      (await (prisma as any).auditLog?.findMany({
+        where: {
+          timestamp: {
+            gte: startDate,
+            lte: endDate,
+          },
+          userId,
+          eventType,
+          severity,
+          resourceType,
+          resourceId,
+          success,
         },
-        userId,
-        eventType,
-        severity,
-        resourceType,
-        resourceId,
-        success,
-      },
-      orderBy: { timestamp: 'desc' },
-      take: limit,
-      skip: offset,
-    }) || [];
+        orderBy: { timestamp: "desc" },
+        take: limit,
+        skip: offset,
+      })) || [];
 
     return logs.map((log: any) => ({
       ...log,
       metadata: log.metadata ? JSON.parse(log.metadata) : undefined,
     }));
   } catch (error) {
-    logger.error('Failed to query audit logs', { error, filters });
+    logger.error("Failed to query audit logs", { error, filters });
     return [];
   }
 }
@@ -471,7 +493,9 @@ export async function queryAuditLogs(filters: {
 /**
  * Get audit statistics
  */
-export async function getAuditStats(period: 'day' | 'week' | 'month' = 'day'): Promise<{
+export async function getAuditStats(
+  period: "day" | "week" | "month" = "day",
+): Promise<{
   totalEvents: number;
   byEventType: Record<string, number>;
   bySeverity: Record<string, number>;
@@ -481,10 +505,10 @@ export async function getAuditStats(period: 'day' | 'week' | 'month' = 'day'): P
   const startDate = new Date();
 
   switch (period) {
-    case 'week':
+    case "week":
       startDate.setDate(now.getDate() - 7);
       break;
-    case 'month':
+    case "month":
       startDate.setMonth(now.getMonth() - 1);
       break;
     default:
@@ -501,16 +525,17 @@ export async function getAuditStats(period: 'day' | 'week' | 'month' = 'day'): P
   }
 
   try {
-    const logs = await (prisma as any).auditLog?.findMany({
-      where: {
-        timestamp: { gte: startDate },
-      },
-      select: {
-        eventType: true,
-        severity: true,
-        success: true,
-      },
-    }) || [];
+    const logs =
+      (await (prisma as any).auditLog?.findMany({
+        where: {
+          timestamp: { gte: startDate },
+        },
+        select: {
+          eventType: true,
+          severity: true,
+          success: true,
+        },
+      })) || [];
 
     const byEventType: Record<string, number> = {};
     const bySeverity: Record<string, number> = {};
@@ -529,7 +554,7 @@ export async function getAuditStats(period: 'day' | 'week' | 'month' = 'day'): P
       failureRate: logs.length > 0 ? failures / logs.length : 0,
     };
   } catch (error) {
-    logger.error('Failed to get audit stats', { error });
+    logger.error("Failed to get audit stats", { error });
     return {
       totalEvents: 0,
       byEventType: {},

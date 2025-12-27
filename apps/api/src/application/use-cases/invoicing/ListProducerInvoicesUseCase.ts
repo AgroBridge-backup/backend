@@ -3,9 +3,13 @@
  * Lists invoices for the authenticated producer
  */
 
-import { IInvoiceRepository } from '../../../domain/repositories/IInvoiceRepository.js';
-import { Invoice, InvoiceFilter, InvoiceStatus } from '../../../domain/entities/Invoice.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
+import { IInvoiceRepository } from "../../../domain/repositories/IInvoiceRepository.js";
+import {
+  Invoice,
+  InvoiceFilter,
+  InvoiceStatus,
+} from "../../../domain/entities/Invoice.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
 
 export interface ListProducerInvoicesRequest {
   userId: string;
@@ -24,9 +28,11 @@ export interface ListProducerInvoicesResponse {
 export class ListProducerInvoicesUseCase {
   constructor(private readonly invoiceRepository: IInvoiceRepository) {}
 
-  async execute(request: ListProducerInvoicesRequest): Promise<ListProducerInvoicesResponse> {
+  async execute(
+    request: ListProducerInvoicesRequest,
+  ): Promise<ListProducerInvoicesResponse> {
     if (!request.userId) {
-      throw new ValidationError('userId is required');
+      throw new ValidationError("userId is required");
     }
 
     const filter: InvoiceFilter = {
@@ -37,7 +43,10 @@ export class ListProducerInvoicesUseCase {
       offset: request.offset || 0,
     };
 
-    const invoices = await this.invoiceRepository.listByUser(request.userId, filter);
+    const invoices = await this.invoiceRepository.listByUser(
+      request.userId,
+      filter,
+    );
 
     return {
       invoices,

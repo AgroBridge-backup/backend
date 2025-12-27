@@ -9,7 +9,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from "@prisma/client/runtime/library";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // ENUMS (Runtime values + Type safety)
@@ -21,11 +21,11 @@ import { Decimal } from '@prisma/client/runtime/library';
  */
 export enum RiskTier {
   /** Low risk: 90-100 score, excellent history, lowest fees */
-  A = 'A',
+  A = "A",
   /** Medium risk: 70-89 score, good history, standard fees */
-  B = 'B',
+  B = "B",
   /** High risk: <70 score or new farmer, higher fees, manual review */
-  C = 'C',
+  C = "C",
 }
 
 /**
@@ -34,11 +34,11 @@ export enum RiskTier {
  */
 export enum ScoreTrend {
   /** Score has been increasing over time */
-  IMPROVING = 'IMPROVING',
+  IMPROVING = "IMPROVING",
   /** Score is stable with minimal variance */
-  STABLE = 'STABLE',
+  STABLE = "STABLE",
   /** Score has been decreasing - requires attention */
-  DECLINING = 'DECLINING',
+  DECLINING = "DECLINING",
 }
 
 /**
@@ -167,9 +167,9 @@ export interface QualityMetrics {
   /** Quality grades breakdown */
   gradeDistribution: {
     excellent: number; // 90-100
-    good: number;      // 70-89
-    fair: number;      // 50-69
-    poor: number;      // <50
+    good: number; // 70-89
+    fair: number; // 50-69
+    poor: number; // <50
   };
 }
 
@@ -325,7 +325,7 @@ export interface ScoringFactor {
   /** Impact on score (-100 to +100) */
   impact: number;
   /** Category of factor */
-  category: 'positive' | 'negative' | 'neutral';
+  category: "positive" | "negative" | "neutral";
   /** Human-readable description */
   description: string;
   /** Weight in overall score */
@@ -339,7 +339,7 @@ export interface ScoreRecommendation {
   /** Recommendation ID */
   id: string;
   /** Priority level */
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   /** Action to take */
   action: string;
   /** Expected score impact */
@@ -623,7 +623,8 @@ export const DEFAULT_CREDIT_SCORING_CONFIG: CreditScoringConfig = {
   autoRecalculate: true,
   recalculationIntervalHours: 24,
   blockchainVerificationEnabled: true,
-  blockchainRpcUrl: process.env.BLOCKCHAIN_RPC_URL || 'https://rpc-mumbai.maticvigil.com',
+  blockchainRpcUrl:
+    process.env.BLOCKCHAIN_RPC_URL || "https://rpc-mumbai.maticvigil.com",
   mlScoringEnabled: false,
   alertThresholds: {
     lowScoreThreshold: 50,
@@ -653,9 +654,11 @@ export function isValidScoreTrend(trend: string): trend is ScoreTrend {
 /**
  * Convert Decimal to number safely
  */
-export function decimalToNumber(value: Decimal | number | null | undefined): number {
+export function decimalToNumber(
+  value: Decimal | number | null | undefined,
+): number {
   if (value === null || value === undefined) return 0;
-  if (typeof value === 'number') return value;
+  if (typeof value === "number") return value;
   return value.toNumber();
 }
 

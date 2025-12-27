@@ -4,12 +4,12 @@
  */
 
 export enum TransitStatus {
-  SCHEDULED = 'SCHEDULED',
-  IN_TRANSIT = 'IN_TRANSIT',
-  PAUSED = 'PAUSED',
-  DELAYED = 'DELAYED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  SCHEDULED = "SCHEDULED",
+  IN_TRANSIT = "IN_TRANSIT",
+  PAUSED = "PAUSED",
+  DELAYED = "DELAYED",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface TransitSession {
@@ -103,66 +103,84 @@ export interface UpdateTransitStatusInput {
 /**
  * Status display information
  */
-export const TRANSIT_STATUS_INFO: Record<TransitStatus, {
-  displayName: string;
-  description: string;
-  color: string;
-  icon: string;
-}> = {
+export const TRANSIT_STATUS_INFO: Record<
+  TransitStatus,
+  {
+    displayName: string;
+    description: string;
+    color: string;
+    icon: string;
+  }
+> = {
   [TransitStatus.SCHEDULED]: {
-    displayName: 'Programado',
-    description: 'Tránsito programado, pendiente de inicio',
-    color: '#9E9E9E',
-    icon: 'schedule',
+    displayName: "Programado",
+    description: "Tránsito programado, pendiente de inicio",
+    color: "#9E9E9E",
+    icon: "schedule",
   },
   [TransitStatus.IN_TRANSIT]: {
-    displayName: 'En tránsito',
-    description: 'Vehículo en movimiento hacia destino',
-    color: '#2196F3',
-    icon: 'local_shipping',
+    displayName: "En tránsito",
+    description: "Vehículo en movimiento hacia destino",
+    color: "#2196F3",
+    icon: "local_shipping",
   },
   [TransitStatus.PAUSED]: {
-    displayName: 'Pausado',
-    description: 'Tránsito temporalmente detenido',
-    color: '#FF9800',
-    icon: 'pause_circle',
+    displayName: "Pausado",
+    description: "Tránsito temporalmente detenido",
+    color: "#FF9800",
+    icon: "pause_circle",
   },
   [TransitStatus.DELAYED]: {
-    displayName: 'Retrasado',
-    description: 'Tránsito con retraso sobre horario',
-    color: '#F44336',
-    icon: 'warning',
+    displayName: "Retrasado",
+    description: "Tránsito con retraso sobre horario",
+    color: "#F44336",
+    icon: "warning",
   },
   [TransitStatus.COMPLETED]: {
-    displayName: 'Completado',
-    description: 'Tránsito finalizado exitosamente',
-    color: '#4CAF50',
-    icon: 'check_circle',
+    displayName: "Completado",
+    description: "Tránsito finalizado exitosamente",
+    color: "#4CAF50",
+    icon: "check_circle",
   },
   [TransitStatus.CANCELLED]: {
-    displayName: 'Cancelado',
-    description: 'Tránsito cancelado',
-    color: '#795548',
-    icon: 'cancel',
+    displayName: "Cancelado",
+    description: "Tránsito cancelado",
+    color: "#795548",
+    icon: "cancel",
   },
 };
 
 /**
  * Valid status transitions for transit sessions
  */
-export const VALID_STATUS_TRANSITIONS: Record<TransitStatus, TransitStatus[]> = {
-  [TransitStatus.SCHEDULED]: [TransitStatus.IN_TRANSIT, TransitStatus.CANCELLED],
-  [TransitStatus.IN_TRANSIT]: [TransitStatus.PAUSED, TransitStatus.DELAYED, TransitStatus.COMPLETED],
-  [TransitStatus.PAUSED]: [TransitStatus.IN_TRANSIT, TransitStatus.CANCELLED],
-  [TransitStatus.DELAYED]: [TransitStatus.IN_TRANSIT, TransitStatus.COMPLETED, TransitStatus.CANCELLED],
-  [TransitStatus.COMPLETED]: [], // Terminal state
-  [TransitStatus.CANCELLED]: [], // Terminal state
-};
+export const VALID_STATUS_TRANSITIONS: Record<TransitStatus, TransitStatus[]> =
+  {
+    [TransitStatus.SCHEDULED]: [
+      TransitStatus.IN_TRANSIT,
+      TransitStatus.CANCELLED,
+    ],
+    [TransitStatus.IN_TRANSIT]: [
+      TransitStatus.PAUSED,
+      TransitStatus.DELAYED,
+      TransitStatus.COMPLETED,
+    ],
+    [TransitStatus.PAUSED]: [TransitStatus.IN_TRANSIT, TransitStatus.CANCELLED],
+    [TransitStatus.DELAYED]: [
+      TransitStatus.IN_TRANSIT,
+      TransitStatus.COMPLETED,
+      TransitStatus.CANCELLED,
+    ],
+    [TransitStatus.COMPLETED]: [], // Terminal state
+    [TransitStatus.CANCELLED]: [], // Terminal state
+  };
 
 /**
  * Check if a status transition is valid
  */
-export function isValidStatusTransition(from: TransitStatus, to: TransitStatus): boolean {
+export function isValidStatusTransition(
+  from: TransitStatus,
+  to: TransitStatus,
+): boolean {
   return VALID_STATUS_TRANSITIONS[from].includes(to);
 }
 
@@ -174,14 +192,17 @@ export function calculateDistance(
   lat1: number,
   lng1: number,
   lat2: number,
-  lng2: number
+  lng2: number,
 ): number {
   const R = 6371; // Earth's radius in km
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -200,7 +221,7 @@ export function calculateRouteDeviation(
   originLat: number,
   originLng: number,
   destLat: number,
-  destLng: number
+  destLng: number,
 ): number {
   // Calculate perpendicular distance from point to line (origin to destination)
   const A = currentLat - originLat;
@@ -236,7 +257,10 @@ export function calculateRouteDeviation(
 /**
  * Calculate progress percentage based on distance traveled
  */
-export function calculateProgress(distanceTraveled: number, totalDistance: number): number {
+export function calculateProgress(
+  distanceTraveled: number,
+  totalDistance: number,
+): number {
   if (totalDistance <= 0) return 0;
   return Math.min(100, Math.round((distanceTraveled / totalDistance) * 100));
 }
@@ -246,7 +270,7 @@ export function calculateProgress(distanceTraveled: number, totalDistance: numbe
  */
 export function estimateArrival(
   remainingDistanceKm: number,
-  currentSpeedKmh: number
+  currentSpeedKmh: number,
 ): Date | null {
   if (currentSpeedKmh <= 0 || remainingDistanceKm <= 0) return null;
 

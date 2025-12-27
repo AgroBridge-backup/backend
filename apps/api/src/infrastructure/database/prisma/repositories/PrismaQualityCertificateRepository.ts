@@ -3,15 +3,20 @@
  * Prisma Repository Implementation for QualityCertificate
  */
 
-import { PrismaClient, CertificateGrade as PrismaCertificateGrade } from '@prisma/client';
-import { IQualityCertificateRepository } from '../../../../domain/repositories/IQualityCertificateRepository.js';
+import {
+  PrismaClient,
+  CertificateGrade as PrismaCertificateGrade,
+} from "@prisma/client";
+import { IQualityCertificateRepository } from "../../../../domain/repositories/IQualityCertificateRepository.js";
 import {
   QualityCertificate,
   CreateCertificateInput,
   CertificateGrade,
-} from '../../../../domain/entities/QualityCertificate.js';
+} from "../../../../domain/entities/QualityCertificate.js";
 
-export class PrismaQualityCertificateRepository implements IQualityCertificateRepository {
+export class PrismaQualityCertificateRepository
+  implements IQualityCertificateRepository
+{
   constructor(private prisma: PrismaClient) {}
 
   private mapToDomain(certificate: any): QualityCertificate {
@@ -42,15 +47,17 @@ export class PrismaQualityCertificateRepository implements IQualityCertificateRe
   async findByBatchId(batchId: string): Promise<QualityCertificate[]> {
     const certificates = await this.prisma.qualityCertificate.findMany({
       where: { batchId },
-      orderBy: { issuedAt: 'desc' },
+      orderBy: { issuedAt: "desc" },
     });
     return certificates.map(this.mapToDomain);
   }
 
-  async findByCertifyingBody(certifyingBody: string): Promise<QualityCertificate[]> {
+  async findByCertifyingBody(
+    certifyingBody: string,
+  ): Promise<QualityCertificate[]> {
     const certificates = await this.prisma.qualityCertificate.findMany({
       where: { certifyingBody },
-      orderBy: { issuedAt: 'desc' },
+      orderBy: { issuedAt: "desc" },
     });
     return certificates.map(this.mapToDomain);
   }
@@ -63,16 +70,18 @@ export class PrismaQualityCertificateRepository implements IQualityCertificateRe
         validFrom: { lte: now },
         validTo: { gte: now },
       },
-      orderBy: { issuedAt: 'desc' },
+      orderBy: { issuedAt: "desc" },
     });
     return certificates.map(this.mapToDomain);
   }
 
-  async create(input: CreateCertificateInput & {
-    hashOnChain?: string;
-    pdfUrl?: string;
-    payloadSnapshot?: string;
-  }): Promise<QualityCertificate> {
+  async create(
+    input: CreateCertificateInput & {
+      hashOnChain?: string;
+      pdfUrl?: string;
+      payloadSnapshot?: string;
+    },
+  ): Promise<QualityCertificate> {
     const certificate = await this.prisma.qualityCertificate.create({
       data: {
         batchId: input.batchId,
@@ -89,7 +98,10 @@ export class PrismaQualityCertificateRepository implements IQualityCertificateRe
     return this.mapToDomain(certificate);
   }
 
-  async updateHash(id: string, hashOnChain: string): Promise<QualityCertificate> {
+  async updateHash(
+    id: string,
+    hashOnChain: string,
+  ): Promise<QualityCertificate> {
     const certificate = await this.prisma.qualityCertificate.update({
       where: { id },
       data: { hashOnChain },
@@ -111,7 +123,10 @@ export class PrismaQualityCertificateRepository implements IQualityCertificateRe
     });
   }
 
-  async hasValidCertificate(batchId: string, grade: CertificateGrade): Promise<boolean> {
+  async hasValidCertificate(
+    batchId: string,
+    grade: CertificateGrade,
+  ): Promise<boolean> {
     const now = new Date();
     const count = await this.prisma.qualityCertificate.count({
       where: {

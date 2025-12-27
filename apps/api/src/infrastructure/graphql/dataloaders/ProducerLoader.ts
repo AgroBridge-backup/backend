@@ -5,14 +5,14 @@
  * @author AgroBridge Engineering Team
  */
 
-import DataLoader from 'dataloader';
-import { PrismaClient, Producer } from '@prisma/client';
+import DataLoader from "dataloader";
+import { PrismaClient, Producer } from "@prisma/client";
 
 /**
  * Create producer loader
  */
 export function createProducerLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, Producer | null> {
   return new DataLoader<string, Producer | null>(
     async (ids: readonly string[]) => {
@@ -31,7 +31,7 @@ export function createProducerLoader(
 
       return ids.map((id) => producerMap.get(id) || null);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -39,7 +39,7 @@ export function createProducerLoader(
  * Create producer loader by user ID
  */
 export function createProducerByUserIdLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, Producer | null> {
   return new DataLoader<string, Producer | null>(
     async (userIds: readonly string[]) => {
@@ -58,7 +58,7 @@ export function createProducerByUserIdLoader(
 
       return userIds.map((id) => producerMap.get(id) || null);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -66,12 +66,12 @@ export function createProducerByUserIdLoader(
  * Load batch count per producer
  */
 export function createProducerBatchCountLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, number> {
   return new DataLoader<string, number>(
     async (producerIds: readonly string[]) => {
       const counts = await prisma.batch.groupBy({
-        by: ['producerId'],
+        by: ["producerId"],
         where: {
           producerId: {
             in: producerIds as string[],
@@ -87,7 +87,7 @@ export function createProducerBatchCountLoader(
 
       return producerIds.map((id) => countMap.get(id) || 0);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -95,18 +95,18 @@ export function createProducerBatchCountLoader(
  * Load active batch count per producer (REGISTERED, IN_TRANSIT, ARRIVED)
  */
 export function createProducerActiveBatchCountLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, number> {
   return new DataLoader<string, number>(
     async (producerIds: readonly string[]) => {
       const counts = await prisma.batch.groupBy({
-        by: ['producerId'],
+        by: ["producerId"],
         where: {
           producerId: {
             in: producerIds as string[],
           },
           status: {
-            in: ['REGISTERED', 'IN_TRANSIT', 'ARRIVED'],
+            in: ["REGISTERED", "IN_TRANSIT", "ARRIVED"],
           },
         },
         _count: true,
@@ -119,10 +119,14 @@ export function createProducerActiveBatchCountLoader(
 
       return producerIds.map((id) => countMap.get(id) || 0);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
 export type ProducerLoaderType = ReturnType<typeof createProducerLoader>;
-export type ProducerByUserIdLoaderType = ReturnType<typeof createProducerByUserIdLoader>;
-export type ProducerBatchCountLoaderType = ReturnType<typeof createProducerBatchCountLoader>;
+export type ProducerByUserIdLoaderType = ReturnType<
+  typeof createProducerByUserIdLoader
+>;
+export type ProducerBatchCountLoaderType = ReturnType<
+  typeof createProducerBatchCountLoader
+>;

@@ -3,8 +3,12 @@
  * Implements IWhatsAppService using Meta's WhatsApp Cloud API
  */
 
-import { IWhatsAppService, SendTextResult, TemplateParams } from '../../domain/services/IWhatsAppService.js';
-import { logger } from '../logging/logger.js';
+import {
+  IWhatsAppService,
+  SendTextResult,
+  TemplateParams,
+} from "../../domain/services/IWhatsAppService.js";
+import { logger } from "../logging/logger.js";
 
 interface WhatsAppProviderConfig {
   phoneNumberId: string;
@@ -21,17 +25,21 @@ export class WhatsAppProvider implements IWhatsAppService {
 
   constructor(config?: Partial<WhatsAppProviderConfig>) {
     this.config = {
-      phoneNumberId: config?.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID || '',
-      accessToken: config?.accessToken || process.env.WHATSAPP_ACCESS_TOKEN || '',
-      apiVersion: config?.apiVersion || 'v18.0',
-      baseUrl: config?.baseUrl || 'https://graph.facebook.com',
+      phoneNumberId:
+        config?.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID || "",
+      accessToken:
+        config?.accessToken || process.env.WHATSAPP_ACCESS_TOKEN || "",
+      apiVersion: config?.apiVersion || "v18.0",
+      baseUrl: config?.baseUrl || "https://graph.facebook.com",
       maxMessagesPerDay: config?.maxMessagesPerDay || 1000,
     };
 
     this.apiUrl = `${this.config.baseUrl}/${this.config.apiVersion}/${this.config.phoneNumberId}`;
 
     if (!this.config.phoneNumberId || !this.config.accessToken) {
-      logger.warn('[WhatsAppProvider] Not fully configured - missing credentials');
+      logger.warn(
+        "[WhatsAppProvider] Not fully configured - missing credentials",
+      );
     }
   }
 
@@ -41,26 +49,26 @@ export class WhatsAppProvider implements IWhatsAppService {
 
   async sendText(to: string, body: string): Promise<SendTextResult> {
     if (!this.isAvailable()) {
-      return { success: false, error: 'WhatsApp not configured' };
+      return { success: false, error: "WhatsApp not configured" };
     }
 
     // Rate limiting check
     if (!this.checkRateLimit()) {
-      return { success: false, error: 'Daily message limit reached' };
+      return { success: false, error: "Daily message limit reached" };
     }
 
     try {
       const response = await fetch(`${this.apiUrl}/messages`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.accessToken}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
           to: this.formatPhoneNumber(to),
-          type: 'text',
+          type: "text",
           text: { body, preview_url: false },
         }),
       });
@@ -68,28 +76,29 @@ export class WhatsAppProvider implements IWhatsAppService {
       const data = await response.json();
 
       if (!response.ok) {
-        logger.error('[WhatsAppProvider] API Error:', {
+        logger.error("[WhatsAppProvider] API Error:", {
           status: response.status,
           error: data.error,
         });
         return {
           success: false,
-          error: data.error?.message || 'Unknown error',
+          error: data.error?.message || "Unknown error",
         };
       }
 
       const messageId = data.messages?.[0]?.id;
       this.incrementRateLimit();
 
-      logger.info('[WhatsAppProvider] Message sent', {
+      logger.info("[WhatsAppProvider] Message sent", {
         to: to.slice(-4),
         messageId,
       });
 
       return { success: true, messageId };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('[WhatsAppProvider] Send failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      logger.error("[WhatsAppProvider] Send failed:", error);
       return { success: false, error: errorMessage };
     }
   }
@@ -98,14 +107,14 @@ export class WhatsAppProvider implements IWhatsAppService {
     to: string,
     templateName: string,
     languageCode: string,
-    parameters?: TemplateParams
+    parameters?: TemplateParams,
   ): Promise<SendTextResult> {
     if (!this.isAvailable()) {
-      return { success: false, error: 'WhatsApp not configured' };
+      return { success: false, error: "WhatsApp not configured" };
     }
 
     if (!this.checkRateLimit()) {
-      return { success: false, error: 'Daily message limit reached' };
+      return { success: false, error: "Daily message limit reached" };
     }
 
     try {
@@ -117,9 +126,9 @@ export class WhatsAppProvider implements IWhatsAppService {
       if (parameters && Object.keys(parameters).length > 0) {
         template.components = [
           {
-            type: 'body',
+            type: "body",
             parameters: Object.values(parameters).map((text) => ({
-              type: 'text',
+              type: "text",
               text,
             })),
           },
@@ -127,16 +136,16 @@ export class WhatsAppProvider implements IWhatsAppService {
       }
 
       const response = await fetch(`${this.apiUrl}/messages`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.accessToken}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
           to: this.formatPhoneNumber(to),
-          type: 'template',
+          type: "template",
           template,
         }),
       });
@@ -144,21 +153,21 @@ export class WhatsAppProvider implements IWhatsAppService {
       const data = await response.json();
 
       if (!response.ok) {
-        logger.error('[WhatsAppProvider] Template API Error:', {
+        logger.error("[WhatsAppProvider] Template API Error:", {
           status: response.status,
           error: data.error,
           templateName,
         });
         return {
           success: false,
-          error: data.error?.message || 'Unknown error',
+          error: data.error?.message || "Unknown error",
         };
       }
 
       const messageId = data.messages?.[0]?.id;
       this.incrementRateLimit();
 
-      logger.info('[WhatsAppProvider] Template sent', {
+      logger.info("[WhatsAppProvider] Template sent", {
         to: to.slice(-4),
         templateName,
         messageId,
@@ -166,8 +175,9 @@ export class WhatsAppProvider implements IWhatsAppService {
 
       return { success: true, messageId };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('[WhatsAppProvider] Template send failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      logger.error("[WhatsAppProvider] Template send failed:", error);
       return { success: false, error: errorMessage };
     }
   }
@@ -177,42 +187,42 @@ export class WhatsAppProvider implements IWhatsAppService {
     body: string,
     buttons: Array<{ id: string; title: string }>,
     header?: string,
-    footer?: string
+    footer?: string,
   ): Promise<SendTextResult> {
     if (!this.isAvailable()) {
-      return { success: false, error: 'WhatsApp not configured' };
+      return { success: false, error: "WhatsApp not configured" };
     }
 
     if (!this.checkRateLimit()) {
-      return { success: false, error: 'Daily message limit reached' };
+      return { success: false, error: "Daily message limit reached" };
     }
 
     try {
       const interactive: any = {
-        type: 'button',
+        type: "button",
         body: { text: body },
         action: {
           buttons: buttons.slice(0, 3).map((btn) => ({
-            type: 'reply',
+            type: "reply",
             reply: { id: btn.id, title: btn.title.slice(0, 20) },
           })),
         },
       };
 
-      if (header) interactive.header = { type: 'text', text: header };
+      if (header) interactive.header = { type: "text", text: header };
       if (footer) interactive.footer = { text: footer };
 
       const response = await fetch(`${this.apiUrl}/messages`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.accessToken}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
           to: this.formatPhoneNumber(to),
-          type: 'interactive',
+          type: "interactive",
           interactive,
         }),
       });
@@ -220,13 +230,13 @@ export class WhatsAppProvider implements IWhatsAppService {
       const data = await response.json();
 
       if (!response.ok) {
-        logger.error('[WhatsAppProvider] Buttons API Error:', {
+        logger.error("[WhatsAppProvider] Buttons API Error:", {
           status: response.status,
           error: data.error,
         });
         return {
           success: false,
-          error: data.error?.message || 'Unknown error',
+          error: data.error?.message || "Unknown error",
         };
       }
 
@@ -235,15 +245,16 @@ export class WhatsAppProvider implements IWhatsAppService {
 
       return { success: true, messageId };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('[WhatsAppProvider] Buttons send failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      logger.error("[WhatsAppProvider] Buttons send failed:", error);
       return { success: false, error: errorMessage };
     }
   }
 
   private formatPhoneNumber(phone: string): string {
-    let cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('52') && cleaned.length === 12) {
+    let cleaned = phone.replace(/\D/g, "");
+    if (cleaned.startsWith("52") && cleaned.length === 12) {
       return cleaned;
     }
     if (cleaned.length === 10 && /^[1-9]/.test(cleaned)) {
@@ -253,13 +264,13 @@ export class WhatsAppProvider implements IWhatsAppService {
   }
 
   private checkRateLimit(): boolean {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const currentCount = this.messageCount.get(today) || 0;
     return currentCount < this.config.maxMessagesPerDay;
   }
 
   private incrementRateLimit(): void {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const currentCount = this.messageCount.get(today) || 0;
     this.messageCount.set(today, currentCount + 1);
   }

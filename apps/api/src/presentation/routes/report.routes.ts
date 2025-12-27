@@ -13,24 +13,24 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response } from 'express';
-import { PrismaClient, ReportType, ReportFormat } from '@prisma/client';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
+import { Router, Request, Response } from "express";
+import { PrismaClient, ReportType, ReportFormat } from "@prisma/client";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
 import {
   ReportService,
   createReportService,
   ReportServiceError,
-} from '../../infrastructure/reports/ReportService.js';
+} from "../../infrastructure/reports/ReportService.js";
 import {
   createReportSchema,
   listReportsSchema,
   getReportSchema,
   deleteReportSchema,
   downloadReportSchema,
-} from '../validators/report.validator.js';
-import logger from '../../shared/utils/logger.js';
+} from "../validators/report.validator.js";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // REPORT ROUTER FACTORY
@@ -48,57 +48,62 @@ export function createReportRouter(prisma: PrismaClient): Router {
    * GET /api/v1/reports/types
    * Get available report types and formats
    */
-  router.get('/types', RateLimiterConfig.api(), (req: Request, res: Response) => {
-    const types = [
-      {
-        type: ReportType.BATCH_TRACEABILITY,
-        name: 'Trazabilidad de Lotes',
-        description: 'Reporte detallado de lotes con eventos y certificaciones',
-        formats: [ReportFormat.PDF, ReportFormat.CSV, ReportFormat.XLSX],
-      },
-      {
-        type: ReportType.PRODUCER_SUMMARY,
-        name: 'Resumen de Productor',
-        description: 'Estadisticas y actividad del productor',
-        formats: [ReportFormat.PDF, ReportFormat.XLSX],
-      },
-      {
-        type: ReportType.AUDIT_LOG,
-        name: 'Registro de Auditoria',
-        description: 'Historial de acciones del sistema',
-        formats: [ReportFormat.PDF, ReportFormat.CSV, ReportFormat.XLSX],
-      },
-      {
-        type: ReportType.INVENTORY,
-        name: 'Inventario',
-        description: 'Estado actual del inventario por variedad',
-        formats: [ReportFormat.CSV, ReportFormat.XLSX],
-      },
-      {
-        type: ReportType.ANALYTICS,
-        name: 'Analiticas',
-        description: 'Metricas y tendencias de la plataforma',
-        formats: [ReportFormat.PDF, ReportFormat.XLSX],
-      },
-      {
-        type: ReportType.EVENTS_TIMELINE,
-        name: 'Linea de Tiempo de Eventos',
-        description: 'Exportacion de eventos de trazabilidad',
-        formats: [ReportFormat.CSV, ReportFormat.XLSX],
-      },
-      {
-        type: ReportType.COMPLIANCE,
-        name: 'Cumplimiento',
-        description: 'Reporte de cumplimiento normativo',
-        formats: [ReportFormat.PDF],
-      },
-    ];
+  router.get(
+    "/types",
+    RateLimiterConfig.api(),
+    (req: Request, res: Response) => {
+      const types = [
+        {
+          type: ReportType.BATCH_TRACEABILITY,
+          name: "Trazabilidad de Lotes",
+          description:
+            "Reporte detallado de lotes con eventos y certificaciones",
+          formats: [ReportFormat.PDF, ReportFormat.CSV, ReportFormat.XLSX],
+        },
+        {
+          type: ReportType.PRODUCER_SUMMARY,
+          name: "Resumen de Productor",
+          description: "Estadisticas y actividad del productor",
+          formats: [ReportFormat.PDF, ReportFormat.XLSX],
+        },
+        {
+          type: ReportType.AUDIT_LOG,
+          name: "Registro de Auditoria",
+          description: "Historial de acciones del sistema",
+          formats: [ReportFormat.PDF, ReportFormat.CSV, ReportFormat.XLSX],
+        },
+        {
+          type: ReportType.INVENTORY,
+          name: "Inventario",
+          description: "Estado actual del inventario por variedad",
+          formats: [ReportFormat.CSV, ReportFormat.XLSX],
+        },
+        {
+          type: ReportType.ANALYTICS,
+          name: "Analiticas",
+          description: "Metricas y tendencias de la plataforma",
+          formats: [ReportFormat.PDF, ReportFormat.XLSX],
+        },
+        {
+          type: ReportType.EVENTS_TIMELINE,
+          name: "Linea de Tiempo de Eventos",
+          description: "Exportacion de eventos de trazabilidad",
+          formats: [ReportFormat.CSV, ReportFormat.XLSX],
+        },
+        {
+          type: ReportType.COMPLIANCE,
+          name: "Cumplimiento",
+          description: "Reporte de cumplimiento normativo",
+          formats: [ReportFormat.PDF],
+        },
+      ];
 
-    res.json({
-      success: true,
-      data: { types },
-    });
-  });
+      res.json({
+        success: true,
+        data: { types },
+      });
+    },
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // AUTHENTICATED ENDPOINTS
@@ -109,7 +114,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
    * Create a new report
    */
   router.post(
-    '/',
+    "/",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(createReportSchema),
@@ -118,7 +123,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -135,12 +140,12 @@ export function createReportRouter(prisma: PrismaClient): Router {
         res.status(202).json({
           success: true,
           data: report,
-          message: 'Report generation started. Check status for completion.',
+          message: "Report generation started. Check status for completion.",
         });
       } catch (error) {
         handleReportError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -148,7 +153,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
    * List user's reports
    */
   router.get(
-    '/',
+    "/",
     authenticate(),
     validateRequest(listReportsSchema),
     async (req: Request, res: Response) => {
@@ -156,7 +161,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -181,7 +186,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handleReportError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -189,7 +194,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
    * Get report details
    */
   router.get(
-    '/:reportId',
+    "/:reportId",
     authenticate(),
     validateRequest(getReportSchema),
     async (req: Request, res: Response) => {
@@ -197,19 +202,19 @@ export function createReportRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         const report = await reportService.getReport(
           req.params.reportId,
-          req.user.userId
+          req.user.userId,
         );
 
         if (!report) {
           return res.status(404).json({
             success: false,
-            error: { code: 'NOT_FOUND', message: 'Report not found' },
+            error: { code: "NOT_FOUND", message: "Report not found" },
           });
         }
 
@@ -220,7 +225,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handleReportError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -228,7 +233,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
    * Delete a report
    */
   router.delete(
-    '/:reportId',
+    "/:reportId",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(deleteReportSchema),
@@ -237,7 +242,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -247,7 +252,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handleReportError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -255,7 +260,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
    * Get download URL for report
    */
   router.get(
-    '/:reportId/download',
+    "/:reportId/download",
     authenticate(),
     validateRequest(downloadReportSchema),
     async (req: Request, res: Response) => {
@@ -263,13 +268,13 @@ export function createReportRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         const downloadUrl = await reportService.getDownloadUrl(
           req.params.reportId,
-          req.user.userId
+          req.user.userId,
         );
 
         res.json({
@@ -282,7 +287,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handleReportError(error, res);
       }
-    }
+    },
   );
 
   return router;
@@ -297,7 +302,7 @@ export function createReportRouter(prisma: PrismaClient): Router {
  */
 function handleReportError(error: unknown, res: Response): void {
   if (error instanceof ReportServiceError) {
-    logger.warn('[ReportRoutes] Report service error', {
+    logger.warn("[ReportRoutes] Report service error", {
       code: error.code,
       message: error.message,
     });
@@ -308,13 +313,13 @@ function handleReportError(error: unknown, res: Response): void {
     return;
   }
 
-  logger.error('[ReportRoutes] Unexpected error', {
-    error: error instanceof Error ? error.message : 'Unknown error',
+  logger.error("[ReportRoutes] Unexpected error", {
+    error: error instanceof Error ? error.message : "Unknown error",
     stack: error instanceof Error ? error.stack : undefined,
   });
 
   res.status(500).json({
     success: false,
-    error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+    error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
   });
 }

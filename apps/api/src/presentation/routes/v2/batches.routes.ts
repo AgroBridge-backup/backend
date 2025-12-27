@@ -12,13 +12,16 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { QueryBuilder, QueryOptions } from '../../../infrastructure/http/QueryBuilder.js';
-import { ResponseFormatter } from '../../../infrastructure/http/ResponseFormatter.js';
-import { authenticate } from '../../middlewares/auth.middleware.js';
-import { prisma } from '../../../infrastructure/database/prisma/client.js';
-import { redisClient } from '../../../infrastructure/cache/RedisClient.js';
-import logger from '../../../shared/utils/logger.js';
+import { Router, Request, Response, NextFunction } from "express";
+import {
+  QueryBuilder,
+  QueryOptions,
+} from "../../../infrastructure/http/QueryBuilder.js";
+import { ResponseFormatter } from "../../../infrastructure/http/ResponseFormatter.js";
+import { authenticate } from "../../middlewares/auth.middleware.js";
+import { prisma } from "../../../infrastructure/database/prisma/client.js";
+import { redisClient } from "../../../infrastructure/cache/RedisClient.js";
+import logger from "../../../shared/utils/logger.js";
 
 // Auth payload type matching the middleware
 interface AuthPayload {
@@ -53,7 +56,7 @@ const LIST_CACHE_TTL = 300;
  * @query {string} include - Relations to include (e.g., producer,events)
  */
 router.get(
-  '/',
+  "/",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -63,18 +66,21 @@ router.get(
       const queryOptions = QueryBuilder.parse(req.query);
 
       // Validate query options
-      const validationErrors = QueryBuilder.validate(queryOptions, 'Batch');
+      const validationErrors = QueryBuilder.validate(queryOptions, "Batch");
       if (validationErrors.length > 0) {
         return res.status(400).json(
           ResponseFormatter.validationError(
-            validationErrors.map((msg) => ({ field: 'query', message: msg })),
-            req.path
-          )
+            validationErrors.map((msg) => ({ field: "query", message: msg })),
+            req.path,
+          ),
         );
       }
 
       // Build Prisma query
-      const prismaQuery = QueryBuilder.applyToPrismaQuery('Batch', queryOptions);
+      const prismaQuery = QueryBuilder.applyToPrismaQuery(
+        "Batch",
+        queryOptions,
+      );
 
       // Apply role-based filtering
       const roleFilter = await buildRoleBasedFilter(user);
@@ -84,20 +90,22 @@ router.get(
       };
 
       // Try cache for common queries
-      const cacheKey = buildCacheKey('batches:list', queryOptions, user);
-      const cached = await tryGetFromCache<{ data: unknown[]; total: number }>(cacheKey);
+      const cacheKey = buildCacheKey("batches:list", queryOptions, user);
+      const cached = await tryGetFromCache<{ data: unknown[]; total: number }>(
+        cacheKey,
+      );
 
       if (cached) {
-        logger.debug('[BatchesV2] Cache hit', { cacheKey });
+        logger.debug("[BatchesV2] Cache hit", { cacheKey });
         return res.json(
           ResponseFormatter.paginated(
             cached.data,
             cached.total,
             queryOptions.page,
             queryOptions.limit,
-            '/api/v2/batches',
-            req.query as Record<string, unknown>
-          )
+            "/api/v2/batches",
+            req.query as Record<string, unknown>,
+          ),
         );
       }
 
@@ -112,8 +120,8 @@ router.get(
         ...(prismaQuery.select
           ? { select: prismaQuery.select }
           : prismaQuery.include
-          ? { include: prismaQuery.include }
-          : {}),
+            ? { include: prismaQuery.include }
+            : {}),
         orderBy: prismaQuery.orderBy,
         skip: prismaQuery.skip,
         take: prismaQuery.take,
@@ -128,11 +136,11 @@ router.get(
         total,
         queryOptions.page,
         queryOptions.limit,
-        '/api/v2/batches',
-        req.query as Record<string, unknown>
+        "/api/v2/batches",
+        req.query as Record<string, unknown>,
       );
 
-      logger.debug('[BatchesV2] List request', {
+      logger.debug("[BatchesV2] List request", {
         query: QueryBuilder.getSummary(queryOptions),
         total,
         returned: batches.length,
@@ -140,10 +148,10 @@ router.get(
 
       res.json(response);
     } catch (error) {
-      logger.error('[BatchesV2] List error:', error);
+      logger.error("[BatchesV2] List error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -160,7 +168,7 @@ router.get(
  * @query {string} include - Relations to include
  */
 router.get(
-  '/:id',
+  "/:id",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -171,7 +179,10 @@ router.get(
       const queryOptions = QueryBuilder.parse(req.query);
 
       // Build Prisma query
-      const prismaQuery = QueryBuilder.applyToPrismaQuery('Batch', queryOptions);
+      const prismaQuery = QueryBuilder.applyToPrismaQuery(
+        "Batch",
+        queryOptions,
+      );
 
       // Fetch batch - use only select OR include, not both
       const batch = await prisma.batch.findUnique({
@@ -179,30 +190,35 @@ router.get(
         ...(prismaQuery.select
           ? { select: prismaQuery.select }
           : prismaQuery.include
-          ? { include: prismaQuery.include }
-          : {}),
+            ? { include: prismaQuery.include }
+            : {}),
       });
 
       if (!batch) {
-        return res.status(404).json(
-          ResponseFormatter.notFound('Batch', id, req.path)
-        );
+        return res
+          .status(404)
+          .json(ResponseFormatter.notFound("Batch", id, req.path));
       }
 
       // Check access
       const hasAccess = await checkBatchAccess(user, batch);
       if (!hasAccess) {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied to this batch', req.path)
-        );
+        return res
+          .status(403)
+          .json(
+            ResponseFormatter.forbidden(
+              "Access denied to this batch",
+              req.path,
+            ),
+          );
       }
 
       res.json(ResponseFormatter.success(batch));
     } catch (error) {
-      logger.error('[BatchesV2] Get error:', error);
+      logger.error("[BatchesV2] Get error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -215,7 +231,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/:id/events',
+  "/:id/events",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -229,21 +245,29 @@ router.get(
       });
 
       if (!batch) {
-        return res.status(404).json(
-          ResponseFormatter.notFound('Batch', id, req.path)
-        );
+        return res
+          .status(404)
+          .json(ResponseFormatter.notFound("Batch", id, req.path));
       }
 
       const hasAccess = await checkBatchAccess(user, batch);
       if (!hasAccess) {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied to this batch', req.path)
-        );
+        return res
+          .status(403)
+          .json(
+            ResponseFormatter.forbidden(
+              "Access denied to this batch",
+              req.path,
+            ),
+          );
       }
 
       // Parse query options for events
       const queryOptions = QueryBuilder.parse(req.query);
-      const prismaQuery = QueryBuilder.applyToPrismaQuery('Event', queryOptions);
+      const prismaQuery = QueryBuilder.applyToPrismaQuery(
+        "Event",
+        queryOptions,
+      );
 
       // Add batch filter
       prismaQuery.where = {
@@ -260,7 +284,7 @@ router.get(
       const events = await prisma.traceabilityEvent.findMany({
         where: prismaQuery.where,
         select: prismaQuery.select,
-        orderBy: prismaQuery.orderBy || [{ timestamp: 'asc' }],
+        orderBy: prismaQuery.orderBy || [{ timestamp: "asc" }],
         skip: prismaQuery.skip,
         take: prismaQuery.take,
       });
@@ -272,14 +296,14 @@ router.get(
           queryOptions.page,
           queryOptions.limit,
           `/api/v2/batches/${id}/events`,
-          req.query as Record<string, unknown>
-        )
+          req.query as Record<string, unknown>,
+        ),
       );
     } catch (error) {
-      logger.error('[BatchesV2] Get events error:', error);
+      logger.error("[BatchesV2] Get events error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -292,7 +316,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/:id/timeline',
+  "/:id/timeline",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -313,16 +337,21 @@ router.get(
       });
 
       if (!batch) {
-        return res.status(404).json(
-          ResponseFormatter.notFound('Batch', id, req.path)
-        );
+        return res
+          .status(404)
+          .json(ResponseFormatter.notFound("Batch", id, req.path));
       }
 
       const hasAccess = await checkBatchAccess(user, batch);
       if (!hasAccess) {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied to this batch', req.path)
-        );
+        return res
+          .status(403)
+          .json(
+            ResponseFormatter.forbidden(
+              "Access denied to this batch",
+              req.path,
+            ),
+          );
       }
 
       // Get events ordered by timestamp
@@ -341,7 +370,7 @@ router.get(
           isVerified: true,
           blockchainTxHash: true,
         },
-        orderBy: { timestamp: 'asc' },
+        orderBy: { timestamp: "asc" },
       });
 
       // Build timeline
@@ -369,10 +398,10 @@ router.get(
 
       res.json(ResponseFormatter.success(timeline));
     } catch (error) {
-      logger.error('[BatchesV2] Get timeline error:', error);
+      logger.error("[BatchesV2] Get timeline error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -383,15 +412,15 @@ router.get(
  * Build role-based filter for queries
  */
 async function buildRoleBasedFilter(
-  user: AuthPayload
+  user: AuthPayload,
 ): Promise<Record<string, unknown>> {
   // Admins and certifiers see all
-  if (user.role === 'ADMIN' || user.role === 'CERTIFIER') {
+  if (user.role === "ADMIN" || user.role === "CERTIFIER") {
     return {};
   }
 
   // Producers see their own batches
-  if (user.role === 'PRODUCER') {
+  if (user.role === "PRODUCER") {
     const producer = await prisma.producer.findUnique({
       where: { userId: user.userId },
       select: { id: true },
@@ -411,15 +440,15 @@ async function buildRoleBasedFilter(
  */
 async function checkBatchAccess(
   user: AuthPayload,
-  batch: { producerId?: string }
+  batch: { producerId?: string },
 ): Promise<boolean> {
   // Admins and certifiers have access to all
-  if (user.role === 'ADMIN' || user.role === 'CERTIFIER') {
+  if (user.role === "ADMIN" || user.role === "CERTIFIER") {
     return true;
   }
 
   // Check if user is the producer
-  if (user.role === 'PRODUCER' && batch.producerId) {
+  if (user.role === "PRODUCER" && batch.producerId) {
     const producer = await prisma.producer.findUnique({
       where: { userId: user.userId },
       select: { id: true },
@@ -437,7 +466,7 @@ async function checkBatchAccess(
 function buildCacheKey(
   prefix: string,
   options: QueryOptions,
-  user: AuthPayload
+  user: AuthPayload,
 ): string {
   const parts = [
     prefix,
@@ -457,7 +486,7 @@ function buildCacheKey(
     parts.push(`q:${options.search}`);
   }
 
-  return parts.join(':');
+  return parts.join(":");
 }
 
 /**
@@ -470,7 +499,7 @@ async function tryGetFromCache<T>(key: string): Promise<T | null> {
       return JSON.parse(cached) as T;
     }
   } catch (error) {
-    logger.warn('[BatchesV2] Cache read error:', error);
+    logger.warn("[BatchesV2] Cache read error:", error);
   }
   return null;
 }
@@ -478,11 +507,15 @@ async function tryGetFromCache<T>(key: string): Promise<T | null> {
 /**
  * Cache result
  */
-async function cacheResult(key: string, data: unknown, ttl: number): Promise<void> {
+async function cacheResult(
+  key: string,
+  data: unknown,
+  ttl: number,
+): Promise<void> {
   try {
-    await redisClient.client.set(key, JSON.stringify(data), 'EX', ttl);
+    await redisClient.client.set(key, JSON.stringify(data), "EX", ttl);
   } catch (error) {
-    logger.warn('[BatchesV2] Cache write error:', error);
+    logger.warn("[BatchesV2] Cache write error:", error);
   }
 }
 

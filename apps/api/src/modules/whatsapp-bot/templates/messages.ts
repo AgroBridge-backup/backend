@@ -4,9 +4,9 @@
  * @module whatsapp-bot/templates
  */
 
-import { MenuOption } from '../types/index.js';
+import { MenuOption } from "../types/index.js";
 
-type Language = 'es' | 'en';
+type Language = "es" | "en";
 
 // ============================================================================
 // TEMPLATE MESSAGES
@@ -15,25 +15,27 @@ type Language = 'es' | 'en';
 export const messages = {
   // Welcome & Greeting
   welcome: {
-    es: (name: string) => `¡Hola ${name}! 👋\n\nSoy el asistente virtual de *AgroBridge*. Estoy aquí para ayudarte con tus anticipos de cosecha.\n\n¿Qué te gustaría hacer hoy?`,
-    en: (name: string) => `Hello ${name}! 👋\n\nI'm the *AgroBridge* virtual assistant. I'm here to help you with your harvest advances.\n\nWhat would you like to do today?`,
+    es: (name: string) =>
+      `¡Hola ${name}! 👋\n\nSoy el asistente virtual de *AgroBridge*. Estoy aquí para ayudarte con tus anticipos de cosecha.\n\n¿Qué te gustaría hacer hoy?`,
+    en: (name: string) =>
+      `Hello ${name}! 👋\n\nI'm the *AgroBridge* virtual assistant. I'm here to help you with your harvest advances.\n\nWhat would you like to do today?`,
   },
 
   // Main Menu
   mainMenu: {
-    es: '📋 *Menú Principal*\n\nElige una opción:',
-    en: '📋 *Main Menu*\n\nChoose an option:',
+    es: "📋 *Menú Principal*\n\nElige una opción:",
+    en: "📋 *Main Menu*\n\nChoose an option:",
   },
 
   // Advance Request Flow
   noEligibleOrders: {
-    es: '😔 No tienes órdenes elegibles para anticipo en este momento.\n\nCuando tengas una orden confirmada por un comprador, podrás solicitar un anticipo.',
-    en: '😔 You don\'t have any eligible orders for advance at this time.\n\nWhen you have an order confirmed by a buyer, you\'ll be able to request an advance.',
+    es: "😔 No tienes órdenes elegibles para anticipo en este momento.\n\nCuando tengas una orden confirmada por un comprador, podrás solicitar un anticipo.",
+    en: "😔 You don't have any eligible orders for advance at this time.\n\nWhen you have an order confirmed by a buyer, you'll be able to request an advance.",
   },
 
   selectOrder: {
-    es: '📦 *Órdenes Elegibles*\n\nSelecciona la orden para la cual quieres solicitar un anticipo:',
-    en: '📦 *Eligible Orders*\n\nSelect the order for which you want to request an advance:',
+    es: "📦 *Órdenes Elegibles*\n\nSelecciona la orden para la cual quieres solicitar un anticipo:",
+    en: "📦 *Eligible Orders*\n\nSelect the order for which you want to request an advance:",
   },
 
   advanceCalculation: {
@@ -130,7 +132,7 @@ If you have questions, contact our support team.`,
 💳 *Monto Próximo Pago:* ${data.nextPaymentAmount}
 
 ━━━━━━━━━━━━━━━━━━━
-${data.advances.map((a, i) => `${i + 1}. ${a.contractNumber} - ${a.remaining} (vence: ${a.dueDate})`).join('\n')}`,
+${data.advances.map((a, i) => `${i + 1}. ${a.contractNumber} - ${a.remaining} (vence: ${a.dueDate})`).join("\n")}`,
     en: (data: BalanceData) => `
 📊 *Your Account Summary*
 
@@ -140,12 +142,12 @@ ${data.advances.map((a, i) => `${i + 1}. ${a.contractNumber} - ${a.remaining} (v
 💳 *Next Payment Amount:* ${data.nextPaymentAmount}
 
 ━━━━━━━━━━━━━━━━━━━
-${data.advances.map((a, i) => `${i + 1}. ${a.contractNumber} - ${a.remaining} (due: ${a.dueDate})`).join('\n')}`,
+${data.advances.map((a, i) => `${i + 1}. ${a.contractNumber} - ${a.remaining} (due: ${a.dueDate})`).join("\n")}`,
   },
 
   noActiveAdvances: {
-    es: '✨ No tienes anticipos activos en este momento.\n\n¡Tu historial está limpio! 👍',
-    en: '✨ You don\'t have any active advances at this moment.\n\nYour history is clean! 👍',
+    es: "✨ No tienes anticipos activos en este momento.\n\n¡Tu historial está limpio! 👍",
+    en: "✨ You don't have any active advances at this moment.\n\nYour history is clean! 👍",
   },
 
   // Payment Flow
@@ -244,7 +246,12 @@ To avoid late fees, make your payment before 11:59 PM.
   },
 
   reminderOverdue: {
-    es: (name: string, amount: string, daysOverdue: number, lateFee: string) => `
+    es: (
+      name: string,
+      amount: string,
+      daysOverdue: number,
+      lateFee: string,
+    ) => `
 🚨 *Pago Vencido*
 
 Hola ${name}, tu pago está *${daysOverdue} días vencido*.
@@ -256,7 +263,12 @@ Hola ${name}, tu pago está *${daysOverdue} días vencido*.
 Para evitar más cargos y proteger tu historial crediticio, realiza tu pago lo antes posible.
 
 📲 Escribe "PAGAR" o llámanos al soporte.`,
-    en: (name: string, amount: string, daysOverdue: number, lateFee: string) => `
+    en: (
+      name: string,
+      amount: string,
+      daysOverdue: number,
+      lateFee: string,
+    ) => `
 🚨 *Overdue Payment*
 
 Hi ${name}, your payment is *${daysOverdue} days overdue*.
@@ -296,13 +308,13 @@ Describe your issue and an agent will contact you soon.`,
 
   // Errors
   userNotFound: {
-    es: '❌ No encontramos una cuenta asociada a este número.\n\nPor favor, regístrate en nuestra app o contacta a soporte.',
-    en: '❌ We couldn\'t find an account associated with this number.\n\nPlease register in our app or contact support.',
+    es: "❌ No encontramos una cuenta asociada a este número.\n\nPor favor, regístrate en nuestra app o contacta a soporte.",
+    en: "❌ We couldn't find an account associated with this number.\n\nPlease register in our app or contact support.",
   },
 
   genericError: {
-    es: '😔 Lo sentimos, algo salió mal.\n\nPor favor intenta de nuevo o contacta a soporte si el problema persiste.',
-    en: '😔 Sorry, something went wrong.\n\nPlease try again or contact support if the problem persists.',
+    es: "😔 Lo sentimos, algo salió mal.\n\nPor favor intenta de nuevo o contacta a soporte si el problema persiste.",
+    en: "😔 Sorry, something went wrong.\n\nPlease try again or contact support if the problem persists.",
   },
 
   notUnderstood: {
@@ -311,13 +323,13 @@ Describe your issue and an agent will contact you soon.`,
   },
 
   goodbye: {
-    es: '¡Hasta pronto! 👋\n\nSi necesitas algo más, escríbeme. Estoy aquí para ayudarte.',
-    en: 'See you soon! 👋\n\nIf you need anything else, message me. I\'m here to help.',
+    es: "¡Hasta pronto! 👋\n\nSi necesitas algo más, escríbeme. Estoy aquí para ayudarte.",
+    en: "See you soon! 👋\n\nIf you need anything else, message me. I'm here to help.",
   },
 
   thanks: {
-    es: '¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?',
-    en: 'You\'re welcome! 😊 Is there anything else I can help you with?',
+    es: "¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?",
+    en: "You're welcome! 😊 Is there anything else I can help you with?",
   },
 
   // ==========================================================================
@@ -392,7 +404,7 @@ _This certificate CANNOT be forged_`,
 
 📄 *Folio:* ${data.folio}
 🔑 *UUID:* ${data.uuid}
-💵 *Total:* ${data.total.toLocaleString('es-MX')} MXN
+💵 *Total:* ${data.total.toLocaleString("es-MX")} MXN
 
 ✅ *CFDI 4.0 válido (SAT)*
 🔐 *Hash en blockchain:* ${data.blockchainHash.substring(0, 16)}...
@@ -406,7 +418,7 @@ _Comprobante fiscalmente válido + prueba blockchain_`,
 
 📄 *Folio:* ${data.folio}
 🔑 *UUID:* ${data.uuid}
-💵 *Total:* ${data.total.toLocaleString('en-US')} MXN
+💵 *Total:* ${data.total.toLocaleString("en-US")} MXN
 
 ✅ *CFDI 4.0 valid (SAT)*
 🔐 *Blockchain hash:* ${data.blockchainHash.substring(0, 16)}...
@@ -530,29 +542,84 @@ _Keep referring to earn more rewards_`,
 
 export const menuOptions: Record<string, MenuOption[]> = {
   main: [
-    { id: 'request_advance', title: 'Solicitar Anticipo', emoji: '💰', description: 'Solicita un anticipo sobre tu cosecha' },
-    { id: 'check_balance', title: 'Ver Saldo', emoji: '📊', description: 'Consulta tu saldo y pagos pendientes' },
-    { id: 'make_payment', title: 'Realizar Pago', emoji: '💳', description: 'Genera una liga de pago' },
-    { id: 'support', title: 'Soporte', emoji: '📞', description: 'Habla con un agente' },
+    {
+      id: "request_advance",
+      title: "Solicitar Anticipo",
+      emoji: "💰",
+      description: "Solicita un anticipo sobre tu cosecha",
+    },
+    {
+      id: "check_balance",
+      title: "Ver Saldo",
+      emoji: "📊",
+      description: "Consulta tu saldo y pagos pendientes",
+    },
+    {
+      id: "make_payment",
+      title: "Realizar Pago",
+      emoji: "💳",
+      description: "Genera una liga de pago",
+    },
+    {
+      id: "support",
+      title: "Soporte",
+      emoji: "📞",
+      description: "Habla con un agente",
+    },
   ],
   mainEn: [
-    { id: 'request_advance', title: 'Request Advance', emoji: '💰', description: 'Request an advance on your harvest' },
-    { id: 'check_balance', title: 'Check Balance', emoji: '📊', description: 'Check your balance and pending payments' },
-    { id: 'make_payment', title: 'Make Payment', emoji: '💳', description: 'Generate a payment link' },
-    { id: 'support', title: 'Support', emoji: '📞', description: 'Talk to an agent' },
+    {
+      id: "request_advance",
+      title: "Request Advance",
+      emoji: "💰",
+      description: "Request an advance on your harvest",
+    },
+    {
+      id: "check_balance",
+      title: "Check Balance",
+      emoji: "📊",
+      description: "Check your balance and pending payments",
+    },
+    {
+      id: "make_payment",
+      title: "Make Payment",
+      emoji: "💳",
+      description: "Generate a payment link",
+    },
+    {
+      id: "support",
+      title: "Support",
+      emoji: "📞",
+      description: "Talk to an agent",
+    },
   ],
   confirmation: [
-    { id: 'confirm_yes', title: 'Sí, confirmar', emoji: '✅' },
-    { id: 'confirm_no', title: 'No, cancelar', emoji: '❌' },
+    { id: "confirm_yes", title: "Sí, confirmar", emoji: "✅" },
+    { id: "confirm_no", title: "No, cancelar", emoji: "❌" },
   ],
   confirmationEn: [
-    { id: 'confirm_yes', title: 'Yes, confirm', emoji: '✅' },
-    { id: 'confirm_no', title: 'No, cancel', emoji: '❌' },
+    { id: "confirm_yes", title: "Yes, confirm", emoji: "✅" },
+    { id: "confirm_no", title: "No, cancel", emoji: "❌" },
   ],
   paymentMethods: [
-    { id: 'pay_spei', title: 'SPEI', emoji: '🏦', description: 'Transferencia bancaria' },
-    { id: 'pay_card', title: 'Tarjeta', emoji: '💳', description: 'Pago con tarjeta' },
-    { id: 'pay_oxxo', title: 'OXXO', emoji: '🏪', description: 'Pago en efectivo' },
+    {
+      id: "pay_spei",
+      title: "SPEI",
+      emoji: "🏦",
+      description: "Transferencia bancaria",
+    },
+    {
+      id: "pay_card",
+      title: "Tarjeta",
+      emoji: "💳",
+      description: "Pago con tarjeta",
+    },
+    {
+      id: "pay_oxxo",
+      title: "OXXO",
+      emoji: "🏪",
+      description: "Pago en efectivo",
+    },
   ],
 };
 
@@ -667,7 +734,7 @@ export function getMessage(
     return messages.genericError[lang];
   }
 
-  if (typeof template === 'function') {
+  if (typeof template === "function") {
     return (template as (...params: unknown[]) => string)(...args);
   }
 
@@ -675,6 +742,6 @@ export function getMessage(
 }
 
 export function getMenuOptions(menuKey: string, lang: Language): MenuOption[] {
-  const key = lang === 'en' ? `${menuKey}En` : menuKey;
+  const key = lang === "en" ? `${menuKey}En` : menuKey;
   return menuOptions[key] || menuOptions[menuKey] || [];
 }

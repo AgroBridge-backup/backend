@@ -21,9 +21,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import { notificationQueue } from '../queue/NotificationQueue.js';
-import { metricsCollector } from '../monitoring/MetricsCollector.js';
-import logger from '../../../shared/utils/logger.js';
+import { notificationQueue } from "../queue/NotificationQueue.js";
+import { metricsCollector } from "../monitoring/MetricsCollector.js";
+import logger from "../../../shared/utils/logger.js";
 
 // Constants
 const HEALTH_CHECK_INTERVAL = 60000; // 1 minute
@@ -33,9 +33,9 @@ const METRICS_COLLECTION_INTERVAL = 300000; // 5 minutes
  * Start the notification worker
  */
 async function startWorker(): Promise<void> {
-  logger.info('[NotificationWorker] Starting notification worker...', {
+  logger.info("[NotificationWorker] Starting notification worker...", {
     nodeEnv: process.env.NODE_ENV,
-    redisHost: process.env.REDIS_HOST || 'localhost',
+    redisHost: process.env.REDIS_HOST || "localhost",
     pid: process.pid,
   });
 
@@ -43,7 +43,7 @@ async function startWorker(): Promise<void> {
     // Start queue processing
     await notificationQueue.startProcessing();
 
-    logger.info('[NotificationWorker] Worker started successfully', {
+    logger.info("[NotificationWorker] Worker started successfully", {
       pid: process.pid,
     });
 
@@ -53,14 +53,14 @@ async function startWorker(): Promise<void> {
         const health = await metricsCollector.checkHealth();
 
         if (!health.healthy) {
-          logger.warn('[NotificationWorker] Health check warning', {
+          logger.warn("[NotificationWorker] Health check warning", {
             deliveryRate: health.deliveryRate,
             queueDepth: health.queueDepth,
           });
         }
       } catch (error) {
         const err = error as Error;
-        logger.error('[NotificationWorker] Health check failed', {
+        logger.error("[NotificationWorker] Health check failed", {
           error: err.message,
         });
       }
@@ -71,7 +71,7 @@ async function startWorker(): Promise<void> {
       try {
         const metrics = await metricsCollector.collectMetrics(1);
 
-        logger.info('[NotificationWorker] Metrics snapshot', {
+        logger.info("[NotificationWorker] Metrics snapshot", {
           deliveryRate: `${metrics.deliveryRate}%`,
           queueDepth: metrics.queueDepth,
           totalSent: metrics.totalSent,
@@ -81,14 +81,14 @@ async function startWorker(): Promise<void> {
         });
       } catch (error) {
         const err = error as Error;
-        logger.error('[NotificationWorker] Metrics collection failed', {
+        logger.error("[NotificationWorker] Metrics collection failed", {
           error: err.message,
         });
       }
     }, METRICS_COLLECTION_INTERVAL);
   } catch (error) {
     const err = error as Error;
-    logger.error('[NotificationWorker] Failed to start worker', {
+    logger.error("[NotificationWorker] Failed to start worker", {
       error: err.message,
       stack: err.stack,
     });
@@ -100,17 +100,19 @@ async function startWorker(): Promise<void> {
  * Graceful shutdown handler
  */
 async function gracefulShutdown(signal: string): Promise<void> {
-  logger.info(`[NotificationWorker] Received ${signal}, shutting down gracefully...`);
+  logger.info(
+    `[NotificationWorker] Received ${signal}, shutting down gracefully...`,
+  );
 
   try {
     // Stop accepting new jobs and wait for current jobs to complete
     await notificationQueue.shutdown();
 
-    logger.info('[NotificationWorker] Worker shut down successfully');
+    logger.info("[NotificationWorker] Worker shut down successfully");
     process.exit(0);
   } catch (error) {
     const err = error as Error;
-    logger.error('[NotificationWorker] Error during shutdown', {
+    logger.error("[NotificationWorker] Error during shutdown", {
       error: err.message,
     });
     process.exit(1);
@@ -118,12 +120,12 @@ async function gracefulShutdown(signal: string): Promise<void> {
 }
 
 // Handle shutdown signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('[NotificationWorker] Uncaught exception', {
+process.on("uncaughtException", (error) => {
+  logger.error("[NotificationWorker] Uncaught exception", {
     error: error.message,
     stack: error.stack,
   });
@@ -131,8 +133,8 @@ process.on('uncaughtException', (error) => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('[NotificationWorker] Unhandled rejection', {
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("[NotificationWorker] Unhandled rejection", {
     reason: reason instanceof Error ? reason.message : String(reason),
   });
   // Don't exit - let the worker continue processing

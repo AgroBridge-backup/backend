@@ -8,8 +8,8 @@ import {
   CreateVerificationStageInput,
   UpdateVerificationStageInput,
   StageType,
-  StageStatus
-} from '../entities/VerificationStage.js';
+  StageStatus,
+} from "../entities/VerificationStage.js";
 
 export interface IVerificationStageRepository {
   /**
@@ -25,7 +25,10 @@ export interface IVerificationStageRepository {
   /**
    * Find a specific stage type for a batch
    */
-  findByBatchAndType(batchId: string, stageType: StageType): Promise<VerificationStage | null>;
+  findByBatchAndType(
+    batchId: string,
+    stageType: StageType,
+  ): Promise<VerificationStage | null>;
 
   /**
    * Get the latest approved stage for a batch
@@ -40,7 +43,10 @@ export interface IVerificationStageRepository {
   /**
    * Update a verification stage
    */
-  update(id: string, input: UpdateVerificationStageInput): Promise<VerificationStage>;
+  update(
+    id: string,
+    input: UpdateVerificationStageInput,
+  ): Promise<VerificationStage>;
 
   /**
    * Check if all stages are approved for a batch

@@ -9,8 +9,8 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Request, Response, NextFunction } from 'express';
-import logger from '../../../shared/utils/logger.js';
+import { Request, Response, NextFunction } from "express";
+import logger from "../../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -19,7 +19,7 @@ import logger from '../../../shared/utils/logger.js';
 /**
  * API versions supported
  */
-export type ApiVersion = '1' | '2';
+export type ApiVersion = "1" | "2";
 
 /**
  * Extended request with API version
@@ -42,8 +42,8 @@ interface VersionConfig {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const VERSION_CONFIG: VersionConfig = {
-  default: '1',
-  supported: ['1', '2'],
+  default: "1",
+  supported: ["1", "2"],
   deprecated: [],
 };
 
@@ -63,7 +63,7 @@ const VERSION_CONFIG: VersionConfig = {
 export function apiVersioning(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   const versionedReq = req as VersionedRequest;
   let version: ApiVersion | null = null;
@@ -76,7 +76,7 @@ export function apiVersioning(
 
   // 2. Extract from Accept header: application/vnd.agrobridge.v2+json
   if (!version) {
-    const acceptHeader = req.get('Accept');
+    const acceptHeader = req.get("Accept");
     if (acceptHeader) {
       const headerMatch = acceptHeader.match(/vnd\.agrobridge\.v(\d+)/);
       if (headerMatch) {
@@ -87,7 +87,7 @@ export function apiVersioning(
 
   // 3. Extract from X-API-Version header
   if (!version) {
-    const versionHeader = req.get('X-API-Version');
+    const versionHeader = req.get("X-API-Version");
     if (versionHeader) {
       version = versionHeader as ApiVersion;
     }
@@ -103,8 +103,8 @@ export function apiVersioning(
     res.status(400).json({
       success: false,
       error: {
-        code: 'UNSUPPORTED_API_VERSION',
-        message: `API version ${version} is not supported. Supported versions: ${VERSION_CONFIG.supported.join(', ')}`,
+        code: "UNSUPPORTED_API_VERSION",
+        message: `API version ${version} is not supported. Supported versions: ${VERSION_CONFIG.supported.join(", ")}`,
         supportedVersions: VERSION_CONFIG.supported,
       },
     });
@@ -116,11 +116,14 @@ export function apiVersioning(
 
   // Add deprecation warning header if applicable
   if (VERSION_CONFIG.deprecated?.includes(version)) {
-    res.set('Deprecation', 'true');
-    res.set('Sunset', 'Sat, 01 Jan 2026 00:00:00 GMT');
-    res.set('X-API-Deprecation-Notice', `API version ${version} is deprecated. Please migrate to a newer version.`);
+    res.set("Deprecation", "true");
+    res.set("Sunset", "Sat, 01 Jan 2026 00:00:00 GMT");
+    res.set(
+      "X-API-Deprecation-Notice",
+      `API version ${version} is deprecated. Please migrate to a newer version.`,
+    );
 
-    logger.warn('[API] Deprecated version accessed', {
+    logger.warn("[API] Deprecated version accessed", {
       version,
       path: req.path,
       ip: req.ip,
@@ -128,7 +131,7 @@ export function apiVersioning(
   }
 
   // Add version header to response
-  res.set('X-API-Version', version);
+  res.set("X-API-Version", version);
 
   next();
 }
@@ -147,7 +150,7 @@ export function requireVersion(version: ApiVersion) {
       res.status(400).json({
         success: false,
         error: {
-          code: 'INVALID_API_VERSION',
+          code: "INVALID_API_VERSION",
           message: `This endpoint requires API version ${version}`,
           requiredVersion: version,
           currentVersion: versionedReq.apiVersion,
@@ -176,7 +179,7 @@ export function requireMinVersion(minVersion: ApiVersion) {
       res.status(400).json({
         success: false,
         error: {
-          code: 'API_VERSION_TOO_LOW',
+          code: "API_VERSION_TOO_LOW",
           message: `This endpoint requires API version ${minVersion} or higher`,
           minimumVersion: minVersion,
           currentVersion: versionedReq.apiVersion,
@@ -199,7 +202,12 @@ export function requireMinVersion(minVersion: ApiVersion) {
  * }));
  */
 export function versionedHandler(
-  handlers: Partial<Record<ApiVersion, (req: Request, res: Response, next: NextFunction) => void>>
+  handlers: Partial<
+    Record<
+      ApiVersion,
+      (req: Request, res: Response, next: NextFunction) => void
+    >
+  >,
 ) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const versionedReq = req as VersionedRequest;
@@ -209,7 +217,7 @@ export function versionedHandler(
       res.status(400).json({
         success: false,
         error: {
-          code: 'VERSION_NOT_SUPPORTED',
+          code: "VERSION_NOT_SUPPORTED",
           message: `This endpoint is not available in API version ${versionedReq.apiVersion}`,
           availableVersions: Object.keys(handlers),
         },

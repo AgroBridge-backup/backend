@@ -3,10 +3,13 @@
  * Multi-tier rate limiting for different endpoint categories
  */
 
-import rateLimit, { RateLimitRequestHandler, Options } from 'express-rate-limit';
-import { Request, Response, NextFunction } from 'express';
-import { Redis } from 'ioredis';
-import { logger } from '../logging/logger.js';
+import rateLimit, {
+  RateLimitRequestHandler,
+  Options,
+} from "express-rate-limit";
+import { Request, Response, NextFunction } from "express";
+import { Redis } from "ioredis";
+import { logger } from "../logging/logger.js";
 
 // Redis client for rate limiting
 let redisClient: Redis | null = null;
@@ -16,7 +19,7 @@ let redisClient: Redis | null = null;
  */
 export function initRateLimitRedis(redis: Redis): void {
   redisClient = redis;
-  logger.info('Rate limiter Redis client initialized');
+  logger.info("Rate limiter Redis client initialized");
 }
 
 /**
@@ -27,7 +30,8 @@ export const RateLimitTiers = {
   AUTH: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 attempts per window
-    message: 'Too many authentication attempts. Please try again in 15 minutes.',
+    message:
+      "Too many authentication attempts. Please try again in 15 minutes.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -36,7 +40,7 @@ export const RateLimitTiers = {
   API: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // 100 requests per window
-    message: 'Too many requests. Please slow down.',
+    message: "Too many requests. Please slow down.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -45,7 +49,7 @@ export const RateLimitTiers = {
   HIGH_FREQUENCY: {
     windowMs: 1 * 60 * 1000, // 1 minute
     max: 300, // 300 requests per minute
-    message: 'Rate limit exceeded.',
+    message: "Rate limit exceeded.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -54,7 +58,7 @@ export const RateLimitTiers = {
   SENSITIVE: {
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 3, // 3 attempts per hour
-    message: 'Too many sensitive operation attempts. Please try again later.',
+    message: "Too many sensitive operation attempts. Please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -63,7 +67,7 @@ export const RateLimitTiers = {
   UPLOAD: {
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 20, // 20 uploads per hour
-    message: 'Upload limit exceeded. Please try again later.',
+    message: "Upload limit exceeded. Please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -72,7 +76,7 @@ export const RateLimitTiers = {
   EXPORT: {
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 10, // 10 exports per hour
-    message: 'Export limit exceeded. Please try again later.',
+    message: "Export limit exceeded. Please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -81,7 +85,7 @@ export const RateLimitTiers = {
   WEBHOOK: {
     windowMs: 1 * 60 * 1000, // 1 minute
     max: 50, // 50 webhook deliveries per minute
-    message: 'Webhook rate limit exceeded.',
+    message: "Webhook rate limit exceeded.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -90,7 +94,7 @@ export const RateLimitTiers = {
   GRAPHQL: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 200, // 200 queries per window
-    message: 'GraphQL rate limit exceeded.',
+    message: "GraphQL rate limit exceeded.",
     standardHeaders: true,
     legacyHeaders: false,
   },
@@ -112,9 +116,11 @@ class RedisRateLimitStore {
     return `ratelimit:${this.prefix}:${key}`;
   }
 
-  async increment(key: string): Promise<{ totalHits: number; resetTime: Date }> {
+  async increment(
+    key: string,
+  ): Promise<{ totalHits: number; resetTime: Date }> {
     if (!redisClient) {
-      throw new Error('Redis client not initialized');
+      throw new Error("Redis client not initialized");
     }
 
     const redisKey = this.getKey(key);
@@ -126,7 +132,11 @@ class RedisRateLimitStore {
       await redisClient.zremrangebyscore(redisKey, 0, windowStart);
 
       // Add current request
-      await redisClient.zadd(redisKey, now.toString(), `${now}-${Math.random()}`);
+      await redisClient.zadd(
+        redisKey,
+        now.toString(),
+        `${now}-${Math.random()}`,
+      );
 
       // Get count of requests in window
       const count = await redisClient.zcard(redisKey);
@@ -135,14 +145,20 @@ class RedisRateLimitStore {
       await redisClient.pexpire(redisKey, this.windowMs);
 
       // Calculate reset time
-      const oldestEntry = await redisClient.zrange(redisKey, 0, 0, 'WITHSCORES');
-      const resetTime = oldestEntry.length > 1
-        ? new Date(parseInt(oldestEntry[1]) + this.windowMs)
-        : new Date(now + this.windowMs);
+      const oldestEntry = await redisClient.zrange(
+        redisKey,
+        0,
+        0,
+        "WITHSCORES",
+      );
+      const resetTime =
+        oldestEntry.length > 1
+          ? new Date(parseInt(oldestEntry[1]) + this.windowMs)
+          : new Date(now + this.windowMs);
 
       return { totalHits: count, resetTime };
     } catch (error) {
-      logger.error('Rate limit Redis error', { error, key });
+      logger.error("Rate limit Redis error", { error, key });
       // Fallback: allow request on Redis error
       return { totalHits: 0, resetTime: new Date(now + this.windowMs) };
     }
@@ -159,7 +175,7 @@ class RedisRateLimitStore {
         await redisClient.zrem(redisKey, entries[0]);
       }
     } catch (error) {
-      logger.error('Rate limit decrement error', { error, key });
+      logger.error("Rate limit decrement error", { error, key });
     }
   }
 
@@ -170,7 +186,7 @@ class RedisRateLimitStore {
     try {
       await redisClient.del(redisKey);
     } catch (error) {
-      logger.error('Rate limit reset error', { error, key });
+      logger.error("Rate limit reset error", { error, key });
     }
   }
 }
@@ -180,7 +196,7 @@ class RedisRateLimitStore {
  */
 export function createRateLimiter(
   tier: keyof typeof RateLimitTiers,
-  customOptions: Partial<Options> = {}
+  customOptions: Partial<Options> = {},
 ): RateLimitRequestHandler {
   const tierConfig = RateLimitTiers[tier];
   const prefix = tier.toLowerCase();
@@ -195,18 +211,26 @@ export function createRateLimiter(
     keyGenerator: (req: Request): string => {
       // Use user ID if authenticated, otherwise IP
       const userId = req.user?.id || req.user?.userId;
-      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const ip = req.ip || req.socket.remoteAddress || "unknown";
       return userId ? `user:${userId}` : `ip:${ip}`;
     },
     skip: (req: Request): boolean => {
       // Skip rate limiting for internal health checks
-      if (req.path === '/health' && req.headers['x-internal-check'] === 'true') {
+      if (
+        req.path === "/health" &&
+        req.headers["x-internal-check"] === "true"
+      ) {
         return true;
       }
       return false;
     },
-    handler: (req: Request, res: Response, next: NextFunction, options: Options): void => {
-      logger.warn('Rate limit exceeded', {
+    handler: (
+      req: Request,
+      res: Response,
+      next: NextFunction,
+      options: Options,
+    ): void => {
+      logger.warn("Rate limit exceeded", {
         ip: req.ip,
         path: req.path,
         method: req.method,
@@ -217,7 +241,7 @@ export function createRateLimiter(
       res.status(429).json({
         success: false,
         error: {
-          code: 'RATE_LIMIT_EXCEEDED',
+          code: "RATE_LIMIT_EXCEEDED",
           message: tierConfig.message,
           retryAfter: Math.ceil(tierConfig.windowMs / 1000),
         },
@@ -231,7 +255,7 @@ export function createRateLimiter(
       increment: async (key: string) => store.increment(key),
       decrement: async (key: string) => store.decrement(key),
       resetKey: async (key: string) => store.resetKey(key),
-    } as Options['store'];
+    } as Options["store"];
   }
 
   return rateLimit(options);
@@ -243,7 +267,7 @@ export function createRateLimiter(
 export function ipRateLimiter(
   windowMs: number,
   maxRequests: number,
-  message: string
+  message: string,
 ): RateLimitRequestHandler {
   return rateLimit({
     windowMs,
@@ -251,12 +275,12 @@ export function ipRateLimiter(
     message: {
       success: false,
       error: {
-        code: 'RATE_LIMIT_EXCEEDED',
+        code: "RATE_LIMIT_EXCEEDED",
         message,
       },
     },
     keyGenerator: (req: Request): string => {
-      return req.ip || req.socket.remoteAddress || 'unknown';
+      return req.ip || req.socket.remoteAddress || "unknown";
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -269,7 +293,7 @@ export function ipRateLimiter(
 export function userRateLimiter(
   windowMs: number,
   maxRequests: number,
-  message: string
+  message: string,
 ): RateLimitRequestHandler {
   return rateLimit({
     windowMs,
@@ -277,13 +301,13 @@ export function userRateLimiter(
     message: {
       success: false,
       error: {
-        code: 'RATE_LIMIT_EXCEEDED',
+        code: "RATE_LIMIT_EXCEEDED",
         message,
       },
     },
     keyGenerator: (req: Request): string => {
       const userId = req.user?.id || req.user?.userId;
-      return userId ? `user:${userId}` : req.ip || 'unknown';
+      return userId ? `user:${userId}` : req.ip || "unknown";
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -293,7 +317,11 @@ export function userRateLimiter(
 /**
  * Dynamic rate limiter based on user subscription tier
  */
-export function dynamicRateLimiter(): (req: Request, res: Response, next: NextFunction) => void {
+export function dynamicRateLimiter(): (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => void {
   const limiters: Record<string, RateLimitRequestHandler> = {
     free: rateLimit({
       windowMs: 15 * 60 * 1000,
@@ -322,7 +350,7 @@ export function dynamicRateLimiter(): (req: Request, res: Response, next: NextFu
   };
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const tier = req.user?.subscriptionTier || 'free';
+    const tier = req.user?.subscriptionTier || "free";
     const limiter = limiters[tier] || limiters.free;
     limiter(req, res, next);
   };
@@ -334,7 +362,7 @@ export function dynamicRateLimiter(): (req: Request, res: Response, next: NextFu
 export async function slidingWindowRateLimiter(
   key: string,
   windowMs: number,
-  maxRequests: number
+  maxRequests: number,
 ): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
   if (!redisClient) {
     return { allowed: true, remaining: maxRequests, resetTime: new Date() };
@@ -353,10 +381,11 @@ export async function slidingWindowRateLimiter(
 
     if (count >= maxRequests) {
       // Get oldest entry to calculate reset time
-      const oldest = await redisClient.zrange(redisKey, 0, 0, 'WITHSCORES');
-      const resetTime = oldest.length > 1
-        ? new Date(parseInt(oldest[1]) + windowMs)
-        : new Date(now + windowMs);
+      const oldest = await redisClient.zrange(redisKey, 0, 0, "WITHSCORES");
+      const resetTime =
+        oldest.length > 1
+          ? new Date(parseInt(oldest[1]) + windowMs)
+          : new Date(now + windowMs);
 
       return { allowed: false, remaining: 0, resetTime };
     }
@@ -371,7 +400,7 @@ export async function slidingWindowRateLimiter(
       resetTime: new Date(now + windowMs),
     };
   } catch (error) {
-    logger.error('Sliding window rate limiter error', { error, key });
+    logger.error("Sliding window rate limiter error", { error, key });
     return { allowed: true, remaining: maxRequests, resetTime: new Date() };
   }
 }
@@ -391,7 +420,8 @@ export async function burstRateLimiter(
   const redisKey = `bucket:${key}`;
 
   try {
-    const result = await redisClient.eval(`
+    const result = (await redisClient.eval(
+      `
       local key = KEYS[1]
       local bucketSize = tonumber(ARGV[1])
       local refillRate = tonumber(ARGV[2])
@@ -416,11 +446,17 @@ export async function burstRateLimiter(
         redis.call('EXPIRE', key, 3600)
         return {0, newTokens}
       end
-    `, 1, redisKey, bucketSize, refillRate, Date.now()) as [number, number];
+    `,
+      1,
+      redisKey,
+      bucketSize,
+      refillRate,
+      Date.now(),
+    )) as [number, number];
 
     return { allowed: result[0] === 1, tokens: result[1] };
   } catch (error) {
-    logger.error('Burst rate limiter error', { error, key });
+    logger.error("Burst rate limiter error", { error, key });
     return { allowed: true, tokens: bucketSize };
   }
 }
@@ -429,14 +465,14 @@ export async function burstRateLimiter(
  * Pre-configured rate limiters for common endpoints
  */
 export const rateLimiters = {
-  auth: createRateLimiter('AUTH'),
-  api: createRateLimiter('API'),
-  highFrequency: createRateLimiter('HIGH_FREQUENCY'),
-  sensitive: createRateLimiter('SENSITIVE'),
-  upload: createRateLimiter('UPLOAD'),
-  export: createRateLimiter('EXPORT'),
-  webhook: createRateLimiter('WEBHOOK'),
-  graphql: createRateLimiter('GRAPHQL'),
+  auth: createRateLimiter("AUTH"),
+  api: createRateLimiter("API"),
+  highFrequency: createRateLimiter("HIGH_FREQUENCY"),
+  sensitive: createRateLimiter("SENSITIVE"),
+  upload: createRateLimiter("UPLOAD"),
+  export: createRateLimiter("EXPORT"),
+  webhook: createRateLimiter("WEBHOOK"),
+  graphql: createRateLimiter("GRAPHQL"),
 };
 
 /**
@@ -445,13 +481,15 @@ export const rateLimiters = {
 export function rateLimitHeaders(
   remaining: number,
   limit: number,
-  resetTime: Date
+  resetTime: Date,
 ): Record<string, string> {
   return {
-    'X-RateLimit-Limit': limit.toString(),
-    'X-RateLimit-Remaining': remaining.toString(),
-    'X-RateLimit-Reset': Math.ceil(resetTime.getTime() / 1000).toString(),
-    'Retry-After': Math.ceil((resetTime.getTime() - Date.now()) / 1000).toString(),
+    "X-RateLimit-Limit": limit.toString(),
+    "X-RateLimit-Remaining": remaining.toString(),
+    "X-RateLimit-Reset": Math.ceil(resetTime.getTime() / 1000).toString(),
+    "Retry-After": Math.ceil(
+      (resetTime.getTime() - Date.now()) / 1000,
+    ).toString(),
   };
 }
 

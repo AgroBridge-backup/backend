@@ -9,7 +9,7 @@ import {
   ExportCompanyStatus,
   ExportCompanyTier,
   ExportCompanyWithStats,
-} from '../entities/ExportCompany.js';
+} from "../entities/ExportCompany.js";
 
 export interface CreateExportCompanyData {
   id: string;
@@ -93,7 +93,9 @@ export interface IExportCompanyRepository {
   /**
    * Find export company by Stripe customer ID
    */
-  findByStripeCustomerId(stripeCustomerId: string): Promise<ExportCompany | null>;
+  findByStripeCustomerId(
+    stripeCustomerId: string,
+  ): Promise<ExportCompany | null>;
 
   /**
    * List export companies with filtering and pagination
@@ -118,7 +120,11 @@ export interface IExportCompanyRepository {
   /**
    * Count certificates issued for an export company in a given month
    */
-  countCertificatesInMonth(id: string, year: number, month: number): Promise<number>;
+  countCertificatesInMonth(
+    id: string,
+    year: number,
+    month: number,
+  ): Promise<number>;
 
   /**
    * Get companies with expiring trials (for notification)
@@ -128,7 +134,11 @@ export interface IExportCompanyRepository {
   /**
    * Activate company (move from TRIAL to ACTIVE)
    */
-  activate(id: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<ExportCompany>;
+  activate(
+    id: string,
+    stripeCustomerId: string,
+    stripeSubscriptionId: string,
+  ): Promise<ExportCompany>;
 
   /**
    * Suspend company (payment failed)

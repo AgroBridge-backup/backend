@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { randomUUID } from 'crypto';
+import { Request, Response, NextFunction } from "express";
+import { randomUUID } from "crypto";
 
 /**
  * Correlation ID Middleware
@@ -14,12 +14,12 @@ import { randomUUID } from 'crypto';
 export const correlationIdMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   // Check for existing correlation ID from client or upstream service
   const existingCorrelationId =
-    (req.headers['x-correlation-id'] as string) ||
-    (req.headers['x-request-id'] as string);
+    (req.headers["x-correlation-id"] as string) ||
+    (req.headers["x-request-id"] as string);
 
   // Generate new ID if not provided
   const correlationId = existingCorrelationId || randomUUID();
@@ -31,8 +31,8 @@ export const correlationIdMiddleware = (
   req.requestId = correlationId;
 
   // Add to response headers so client can track their request
-  res.setHeader('X-Correlation-ID', correlationId);
-  res.setHeader('X-Request-ID', correlationId);
+  res.setHeader("X-Correlation-ID", correlationId);
+  res.setHeader("X-Request-ID", correlationId);
 
   next();
 };
@@ -42,5 +42,5 @@ export const correlationIdMiddleware = (
  * Safe to use in any middleware or controller
  */
 export const getCorrelationId = (req: Request): string => {
-  return req.correlationId || req.requestId || 'unknown';
+  return req.correlationId || req.requestId || "unknown";
 };

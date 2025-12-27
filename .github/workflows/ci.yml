@@ -81,7 +81,7 @@ jobs:
         run: npm ci
 
       - name: Fix rollup platform bindings
-        run: npm rebuild
+        run: npm install rollup @rollup/rollup-linux-x64-gnu --save-optional
 
       - name: Generate Prisma Client
         run: npx prisma generate

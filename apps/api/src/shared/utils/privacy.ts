@@ -10,10 +10,13 @@ export class PrivacyUtils {
    * @param lastName Last name
    * @returns Initials string or "AB" for AgroBridge default
    */
-  static getInitials(firstName?: string | null, lastName?: string | null): string {
-    const first = firstName?.charAt(0)?.toUpperCase() || '';
-    const last = lastName?.charAt(0)?.toUpperCase() || '';
-    return first && last ? `${first}${last}` : 'AB';
+  static getInitials(
+    firstName?: string | null,
+    lastName?: string | null,
+  ): string {
+    const first = firstName?.charAt(0)?.toUpperCase() || "";
+    const last = lastName?.charAt(0)?.toUpperCase() || "";
+    return first && last ? `${first}${last}` : "AB";
   }
 
   /**
@@ -24,17 +27,17 @@ export class PrivacyUtils {
    */
   static maskName(firstName?: string | null, lastName?: string | null): string {
     if (!firstName && !lastName) {
-      return 'Usuario Anónimo';
+      return "Usuario Anónimo";
     }
 
-    const first = firstName || '';
-    const lastInitial = lastName?.charAt(0)?.toUpperCase() || '';
+    const first = firstName || "";
+    const lastInitial = lastName?.charAt(0)?.toUpperCase() || "";
 
     if (first && lastInitial) {
       return `${first} ${lastInitial}.`;
     }
 
-    return first || 'Usuario';
+    return first || "Usuario";
   }
 
   /**
@@ -43,12 +46,12 @@ export class PrivacyUtils {
    * @returns Masked email
    */
   static maskEmail(email?: string | null): string {
-    if (!email) return '***@***.***';
+    if (!email) return "***@***.***";
 
-    const [localPart, domain] = email.split('@');
-    if (!localPart || !domain) return '***@***.***';
+    const [localPart, domain] = email.split("@");
+    if (!localPart || !domain) return "***@***.***";
 
-    const maskedLocal = localPart.charAt(0) + '***';
+    const maskedLocal = localPart.charAt(0) + "***";
     return `${maskedLocal}@${domain}`;
   }
 
@@ -58,11 +61,11 @@ export class PrivacyUtils {
    * @returns Masked phone
    */
   static maskPhone(phone?: string | null): string {
-    if (!phone) return '*** *** ****';
+    if (!phone) return "*** *** ****";
 
     // Keep last 4 digits visible
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length < 4) return '*** *** ****';
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length < 4) return "*** *** ****";
 
     const lastFour = cleaned.slice(-4);
     return `*** *** ${lastFour}`;
@@ -73,8 +76,10 @@ export class PrivacyUtils {
    * @param user User object with firstName and lastName
    * @returns Safe display string
    */
-  static getSafeDisplayName(user?: { firstName?: string | null; lastName?: string | null } | null): string {
-    if (!user) return 'Verificado por AgroBridge';
+  static getSafeDisplayName(
+    user?: { firstName?: string | null; lastName?: string | null } | null,
+  ): string {
+    if (!user) return "Verificado por AgroBridge";
     return this.maskName(user.firstName, user.lastName);
   }
 }

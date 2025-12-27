@@ -1,4 +1,4 @@
-import { Producer } from '../entities/Producer.js';
+import { Producer } from "../entities/Producer.js";
 
 export type ProducerList = {
   producers: Producer[];

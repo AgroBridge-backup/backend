@@ -3,8 +3,8 @@
  * Domain Service for Temperature Monitoring
  */
 
-import { PrismaClient } from '@prisma/client';
-import { ITemperatureReadingRepository } from '../repositories/ITemperatureReadingRepository.js';
+import { PrismaClient } from "@prisma/client";
+import { ITemperatureReadingRepository } from "../repositories/ITemperatureReadingRepository.js";
 import {
   TemperatureReading,
   TemperatureSource,
@@ -15,9 +15,9 @@ import {
   detectRapidChange,
   getAlertSeverity,
   DEFAULT_THRESHOLDS,
-} from '../entities/TemperatureReading.js';
-import { AppError } from '../../shared/errors/AppError.js';
-import logger from '../../shared/utils/logger.js';
+} from "../entities/TemperatureReading.js";
+import { AppError } from "../../shared/errors/AppError.js";
+import logger from "../../shared/utils/logger.js";
 
 export interface RecordTemperatureInput {
   batchId: string;
@@ -48,24 +48,26 @@ export interface TemperatureChartData {
 export class TemperatureMonitoringService {
   constructor(
     private prisma: PrismaClient,
-    private readingRepository: ITemperatureReadingRepository
+    private readingRepository: ITemperatureReadingRepository,
   ) {}
 
   /**
    * Record a new temperature reading
    */
-  async recordTemperature(input: RecordTemperatureInput): Promise<RecordTemperatureResult> {
+  async recordTemperature(
+    input: RecordTemperatureInput,
+  ): Promise<RecordTemperatureResult> {
     // Validate batch exists
     const batch = await this.prisma.batch.findUnique({
       where: { id: input.batchId },
     });
 
     if (!batch) {
-      throw new AppError('Batch not found', 404);
+      throw new AppError("Batch not found", 404);
     }
 
     // Get thresholds based on crop type
-    const thresholds = this.getThresholdsForCrop(batch.variety || 'DEFAULT');
+    const thresholds = this.getThresholdsForCrop(batch.variety || "DEFAULT");
 
     const readingInput: CreateTemperatureReadingInput = {
       batchId: input.batchId,
@@ -86,26 +88,32 @@ export class TemperatureMonitoringService {
     // Check for alerts
     let alert: TemperatureAlert | null = null;
     if (reading.isOutOfRange) {
-      const severity = getAlertSeverity(reading.value, thresholds.min, thresholds.max);
+      const severity = getAlertSeverity(
+        reading.value,
+        thresholds.min,
+        thresholds.max,
+      );
       if (severity) {
         alert = {
           id: `alert-${reading.id}`,
           readingId: reading.id,
           batchId: input.batchId,
-          type: reading.value < thresholds.min ? 'LOW_TEMP' : 'HIGH_TEMP',
+          type: reading.value < thresholds.min ? "LOW_TEMP" : "HIGH_TEMP",
           severity,
-          message: reading.value < thresholds.min
-            ? `Temperature ${reading.value}°C is below minimum ${thresholds.min}°C`
-            : `Temperature ${reading.value}°C exceeds maximum ${thresholds.max}°C`,
+          message:
+            reading.value < thresholds.min
+              ? `Temperature ${reading.value}°C is below minimum ${thresholds.min}°C`
+              : `Temperature ${reading.value}°C exceeds maximum ${thresholds.max}°C`,
           value: reading.value,
-          threshold: reading.value < thresholds.min ? thresholds.min : thresholds.max,
+          threshold:
+            reading.value < thresholds.min ? thresholds.min : thresholds.max,
           timestamp: reading.timestamp,
           acknowledged: false,
           acknowledgedBy: null,
           acknowledgedAt: null,
         };
 
-        logger.warn('Temperature alert generated', {
+        logger.warn("Temperature alert generated", {
           batchId: input.batchId,
           value: reading.value,
           type: alert.type,
@@ -115,22 +123,27 @@ export class TemperatureMonitoringService {
     }
 
     // Check for rapid temperature changes
-    const recentReadings = await this.readingRepository.findByBatchIdAndTimeRange(
-      input.batchId,
-      new Date(Date.now() - 2 * 60 * 60 * 1000), // Last 2 hours
-      new Date()
-    );
+    const recentReadings =
+      await this.readingRepository.findByBatchIdAndTimeRange(
+        input.batchId,
+        new Date(Date.now() - 2 * 60 * 60 * 1000), // Last 2 hours
+        new Date(),
+      );
 
     const rapidChanges = detectRapidChange(recentReadings);
-    if (rapidChanges.length > 0 && rapidChanges[rapidChanges.length - 1].id === reading.id) {
+    if (
+      rapidChanges.length > 0 &&
+      rapidChanges[rapidChanges.length - 1].id === reading.id
+    ) {
       if (!alert) {
         alert = {
           id: `alert-rapid-${reading.id}`,
           readingId: reading.id,
           batchId: input.batchId,
-          type: 'RAPID_CHANGE',
-          severity: 'WARNING',
-          message: 'Rapid temperature change detected - possible cold chain breach',
+          type: "RAPID_CHANGE",
+          severity: "WARNING",
+          message:
+            "Rapid temperature change detected - possible cold chain breach",
           value: reading.value,
           threshold: 3, // °C per hour threshold
           timestamp: reading.timestamp,
@@ -141,7 +154,7 @@ export class TemperatureMonitoringService {
       }
     }
 
-    logger.info('Temperature reading recorded', {
+    logger.info("Temperature reading recorded", {
       readingId: reading.id,
       batchId: input.batchId,
       value: reading.value,
@@ -160,49 +173,56 @@ export class TemperatureMonitoringService {
    * Record multiple temperature readings (batch insert from IoT sensors)
    */
   async recordBatchTemperatures(
-    inputs: RecordTemperatureInput[]
+    inputs: RecordTemperatureInput[],
   ): Promise<{ count: number; outOfRangeCount: number }> {
     if (inputs.length === 0) {
       return { count: 0, outOfRangeCount: 0 };
     }
 
     // Get batch info for thresholds
-    const batchIds = [...new Set(inputs.map(i => i.batchId))];
+    const batchIds = [...new Set(inputs.map((i) => i.batchId))];
     const batches = await this.prisma.batch.findMany({
       where: { id: { in: batchIds } },
     });
 
     const batchThresholds = new Map<string, { min: number; max: number }>();
-    batches.forEach(batch => {
-      batchThresholds.set(batch.id, this.getThresholdsForCrop(batch.variety || 'DEFAULT'));
+    batches.forEach((batch) => {
+      batchThresholds.set(
+        batch.id,
+        this.getThresholdsForCrop(batch.variety || "DEFAULT"),
+      );
     });
 
-    const readingInputs: CreateTemperatureReadingInput[] = inputs.map(input => {
-      const thresholds = batchThresholds.get(input.batchId) || DEFAULT_THRESHOLDS.DEFAULT;
-      return {
-        batchId: input.batchId,
-        value: input.value,
-        humidity: input.humidity,
-        source: input.source,
-        minThreshold: thresholds.min,
-        maxThreshold: thresholds.max,
-        sensorId: input.sensorId,
-        deviceId: input.deviceId,
-        latitude: input.latitude,
-        longitude: input.longitude,
-        recordedBy: input.recordedBy,
-      };
-    });
+    const readingInputs: CreateTemperatureReadingInput[] = inputs.map(
+      (input) => {
+        const thresholds =
+          batchThresholds.get(input.batchId) || DEFAULT_THRESHOLDS.DEFAULT;
+        return {
+          batchId: input.batchId,
+          value: input.value,
+          humidity: input.humidity,
+          source: input.source,
+          minThreshold: thresholds.min,
+          maxThreshold: thresholds.max,
+          sensorId: input.sensorId,
+          deviceId: input.deviceId,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          recordedBy: input.recordedBy,
+        };
+      },
+    );
 
     const count = await this.readingRepository.createMany(readingInputs);
 
     // Count out of range (simple calculation)
-    const outOfRangeCount = inputs.filter(input => {
-      const thresholds = batchThresholds.get(input.batchId) || DEFAULT_THRESHOLDS.DEFAULT;
+    const outOfRangeCount = inputs.filter((input) => {
+      const thresholds =
+        batchThresholds.get(input.batchId) || DEFAULT_THRESHOLDS.DEFAULT;
       return input.value < thresholds.min || input.value > thresholds.max;
     }).length;
 
-    logger.info('Batch temperature readings recorded', {
+    logger.info("Batch temperature readings recorded", {
       count,
       outOfRangeCount,
       batchIds,
@@ -214,7 +234,9 @@ export class TemperatureMonitoringService {
   /**
    * Get temperature summary for a batch
    */
-  async getTemperatureSummary(batchId: string): Promise<TemperatureSummary | null> {
+  async getTemperatureSummary(
+    batchId: string,
+  ): Promise<TemperatureSummary | null> {
     const readings = await this.readingRepository.findByBatchId(batchId);
     return calculateTemperatureStats(readings);
   }
@@ -223,7 +245,10 @@ export class TemperatureMonitoringService {
    * Get temperature readings for a batch
    * Uses database-level pagination for efficiency
    */
-  async getReadings(batchId: string, limit?: number): Promise<TemperatureReading[]> {
+  async getReadings(
+    batchId: string,
+    limit?: number,
+  ): Promise<TemperatureReading[]> {
     if (limit) {
       return this.readingRepository.findByBatchIdPaginated(batchId, { limit });
     }
@@ -243,12 +268,12 @@ export class TemperatureMonitoringService {
   async getChartData(
     batchId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<TemperatureChartData> {
     const readings = await this.readingRepository.findByBatchIdAndTimeRange(
       batchId,
       startTime,
-      endTime
+      endTime,
     );
 
     if (readings.length === 0) {
@@ -261,11 +286,11 @@ export class TemperatureMonitoringService {
       };
     }
 
-    const labels = readings.map(r => r.timestamp.toISOString());
-    const values = readings.map(r => r.value);
+    const labels = readings.map((r) => r.timestamp.toISOString());
+    const values = readings.map((r) => r.value);
     const outOfRangeIndices = readings
       .map((r, i) => (r.isOutOfRange ? i : -1))
-      .filter(i => i >= 0);
+      .filter((i) => i >= 0);
 
     return {
       labels,
@@ -304,7 +329,7 @@ export class TemperatureMonitoringService {
     }
 
     const summary = calculateTemperatureStats(readings);
-    const violations = readings.filter(r => r.isOutOfRange);
+    const violations = readings.filter((r) => r.isOutOfRange);
     const rapidChanges = detectRapidChange(readings);
 
     return {

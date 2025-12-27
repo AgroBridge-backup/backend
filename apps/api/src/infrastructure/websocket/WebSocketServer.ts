@@ -12,12 +12,12 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Server as HTTPServer } from 'http';
-import { Server, Socket } from 'socket.io';
-import jwt from 'jsonwebtoken';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import logger from '../../shared/utils/logger.js';
+import { Server as HTTPServer } from "http";
+import { Server, Socket } from "socket.io";
+import jwt from "jsonwebtoken";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // JWT PUBLIC KEY LOADING (Consistent with REST API auth.middleware.ts)
@@ -30,20 +30,20 @@ function getJwtPublicKey(): string {
     return JWT_PUBLIC_KEY;
   }
 
-  const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || './jwtRS256.key.pub';
+  const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || "./jwtRS256.key.pub";
   const resolvedPath = path.resolve(process.cwd(), publicKeyPath);
 
   try {
-    JWT_PUBLIC_KEY = fs.readFileSync(resolvedPath, 'utf-8');
-    logger.info('[WebSocket] JWT public key loaded successfully');
+    JWT_PUBLIC_KEY = fs.readFileSync(resolvedPath, "utf-8");
+    logger.info("[WebSocket] JWT public key loaded successfully");
     return JWT_PUBLIC_KEY;
   } catch (error) {
-    logger.error('[WebSocket] Failed to load JWT public key', {
+    logger.error("[WebSocket] Failed to load JWT public key", {
       path: resolvedPath,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
     });
     throw new Error(
-      `JWT public key not found at ${resolvedPath}. WebSocket authentication will not work.`
+      `JWT public key not found at ${resolvedPath}. WebSocket authentication will not work.`,
     );
   }
 }
@@ -62,7 +62,7 @@ export interface AuthenticatedSocket extends Socket {
  * Uses 'sub' for user ID per JWT standard (RFC 7519)
  */
 export interface JWTPayload {
-  sub: string;      // User ID (subject claim)
+  sub: string; // User ID (subject claim)
   role: string;
   email?: string;
   jti: string;
@@ -112,10 +112,10 @@ export class WebSocketServer {
 
   // Room prefixes
   private readonly ROOM_PREFIX = {
-    USER: 'user:',
-    BATCH: 'batch:',
-    PRODUCER: 'producer:',
-    ADMIN: 'admin',
+    USER: "user:",
+    BATCH: "batch:",
+    PRODUCER: "producer:",
+    ADMIN: "admin",
   };
 
   private constructor() {
@@ -137,30 +137,32 @@ export class WebSocketServer {
    */
   initialize(httpServer: HTTPServer): void {
     if (this.io) {
-      logger.warn('[WebSocket] Server already initialized');
+      logger.warn("[WebSocket] Server already initialized");
       return;
     }
 
-    const corsOrigin = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+    const corsOrigin = process.env.CORS_ORIGIN?.split(",") || [
+      "http://localhost:3000",
+    ];
 
     this.io = new Server(httpServer, {
       cors: {
         origin: corsOrigin,
-        methods: ['GET', 'POST'],
+        methods: ["GET", "POST"],
         credentials: true,
       },
       pingTimeout: 60000,
       pingInterval: 25000,
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
     });
 
     // Authentication middleware
     this.io.use(this.authMiddleware.bind(this));
 
     // Connection handler
-    this.io.on('connection', this.handleConnection.bind(this));
+    this.io.on("connection", this.handleConnection.bind(this));
 
-    logger.info('[WebSocket] Server initialized', {
+    logger.info("[WebSocket] Server initialized", {
       corsOrigin,
     });
   }
@@ -234,12 +236,14 @@ export class WebSocketServer {
     if (!this.io) return;
 
     // Emit to batch subscribers
-    this.io.to(`${this.ROOM_PREFIX.BATCH}${batchId}`).emit('batch:updated', data);
+    this.io
+      .to(`${this.ROOM_PREFIX.BATCH}${batchId}`)
+      .emit("batch:updated", data);
 
     // Also emit to admins
-    this.io.to(this.ROOM_PREFIX.ADMIN).emit('batch:updated', data);
+    this.io.to(this.ROOM_PREFIX.ADMIN).emit("batch:updated", data);
 
-    logger.debug('[WebSocket] Batch update emitted', {
+    logger.debug("[WebSocket] Batch update emitted", {
       batchId,
       status: data.status,
     });
@@ -252,12 +256,14 @@ export class WebSocketServer {
     if (!this.io) return;
 
     // Emit to batch subscribers
-    this.io.to(`${this.ROOM_PREFIX.BATCH}${data.batchId}`).emit('event:created', data);
+    this.io
+      .to(`${this.ROOM_PREFIX.BATCH}${data.batchId}`)
+      .emit("event:created", data);
 
     // Also emit to admins
-    this.io.to(this.ROOM_PREFIX.ADMIN).emit('event:created', data);
+    this.io.to(this.ROOM_PREFIX.ADMIN).emit("event:created", data);
 
-    logger.debug('[WebSocket] Event created emitted', {
+    logger.debug("[WebSocket] Event created emitted", {
       eventId: data.eventId,
       batchId: data.batchId,
     });
@@ -269,9 +275,11 @@ export class WebSocketServer {
   emitNotification(userId: string, notification: NotificationEvent): void {
     if (!this.io) return;
 
-    this.io.to(`${this.ROOM_PREFIX.USER}${userId}`).emit('notification', notification);
+    this.io
+      .to(`${this.ROOM_PREFIX.USER}${userId}`)
+      .emit("notification", notification);
 
-    logger.debug('[WebSocket] Notification emitted', {
+    logger.debug("[WebSocket] Notification emitted", {
       userId,
       type: notification.type,
     });
@@ -280,26 +288,36 @@ export class WebSocketServer {
   /**
    * Broadcast producer update
    */
-  emitProducerUpdate(producerId: string, data: { action: string; details: unknown }): void {
+  emitProducerUpdate(
+    producerId: string,
+    data: { action: string; details: unknown },
+  ): void {
     if (!this.io) return;
 
-    this.io.to(`${this.ROOM_PREFIX.PRODUCER}${producerId}`).emit('producer:updated', data);
-    this.io.to(this.ROOM_PREFIX.ADMIN).emit('producer:updated', { producerId, ...data });
+    this.io
+      .to(`${this.ROOM_PREFIX.PRODUCER}${producerId}`)
+      .emit("producer:updated", data);
+    this.io
+      .to(this.ROOM_PREFIX.ADMIN)
+      .emit("producer:updated", { producerId, ...data });
   }
 
   /**
    * Broadcast system announcement
    */
-  emitSystemAnnouncement(message: string, data?: Record<string, unknown>): void {
+  emitSystemAnnouncement(
+    message: string,
+    data?: Record<string, unknown>,
+  ): void {
     if (!this.io) return;
 
-    this.io.emit('system:announcement', {
+    this.io.emit("system:announcement", {
       message,
       data,
       timestamp: new Date(),
     });
 
-    logger.info('[WebSocket] System announcement broadcasted', { message });
+    logger.info("[WebSocket] System announcement broadcasted", { message });
   }
 
   /**
@@ -318,12 +336,17 @@ export class WebSocketServer {
    * Authentication middleware
    * Uses RS256 asymmetric verification (consistent with REST API)
    */
-  private authMiddleware(socket: AuthenticatedSocket, next: (err?: Error) => void): void {
-    const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
+  private authMiddleware(
+    socket: AuthenticatedSocket,
+    next: (err?: Error) => void,
+  ): void {
+    const token =
+      socket.handshake.auth?.token ||
+      socket.handshake.headers?.authorization?.replace("Bearer ", "");
 
     if (!token) {
       // Allow anonymous connections for public data
-      logger.debug('[WebSocket] Anonymous connection', { socketId: socket.id });
+      logger.debug("[WebSocket] Anonymous connection", { socketId: socket.id });
       return next();
     }
 
@@ -331,14 +354,14 @@ export class WebSocketServer {
       // Use RS256 with public key (same as REST API)
       const publicKey = getJwtPublicKey();
       const decoded = jwt.verify(token, publicKey, {
-        algorithms: ['RS256']
+        algorithms: ["RS256"],
       }) as JWTPayload;
 
       // Use 'sub' claim for user ID (JWT standard)
       socket.userId = decoded.sub;
       socket.userRole = decoded.role;
 
-      logger.debug('[WebSocket] Authenticated connection', {
+      logger.debug("[WebSocket] Authenticated connection", {
         socketId: socket.id,
         userId: decoded.sub,
         role: decoded.role,
@@ -346,18 +369,18 @@ export class WebSocketServer {
 
       next();
     } catch (error) {
-      logger.warn('[WebSocket] Authentication failed', {
+      logger.warn("[WebSocket] Authentication failed", {
         socketId: socket.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Reject invalid tokens instead of allowing unauthenticated access
       // This prevents attackers from using invalid tokens to bypass authentication
       if (error instanceof jwt.TokenExpiredError) {
-        return next(new Error('Token expired'));
+        return next(new Error("Token expired"));
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        return next(new Error('Invalid token'));
+        return next(new Error("Invalid token"));
       }
 
       // For unknown errors, allow connection as anonymous
@@ -371,10 +394,10 @@ export class WebSocketServer {
   private handleConnection(socket: AuthenticatedSocket): void {
     this.connectionCount++;
 
-    logger.info('[WebSocket] Client connected', {
+    logger.info("[WebSocket] Client connected", {
       socketId: socket.id,
-      userId: socket.userId || 'anonymous',
-      role: socket.userRole || 'none',
+      userId: socket.userId || "anonymous",
+      role: socket.userRole || "none",
       transport: socket.conn.transport.name,
     });
 
@@ -383,87 +406,87 @@ export class WebSocketServer {
       socket.join(`${this.ROOM_PREFIX.USER}${socket.userId}`);
 
       // Join admin room if admin
-      if (socket.userRole === 'ADMIN') {
+      if (socket.userRole === "ADMIN") {
         socket.join(this.ROOM_PREFIX.ADMIN);
       }
     }
 
     // Subscribe to batch updates
-    socket.on('subscribe:batch', (batchId: string) => {
+    socket.on("subscribe:batch", (batchId: string) => {
       const room = `${this.ROOM_PREFIX.BATCH}${batchId}`;
       socket.join(room);
-      logger.debug('[WebSocket] Subscribed to batch', {
+      logger.debug("[WebSocket] Subscribed to batch", {
         socketId: socket.id,
         batchId,
       });
-      socket.emit('subscribed', { room, batchId });
+      socket.emit("subscribed", { room, batchId });
     });
 
     // Unsubscribe from batch updates
-    socket.on('unsubscribe:batch', (batchId: string) => {
+    socket.on("unsubscribe:batch", (batchId: string) => {
       const room = `${this.ROOM_PREFIX.BATCH}${batchId}`;
       socket.leave(room);
-      logger.debug('[WebSocket] Unsubscribed from batch', {
+      logger.debug("[WebSocket] Unsubscribed from batch", {
         socketId: socket.id,
         batchId,
       });
     });
 
     // Subscribe to producer updates
-    socket.on('subscribe:producer', (producerId: string) => {
+    socket.on("subscribe:producer", (producerId: string) => {
       // Only allow authenticated users to subscribe to producer updates
       if (!socket.userId) {
-        socket.emit('error', { message: 'Authentication required' });
+        socket.emit("error", { message: "Authentication required" });
         return;
       }
 
       const room = `${this.ROOM_PREFIX.PRODUCER}${producerId}`;
       socket.join(room);
-      logger.debug('[WebSocket] Subscribed to producer', {
+      logger.debug("[WebSocket] Subscribed to producer", {
         socketId: socket.id,
         producerId,
       });
-      socket.emit('subscribed', { room, producerId });
+      socket.emit("subscribed", { room, producerId });
     });
 
     // Unsubscribe from producer updates
-    socket.on('unsubscribe:producer', (producerId: string) => {
+    socket.on("unsubscribe:producer", (producerId: string) => {
       const room = `${this.ROOM_PREFIX.PRODUCER}${producerId}`;
       socket.leave(room);
     });
 
     // Mark notification as read
-    socket.on('notification:read', (notificationId: string) => {
+    socket.on("notification:read", (notificationId: string) => {
       if (!socket.userId) return;
 
-      logger.debug('[WebSocket] Notification marked as read', {
+      logger.debug("[WebSocket] Notification marked as read", {
         userId: socket.userId,
         notificationId,
       });
 
       // Could emit event to update unread count
-      socket.emit('notification:readConfirmed', { notificationId });
+      socket.emit("notification:readConfirmed", { notificationId });
     });
 
     // Ping/pong for connection health
-    socket.on('ping', () => {
-      socket.emit('pong', { timestamp: Date.now() });
+    socket.on("ping", () => {
+      socket.emit("pong", { timestamp: Date.now() });
     });
 
     // Handle disconnect
-    socket.on('disconnect', (reason) => {
+    socket.on("disconnect", (reason) => {
       this.connectionCount--;
 
-      logger.info('[WebSocket] Client disconnected', {
+      logger.info("[WebSocket] Client disconnected", {
         socketId: socket.id,
-        userId: socket.userId || 'anonymous',
+        userId: socket.userId || "anonymous",
         reason,
       });
     });
 
     // Handle errors
-    socket.on('error', (error) => {
-      logger.error('[WebSocket] Socket error', {
+    socket.on("error", (error) => {
+      logger.error("[WebSocket] Socket error", {
         socketId: socket.id,
         error: error.message,
       });
@@ -476,7 +499,7 @@ export class WebSocketServer {
   async shutdown(): Promise<void> {
     if (!this.io) return;
 
-    logger.info('[WebSocket] Shutting down...');
+    logger.info("[WebSocket] Shutting down...");
 
     // Disconnect all clients
     const sockets = await this.io.fetchSockets();
@@ -486,7 +509,7 @@ export class WebSocketServer {
 
     return new Promise((resolve) => {
       this.io!.close(() => {
-        logger.info('[WebSocket] Server closed');
+        logger.info("[WebSocket] Server closed");
         this.io = null;
         resolve();
       });

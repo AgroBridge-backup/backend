@@ -5,4 +5,4 @@
  * @author AgroBridge Engineering Team
  */
 
-export { typeDefs } from './typeDefs.js';
+export { typeDefs } from "./typeDefs.js";

@@ -4,15 +4,15 @@
  * Revenue-critical: $5-20/certificate
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaOrganicCertificateRepository } from '../../infrastructure/database/prisma/repositories/PrismaOrganicCertificateRepository.js';
-import { PrismaOrganicFieldRepository } from '../../infrastructure/database/prisma/repositories/PrismaOrganicFieldRepository.js';
-import { PrismaFieldInspectionRepository } from '../../infrastructure/database/prisma/repositories/PrismaFieldInspectionRepository.js';
-import { OrganicCertificateService } from '../../domain/services/OrganicCertificateService.js';
-import { PdfGenerator } from '../../infrastructure/pdf/PdfGenerator.js';
-import { createIpfsService } from '../../infrastructure/ipfs/IPFSService.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaOrganicCertificateRepository } from "../../infrastructure/database/prisma/repositories/PrismaOrganicCertificateRepository.js";
+import { PrismaOrganicFieldRepository } from "../../infrastructure/database/prisma/repositories/PrismaOrganicFieldRepository.js";
+import { PrismaFieldInspectionRepository } from "../../infrastructure/database/prisma/repositories/PrismaFieldInspectionRepository.js";
+import { OrganicCertificateService } from "../../domain/services/OrganicCertificateService.js";
+import { PdfGenerator } from "../../infrastructure/pdf/PdfGenerator.js";
+import { createIpfsService } from "../../infrastructure/ipfs/IPFSService.js";
 import {
   CreateCertificateUseCase,
   GetCertificateUseCase,
@@ -21,29 +21,31 @@ import {
   RejectCertificateUseCase,
   RevokeCertificateUseCase,
   DownloadCertificatePdfUseCase,
-} from '../../application/use-cases/organic-certificates/index.js';
+} from "../../application/use-cases/organic-certificates/index.js";
 import {
   OrganicCertificateStatus,
   CropType,
   CertificationStandard,
-} from '../../domain/entities/OrganicCertificate.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../domain/entities/OrganicCertificate.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const createCertificateSchema = z.object({
   fieldIds: z.array(z.string().uuid()).min(1).max(10),
   cropType: z.nativeEnum(CropType).or(z.string()),
   harvestDate: z.string().datetime().optional(),
-  certificationStandard: z.enum(['ORGANIC_USDA', 'ORGANIC_EU', 'SENASICA']),
+  certificationStandard: z.enum(["ORGANIC_USDA", "ORGANIC_EU", "SENASICA"]),
   notes: z.string().max(1000).optional(),
 });
 
 const listCertificatesSchema = z.object({
   status: z.nativeEnum(OrganicCertificateStatus).optional(),
   cropType: z.nativeEnum(CropType).or(z.string()).optional(),
-  certificationStandard: z.enum(['ORGANIC_USDA', 'ORGANIC_EU', 'SENASICA']).optional(),
+  certificationStandard: z
+    .enum(["ORGANIC_USDA", "ORGANIC_EU", "SENASICA"])
+    .optional(),
   fromDate: z.string().datetime().optional(),
   toDate: z.string().datetime().optional(),
   limit: z.coerce.number().int().positive().max(100).default(50),
@@ -71,9 +73,10 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
 
   // Initialize services
   const pdfGenerator = new PdfGenerator({
-    companyName: 'AgroBridge',
-    companyWebsite: 'https://agrobridge.io',
-    verificationBaseUrl: process.env.VERIFICATION_BASE_URL || 'https://verify.agrobridge.io',
+    companyName: "AgroBridge",
+    companyWebsite: "https://agrobridge.io",
+    verificationBaseUrl:
+      process.env.VERIFICATION_BASE_URL || "https://verify.agrobridge.io",
   });
 
   const ipfsService = createIpfsService();
@@ -89,13 +92,25 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
   });
 
   // Initialize use cases
-  const createCertificateUseCase = new CreateCertificateUseCase(certificateService);
+  const createCertificateUseCase = new CreateCertificateUseCase(
+    certificateService,
+  );
   const getCertificateUseCase = new GetCertificateUseCase(certificateService);
-  const listCertificatesUseCase = new ListCertificatesUseCase(certificateService);
-  const approveCertificateUseCase = new ApproveCertificateUseCase(certificateService);
-  const rejectCertificateUseCase = new RejectCertificateUseCase(certificateService);
-  const revokeCertificateUseCase = new RevokeCertificateUseCase(certificateService);
-  const downloadPdfUseCase = new DownloadCertificatePdfUseCase(certificateService);
+  const listCertificatesUseCase = new ListCertificatesUseCase(
+    certificateService,
+  );
+  const approveCertificateUseCase = new ApproveCertificateUseCase(
+    certificateService,
+  );
+  const rejectCertificateUseCase = new RejectCertificateUseCase(
+    certificateService,
+  );
+  const revokeCertificateUseCase = new RevokeCertificateUseCase(
+    certificateService,
+  );
+  const downloadPdfUseCase = new DownloadCertificatePdfUseCase(
+    certificateService,
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // FARMER ROUTES (Certificate Generation)
@@ -107,8 +122,8 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Farmer JWT
    */
   router.post(
-    '/generate',
-    authenticate(['PRODUCER', 'ADMIN']),
+    "/generate",
+    authenticate(["PRODUCER", "ADMIN"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -116,7 +131,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!farmerId) {
           return res.status(401).json({
             success: false,
-            error: 'Farmer ID not found in token',
+            error: "Farmer ID not found in token",
           });
         }
 
@@ -124,7 +139,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -137,7 +152,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
             : undefined,
         });
 
-        logger.info('Certificate generation initiated via API', {
+        logger.info("Certificate generation initiated via API", {
           certificateId: result.certificate.id,
           certificateNumber: result.certificate.certificateNumber,
           farmerId,
@@ -155,7 +170,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -164,20 +179,20 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Farmer JWT
    */
   router.get(
-    '/',
-    authenticate(['PRODUCER', 'ADMIN', 'EXPORT_COMPANY_ADMIN']),
+    "/",
+    authenticate(["PRODUCER", "ADMIN", "EXPORT_COMPANY_ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const farmerId = req.user?.producerId;
         const exportCompanyId = req.user?.exportCompanyAdminId;
-        const isAdmin = req.user?.role === 'ADMIN';
+        const isAdmin = req.user?.role === "ADMIN";
 
         const validation = listCertificatesSchema.safeParse(req.query);
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -206,7 +221,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -215,13 +230,13 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Farmer JWT (own certificates) or Export Company Admin
    */
   router.get(
-    '/:id',
-    authenticate(['PRODUCER', 'ADMIN', 'EXPORT_COMPANY_ADMIN']),
+    "/:id",
+    authenticate(["PRODUCER", "ADMIN", "EXPORT_COMPANY_ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
-        const includeDetails = req.query.details === 'true';
+        const includeDetails = req.query.details === "true";
 
         const result = await getCertificateUseCase.execute({
           certificateId: id,
@@ -235,7 +250,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -244,8 +259,8 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Farmer JWT or Export Company Admin
    */
   router.get(
-    '/:id/download-pdf',
-    authenticate(['PRODUCER', 'ADMIN', 'EXPORT_COMPANY_ADMIN']),
+    "/:id/download-pdf",
+    authenticate(["PRODUCER", "ADMIN", "EXPORT_COMPANY_ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -258,7 +273,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -271,8 +286,8 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Export Company Admin JWT
    */
   router.get(
-    '/pending-review',
-    authenticate(['EXPORT_COMPANY_ADMIN', 'ADMIN']),
+    "/pending-review",
+    authenticate(["EXPORT_COMPANY_ADMIN", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -280,7 +295,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!exportCompanyId) {
           return res.status(403).json({
             success: false,
-            error: 'Export company admin access required',
+            error: "Export company admin access required",
           });
         }
 
@@ -299,7 +314,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -308,8 +323,8 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Export Company Admin JWT
    */
   router.post(
-    '/:id/approve',
-    authenticate(['EXPORT_COMPANY_ADMIN', 'ADMIN']),
+    "/:id/approve",
+    authenticate(["EXPORT_COMPANY_ADMIN", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -318,7 +333,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!reviewerId) {
           return res.status(401).json({
             success: false,
-            error: 'Reviewer ID not found in token',
+            error: "Reviewer ID not found in token",
           });
         }
 
@@ -327,7 +342,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
           reviewerId,
         });
 
-        logger.info('Certificate approved via API', {
+        logger.info("Certificate approved via API", {
           certificateId: id,
           certificateNumber: result.certificate.certificateNumber,
           reviewerId,
@@ -341,7 +356,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -350,8 +365,8 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Export Company Admin JWT
    */
   router.post(
-    '/:id/reject',
-    authenticate(['EXPORT_COMPANY_ADMIN', 'ADMIN']),
+    "/:id/reject",
+    authenticate(["EXPORT_COMPANY_ADMIN", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -360,7 +375,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!reviewerId) {
           return res.status(401).json({
             success: false,
-            error: 'Reviewer ID not found in token',
+            error: "Reviewer ID not found in token",
           });
         }
 
@@ -368,7 +383,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -379,7 +394,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
           reason: validation.data.reason,
         });
 
-        logger.info('Certificate rejected via API', {
+        logger.info("Certificate rejected via API", {
           certificateId: id,
           certificateNumber: result.certificate.certificateNumber,
           reviewerId,
@@ -394,7 +409,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -403,8 +418,8 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
    * Auth: Export Company Admin JWT
    */
   router.post(
-    '/:id/revoke',
-    authenticate(['EXPORT_COMPANY_ADMIN', 'ADMIN']),
+    "/:id/revoke",
+    authenticate(["EXPORT_COMPANY_ADMIN", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -414,7 +429,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -424,7 +439,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
           reason: validation.data.reason,
         });
 
-        logger.warn('Certificate revoked via API', {
+        logger.warn("Certificate revoked via API", {
           certificateId: id,
           certificateNumber: result.certificate.certificateNumber,
           reason: validation.data.reason,
@@ -438,7 +453,7 @@ export function createOrganicCertificatesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

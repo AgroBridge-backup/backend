@@ -7,11 +7,11 @@
  * @module ColdChainService
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
-import { addMinutes, differenceInMinutes } from 'date-fns';
-import { AppError } from '../../shared/errors/AppError.js';
-import logger from '../../shared/utils/logger.js';
+import { PrismaClient, Prisma } from "@prisma/client";
+import { v4 as uuidv4 } from "uuid";
+import { addMinutes, differenceInMinutes } from "date-fns";
+import { AppError } from "../../shared/errors/AppError.js";
+import logger from "../../shared/utils/logger.js";
 import {
   CropType,
   SessionType,
@@ -28,7 +28,7 @@ import {
   calculateBreachSeverity,
   isTemperatureCompliant,
   isHumidityCompliant,
-} from '../entities/SmartColdChain.js';
+} from "../entities/SmartColdChain.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -103,7 +103,10 @@ export class ColdChainService {
     });
 
     if (existing) {
-      throw new AppError(`Sensor with device ID ${input.deviceId} already exists`, 409);
+      throw new AppError(
+        `Sensor with device ID ${input.deviceId} already exists`,
+        409,
+      );
     }
 
     // Verify export company exists
@@ -112,7 +115,7 @@ export class ColdChainService {
     });
 
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     const sensor = await this.prisma.ioTSensor.create({
@@ -123,11 +126,11 @@ export class ColdChainService {
         name: input.name,
         manufacturer: input.manufacturer,
         firmwareVersion: input.firmwareVersion,
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
     });
 
-    logger.info('[ColdChain] Sensor registered', {
+    logger.info("[ColdChain] Sensor registered", {
       sensorId: sensor.id,
       deviceId: sensor.deviceId,
       companyId: input.exportCompanyId,
@@ -150,7 +153,7 @@ export class ColdChainService {
     });
 
     if (!sensor) {
-      throw new AppError('Sensor not found', 404);
+      throw new AppError("Sensor not found", 404);
     }
 
     return sensor;
@@ -159,12 +162,15 @@ export class ColdChainService {
   /**
    * List sensors for an export company
    */
-  async listSensors(exportCompanyId: string, options?: {
-    status?: string;
-    assignedType?: string;
-    limit?: number;
-    offset?: number;
-  }) {
+  async listSensors(
+    exportCompanyId: string,
+    options?: {
+      status?: string;
+      assignedType?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ) {
     const where: Prisma.IoTSensorWhereInput = { exportCompanyId };
 
     if (options?.status) {
@@ -179,7 +185,7 @@ export class ColdChainService {
         where,
         take: options?.limit || 50,
         skip: options?.offset || 0,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.ioTSensor.count({ where }),
     ]);
@@ -190,7 +196,11 @@ export class ColdChainService {
   /**
    * Assign sensor to a field, batch, or shipment
    */
-  async assignSensor(sensorId: string, assignedTo: string, assignedType: 'FIELD' | 'BATCH' | 'SHIPMENT' | 'STORAGE') {
+  async assignSensor(
+    sensorId: string,
+    assignedTo: string,
+    assignedType: "FIELD" | "BATCH" | "SHIPMENT" | "STORAGE",
+  ) {
     const sensor = await this.prisma.ioTSensor.update({
       where: { id: sensorId },
       data: {
@@ -199,7 +209,7 @@ export class ColdChainService {
       },
     });
 
-    logger.info('[ColdChain] Sensor assigned', {
+    logger.info("[ColdChain] Sensor assigned", {
       sensorId,
       assignedTo,
       assignedType,
@@ -242,7 +252,10 @@ export class ColdChainService {
     });
 
     if (sensors.length !== input.sensorIds.length) {
-      throw new AppError('One or more sensors not found or not owned by company', 400);
+      throw new AppError(
+        "One or more sensors not found or not owned by company",
+        400,
+      );
     }
 
     // Create session
@@ -259,9 +272,9 @@ export class ColdChainService {
         maxTemperature: thresholds.maxTemp,
         targetHumidity: thresholds.targetHumidity,
         startTime: new Date(),
-        status: 'ACTIVE',
+        status: "ACTIVE",
         sensors: {
-          connect: input.sensorIds.map(id => ({ id })),
+          connect: input.sensorIds.map((id) => ({ id })),
         },
       },
       include: {
@@ -269,7 +282,7 @@ export class ColdChainService {
       },
     });
 
-    logger.info('[ColdChain] Session started', {
+    logger.info("[ColdChain] Session started", {
       sessionId: session.id,
       sessionType: input.sessionType,
       cropType: input.cropType,
@@ -288,11 +301,11 @@ export class ColdChainService {
       include: {
         sensors: true,
         breaches: {
-          orderBy: { startTime: 'desc' },
+          orderBy: { startTime: "desc" },
           take: 10,
         },
         alerts: {
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           take: 10,
         },
         _count: {
@@ -302,7 +315,7 @@ export class ColdChainService {
     });
 
     if (!session) {
-      throw new AppError('Session not found', 404);
+      throw new AppError("Session not found", 404);
     }
 
     return session;
@@ -311,13 +324,16 @@ export class ColdChainService {
   /**
    * List sessions for an export company
    */
-  async listSessions(exportCompanyId: string, options?: {
-    status?: string;
-    sessionType?: string;
-    cropType?: string;
-    limit?: number;
-    offset?: number;
-  }) {
+  async listSessions(
+    exportCompanyId: string,
+    options?: {
+      status?: string;
+      sessionType?: string;
+      cropType?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ) {
     const where: Prisma.ColdChainSessionWhereInput = { exportCompanyId };
 
     if (options?.status) {
@@ -335,7 +351,7 @@ export class ColdChainService {
         where,
         take: options?.limit || 20,
         skip: options?.offset || 0,
-        orderBy: { startTime: 'desc' },
+        orderBy: { startTime: "desc" },
         include: {
           sensors: { select: { id: true, deviceId: true, name: true } },
           _count: { select: { readings: true, breaches: true } },
@@ -356,11 +372,11 @@ export class ColdChainService {
     });
 
     if (!session) {
-      throw new AppError('Session not found', 404);
+      throw new AppError("Session not found", 404);
     }
 
-    if (session.status !== 'ACTIVE') {
-      throw new AppError('Session is not active', 400);
+    if (session.status !== "ACTIVE") {
+      throw new AppError("Session is not active", 400);
     }
 
     const durationMinutes = differenceInMinutes(new Date(), session.startTime);
@@ -402,7 +418,7 @@ export class ColdChainService {
       },
     });
 
-    logger.info('[ColdChain] Session ended', {
+    logger.info("[ColdChain] Session ended", {
       sessionId,
       durationMinutes,
       finalStatus,
@@ -424,7 +440,7 @@ export class ColdChainService {
     });
 
     if (!sensor) {
-      throw new AppError('Sensor not found', 404);
+      throw new AppError("Sensor not found", 404);
     }
 
     // Get session if provided
@@ -435,25 +451,33 @@ export class ColdChainService {
       });
 
       if (!session) {
-        throw new AppError('Session not found', 404);
+        throw new AppError("Session not found", 404);
       }
 
-      if (session.status !== 'ACTIVE') {
-        throw new AppError('Session is not active', 400);
+      if (session.status !== "ACTIVE") {
+        throw new AppError("Session is not active", 400);
       }
     }
 
     // Check compliance
-    const cropType = session?.cropType as CropType || CropType.AVOCADO;
-    const temperatureInRange = isTemperatureCompliant(cropType, input.temperature);
-    const humidityInRange = input.humidity !== undefined
-      ? isHumidityCompliant(cropType, input.humidity)
-      : true;
+    const cropType = (session?.cropType as CropType) || CropType.AVOCADO;
+    const temperatureInRange = isTemperatureCompliant(
+      cropType,
+      input.temperature,
+    );
+    const humidityInRange =
+      input.humidity !== undefined
+        ? isHumidityCompliant(cropType, input.humidity)
+        : true;
 
     // Calculate quality grade if Brix available
     let qualityGrade: QualityGradeType | null = null;
     if (input.brixLevel !== undefined) {
-      qualityGrade = calculateQualityGrade(cropType, input.brixLevel, input.phLevel);
+      qualityGrade = calculateQualityGrade(
+        cropType,
+        input.brixLevel,
+        input.phLevel,
+      );
     }
 
     // Create reading
@@ -485,7 +509,10 @@ export class ColdChainService {
       data: {
         lastReadingAt: new Date(),
         batteryLevel: input.batteryLevel,
-        status: input.batteryLevel !== undefined && input.batteryLevel < 20 ? 'LOW_BATTERY' : 'ACTIVE',
+        status:
+          input.batteryLevel !== undefined && input.batteryLevel < 20
+            ? "LOW_BATTERY"
+            : "ACTIVE",
       },
     });
 
@@ -505,10 +532,17 @@ export class ColdChainService {
     }
 
     // Check for low battery alert
-    if (session && input.batteryLevel !== undefined && input.batteryLevel < 20) {
+    if (
+      session &&
+      input.batteryLevel !== undefined &&
+      input.batteryLevel < 20
+    ) {
       await this.createAlert(session.id, input.sensorId, {
         alertType: AlertType.BATTERY_LOW,
-        severity: input.batteryLevel < 10 ? AlertSeverity.CRITICAL : AlertSeverity.WARNING,
+        severity:
+          input.batteryLevel < 10
+            ? AlertSeverity.CRITICAL
+            : AlertSeverity.WARNING,
         currentValue: input.batteryLevel,
         threshold: 20,
         message: `Batería baja (${input.batteryLevel}%) en sensor`,
@@ -532,12 +566,15 @@ export class ColdChainService {
   /**
    * Get readings for a session
    */
-  async getSessionReadings(sessionId: string, options?: {
-    limit?: number;
-    offset?: number;
-    startTime?: Date;
-    endTime?: Date;
-  }) {
+  async getSessionReadings(
+    sessionId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      startTime?: Date;
+      endTime?: Date;
+    },
+  ) {
     const where: Prisma.ColdChainReadingWhereInput = { sessionId };
 
     if (options?.startTime || options?.endTime) {
@@ -555,7 +592,7 @@ export class ColdChainService {
         where,
         take: options?.limit || 100,
         skip: options?.offset || 0,
-        orderBy: { readingTime: 'desc' },
+        orderBy: { readingTime: "desc" },
       }),
       this.prisma.coldChainReading.count({ where }),
     ]);
@@ -579,7 +616,7 @@ export class ColdChainService {
       temperatureInRange: boolean;
       humidityInRange: boolean;
       thresholds: { minTemp: number; maxTemp: number; targetHumidity: number };
-    }
+    },
   ): Promise<void> {
     // Check for ongoing breach
     const ongoingBreach = await this.prisma.coldChainBreach.findFirst({
@@ -587,7 +624,7 @@ export class ColdChainService {
         sessionId,
         endTime: null,
       },
-      orderBy: { startTime: 'desc' },
+      orderBy: { startTime: "desc" },
     });
 
     let breachType: BreachType;
@@ -619,7 +656,10 @@ export class ColdChainService {
 
     if (ongoingBreach) {
       // Update existing breach
-      const durationMinutes = differenceInMinutes(new Date(), ongoingBreach.startTime);
+      const durationMinutes = differenceInMinutes(
+        new Date(),
+        ongoingBreach.startTime,
+      );
       const severity = calculateBreachSeverity(deviation, durationMinutes);
 
       await this.prisma.coldChainBreach.update({
@@ -650,13 +690,24 @@ export class ColdChainService {
 
       // Create alert for new breach
       await this.createAlert(sessionId, sensorId, {
-        alertType: breachType.includes('TEMP') ? AlertType.TEMPERATURE_BREACH : AlertType.HUMIDITY_BREACH,
-        severity: severity === BreachSeverity.CRITICAL ? AlertSeverity.CRITICAL : AlertSeverity.WARNING,
+        alertType: breachType.includes("TEMP")
+          ? AlertType.TEMPERATURE_BREACH
+          : AlertType.HUMIDITY_BREACH,
+        severity:
+          severity === BreachSeverity.CRITICAL
+            ? AlertSeverity.CRITICAL
+            : AlertSeverity.WARNING,
         currentValue: peakValue,
         threshold,
-        message: `${breachType === BreachType.OVER_TEMP ? 'Temperatura alta' :
-                  breachType === BreachType.UNDER_TEMP ? 'Temperatura baja' :
-                  breachType === BreachType.HUMIDITY_HIGH ? 'Humedad alta' : 'Humedad baja'}: ${peakValue.toFixed(1)} (límite: ${threshold})`,
+        message: `${
+          breachType === BreachType.OVER_TEMP
+            ? "Temperatura alta"
+            : breachType === BreachType.UNDER_TEMP
+              ? "Temperatura baja"
+              : breachType === BreachType.HUMIDITY_HIGH
+                ? "Humedad alta"
+                : "Humedad baja"
+        }: ${peakValue.toFixed(1)} (límite: ${threshold})`,
       });
 
       // Update session breach count
@@ -667,7 +718,7 @@ export class ColdChainService {
         },
       });
 
-      logger.warn('[ColdChain] Breach detected', {
+      logger.warn("[ColdChain] Breach detected", {
         sessionId,
         sensorId,
         breachType,
@@ -690,7 +741,7 @@ export class ColdChainService {
       currentValue: number;
       threshold: number;
       message: string;
-    }
+    },
   ): Promise<void> {
     // Check for duplicate recent alert (within 5 minutes)
     const recentAlert = await this.prisma.coldChainAlert.findFirst({
@@ -715,12 +766,12 @@ export class ColdChainService {
         currentValue: data.currentValue,
         threshold: data.threshold,
         message: data.message,
-        messageLang: 'es',
+        messageLang: "es",
         sent: false,
       },
     });
 
-    logger.info('[ColdChain] Alert created', {
+    logger.info("[ColdChain] Alert created", {
       sessionId,
       sensorId,
       alertType: data.alertType,
@@ -758,43 +809,55 @@ export class ColdChainService {
 
     // Calculate metrics
     const totalReadings = readings.length;
-    const compliantReadings = readings.filter(r => r.temperatureInRange && r.humidityInRange).length;
+    const compliantReadings = readings.filter(
+      (r) => r.temperatureInRange && r.humidityInRange,
+    ).length;
 
     // Get breach data
     const breaches = await this.prisma.coldChainBreach.findMany({
       where: { sessionId },
     });
 
-    const maxBreachDuration = breaches.reduce((max, b) => Math.max(max, b.durationMinutes), 0);
+    const maxBreachDuration = breaches.reduce(
+      (max, b) => Math.max(max, b.durationMinutes),
+      0,
+    );
     const complianceScore = calculateComplianceScore(
       totalReadings,
       compliantReadings,
       breaches.length,
-      maxBreachDuration
+      maxBreachDuration,
     );
 
     // Temperature stats
-    const temperatures = readings.map(r => Number(r.temperature));
-    const avgTemperature = temperatures.reduce((a, b) => a + b, 0) / temperatures.length;
+    const temperatures = readings.map((r) => Number(r.temperature));
+    const avgTemperature =
+      temperatures.reduce((a, b) => a + b, 0) / temperatures.length;
     const minTemperature = Math.min(...temperatures);
     const maxTemperature = Math.max(...temperatures);
 
     // Humidity stats
-    const humidityReadings = readings.filter(r => r.humidity !== null);
-    const avgHumidity = humidityReadings.length > 0
-      ? humidityReadings.reduce((sum, r) => sum + Number(r.humidity), 0) / humidityReadings.length
-      : null;
+    const humidityReadings = readings.filter((r) => r.humidity !== null);
+    const avgHumidity =
+      humidityReadings.length > 0
+        ? humidityReadings.reduce((sum, r) => sum + Number(r.humidity), 0) /
+          humidityReadings.length
+        : null;
 
     // Quality metrics
-    const brixReadings = readings.filter(r => r.brixLevel !== null);
-    const avgBrixLevel = brixReadings.length > 0
-      ? brixReadings.reduce((sum, r) => sum + Number(r.brixLevel), 0) / brixReadings.length
-      : null;
+    const brixReadings = readings.filter((r) => r.brixLevel !== null);
+    const avgBrixLevel =
+      brixReadings.length > 0
+        ? brixReadings.reduce((sum, r) => sum + Number(r.brixLevel), 0) /
+          brixReadings.length
+        : null;
 
-    const phReadings = readings.filter(r => r.phLevel !== null);
-    const avgPhLevel = phReadings.length > 0
-      ? phReadings.reduce((sum, r) => sum + Number(r.phLevel), 0) / phReadings.length
-      : null;
+    const phReadings = readings.filter((r) => r.phLevel !== null);
+    const avgPhLevel =
+      phReadings.length > 0
+        ? phReadings.reduce((sum, r) => sum + Number(r.phLevel), 0) /
+          phReadings.length
+        : null;
 
     // Get session for crop type
     const session = await this.prisma.coldChainSession.findUnique({
@@ -806,7 +869,7 @@ export class ColdChainService {
       qualityGrade = calculateQualityGrade(
         session.cropType as CropType,
         avgBrixLevel,
-        avgPhLevel
+        avgPhLevel,
       );
     }
 
@@ -825,9 +888,14 @@ export class ColdChainService {
         avgPhLevel,
         qualityGrade: qualityGrade as any,
         breachDurationMinutes: maxBreachDuration > 0 ? maxBreachDuration : null,
-        maxTemperatureBreach: breaches.length > 0
-          ? Math.max(...breaches.map(b => Math.abs(Number(b.peakValue) - Number(b.threshold))))
-          : null,
+        maxTemperatureBreach:
+          breaches.length > 0
+            ? Math.max(
+                ...breaches.map((b) =>
+                  Math.abs(Number(b.peakValue) - Number(b.threshold)),
+                ),
+              )
+            : null,
       },
     });
 
@@ -862,12 +930,12 @@ export class ColdChainService {
       avgComplianceScore,
     ] = await Promise.all([
       this.prisma.coldChainSession.count({
-        where: { exportCompanyId, status: 'ACTIVE' },
+        where: { exportCompanyId, status: "ACTIVE" },
       }),
       this.prisma.coldChainSession.count({
         where: {
           exportCompanyId,
-          status: 'COMPLETED',
+          status: "COMPLETED",
           endTime: { gte: startOfMonth },
         },
       }),
@@ -875,7 +943,7 @@ export class ColdChainService {
         where: { exportCompanyId },
       }),
       this.prisma.ioTSensor.count({
-        where: { exportCompanyId, status: 'ACTIVE' },
+        where: { exportCompanyId, status: "ACTIVE" },
       }),
       this.prisma.coldChainBreach.count({
         where: {
@@ -886,7 +954,7 @@ export class ColdChainService {
       this.prisma.coldChainSession.aggregate({
         where: {
           exportCompanyId,
-          status: 'COMPLETED',
+          status: "COMPLETED",
           endTime: { gte: startOfMonth },
         },
         _avg: { complianceScore: true },
@@ -914,32 +982,35 @@ export class ColdChainService {
       where: { id: sessionId },
       include: {
         sensors: true,
-        breaches: { orderBy: { startTime: 'asc' } },
-        alerts: { orderBy: { timestamp: 'asc' } },
+        breaches: { orderBy: { startTime: "asc" } },
+        alerts: { orderBy: { timestamp: "asc" } },
         exportCompany: { select: { name: true } },
       },
     });
 
     if (!session) {
-      throw new AppError('Session not found', 404);
+      throw new AppError("Session not found", 404);
     }
 
     // Get readings summary by hour
     const readings = await this.prisma.coldChainReading.findMany({
       where: { sessionId },
-      orderBy: { readingTime: 'asc' },
+      orderBy: { readingTime: "asc" },
     });
 
     // Group readings by hour for chart data
-    const hourlyData: Record<string, {
-      hour: string;
-      avgTemp: number;
-      minTemp: number;
-      maxTemp: number;
-      readings: number;
-    }> = {};
+    const hourlyData: Record<
+      string,
+      {
+        hour: string;
+        avgTemp: number;
+        minTemp: number;
+        maxTemp: number;
+        readings: number;
+      }
+    > = {};
 
-    readings.forEach(r => {
+    readings.forEach((r) => {
       const hour = new Date(r.readingTime).toISOString().slice(0, 13);
       if (!hourlyData[hour]) {
         hourlyData[hour] = {
@@ -951,13 +1022,19 @@ export class ColdChainService {
         };
       }
       hourlyData[hour].avgTemp += Number(r.temperature);
-      hourlyData[hour].minTemp = Math.min(hourlyData[hour].minTemp, Number(r.temperature));
-      hourlyData[hour].maxTemp = Math.max(hourlyData[hour].maxTemp, Number(r.temperature));
+      hourlyData[hour].minTemp = Math.min(
+        hourlyData[hour].minTemp,
+        Number(r.temperature),
+      );
+      hourlyData[hour].maxTemp = Math.max(
+        hourlyData[hour].maxTemp,
+        Number(r.temperature),
+      );
       hourlyData[hour].readings++;
     });
 
     // Calculate averages
-    Object.values(hourlyData).forEach(h => {
+    Object.values(hourlyData).forEach((h) => {
       h.avgTemp = h.avgTemp / h.readings;
     });
 
@@ -982,11 +1059,19 @@ export class ColdChainService {
         totalReadings: session.totalReadings,
         compliantReadings: session.compliantReadings,
         breachCount: session.breachCount,
-        avgTemperature: session.avgTemperature ? Number(session.avgTemperature) : null,
-        minTemperature: session.minTemperatureRecorded ? Number(session.minTemperatureRecorded) : null,
-        maxTemperature: session.maxTemperatureRecorded ? Number(session.maxTemperatureRecorded) : null,
+        avgTemperature: session.avgTemperature
+          ? Number(session.avgTemperature)
+          : null,
+        minTemperature: session.minTemperatureRecorded
+          ? Number(session.minTemperatureRecorded)
+          : null,
+        maxTemperature: session.maxTemperatureRecorded
+          ? Number(session.maxTemperatureRecorded)
+          : null,
         avgHumidity: session.avgHumidity ? Number(session.avgHumidity) : null,
-        avgBrixLevel: session.avgBrixLevel ? Number(session.avgBrixLevel) : null,
+        avgBrixLevel: session.avgBrixLevel
+          ? Number(session.avgBrixLevel)
+          : null,
         avgPhLevel: session.avgPhLevel ? Number(session.avgPhLevel) : null,
       },
       sensors: session.sensors,

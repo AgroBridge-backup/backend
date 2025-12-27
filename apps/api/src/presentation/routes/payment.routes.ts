@@ -23,21 +23,21 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response, raw } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
+import { Router, Request, Response, raw } from "express";
+import { PrismaClient } from "@prisma/client";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
 import {
   PaymentService,
   createPaymentService,
   PaymentServiceError,
-} from '../../infrastructure/payment/PaymentService.js';
+} from "../../infrastructure/payment/PaymentService.js";
 import {
   StripeWebhookHandler,
   createStripeWebhookHandler,
   WebhookHandlerError,
-} from '../../infrastructure/payment/webhooks/StripeWebhookHandler.js';
+} from "../../infrastructure/payment/webhooks/StripeWebhookHandler.js";
 import {
   createSubscriptionSchema,
   updateSubscriptionSchema,
@@ -50,8 +50,8 @@ import {
   getInvoicePdfSchema,
   createPortalSessionSchema,
   checkUsageSchema,
-} from '../validators/payment.validator.js';
-import logger from '../../shared/utils/logger.js';
+} from "../validators/payment.validator.js";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PAYMENT ROUTER FACTORY
@@ -72,16 +72,19 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Note: This endpoint uses raw body parser for signature verification
    */
   router.post(
-    '/webhook',
-    raw({ type: 'application/json' }),
+    "/webhook",
+    raw({ type: "application/json" }),
     async (req: Request, res: Response) => {
-      const signature = req.headers['stripe-signature'];
+      const signature = req.headers["stripe-signature"];
 
-      if (!signature || typeof signature !== 'string') {
-        logger.warn('[PaymentRoutes] Webhook missing signature');
+      if (!signature || typeof signature !== "string") {
+        logger.warn("[PaymentRoutes] Webhook missing signature");
         return res.status(400).json({
           success: false,
-          error: { code: 'MISSING_SIGNATURE', message: 'Missing Stripe signature' },
+          error: {
+            code: "MISSING_SIGNATURE",
+            message: "Missing Stripe signature",
+          },
         });
       }
 
@@ -93,7 +96,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         });
       } catch (error) {
         if (error instanceof WebhookHandlerError) {
-          logger.warn('[PaymentRoutes] Webhook error', {
+          logger.warn("[PaymentRoutes] Webhook error", {
             code: error.code,
             message: error.message,
           });
@@ -102,15 +105,18 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
             error: { code: error.code, message: error.message },
           });
         }
-        logger.error('[PaymentRoutes] Unexpected webhook error', {
-          error: error instanceof Error ? error.message : 'Unknown error',
+        logger.error("[PaymentRoutes] Unexpected webhook error", {
+          error: error instanceof Error ? error.message : "Unknown error",
         });
         res.status(500).json({
           success: false,
-          error: { code: 'WEBHOOK_ERROR', message: 'Webhook processing failed' },
+          error: {
+            code: "WEBHOOK_ERROR",
+            message: "Webhook processing failed",
+          },
         });
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -122,24 +128,30 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Get available subscription tiers and pricing
    * Public endpoint
    */
-  router.get('/tiers', RateLimiterConfig.api(), async (req: Request, res: Response) => {
-    const tiers = paymentService.getTierConfigs().map((tier) => ({
-      tier: tier.tier,
-      name: tier.name,
-      priceMonthly: tier.priceMonthly / 100, // Convert to dollars
-      priceYearly: tier.priceYearly / 100,
-      limits: {
-        batches: tier.batchesLimit === -1 ? 'unlimited' : tier.batchesLimit,
-        apiCalls: tier.apiCallsLimit === -1 ? 'unlimited' : tier.apiCallsLimit,
-        storageMb: tier.storageLimitMb === -1 ? 'unlimited' : tier.storageLimitMb,
-      },
-    }));
+  router.get(
+    "/tiers",
+    RateLimiterConfig.api(),
+    async (req: Request, res: Response) => {
+      const tiers = paymentService.getTierConfigs().map((tier) => ({
+        tier: tier.tier,
+        name: tier.name,
+        priceMonthly: tier.priceMonthly / 100, // Convert to dollars
+        priceYearly: tier.priceYearly / 100,
+        limits: {
+          batches: tier.batchesLimit === -1 ? "unlimited" : tier.batchesLimit,
+          apiCalls:
+            tier.apiCallsLimit === -1 ? "unlimited" : tier.apiCallsLimit,
+          storageMb:
+            tier.storageLimitMb === -1 ? "unlimited" : tier.storageLimitMb,
+        },
+      }));
 
-    res.json({
-      success: true,
-      data: { tiers },
-    });
-  });
+      res.json({
+        success: true,
+        data: { tiers },
+      });
+    },
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // SUBSCRIPTION ENDPOINTS
@@ -151,23 +163,25 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.get(
-    '/subscription',
+    "/subscription",
     authenticate(),
     async (req: Request, res: Response) => {
       try {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
-        const subscription = await paymentService.getSubscription(req.user.userId);
+        const subscription = await paymentService.getSubscription(
+          req.user.userId,
+        );
 
         if (!subscription) {
           return res.status(404).json({
             success: false,
-            error: { code: 'NOT_FOUND', message: 'No subscription found' },
+            error: { code: "NOT_FOUND", message: "No subscription found" },
           });
         }
 
@@ -178,7 +192,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -187,7 +201,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.post(
-    '/subscription',
+    "/subscription",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(createSubscriptionSchema),
@@ -196,7 +210,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -209,7 +223,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!user) {
           return res.status(404).json({
             success: false,
-            error: { code: 'USER_NOT_FOUND', message: 'User not found' },
+            error: { code: "USER_NOT_FOUND", message: "User not found" },
           });
         }
 
@@ -232,7 +246,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -241,7 +255,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.patch(
-    '/subscription',
+    "/subscription",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(updateSubscriptionSchema),
@@ -250,7 +264,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -270,7 +284,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -279,7 +293,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.delete(
-    '/subscription',
+    "/subscription",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(cancelSubscriptionSchema),
@@ -288,7 +302,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -296,20 +310,20 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
 
         const subscription = await paymentService.cancelSubscription(
           req.user.userId,
-          immediately
+          immediately,
         );
 
         res.json({
           success: true,
           data: subscription,
           message: immediately
-            ? 'Subscription canceled immediately'
-            : 'Subscription will be canceled at end of billing period',
+            ? "Subscription canceled immediately"
+            : "Subscription will be canceled at end of billing period",
         });
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -318,7 +332,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.post(
-    '/subscription/resume',
+    "/subscription/resume",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response) => {
@@ -326,21 +340,23 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
-        const subscription = await paymentService.resumeSubscription(req.user.userId);
+        const subscription = await paymentService.resumeSubscription(
+          req.user.userId,
+        );
 
         res.json({
           success: true,
           data: subscription,
-          message: 'Subscription resumed successfully',
+          message: "Subscription resumed successfully",
         });
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -353,18 +369,20 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.get(
-    '/methods',
+    "/methods",
     authenticate(),
     async (req: Request, res: Response) => {
       try {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
-        const methods = await paymentService.listPaymentMethods(req.user.userId);
+        const methods = await paymentService.listPaymentMethods(
+          req.user.userId,
+        );
 
         res.json({
           success: true,
@@ -373,7 +391,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -382,7 +400,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.post(
-    '/methods',
+    "/methods",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(addPaymentMethodSchema),
@@ -391,7 +409,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -400,7 +418,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         const method = await paymentService.addPaymentMethod(
           req.user.userId,
           paymentMethodId,
-          setAsDefault
+          setAsDefault,
         );
 
         res.status(201).json({
@@ -410,7 +428,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -419,7 +437,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.delete(
-    '/methods/:paymentMethodId',
+    "/methods/:paymentMethodId",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(removePaymentMethodSchema),
@@ -428,20 +446,20 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         await paymentService.removePaymentMethod(
           req.user.userId,
-          req.params.paymentMethodId
+          req.params.paymentMethodId,
         );
 
         res.status(204).send();
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -450,7 +468,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.post(
-    '/methods/default',
+    "/methods/default",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(setDefaultPaymentMethodSchema),
@@ -459,23 +477,23 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         await paymentService.setDefaultPaymentMethod(
           req.user.userId,
-          req.body.paymentMethodId
+          req.body.paymentMethodId,
         );
 
         res.json({
           success: true,
-          message: 'Default payment method updated',
+          message: "Default payment method updated",
         });
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -488,7 +506,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.post(
-    '/one-time',
+    "/one-time",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(createOneTimePaymentSchema),
@@ -497,11 +515,12 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
-        const { amount, currency, description, paymentMethodId, metadata } = req.body;
+        const { amount, currency, description, paymentMethodId, metadata } =
+          req.body;
 
         const payment = await paymentService.createOneTimePayment({
           userId: req.user.userId,
@@ -519,7 +538,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -532,7 +551,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.get(
-    '/invoices',
+    "/invoices",
     authenticate(),
     validateRequest(listInvoicesSchema),
     async (req: Request, res: Response) => {
@@ -540,12 +559,15 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         const limit = parseInt(req.query.limit as string, 10) || 10;
-        const invoices = await paymentService.listInvoices(req.user.userId, limit);
+        const invoices = await paymentService.listInvoices(
+          req.user.userId,
+          limit,
+        );
 
         res.json({
           success: true,
@@ -554,7 +576,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   /**
@@ -563,7 +585,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.get(
-    '/invoices/:invoiceId/pdf',
+    "/invoices/:invoiceId/pdf",
     authenticate(),
     validateRequest(getInvoicePdfSchema),
     async (req: Request, res: Response) => {
@@ -571,19 +593,22 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         const pdfUrl = await paymentService.getInvoicePdf(
           req.user.userId,
-          req.params.invoiceId
+          req.params.invoiceId,
         );
 
         if (!pdfUrl) {
           return res.status(404).json({
             success: false,
-            error: { code: 'PDF_NOT_AVAILABLE', message: 'Invoice PDF not available' },
+            error: {
+              code: "PDF_NOT_AVAILABLE",
+              message: "Invoice PDF not available",
+            },
           });
         }
 
@@ -594,7 +619,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -607,7 +632,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.post(
-    '/portal',
+    "/portal",
     authenticate(),
     RateLimiterConfig.api(),
     validateRequest(createPortalSessionSchema),
@@ -616,18 +641,18 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
         const returnUrl =
           req.body.returnUrl ||
           process.env.FRONTEND_URL ||
-          'http://localhost:3000/settings/billing';
+          "http://localhost:3000/settings/billing";
 
         const session = await paymentService.createPortalSession(
           req.user.userId,
-          returnUrl
+          returnUrl,
         );
 
         res.json({
@@ -637,7 +662,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -650,7 +675,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
    * Requires authentication
    */
   router.get(
-    '/usage',
+    "/usage",
     authenticate(),
     validateRequest(checkUsageSchema),
     async (req: Request, res: Response) => {
@@ -658,14 +683,18 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
-        const type = req.query.type as 'batches' | 'apiCalls' | 'storage';
+        const type = req.query.type as "batches" | "apiCalls" | "storage";
         const amount = parseInt(req.query.amount as string, 10) || 1;
 
-        const usage = await paymentService.checkUsage(req.user.userId, type, amount);
+        const usage = await paymentService.checkUsage(
+          req.user.userId,
+          type,
+          amount,
+        );
 
         res.json({
           success: true,
@@ -674,7 +703,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       } catch (error) {
         handlePaymentError(error, res);
       }
-    }
+    },
   );
 
   return router;
@@ -689,7 +718,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
  */
 function handlePaymentError(error: unknown, res: Response): void {
   if (error instanceof PaymentServiceError) {
-    logger.warn('[PaymentRoutes] Payment service error', {
+    logger.warn("[PaymentRoutes] Payment service error", {
       code: error.code,
       message: error.message,
     });
@@ -700,13 +729,13 @@ function handlePaymentError(error: unknown, res: Response): void {
     return;
   }
 
-  logger.error('[PaymentRoutes] Unexpected error', {
-    error: error instanceof Error ? error.message : 'Unknown error',
+  logger.error("[PaymentRoutes] Unexpected error", {
+    error: error instanceof Error ? error.message : "Unknown error",
     stack: error instanceof Error ? error.stack : undefined,
   });
 
   res.status(500).json({
     success: false,
-    error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+    error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
   });
 }

@@ -1,4 +1,4 @@
-import { AppError } from './AppError.js';
+import { AppError } from "./AppError.js";
 
 /**
  * Represents an error during the authentication process (e.g., invalid credentials).
@@ -6,8 +6,8 @@ import { AppError } from './AppError.js';
  */
 export class AuthenticationError extends AppError {
   public name: string;
-  constructor(message: string = 'Invalid email or password') {
+  constructor(message: string = "Invalid email or password") {
     super(message, 401);
-    this.name = 'AuthenticationError';
+    this.name = "AuthenticationError";
   }
 }

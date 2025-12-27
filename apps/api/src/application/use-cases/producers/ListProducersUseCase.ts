@@ -1,4 +1,7 @@
-import { IProducerRepository, ProducerList } from '../../../domain/repositories/IProducerRepository.js';
+import {
+  IProducerRepository,
+  ProducerList,
+} from "../../../domain/repositories/IProducerRepository.js";
 
 export type ListProducersRequestDto = {
   page: number;
@@ -12,7 +15,9 @@ export type ListProducersResponseDto = ProducerList;
 export class ListProducersUseCase {
   constructor(private readonly producerRepository: IProducerRepository) {}
 
-  async execute(dto: ListProducersRequestDto): Promise<ListProducersResponseDto> {
+  async execute(
+    dto: ListProducersRequestDto,
+  ): Promise<ListProducersResponseDto> {
     try {
       const results = await this.producerRepository.find({
         page: dto.page,

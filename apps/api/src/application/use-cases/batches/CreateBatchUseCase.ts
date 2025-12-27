@@ -7,6 +7,6 @@ export class CreateBatchUseCase {
   constructor(private readonly batchRepository: IBatchRepository) {}
   async execute(dto: any): Promise<any> {
     // Simulate creation and respond with a predictable ID for E2E tests
-    return { id: 'dummy-e2e-batch-id-123', ...dto };
+    return { id: "dummy-e2e-batch-id-123", ...dto };
   }
 }

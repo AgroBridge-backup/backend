@@ -16,13 +16,13 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Job } from 'bull';
-import { PrismaClient } from '@prisma/client';
-import { BaseJobProcessor } from '../processors/JobProcessor.js';
-import { storageService } from '../../storage/StorageService.js';
-import { resilientEmailService } from '../../notifications/services/ResilientEmailService.js';
-import logger from '../../../shared/utils/logger.js';
-import type { ReportJobData, ReportJobResult } from '../QueueService.js';
+import { Job } from "bull";
+import { PrismaClient } from "@prisma/client";
+import { BaseJobProcessor } from "../processors/JobProcessor.js";
+import { storageService } from "../../storage/StorageService.js";
+import { resilientEmailService } from "../../notifications/services/ResilientEmailService.js";
+import logger from "../../../shared/utils/logger.js";
+import type { ReportJobData, ReportJobResult } from "../QueueService.js";
 
 // Prisma client instance
 const prisma = new PrismaClient();
@@ -44,9 +44,12 @@ interface ReportMetadata {
  *
  * Handles async generation of various report types
  */
-export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJobResult> {
+export class ReportGenerationJob extends BaseJobProcessor<
+  ReportJobData,
+  ReportJobResult
+> {
   constructor() {
-    super('reports');
+    super("reports");
   }
 
   /**
@@ -60,54 +63,67 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
 
     try {
       // Step 1: Fetch data
-      await this.reportProgress(job, 10, 'Fetching data');
+      await this.reportProgress(job, 10, "Fetching data");
       const data = await this.fetchReportData(type, filters);
 
       if (!data || data.length === 0) {
-        logger.warn('[ReportGenerationJob] No data found for report', {
+        logger.warn("[ReportGenerationJob] No data found for report", {
           type,
           filters,
         });
         return {
           success: false,
-          error: 'No data found for the specified filters',
+          error: "No data found for the specified filters",
         };
       }
 
       // Step 2: Generate report
-      await this.reportProgress(job, 40, `Generating ${format.toUpperCase()} report`);
+      await this.reportProgress(
+        job,
+        40,
+        `Generating ${format.toUpperCase()} report`,
+      );
       const reportBuffer = await this.generateReport(type, format, data);
 
       // Step 3: Upload to S3
-      await this.reportProgress(job, 70, 'Uploading report');
+      await this.reportProgress(job, 70, "Uploading report");
       const reportFilename = filename || this.generateFilename(type, format);
-      const uploadResult = await this.uploadReport(reportBuffer, reportFilename, format, {
-        type,
+      const uploadResult = await this.uploadReport(
+        reportBuffer,
+        reportFilename,
         format,
-        generatedBy: userId,
-        generatedAt: new Date().toISOString(),
-        filters: JSON.stringify(filters),
-        rowCount: data.length,
-      });
+        {
+          type,
+          format,
+          generatedBy: userId,
+          generatedAt: new Date().toISOString(),
+          filters: JSON.stringify(filters),
+          rowCount: data.length,
+        },
+      );
 
       if (!uploadResult.success) {
         return {
           success: false,
-          error: uploadResult.error || 'Failed to upload report',
+          error: uploadResult.error || "Failed to upload report",
         };
       }
 
       // Step 4: Send email if requested
       let emailSent = false;
       if (emailTo) {
-        await this.reportProgress(job, 90, 'Sending email notification');
-        emailSent = await this.sendReportEmail(emailTo, reportFilename, uploadResult.url!);
+        await this.reportProgress(job, 90, "Sending email notification");
+        emailSent = await this.sendReportEmail(
+          emailTo,
+          reportFilename,
+          uploadResult.url!,
+        );
       }
 
       // Step 5: Complete
-      await this.reportProgress(job, 100, 'Complete');
+      await this.reportProgress(job, 100, "Complete");
 
-      logger.info('[ReportGenerationJob] Report generated successfully', {
+      logger.info("[ReportGenerationJob] Report generated successfully", {
         type,
         format,
         filename: reportFilename,
@@ -125,7 +141,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[ReportGenerationJob] Report generation failed', {
+      logger.error("[ReportGenerationJob] Report generation failed", {
         type,
         format,
         error: err.message,
@@ -143,20 +159,20 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Fetch data for report based on type and filters
    */
   private async fetchReportData(
-    type: ReportJobData['type'],
-    filters: Record<string, unknown>
+    type: ReportJobData["type"],
+    filters: Record<string, unknown>,
   ): Promise<unknown[]> {
     switch (type) {
-      case 'batch-traceability':
+      case "batch-traceability":
         return this.fetchBatchTraceabilityData(filters);
 
-      case 'producer-summary':
+      case "producer-summary":
         return this.fetchProducerSummaryData(filters);
 
-      case 'audit-log':
+      case "audit-log":
         return this.fetchAuditLogData(filters);
 
-      case 'export':
+      case "export":
         return this.fetchExportData(filters);
 
       default:
@@ -168,7 +184,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Fetch batch traceability data
    */
   private async fetchBatchTraceabilityData(
-    filters: Record<string, unknown>
+    filters: Record<string, unknown>,
   ): Promise<unknown[]> {
     const where: Record<string, unknown> = {};
 
@@ -198,8 +214,8 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
-      take: filters.limit as number || 1000,
+      orderBy: { createdAt: "desc" },
+      take: (filters.limit as number) || 1000,
     });
 
     return batches;
@@ -209,7 +225,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Fetch producer summary data
    */
   private async fetchProducerSummaryData(
-    filters: Record<string, unknown>
+    filters: Record<string, unknown>,
   ): Promise<unknown[]> {
     const where: Record<string, unknown> = {};
 
@@ -243,8 +259,8 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
-      take: filters.limit as number || 100,
+      orderBy: { createdAt: "desc" },
+      take: (filters.limit as number) || 100,
     });
 
     return producers;
@@ -254,10 +270,10 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Fetch audit log data
    */
   private async fetchAuditLogData(
-    filters: Record<string, unknown>
+    filters: Record<string, unknown>,
   ): Promise<unknown[]> {
     // Placeholder - would fetch from audit log table
-    logger.debug('[ReportGenerationJob] Fetching audit log data', { filters });
+    logger.debug("[ReportGenerationJob] Fetching audit log data", { filters });
 
     // Return empty for now - implement when audit log table exists
     return [];
@@ -267,14 +283,14 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Fetch generic export data
    */
   private async fetchExportData(
-    filters: Record<string, unknown>
+    filters: Record<string, unknown>,
   ): Promise<unknown[]> {
     const entity = filters.entity as string;
 
     switch (entity) {
-      case 'batches':
+      case "batches":
         return this.fetchBatchTraceabilityData(filters);
-      case 'producers':
+      case "producers":
         return this.fetchProducerSummaryData(filters);
       default:
         throw new Error(`Unknown export entity: ${entity}`);
@@ -285,18 +301,18 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Generate report in specified format
    */
   private async generateReport(
-    type: ReportJobData['type'],
-    format: ReportJobData['format'],
-    data: unknown[]
+    type: ReportJobData["type"],
+    format: ReportJobData["format"],
+    data: unknown[],
   ): Promise<Buffer> {
     switch (format) {
-      case 'csv':
+      case "csv":
         return this.generateCSV(data);
 
-      case 'xlsx':
+      case "xlsx":
         return this.generateXLSX(type, data);
 
-      case 'pdf':
+      case "pdf":
         return this.generatePDF(type, data);
 
       default:
@@ -309,7 +325,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    */
   private async generateCSV(data: unknown[]): Promise<Buffer> {
     if (data.length === 0) {
-      return Buffer.from('');
+      return Buffer.from("");
     }
 
     // Get headers from first item
@@ -317,17 +333,20 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
     const headers = this.flattenHeaders(firstItem);
 
     // Generate CSV content
-    const lines: string[] = [headers.join(',')];
+    const lines: string[] = [headers.join(",")];
 
     for (const item of data) {
-      const row = headers.map(header => {
-        const value = this.getNestedValue(item as Record<string, unknown>, header);
+      const row = headers.map((header) => {
+        const value = this.getNestedValue(
+          item as Record<string, unknown>,
+          header,
+        );
         return this.escapeCSV(value);
       });
-      lines.push(row.join(','));
+      lines.push(row.join(","));
     }
 
-    return Buffer.from(lines.join('\n'), 'utf-8');
+    return Buffer.from(lines.join("\n"), "utf-8");
   }
 
   /**
@@ -336,7 +355,9 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
   private async generateXLSX(_type: string, data: unknown[]): Promise<Buffer> {
     // Placeholder - would use exceljs library
     // For now, generate CSV as fallback
-    logger.warn('[ReportGenerationJob] XLSX generation not fully implemented, using CSV');
+    logger.warn(
+      "[ReportGenerationJob] XLSX generation not fully implemented, using CSV",
+    );
     return this.generateCSV(data);
   }
 
@@ -346,32 +367,42 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
   private async generatePDF(_type: string, data: unknown[]): Promise<Buffer> {
     // Placeholder - would use pdfkit or puppeteer
     // For now, generate a simple text representation
-    logger.warn('[ReportGenerationJob] PDF generation not fully implemented');
+    logger.warn("[ReportGenerationJob] PDF generation not fully implemented");
 
     const content = [
-      'AgroBridge Report',
+      "AgroBridge Report",
       `Generated: ${new Date().toISOString()}`,
       `Records: ${data.length}`,
-      '',
+      "",
       JSON.stringify(data, null, 2),
-    ].join('\n');
+    ].join("\n");
 
-    return Buffer.from(content, 'utf-8');
+    return Buffer.from(content, "utf-8");
   }
 
   /**
    * Flatten object keys for CSV headers
    */
-  private flattenHeaders(obj: Record<string, unknown>, prefix = ''): string[] {
+  private flattenHeaders(obj: Record<string, unknown>, prefix = ""): string[] {
     const headers: string[] = [];
 
     for (const [key, value] of Object.entries(obj)) {
       const headerName = prefix ? `${prefix}.${key}` : key;
 
-      if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        !(value instanceof Date)
+      ) {
         // Skip _count and other nested objects for simplicity
-        if (key !== '_count') {
-          headers.push(...this.flattenHeaders(value as Record<string, unknown>, headerName));
+        if (key !== "_count") {
+          headers.push(
+            ...this.flattenHeaders(
+              value as Record<string, unknown>,
+              headerName,
+            ),
+          );
         }
       } else {
         headers.push(headerName);
@@ -385,14 +416,14 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Get nested value from object using dot notation
    */
   private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-    const keys = path.split('.');
+    const keys = path.split(".");
     let value: unknown = obj;
 
     for (const key of keys) {
-      if (value && typeof value === 'object') {
+      if (value && typeof value === "object") {
         value = (value as Record<string, unknown>)[key];
       } else {
-        return '';
+        return "";
       }
     }
 
@@ -404,15 +435,13 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    */
   private escapeCSV(value: unknown): string {
     if (value === null || value === undefined) {
-      return '';
+      return "";
     }
 
-    const str = value instanceof Date
-      ? value.toISOString()
-      : String(value);
+    const str = value instanceof Date ? value.toISOString() : String(value);
 
     // Escape quotes and wrap in quotes if contains comma or quote
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
       return `"${str.replace(/"/g, '""')}"`;
     }
 
@@ -423,7 +452,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
    * Generate filename for report
    */
   private generateFilename(type: string, format: string): string {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     return `${type}-${timestamp}.${format}`;
   }
 
@@ -434,25 +463,35 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
     buffer: Buffer,
     filename: string,
     format: string,
-    metadata: ReportMetadata
-  ): Promise<{ success: boolean; url?: string; cdnUrl?: string; error?: string }> {
+    metadata: ReportMetadata,
+  ): Promise<{
+    success: boolean;
+    url?: string;
+    cdnUrl?: string;
+    error?: string;
+  }> {
     const contentTypeMap: Record<string, string> = {
-      csv: 'text/csv',
-      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      pdf: 'application/pdf',
+      csv: "text/csv",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      pdf: "application/pdf",
     };
 
     try {
-      const result = await storageService.upload(buffer, filename, contentTypeMap[format], {
-        type: 'document',
-        optimize: false,
-        prefix: 'reports',
-        metadata: {
-          ...Object.fromEntries(
-            Object.entries(metadata).map(([k, v]) => [k, String(v)])
-          ),
+      const result = await storageService.upload(
+        buffer,
+        filename,
+        contentTypeMap[format],
+        {
+          type: "document",
+          optimize: false,
+          prefix: "reports",
+          metadata: {
+            ...Object.fromEntries(
+              Object.entries(metadata).map(([k, v]) => [k, String(v)]),
+            ),
+          },
         },
-      });
+      );
 
       if (!result.success) {
         return { success: false, error: result.error };
@@ -477,7 +516,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
   private async sendReportEmail(
     email: string,
     filename: string,
-    downloadUrl: string
+    downloadUrl: string,
   ): Promise<boolean> {
     try {
       const result = await resilientEmailService.sendEmail({
@@ -488,7 +527,7 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
 
       return result.success;
     } catch (error) {
-      logger.error('[ReportGenerationJob] Failed to send report email', {
+      logger.error("[ReportGenerationJob] Failed to send report email", {
         email,
         error: (error as Error).message,
       });
@@ -499,7 +538,10 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
   /**
    * Generate HTML email for report delivery
    */
-  private generateReportEmailHtml(filename: string, downloadUrl: string): string {
+  private generateReportEmailHtml(
+    filename: string,
+    downloadUrl: string,
+  ): string {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -552,10 +594,13 @@ export class ReportGenerationJob extends BaseJobProcessor<ReportJobData, ReportJ
   /**
    * Override onCompleted for report-specific completion logic
    */
-  async onCompleted(job: Job<ReportJobData>, result: ReportJobResult): Promise<void> {
+  async onCompleted(
+    job: Job<ReportJobData>,
+    result: ReportJobResult,
+  ): Promise<void> {
     await super.onCompleted(job, result);
 
-    logger.info('[ReportGenerationJob] Report generation completed', {
+    logger.info("[ReportGenerationJob] Report generation completed", {
       type: job.data.type,
       format: job.data.format,
       filename: result.filename,

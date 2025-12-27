@@ -13,9 +13,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Redis } from 'ioredis';
-import logger from '../../shared/utils/logger.js';
-import { CacheTTL, CacheKeys, CachePrefix } from './CacheKeys.js';
+import { Redis } from "ioredis";
+import logger from "../../shared/utils/logger.js";
+import { CacheTTL, CacheKeys, CachePrefix } from "./CacheKeys.js";
 
 /**
  * Cache operation result with metadata
@@ -42,7 +42,7 @@ export interface CacheStats {
  * Cache health status
  */
 export interface CacheHealth {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: "healthy" | "degraded" | "unhealthy";
   connected: boolean;
   latencyMs: number;
   errorMessage?: string;
@@ -80,10 +80,10 @@ export class RedisCacheService {
 
   constructor() {
     this.client = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      host: process.env.REDIS_HOST || "localhost",
+      port: parseInt(process.env.REDIS_PORT || "6379", 10),
       password: process.env.REDIS_PASSWORD || undefined,
-      db: parseInt(process.env.REDIS_DB || '0', 10),
+      db: parseInt(process.env.REDIS_DB || "0", 10),
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         logger.warn({
@@ -104,30 +104,30 @@ export class RedisCacheService {
    * Setup Redis client event handlers
    */
   private setupEventHandlers(): void {
-    this.client.on('connect', () => {
-      logger.info({ message: 'Redis cache service connecting...' });
+    this.client.on("connect", () => {
+      logger.info({ message: "Redis cache service connecting..." });
     });
 
-    this.client.on('ready', () => {
+    this.client.on("ready", () => {
       this.isConnected = true;
-      logger.info({ message: 'Redis cache service connected and ready' });
+      logger.info({ message: "Redis cache service connected and ready" });
     });
 
-    this.client.on('error', (err: Error) => {
+    this.client.on("error", (err: Error) => {
       this.stats.errors++;
       logger.error({
-        message: 'Redis cache service error',
+        message: "Redis cache service error",
         meta: { error: err.message },
       });
     });
 
-    this.client.on('close', () => {
+    this.client.on("close", () => {
       this.isConnected = false;
-      logger.warn({ message: 'Redis cache service connection closed' });
+      logger.warn({ message: "Redis cache service connection closed" });
     });
 
-    this.client.on('reconnecting', () => {
-      logger.info({ message: 'Redis cache service reconnecting...' });
+    this.client.on("reconnecting", () => {
+      logger.info({ message: "Redis cache service reconnecting..." });
     });
   }
 
@@ -160,7 +160,7 @@ export class RedisCacheService {
     } catch (error) {
       this.stats.errors++;
       logger.error({
-        message: 'Cache get error',
+        message: "Cache get error",
         meta: { key, error: (error as Error).message },
       });
       return { hit: false, data: null };
@@ -176,7 +176,7 @@ export class RedisCacheService {
   async set<T>(
     key: string,
     value: T,
-    ttlSeconds: number = CacheTTL.BATCH
+    ttlSeconds: number = CacheTTL.BATCH,
   ): Promise<boolean> {
     try {
       const serialized = JSON.stringify(value);
@@ -185,7 +185,7 @@ export class RedisCacheService {
     } catch (error) {
       this.stats.errors++;
       logger.error({
-        message: 'Cache set error',
+        message: "Cache set error",
         meta: { key, error: (error as Error).message },
       });
       return false;
@@ -203,7 +203,7 @@ export class RedisCacheService {
     } catch (error) {
       this.stats.errors++;
       logger.error({
-        message: 'Cache delete error',
+        message: "Cache delete error",
         meta: { key, error: (error as Error).message },
       });
       return false;
@@ -223,7 +223,7 @@ export class RedisCacheService {
     } catch (error) {
       this.stats.errors++;
       logger.error({
-        message: 'Cache delete multiple error',
+        message: "Cache delete multiple error",
         meta: { keyCount: keys.length, error: (error as Error).message },
       });
       return false;
@@ -272,25 +272,25 @@ export class RedisCacheService {
   async invalidatePattern(pattern: string): Promise<number> {
     try {
       const keys: string[] = [];
-      let cursor = '0';
+      let cursor = "0";
 
       // Use SCAN for non-blocking iteration
       do {
         const [nextCursor, foundKeys] = await this.client.scan(
           cursor,
-          'MATCH',
+          "MATCH",
           pattern,
-          'COUNT',
-          100
+          "COUNT",
+          100,
         );
         cursor = nextCursor;
         keys.push(...foundKeys);
-      } while (cursor !== '0');
+      } while (cursor !== "0");
 
       if (keys.length > 0) {
         await this.client.del(...keys);
         logger.debug({
-          message: 'Cache invalidation completed',
+          message: "Cache invalidation completed",
           meta: { pattern, keysDeleted: keys.length },
         });
       }
@@ -299,7 +299,7 @@ export class RedisCacheService {
     } catch (error) {
       this.stats.errors++;
       logger.error({
-        message: 'Cache invalidation error',
+        message: "Cache invalidation error",
         meta: { pattern, error: (error as Error).message },
       });
       return 0;
@@ -326,7 +326,7 @@ export class RedisCacheService {
     await this.invalidatePattern(CacheKeys.producerPattern(producerId));
     // Also invalidate producer list caches
     await this.invalidatePattern(
-      `${CachePrefix.PRODUCER}:${CachePrefix.LIST}:*`
+      `${CachePrefix.PRODUCER}:${CachePrefix.LIST}:*`,
     );
     // Invalidate related stats
     await this.invalidatePattern(`${CachePrefix.STATS}:producers*`);
@@ -361,11 +361,11 @@ export class RedisCacheService {
   async flushAll(): Promise<void> {
     try {
       await this.client.flushdb();
-      logger.warn({ message: 'All cache entries flushed' });
+      logger.warn({ message: "All cache entries flushed" });
     } catch (error) {
       this.stats.errors++;
       logger.error({
-        message: 'Cache flush error',
+        message: "Cache flush error",
         meta: { error: (error as Error).message },
       });
     }
@@ -395,7 +395,7 @@ export class RedisCacheService {
   async getOrSet<T>(
     key: string,
     factory: () => Promise<T | null>,
-    ttlSeconds: number = CacheTTL.BATCH
+    ttlSeconds: number = CacheTTL.BATCH,
   ): Promise<T | null> {
     // Try cache first
     const cached = await this.get<T>(key);
@@ -429,23 +429,23 @@ export class RedisCacheService {
       const pong = await this.client.ping();
       const latencyMs = Date.now() - startTime;
 
-      if (pong === 'PONG') {
+      if (pong === "PONG") {
         return {
-          status: latencyMs < 100 ? 'healthy' : 'degraded',
+          status: latencyMs < 100 ? "healthy" : "degraded",
           connected: true,
           latencyMs,
         };
       }
 
       return {
-        status: 'unhealthy',
+        status: "unhealthy",
         connected: false,
         latencyMs,
-        errorMessage: 'Unexpected PING response',
+        errorMessage: "Unexpected PING response",
       };
     } catch (error) {
       return {
-        status: 'unhealthy',
+        status: "unhealthy",
         connected: false,
         latencyMs: Date.now() - startTime,
         errorMessage: (error as Error).message,
@@ -459,13 +459,13 @@ export class RedisCacheService {
    */
   async getStats(): Promise<CacheStats> {
     try {
-      const info = await this.client.info('memory');
+      const info = await this.client.info("memory");
       const dbSize = await this.client.dbsize();
-      const serverInfo = await this.client.info('server');
+      const serverInfo = await this.client.info("server");
 
       // Parse memory usage from INFO response
       const memoryMatch = info.match(/used_memory_human:(\S+)/);
-      const memoryUsage = memoryMatch ? memoryMatch[1] : 'unknown';
+      const memoryUsage = memoryMatch ? memoryMatch[1] : "unknown";
 
       // Parse uptime from server info
       const uptimeMatch = serverInfo.match(/uptime_in_seconds:(\d+)/);
@@ -481,7 +481,7 @@ export class RedisCacheService {
       return {
         ...this.stats,
         keys: 0,
-        memoryUsage: 'unknown',
+        memoryUsage: "unknown",
         uptime: 0,
       };
     }
@@ -498,7 +498,7 @@ export class RedisCacheService {
    * Check if Redis is connected
    */
   isReady(): boolean {
-    return this.isConnected && this.client.status === 'ready';
+    return this.isConnected && this.client.status === "ready";
   }
 
   /**
@@ -516,10 +516,10 @@ export class RedisCacheService {
     try {
       await this.client.quit();
       this.isConnected = false;
-      logger.info({ message: 'Redis cache service disconnected' });
+      logger.info({ message: "Redis cache service disconnected" });
     } catch (error) {
       logger.error({
-        message: 'Error disconnecting Redis cache service',
+        message: "Error disconnecting Redis cache service",
         meta: { error: (error as Error).message },
       });
     }

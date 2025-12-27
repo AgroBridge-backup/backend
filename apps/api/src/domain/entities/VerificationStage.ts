@@ -4,18 +4,18 @@
  */
 
 export enum StageType {
-  HARVEST = 'HARVEST',
-  PACKING = 'PACKING',
-  COLD_CHAIN = 'COLD_CHAIN',
-  EXPORT = 'EXPORT',
-  DELIVERY = 'DELIVERY',
+  HARVEST = "HARVEST",
+  PACKING = "PACKING",
+  COLD_CHAIN = "COLD_CHAIN",
+  EXPORT = "EXPORT",
+  DELIVERY = "DELIVERY",
 }
 
 export enum StageStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  FLAGGED = 'FLAGGED',
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  FLAGGED = "FLAGGED",
 }
 
 export interface VerificationStage {
@@ -76,7 +76,10 @@ export function getStageIndex(stageType: StageType): number {
 /**
  * Check if a stage transition is valid
  */
-export function isValidStageTransition(currentStage: StageType | null, nextStage: StageType): boolean {
+export function isValidStageTransition(
+  currentStage: StageType | null,
+  nextStage: StageType,
+): boolean {
   if (currentStage === null) {
     // First stage must be HARVEST
     return nextStage === StageType.HARVEST;
@@ -93,7 +96,11 @@ export function isValidStageTransition(currentStage: StageType | null, nextStage
  * Valid status transitions
  */
 export const VALID_STATUS_TRANSITIONS: Record<StageStatus, StageStatus[]> = {
-  [StageStatus.PENDING]: [StageStatus.APPROVED, StageStatus.REJECTED, StageStatus.FLAGGED],
+  [StageStatus.PENDING]: [
+    StageStatus.APPROVED,
+    StageStatus.REJECTED,
+    StageStatus.FLAGGED,
+  ],
   [StageStatus.APPROVED]: [], // Terminal state
   [StageStatus.REJECTED]: [StageStatus.PENDING], // Can retry
   [StageStatus.FLAGGED]: [StageStatus.APPROVED, StageStatus.REJECTED], // Admin can resolve
@@ -102,7 +109,10 @@ export const VALID_STATUS_TRANSITIONS: Record<StageStatus, StageStatus[]> = {
 /**
  * Check if a status transition is valid
  */
-export function isValidStatusTransition(currentStatus: StageStatus, newStatus: StageStatus): boolean {
+export function isValidStatusTransition(
+  currentStatus: StageStatus,
+  newStatus: StageStatus,
+): boolean {
   if (currentStatus === newStatus) {
     return true; // Same status is allowed (no-op)
   }

@@ -3,10 +3,14 @@
  * Updates export company details
  */
 
-import { ExportCompanyService } from '../../../domain/services/ExportCompanyService.js';
-import { ExportCompany, ExportCompanyTier, UpdateExportCompanyInput } from '../../../domain/entities/ExportCompany.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
-import { ILogger } from '../../../domain/services/ILogger.js';
+import { ExportCompanyService } from "../../../domain/services/ExportCompanyService.js";
+import {
+  ExportCompany,
+  ExportCompanyTier,
+  UpdateExportCompanyInput,
+} from "../../../domain/entities/ExportCompany.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
+import { ILogger } from "../../../domain/services/ILogger.js";
 
 export interface UpdateExportCompanyRequest {
   companyId: string;
@@ -34,37 +38,46 @@ export interface UpdateExportCompanyResponse {
 export class UpdateExportCompanyUseCase {
   constructor(
     private readonly companyService: ExportCompanyService,
-    private readonly logger?: ILogger
+    private readonly logger?: ILogger,
   ) {}
 
-  async execute(request: UpdateExportCompanyRequest): Promise<UpdateExportCompanyResponse> {
+  async execute(
+    request: UpdateExportCompanyRequest,
+  ): Promise<UpdateExportCompanyResponse> {
     if (!request.companyId) {
-      throw new ValidationError('Company ID is required');
+      throw new ValidationError("Company ID is required");
     }
 
     // Validate email if provided
     if (request.email && !this.isValidEmail(request.email)) {
-      throw new ValidationError('Invalid email format');
+      throw new ValidationError("Invalid email format");
     }
     if (request.contactEmail && !this.isValidEmail(request.contactEmail)) {
-      throw new ValidationError('Invalid contact email format');
+      throw new ValidationError("Invalid contact email format");
     }
 
     // Validate hex color if provided
     if (request.primaryColor && !this.isValidHexColor(request.primaryColor)) {
-      throw new ValidationError('Primary color must be a valid hex color (e.g., #22C55E)');
+      throw new ValidationError(
+        "Primary color must be a valid hex color (e.g., #22C55E)",
+      );
     }
 
-    this.logger?.info('Updating export company', { companyId: request.companyId });
+    this.logger?.info("Updating export company", {
+      companyId: request.companyId,
+    });
 
     const { companyId, ...updateData } = request;
-    const company = await this.companyService.updateCompany(companyId, updateData);
+    const company = await this.companyService.updateCompany(
+      companyId,
+      updateData,
+    );
 
-    this.logger?.info('Export company updated', { companyId: company.id });
+    this.logger?.info("Export company updated", { companyId: company.id });
 
     return {
       company,
-      message: 'Company updated successfully',
+      message: "Company updated successfully",
     };
   }
 

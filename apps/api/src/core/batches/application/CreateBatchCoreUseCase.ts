@@ -1,8 +1,7 @@
-
-import { BatchRepository } from '../domain/BatchRepository.js';
-import { Batch } from '../../../domain/entities/Batch.js';
-import * as Prisma from '@prisma/client';
-import * as crypto from 'crypto';
+import { BatchRepository } from "../domain/BatchRepository.js";
+import { Batch } from "../../../domain/entities/Batch.js";
+import * as Prisma from "@prisma/client";
+import * as crypto from "crypto";
 
 /**
  * Data Transfer Object (DTO) for creating a new batch.
@@ -30,14 +29,22 @@ export class CreateBatchUseCase {
    */
   async execute(data: CreateBatchDTO): Promise<Batch> {
     // 1. Zero-Trust Validation (can be expanded with a validation library like Zod)
-    if (!data.producerId || !data.variety || !data.origin || data.weightKg <= 0) {
-      throw new Error('Invalid batch data provided.'); // In a real app, use custom error classes
+    if (
+      !data.producerId ||
+      !data.variety ||
+      !data.origin ||
+      data.weightKg <= 0
+    ) {
+      throw new Error("Invalid batch data provided."); // In a real app, use custom error classes
     }
 
     // 2. Blockchain-Ready Hashing (Cryptographic Traceability)
     const timestamp = Date.now();
     const payload = `${data.producerId}${timestamp}${data.variety}${data.weightKg}`;
-    const blockchainHash = crypto.createHash('sha256').update(payload).digest('hex');
+    const blockchainHash = crypto
+      .createHash("sha256")
+      .update(payload)
+      .digest("hex");
 
     // 3. Create the entity object
     const batchToSave = {
@@ -49,9 +56,9 @@ export class CreateBatchUseCase {
       blockchainHash: blockchainHash,
       // Dummy values for now to satisfy the Batch interface
       batchNumber: `BATCH-${Date.now()}`,
-      cropType: 'Avocado', // Default value
+      cropType: "Avocado", // Default value
       quantity: data.weightKg, // Assuming quantity is same as weight for now
-      parcelName: 'Default Parcel',
+      parcelName: "Default Parcel",
       latitude: 0, // Default value
       longitude: 0, // Default value
       qrCode: null,

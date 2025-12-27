@@ -1,6 +1,9 @@
-import * as Prisma from '@prisma/client';
-import { IUserRepository, CreateUserInput } from '../../../../domain/repositories/IUserRepository.js';
-import { User } from '../../../../domain/entities/User.js';
+import * as Prisma from "@prisma/client";
+import {
+  IUserRepository,
+  CreateUserInput,
+} from "../../../../domain/repositories/IUserRepository.js";
+import { User } from "../../../../domain/entities/User.js";
 
 /**
  * Prisma-based implementation of the user repository.
@@ -32,14 +35,17 @@ export class PrismaUserRepository implements IUserRepository {
    * @param email The email of the user to find.
    * @returns A Promise resolving to the User entity or null if not found.
    */
-  async findByEmail(email: string, include?: { producer?: boolean }): Promise<User | null> {
+  async findByEmail(
+    email: string,
+    include?: { producer?: boolean },
+  ): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
         producer: include?.producer,
       },
     });
-    
+
     if (!user) return null;
 
     // The 'toDomain' mapping for User needs to handle the optional producer relation

@@ -5,8 +5,13 @@
  * @author AgroBridge Engineering Team
  */
 
-import { GraphQLContext, requireAuth, requireRole, isAdminOrAuditor } from '../context.js';
-import { NotFoundError } from '../errors.js';
+import {
+  GraphQLContext,
+  requireAuth,
+  requireRole,
+  isAdminOrAuditor,
+} from "../context.js";
+import { NotFoundError } from "../errors.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -22,9 +27,13 @@ interface DateRangeInput {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const analyticsQueries = {
-  dashboard: async (_parent: unknown, _args: unknown, context: GraphQLContext) => {
+  dashboard: async (
+    _parent: unknown,
+    _args: unknown,
+    context: GraphQLContext,
+  ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -42,23 +51,25 @@ export const analyticsQueries = {
     ] = await Promise.all([
       context.prisma.batch.count(),
       context.prisma.batch.count({
-        where: { status: { in: ['REGISTERED', 'IN_TRANSIT', 'ARRIVED'] } },
+        where: { status: { in: ["REGISTERED", "IN_TRANSIT", "ARRIVED"] } },
       }),
       context.prisma.producer.count(),
       context.prisma.producer.count({ where: { isWhitelisted: true } }),
       context.prisma.traceabilityEvent.count(),
-      context.prisma.traceabilityEvent.count({ where: { timestamp: { gte: today } } }),
+      context.prisma.traceabilityEvent.count({
+        where: { timestamp: { gte: today } },
+      }),
       context.prisma.batch.groupBy({
-        by: ['status'],
+        by: ["status"],
         _count: true,
       }),
       context.prisma.traceabilityEvent.groupBy({
-        by: ['eventType'],
+        by: ["eventType"],
         _count: true,
       }),
       context.prisma.traceabilityEvent.findMany({
         take: 10,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
         include: { batch: true },
       }),
     ]);
@@ -103,10 +114,10 @@ export const analyticsQueries = {
   batchTimeline: async (
     _parent: unknown,
     args: { startDate: Date; endDate: Date; granularity?: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     // Simple implementation returning batch counts by date
     const batches = await context.prisma.batch.findMany({
@@ -116,20 +127,23 @@ export const analyticsQueries = {
           lte: args.endDate,
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
 
     // Group by date
-    const timeline = new Map<string, {
-      registered: number;
-      inTransit: number;
-      arrived: number;
-      delivered: number;
-      rejected: number;
-    }>();
+    const timeline = new Map<
+      string,
+      {
+        registered: number;
+        inTransit: number;
+        arrived: number;
+        delivered: number;
+        rejected: number;
+      }
+    >();
 
     batches.forEach((batch) => {
-      const dateKey = batch.createdAt.toISOString().split('T')[0];
+      const dateKey = batch.createdAt.toISOString().split("T")[0];
       if (!timeline.has(dateKey)) {
         timeline.set(dateKey, {
           registered: 0,
@@ -141,19 +155,19 @@ export const analyticsQueries = {
       }
       const entry = timeline.get(dateKey)!;
       switch (batch.status) {
-        case 'REGISTERED':
+        case "REGISTERED":
           entry.registered++;
           break;
-        case 'IN_TRANSIT':
+        case "IN_TRANSIT":
           entry.inTransit++;
           break;
-        case 'ARRIVED':
+        case "ARRIVED":
           entry.arrived++;
           break;
-        case 'DELIVERED':
+        case "DELIVERED":
           entry.delivered++;
           break;
-        case 'REJECTED':
+        case "REJECTED":
           entry.rejected++;
           break;
       }
@@ -168,37 +182,45 @@ export const analyticsQueries = {
   producerStats: async (
     _parent: unknown,
     args: { producerId: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
 
     const producer = await context.loaders.producer.load(args.producerId);
     if (!producer) {
-      throw new NotFoundError('Producer', args.producerId);
+      throw new NotFoundError("Producer", args.producerId);
     }
 
     // Check authorization
     if (!isAdminOrAuditor(context) && producer.userId !== context.user?.id) {
-      requireRole(context, ['ADMIN', 'CERTIFIER']);
+      requireRole(context, ["ADMIN", "CERTIFIER"]);
     }
 
-    const [totalBatches, activeBatches, deliveredBatches, weightStats, certifications] = await Promise.all([
+    const [
+      totalBatches,
+      activeBatches,
+      deliveredBatches,
+      weightStats,
+      certifications,
+    ] = await Promise.all([
       context.prisma.batch.count({ where: { producerId: args.producerId } }),
       context.prisma.batch.count({
         where: {
           producerId: args.producerId,
-          status: { in: ['REGISTERED', 'IN_TRANSIT', 'ARRIVED'] },
+          status: { in: ["REGISTERED", "IN_TRANSIT", "ARRIVED"] },
         },
       }),
       context.prisma.batch.count({
-        where: { producerId: args.producerId, status: 'DELIVERED' },
+        where: { producerId: args.producerId, status: "DELIVERED" },
       }),
       context.prisma.batch.aggregate({
         where: { producerId: args.producerId },
         _sum: { weightKg: true },
         _avg: { weightKg: true },
       }),
-      context.prisma.certification.count({ where: { producerId: args.producerId } }),
+      context.prisma.certification.count({
+        where: { producerId: args.producerId },
+      }),
     ]);
 
     return {
@@ -215,18 +237,18 @@ export const analyticsQueries = {
   topProducers: async (
     _parent: unknown,
     args: { limit?: number },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     const limit = Math.min(args.limit || 10, 50);
 
     const topProducers = await context.prisma.batch.groupBy({
-      by: ['producerId'],
+      by: ["producerId"],
       _count: true,
       _sum: { weightKg: true },
-      orderBy: { _count: { producerId: 'desc' } },
+      orderBy: { _count: { producerId: "desc" } },
       take: limit,
     });
 
@@ -239,7 +261,7 @@ export const analyticsQueries = {
           totalWeightKg: item._sum?.weightKg?.toNumber() || 0,
           rank: index + 1,
         };
-      })
+      }),
     );
 
     return results.filter((r) => r.producer !== null);
@@ -248,10 +270,10 @@ export const analyticsQueries = {
   eventDistribution: async (
     _parent: unknown,
     args: { dateRange?: DateRangeInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     const where: { timestamp?: { gte?: Date; lte?: Date } } = {};
     if (args.dateRange) {
@@ -262,13 +284,13 @@ export const analyticsQueries = {
 
     const [distribution, total, lastEvents] = await Promise.all([
       context.prisma.traceabilityEvent.groupBy({
-        by: ['eventType'],
+        by: ["eventType"],
         where,
         _count: true,
       }),
       context.prisma.traceabilityEvent.count({ where }),
       context.prisma.traceabilityEvent.groupBy({
-        by: ['eventType'],
+        by: ["eventType"],
         where,
         _max: { timestamp: true },
       }),
@@ -287,9 +309,13 @@ export const analyticsQueries = {
     }));
   },
 
-  systemOverview: async (_parent: unknown, _args: unknown, context: GraphQLContext) => {
+  systemOverview: async (
+    _parent: unknown,
+    _args: unknown,
+    context: GraphQLContext,
+  ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN']);
+    requireRole(context, ["ADMIN"]);
 
     const [
       totalUsers,
@@ -302,7 +328,7 @@ export const analyticsQueries = {
       context.prisma.user.count(),
       context.prisma.user.count({ where: { isActive: true } }),
       context.prisma.user.groupBy({
-        by: ['role'],
+        by: ["role"],
         _count: true,
       }),
       context.prisma.batch.count(),
@@ -327,12 +353,12 @@ export const analyticsQueries = {
   search: async (
     _parent: unknown,
     args: { query: string; types?: string[] },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
 
     const searchQuery = args.query.trim();
-    const types = args.types || ['batches', 'producers', 'events'];
+    const types = args.types || ["batches", "producers", "events"];
 
     const results: {
       batches: unknown[];
@@ -348,31 +374,35 @@ export const analyticsQueries = {
 
     const searches = [];
 
-    if (types.includes('batches')) {
+    if (types.includes("batches")) {
       searches.push(
         context.prisma.batch
           .findMany({
             where: {
-              origin: { contains: searchQuery, mode: 'insensitive' },
+              origin: { contains: searchQuery, mode: "insensitive" },
             },
             take: 10,
           })
           .then((batches) => {
             results.batches = batches;
             results.totalCount += batches.length;
-          })
+          }),
       );
     }
 
-    if (types.includes('producers')) {
+    if (types.includes("producers")) {
       searches.push(
         context.prisma.producer
           .findMany({
             where: {
               OR: [
-                { businessName: { contains: searchQuery, mode: 'insensitive' } },
-                { state: { contains: searchQuery, mode: 'insensitive' } },
-                { municipality: { contains: searchQuery, mode: 'insensitive' } },
+                {
+                  businessName: { contains: searchQuery, mode: "insensitive" },
+                },
+                { state: { contains: searchQuery, mode: "insensitive" } },
+                {
+                  municipality: { contains: searchQuery, mode: "insensitive" },
+                },
               ],
             },
             take: 10,
@@ -380,18 +410,20 @@ export const analyticsQueries = {
           .then((producers) => {
             results.producers = producers;
             results.totalCount += producers.length;
-          })
+          }),
       );
     }
 
-    if (types.includes('events')) {
+    if (types.includes("events")) {
       searches.push(
         context.prisma.traceabilityEvent
           .findMany({
             where: {
               OR: [
-                { notes: { contains: searchQuery, mode: 'insensitive' } },
-                { locationName: { contains: searchQuery, mode: 'insensitive' } },
+                { notes: { contains: searchQuery, mode: "insensitive" } },
+                {
+                  locationName: { contains: searchQuery, mode: "insensitive" },
+                },
               ],
             },
             take: 10,
@@ -399,7 +431,7 @@ export const analyticsQueries = {
           .then((events) => {
             results.events = events;
             results.totalCount += events.length;
-          })
+          }),
       );
     }
 
@@ -415,7 +447,11 @@ export const analyticsQueries = {
 
 export const analyticsFieldResolvers = {
   ActivityItem: {
-    createdBy: async (parent: { createdById: string }, _args: unknown, context: GraphQLContext) => {
+    createdBy: async (
+      parent: { createdById: string },
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       if (!parent.createdById) return null;
       return context.loaders.user.load(parent.createdById);
     },
@@ -425,7 +461,7 @@ export const analyticsFieldResolvers = {
     producer: async (
       parent: { producerId: string },
       _args: unknown,
-      context: GraphQLContext
+      context: GraphQLContext,
     ) => {
       return context.loaders.producer.load(parent.producerId);
     },

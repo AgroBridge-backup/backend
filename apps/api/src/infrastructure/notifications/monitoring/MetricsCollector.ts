@@ -13,10 +13,19 @@
  * @author AgroBridge Engineering Team
  */
 
-import { PrismaClient, NotificationChannel, DeliveryStatus } from '@prisma/client';
-import { notificationQueue } from '../queue/NotificationQueue.js';
-import logger from '../../../shared/utils/logger.js';
-import type { NotificationMetrics, ChannelMetrics, ErrorMetrics, HealthStatus } from '../types/index.js';
+import {
+  PrismaClient,
+  NotificationChannel,
+  DeliveryStatus,
+} from "@prisma/client";
+import { notificationQueue } from "../queue/NotificationQueue.js";
+import logger from "../../../shared/utils/logger.js";
+import type {
+  NotificationMetrics,
+  ChannelMetrics,
+  ErrorMetrics,
+  HealthStatus,
+} from "../types/index.js";
 
 const prisma = new PrismaClient();
 
@@ -54,12 +63,13 @@ export class MetricsCollector {
 
     try {
       // Database metrics
-      const [totalSent, totalDelivered, totalFailed, avgLatencyResult] = await Promise.all([
-        this.countNotifications('SENT', since),
-        this.countNotifications('DELIVERED', since),
-        this.countNotifications('FAILED', since),
-        this.calculateAverageLatency(since),
-      ]);
+      const [totalSent, totalDelivered, totalFailed, avgLatencyResult] =
+        await Promise.all([
+          this.countNotifications("SENT", since),
+          this.countNotifications("DELIVERED", since),
+          this.countNotifications("FAILED", since),
+          this.calculateAverageLatency(since),
+        ]);
 
       // Queue metrics
       const queueStats = await notificationQueue.getStats();
@@ -71,7 +81,8 @@ export class MetricsCollector {
       const errorMetrics = await this.getErrorMetrics(since);
 
       const totalProcessed = totalDelivered + totalFailed;
-      const deliveryRate = totalProcessed > 0 ? (totalDelivered / totalProcessed) * 100 : 100;
+      const deliveryRate =
+        totalProcessed > 0 ? (totalDelivered / totalProcessed) * 100 : 100;
 
       const metrics: NotificationMetrics = {
         timestamp: now,
@@ -87,7 +98,7 @@ export class MetricsCollector {
         errorMetrics,
       };
 
-      logger.debug('[MetricsCollector] Metrics collected', {
+      logger.debug("[MetricsCollector] Metrics collected", {
         deliveryRate: metrics.deliveryRate,
         queueDepth: metrics.queueDepth,
         totalSent: metrics.totalSent,
@@ -96,7 +107,7 @@ export class MetricsCollector {
       return metrics;
     } catch (error) {
       const err = error as Error;
-      logger.error('[MetricsCollector] Failed to collect metrics', {
+      logger.error("[MetricsCollector] Failed to collect metrics", {
         error: err.message,
       });
 
@@ -110,7 +121,13 @@ export class MetricsCollector {
         deliveryRate: 0,
         avgLatency: 0,
         queueDepth: 0,
-        queueStats: { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 },
+        queueStats: {
+          waiting: 0,
+          active: 0,
+          completed: 0,
+          failed: 0,
+          delayed: 0,
+        },
         channelMetrics: [],
         errorMetrics: [],
       };
@@ -124,8 +141,8 @@ export class MetricsCollector {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const [delivered, failed] = await Promise.all([
-      this.countNotifications('DELIVERED', since),
-      this.countNotifications('FAILED', since),
+      this.countNotifications("DELIVERED", since),
+      this.countNotifications("FAILED", since),
     ]);
 
     const total = delivered + failed;
@@ -138,7 +155,7 @@ export class MetricsCollector {
   private async calculateAverageLatency(since: Date): Promise<number> {
     const notifications = await prisma.notification.findMany({
       where: {
-        status: 'DELIVERED',
+        status: "DELIVERED",
         deliveredAt: { gte: since },
       },
       select: {
@@ -161,7 +178,10 @@ export class MetricsCollector {
   /**
    * Count notifications by status
    */
-  private async countNotifications(status: string, since: Date): Promise<number> {
+  private async countNotifications(
+    status: string,
+    since: Date,
+  ): Promise<number> {
     return await prisma.notification.count({
       where: {
         status: status as any,
@@ -174,7 +194,12 @@ export class MetricsCollector {
    * Get metrics per channel (PUSH, EMAIL, SMS)
    */
   private async getChannelMetrics(since: Date): Promise<ChannelMetrics[]> {
-    const channels: NotificationChannel[] = ['PUSH', 'EMAIL', 'SMS', 'WHATSAPP'];
+    const channels: NotificationChannel[] = [
+      "PUSH",
+      "EMAIL",
+      "SMS",
+      "WHATSAPP",
+    ];
 
     const metrics = await Promise.all(
       channels.map(async (channel) => {
@@ -189,7 +214,7 @@ export class MetricsCollector {
           prisma.notificationDeliveryLog.count({
             where: {
               channel,
-              status: 'SUCCESS',
+              status: "SUCCESS",
               attemptedAt: { gte: since },
             },
           }),
@@ -199,7 +224,7 @@ export class MetricsCollector {
         const latencyResult = await prisma.notificationDeliveryLog.aggregate({
           where: {
             channel,
-            status: 'SUCCESS',
+            status: "SUCCESS",
             attemptedAt: { gte: since },
             latencyMs: { not: null },
           },
@@ -212,10 +237,11 @@ export class MetricsCollector {
           channel,
           total,
           delivered,
-          deliveryRate: total > 0 ? Math.round((delivered / total) * 10000) / 100 : 100,
+          deliveryRate:
+            total > 0 ? Math.round((delivered / total) * 10000) / 100 : 100,
           avgLatency: Math.round(latencyResult._avg.latencyMs || 0),
         };
-      })
+      }),
     );
 
     return metrics.filter((m) => m.total > 0);
@@ -227,7 +253,7 @@ export class MetricsCollector {
   private async getErrorMetrics(since: Date): Promise<ErrorMetrics[]> {
     const failedLogs = await prisma.notificationDeliveryLog.findMany({
       where: {
-        status: 'FAILED',
+        status: "FAILED",
         attemptedAt: { gte: since },
       },
       select: {
@@ -248,7 +274,8 @@ export class MetricsCollector {
     return Object.entries(errorCounts).map(([errorType, count]) => ({
       errorType,
       count,
-      percentage: totalErrors > 0 ? Math.round((count / totalErrors) * 10000) / 100 : 0,
+      percentage:
+        totalErrors > 0 ? Math.round((count / totalErrors) * 10000) / 100 : 0,
     }));
   }
 
@@ -256,33 +283,33 @@ export class MetricsCollector {
    * Categorize error message into type
    */
   private categorizeError(errorMessage: string | null): string {
-    if (!errorMessage) return 'UNKNOWN';
+    if (!errorMessage) return "UNKNOWN";
 
     const message = errorMessage.toLowerCase();
 
-    if (message.includes('invalid') && message.includes('token')) {
-      return 'INVALID_TOKEN';
+    if (message.includes("invalid") && message.includes("token")) {
+      return "INVALID_TOKEN";
     }
-    if (message.includes('unregistered')) {
-      return 'UNREGISTERED_DEVICE';
+    if (message.includes("unregistered")) {
+      return "UNREGISTERED_DEVICE";
     }
-    if (message.includes('timeout')) {
-      return 'TIMEOUT';
+    if (message.includes("timeout")) {
+      return "TIMEOUT";
     }
-    if (message.includes('rate limit') || message.includes('too many')) {
-      return 'RATE_LIMIT';
+    if (message.includes("rate limit") || message.includes("too many")) {
+      return "RATE_LIMIT";
     }
-    if (message.includes('network') || message.includes('connection')) {
-      return 'NETWORK_ERROR';
+    if (message.includes("network") || message.includes("connection")) {
+      return "NETWORK_ERROR";
     }
-    if (message.includes('auth') || message.includes('credential')) {
-      return 'AUTH_ERROR';
+    if (message.includes("auth") || message.includes("credential")) {
+      return "AUTH_ERROR";
     }
-    if (message.includes('not found')) {
-      return 'NOT_FOUND';
+    if (message.includes("not found")) {
+      return "NOT_FOUND";
     }
 
-    return 'OTHER';
+    return "OTHER";
   }
 
   /**
@@ -320,7 +347,7 @@ export class MetricsCollector {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[MetricsCollector] Health check failed', {
+      logger.error("[MetricsCollector] Health check failed", {
         error: err.message,
       });
 
@@ -338,10 +365,10 @@ export class MetricsCollector {
    */
   async getTopNotificationTypes(
     since: Date,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<Array<{ type: string; count: number }>> {
     const results = await prisma.notification.groupBy({
-      by: ['type'],
+      by: ["type"],
       where: {
         createdAt: { gte: since },
       },
@@ -350,7 +377,7 @@ export class MetricsCollector {
       },
       orderBy: {
         _count: {
-          type: 'desc',
+          type: "desc",
         },
       },
       take: limit,
@@ -367,14 +394,16 @@ export class MetricsCollector {
    */
   async getVolumeOverTime(
     hoursBack: number = 24,
-    intervalHours: number = 1
+    intervalHours: number = 1,
   ): Promise<Array<{ timestamp: Date; count: number }>> {
     const now = new Date();
     const results: Array<{ timestamp: Date; count: number }> = [];
 
     for (let i = hoursBack; i >= 0; i -= intervalHours) {
       const start = new Date(now.getTime() - i * 60 * 60 * 1000);
-      const end = new Date(now.getTime() - (i - intervalHours) * 60 * 60 * 1000);
+      const end = new Date(
+        now.getTime() - (i - intervalHours) * 60 * 60 * 1000,
+      );
 
       const count = await prisma.notification.count({
         where: {

@@ -3,17 +3,22 @@
  * Prisma Repository Implementation for TransitSession
  */
 
-import { PrismaClient, TransitStatus as PrismaTransitStatus } from '@prisma/client';
-import { ITransitSessionRepository } from '../../../../domain/repositories/ITransitSessionRepository.js';
+import {
+  PrismaClient,
+  TransitStatus as PrismaTransitStatus,
+} from "@prisma/client";
+import { ITransitSessionRepository } from "../../../../domain/repositories/ITransitSessionRepository.js";
 import {
   TransitSession,
   TransitLocation,
   TransitStatus,
   CreateTransitSessionInput,
   AddLocationInput,
-} from '../../../../domain/entities/TransitSession.js';
+} from "../../../../domain/entities/TransitSession.js";
 
-export class PrismaTransitSessionRepository implements ITransitSessionRepository {
+export class PrismaTransitSessionRepository
+  implements ITransitSessionRepository
+{
   constructor(private prisma: PrismaClient) {}
 
   private mapSessionToDomain(session: any): TransitSession {
@@ -34,8 +39,12 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
       scheduledArrival: session.scheduledArrival,
       actualArrival: session.actualArrival,
       estimatedArrival: session.estimatedArrival,
-      totalDistanceKm: session.totalDistanceKm ? Number(session.totalDistanceKm) : null,
-      distanceTraveledKm: session.distanceTraveledKm ? Number(session.distanceTraveledKm) : null,
+      totalDistanceKm: session.totalDistanceKm
+        ? Number(session.totalDistanceKm)
+        : null,
+      distanceTraveledKm: session.distanceTraveledKm
+        ? Number(session.distanceTraveledKm)
+        : null,
       maxDeviationKm: Number(session.maxDeviationKm),
       alertOnDeviation: session.alertOnDeviation,
       locations: session.locations?.map(this.mapLocationToDomain),
@@ -73,7 +82,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
       where: { id },
       include: {
         locations: {
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           take: 100, // Limit to last 100 locations
         },
       },
@@ -84,7 +93,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
   async findByBatchId(batchId: string): Promise<TransitSession[]> {
     const sessions = await this.prisma.transitSession.findMany({
       where: { batchId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return sessions.map(this.mapSessionToDomain.bind(this));
   }
@@ -102,7 +111,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
           ],
         },
       },
-      orderBy: { scheduledDeparture: 'asc' },
+      orderBy: { scheduledDeparture: "asc" },
     });
     return sessions.map(this.mapSessionToDomain.bind(this));
   }
@@ -110,7 +119,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
   async findByStatus(status: TransitStatus): Promise<TransitSession[]> {
     const sessions = await this.prisma.transitSession.findMany({
       where: { status: status as PrismaTransitStatus },
-      orderBy: { scheduledDeparture: 'asc' },
+      orderBy: { scheduledDeparture: "asc" },
     });
     return sessions.map(this.mapSessionToDomain.bind(this));
   }
@@ -145,7 +154,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
       actualDeparture?: Date;
       actualArrival?: Date;
       estimatedArrival?: Date;
-    }
+    },
   ): Promise<TransitSession> {
     const session = await this.prisma.transitSession.update({
       where: { id },
@@ -159,7 +168,10 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
     return this.mapSessionToDomain(session);
   }
 
-  async updateEstimatedArrival(id: string, estimatedArrival: Date): Promise<TransitSession> {
+  async updateEstimatedArrival(
+    id: string,
+    estimatedArrival: Date,
+  ): Promise<TransitSession> {
     const session = await this.prisma.transitSession.update({
       where: { id },
       data: { estimatedArrival },
@@ -167,7 +179,10 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
     return this.mapSessionToDomain(session);
   }
 
-  async updateDistanceTraveled(id: string, distanceTraveledKm: number): Promise<TransitSession> {
+  async updateDistanceTraveled(
+    id: string,
+    distanceTraveledKm: number,
+  ): Promise<TransitSession> {
     const session = await this.prisma.transitSession.update({
       where: { id },
       data: { distanceTraveledKm },
@@ -191,10 +206,13 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
     return this.mapLocationToDomain(location);
   }
 
-  async getLocations(sessionId: string, limit?: number): Promise<TransitLocation[]> {
+  async getLocations(
+    sessionId: string,
+    limit?: number,
+  ): Promise<TransitLocation[]> {
     const locations = await this.prisma.transitLocation.findMany({
       where: { sessionId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: limit,
     });
     return locations.map(this.mapLocationToDomain);
@@ -203,7 +221,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
   async getLatestLocation(sessionId: string): Promise<TransitLocation | null> {
     const location = await this.prisma.transitLocation.findFirst({
       where: { sessionId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
     return location ? this.mapLocationToDomain(location) : null;
   }
@@ -220,7 +238,7 @@ export class PrismaTransitSessionRepository implements ITransitSessionRepository
         sessionId,
         isOffRoute: true,
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
     return locations.map(this.mapLocationToDomain);
   }

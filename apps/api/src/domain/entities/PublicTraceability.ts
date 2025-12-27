@@ -3,7 +3,7 @@
  * Domain Entities for Public-Facing Traceability Links
  */
 
-import crypto from 'crypto';
+import crypto from "crypto";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PUBLIC TRACEABILITY LINK
@@ -45,10 +45,10 @@ export interface QrScanEvent {
 }
 
 export enum DeviceType {
-  MOBILE = 'MOBILE',
-  TABLET = 'TABLET',
-  DESKTOP = 'DESKTOP',
-  UNKNOWN = 'UNKNOWN',
+  MOBILE = "MOBILE",
+  TABLET = "TABLET",
+  DESKTOP = "DESKTOP",
+  UNKNOWN = "UNKNOWN",
 }
 
 export interface RecordScanInput {
@@ -161,7 +161,7 @@ export interface KeyFact {
 }
 
 export interface VerificationBadge {
-  status: 'VERIFIED' | 'PARTIAL' | 'PENDING';
+  status: "VERIFIED" | "PARTIAL" | "PENDING";
   label: string;
   blockchainHash: string | null;
   blockchainUrl: string | null;
@@ -169,7 +169,7 @@ export interface VerificationBadge {
 
 export interface JourneyStage {
   name: string; // e.g., "Harvest", "Packing", "Cold Chain", "Export", "Delivery"
-  status: 'COMPLETED' | 'CURRENT' | 'PENDING' | 'SKIPPED';
+  status: "COMPLETED" | "CURRENT" | "PENDING" | "SKIPPED";
   date: Date | null;
   location: string | null;
   actor: string | null; // Role, not name for privacy
@@ -203,7 +203,7 @@ export interface ColdChainSummary {
 }
 
 export interface SealStatus {
-  status: 'INTACT' | 'VERIFIED' | 'BROKEN' | 'NOT_APPLIED';
+  status: "INTACT" | "VERIFIED" | "BROKEN" | "NOT_APPLIED";
   label: string;
   lastVerified: Date | null;
   verificationCount: number;
@@ -212,11 +212,11 @@ export interface SealStatus {
 
 export interface FieldHealthSummary {
   healthScore: number; // 0-100
-  healthCategory: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'CRITICAL';
+  healthCategory: "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "CRITICAL";
   ndviValue: number;
   lastCaptureDate: Date;
   thumbnailUrl: string | null;
-  trend: 'IMPROVING' | 'STABLE' | 'DECLINING';
+  trend: "IMPROVING" | "STABLE" | "DECLINING";
 }
 
 export interface CertificateSummary {
@@ -262,9 +262,10 @@ export interface ScanAnalytics {
  */
 export function generateShortCode(): string {
   // Use base62 (alphanumeric) for URL-safe codes
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = crypto.randomBytes(6);
-  let code = '';
+  let code = "";
   for (let i = 0; i < 8; i++) {
     code += chars[bytes[i % 6] % chars.length];
   }
@@ -277,11 +278,11 @@ export function generateShortCode(): string {
 export function generateFarmerSlug(businessName: string): string {
   return businessName
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
     .substring(0, 50);
 }
 
@@ -290,18 +291,18 @@ export function generateFarmerSlug(businessName: string): string {
  */
 export function getCountryFlag(countryCode: string): string {
   const flags: Record<string, string> = {
-    MX: '🇲🇽',
-    US: '🇺🇸',
-    CA: '🇨🇦',
-    ES: '🇪🇸',
-    FR: '🇫🇷',
-    DE: '🇩🇪',
-    GB: '🇬🇧',
-    JP: '🇯🇵',
-    CN: '🇨🇳',
-    NL: '🇳🇱',
+    MX: "🇲🇽",
+    US: "🇺🇸",
+    CA: "🇨🇦",
+    ES: "🇪🇸",
+    FR: "🇫🇷",
+    DE: "🇩🇪",
+    GB: "🇬🇧",
+    JP: "🇯🇵",
+    CN: "🇨🇳",
+    NL: "🇳🇱",
   };
-  return flags[countryCode.toUpperCase()] || '🌍';
+  return flags[countryCode.toUpperCase()] || "🌍";
 }
 
 /**
@@ -328,12 +329,12 @@ export function detectDeviceType(userAgent: string | undefined): DeviceType {
 export function extractBrowser(userAgent: string | undefined): string | null {
   if (!userAgent) return null;
   const ua = userAgent.toLowerCase();
-  if (ua.includes('chrome') && !ua.includes('edg')) return 'Chrome';
-  if (ua.includes('safari') && !ua.includes('chrome')) return 'Safari';
-  if (ua.includes('firefox')) return 'Firefox';
-  if (ua.includes('edg')) return 'Edge';
-  if (ua.includes('opera') || ua.includes('opr')) return 'Opera';
-  return 'Other';
+  if (ua.includes("chrome") && !ua.includes("edg")) return "Chrome";
+  if (ua.includes("safari") && !ua.includes("chrome")) return "Safari";
+  if (ua.includes("firefox")) return "Firefox";
+  if (ua.includes("edg")) return "Edge";
+  if (ua.includes("opera") || ua.includes("opr")) return "Opera";
+  return "Other";
 }
 
 /**
@@ -341,10 +342,10 @@ export function extractBrowser(userAgent: string | undefined): string | null {
  */
 export function getVarietyDisplayName(variety: string): string {
   const names: Record<string, string> = {
-    HASS: 'Hass Avocados',
-    BERRIES: 'Fresh Berries',
-    MANGO: 'Mangoes',
-    CITRUS: 'Citrus Fruits',
+    HASS: "Hass Avocados",
+    BERRIES: "Fresh Berries",
+    MANGO: "Mangoes",
+    CITRUS: "Citrus Fruits",
   };
   return names[variety] || variety;
 }
@@ -353,7 +354,7 @@ export function getVarietyDisplayName(variety: string): string {
  * Build public URL for traceability page
  */
 export function buildPublicUrl(shortCode: string, baseUrl?: string): string {
-  const base = baseUrl || process.env.PUBLIC_WEB_URL || 'https://agrobridge.io';
+  const base = baseUrl || process.env.PUBLIC_WEB_URL || "https://agrobridge.io";
   return `${base}/t/${shortCode}`;
 }
 
@@ -361,7 +362,7 @@ export function buildPublicUrl(shortCode: string, baseUrl?: string): string {
  * Build public URL for farmer profile
  */
 export function buildFarmerUrl(slug: string, baseUrl?: string): string {
-  const base = baseUrl || process.env.PUBLIC_WEB_URL || 'https://agrobridge.io';
+  const base = baseUrl || process.env.PUBLIC_WEB_URL || "https://agrobridge.io";
   return `${base}/f/${slug}`;
 }
 
@@ -370,22 +371,24 @@ export function buildFarmerUrl(slug: string, baseUrl?: string): string {
  */
 export function getStageIcon(stageType: string): string {
   const icons: Record<string, string> = {
-    HARVEST: '🌾',
-    PACKING: '📦',
-    COLD_CHAIN: '❄️',
-    EXPORT: '🚢',
-    DELIVERY: '✅',
+    HARVEST: "🌾",
+    PACKING: "📦",
+    COLD_CHAIN: "❄️",
+    EXPORT: "🚢",
+    DELIVERY: "✅",
   };
-  return icons[stageType] || '📍';
+  return icons[stageType] || "📍";
 }
 
 /**
  * Get health category from score
  */
-export function getHealthCategory(score: number): 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'CRITICAL' {
-  if (score >= 80) return 'EXCELLENT';
-  if (score >= 60) return 'GOOD';
-  if (score >= 40) return 'FAIR';
-  if (score >= 20) return 'POOR';
-  return 'CRITICAL';
+export function getHealthCategory(
+  score: number,
+): "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "CRITICAL" {
+  if (score >= 80) return "EXCELLENT";
+  if (score >= 60) return "GOOD";
+  if (score >= 40) return "FAIR";
+  if (score >= 20) return "POOR";
+  return "CRITICAL";
 }

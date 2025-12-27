@@ -6,8 +6,8 @@
  * designed for 5-second comprehension on mobile devices.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { IPublicTraceabilityRepository } from '../repositories/IPublicTraceabilityRepository.js';
+import { PrismaClient } from "@prisma/client";
+import { IPublicTraceabilityRepository } from "../repositories/IPublicTraceabilityRepository.js";
 import {
   PublicTraceabilityLink,
   PublicFarmerProfile,
@@ -33,9 +33,9 @@ import {
   buildFarmerUrl,
   getStageIcon,
   getHealthCategory,
-} from '../entities/PublicTraceability.js';
-import { AppError } from '../../shared/errors/AppError.js';
-import logger from '../../shared/utils/logger.js';
+} from "../entities/PublicTraceability.js";
+import { AppError } from "../../shared/errors/AppError.js";
+import logger from "../../shared/utils/logger.js";
 
 export interface GenerateLinkResult {
   link: PublicTraceabilityLink;
@@ -47,7 +47,7 @@ export interface GenerateLinkResult {
 export class PublicTraceabilityService {
   constructor(
     private prisma: PrismaClient,
-    private linkRepository: IPublicTraceabilityRepository
+    private linkRepository: IPublicTraceabilityRepository,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -74,7 +74,7 @@ export class PublicTraceabilityService {
       where: { id: batchId },
     });
     if (!batch) {
-      throw new AppError('Batch not found', 404);
+      throw new AppError("Batch not found", 404);
     }
 
     // Generate unique short code
@@ -84,7 +84,7 @@ export class PublicTraceabilityService {
       shortCode = generateShortCode();
       attempts++;
       if (attempts > 10) {
-        throw new AppError('Failed to generate unique short code', 500);
+        throw new AppError("Failed to generate unique short code", 500);
       }
     }
 
@@ -97,7 +97,7 @@ export class PublicTraceabilityService {
       expiresAt: undefined, // No expiry by default
     });
 
-    logger.info('Public traceability link generated', {
+    logger.info("Public traceability link generated", {
       batchId,
       shortCode,
       publicUrl,
@@ -114,10 +114,13 @@ export class PublicTraceabilityService {
   /**
    * Update QR image URL for a link
    */
-  async setQrImageUrl(shortCode: string, qrImageUrl: string): Promise<PublicTraceabilityLink> {
+  async setQrImageUrl(
+    shortCode: string,
+    qrImageUrl: string,
+  ): Promise<PublicTraceabilityLink> {
     const link = await this.linkRepository.findByShortCode(shortCode);
     if (!link) {
-      throw new AppError('Link not found', 404);
+      throw new AppError("Link not found", 404);
     }
 
     return this.linkRepository.update(link.id, { qrImageUrl });
@@ -130,13 +133,15 @@ export class PublicTraceabilityService {
   /**
    * Get public farmer profile by ID or slug
    */
-  async getFarmerProfile(idOrSlug: string): Promise<PublicFarmerProfile | null> {
+  async getFarmerProfile(
+    idOrSlug: string,
+  ): Promise<PublicFarmerProfile | null> {
     // Try to find by ID first, then by slug
     const producer = await this.prisma.producer.findFirst({
       where: {
         OR: [
           { id: idOrSlug },
-          { businessName: { contains: idOrSlug, mode: 'insensitive' } },
+          { businessName: { contains: idOrSlug, mode: "insensitive" } },
         ],
       },
       include: {
@@ -165,15 +170,15 @@ export class PublicTraceabilityService {
     // Calculate stats
     const batches = (producer as any).batches || [];
     const totalLots = batches.length;
-    const blockchainVerifiedLots = batches.filter(
-      (b: any) => b.qualityCertificates?.some((c: any) => c.hashOnChain)
+    const blockchainVerifiedLots = batches.filter((b: any) =>
+      b.qualityCertificates?.some((c: any) => c.hashOnChain),
     ).length;
 
     // Get average NDVI from organic fields (simplified - no imagery in MVP)
     const averageHealthScore: number | null = null;
 
     // Get unique destination countries (simplified)
-    const countriesExportedTo = ['US', 'CA', 'EU']; // Would need destination tracking
+    const countriesExportedTo = ["US", "CA", "EU"]; // Would need destination tracking
 
     const organicFields = (producer as any).organicFields || [];
     const field = organicFields[0];
@@ -184,17 +189,19 @@ export class PublicTraceabilityService {
       displayName: producer.businessName,
       photoUrl: null, // Would need profile photo field
       region: `${producer.municipality}, ${producer.state}`,
-      country: 'Mexico',
-      countryFlag: getCountryFlag('MX'),
+      country: "Mexico",
+      countryFlag: getCountryFlag("MX"),
       story: null, // Would need bio/story field
       mainCrops: producer.cropTypes || [],
       yearsOfExperience: null, // Would need founding date field
-      certifications: ((producer as any).organicCertificates || []).map((c: any) => ({
-        name: c.certificateNumber || 'Organic Certificate',
-        issuedBy: 'AgroBridge',
-        validUntil: c.validTo,
-        badgeUrl: null,
-      })),
+      certifications: ((producer as any).organicCertificates || []).map(
+        (c: any) => ({
+          name: c.certificateNumber || "Organic Certificate",
+          issuedBy: "AgroBridge",
+          validUntil: c.validTo,
+          badgeUrl: null,
+        }),
+      ),
       stats: {
         totalLotsExported: totalLots,
         blockchainVerifiedLots,
@@ -220,7 +227,9 @@ export class PublicTraceabilityService {
   /**
    * Get full public batch traceability data by short code
    */
-  async getBatchTraceability(shortCode: string): Promise<PublicBatchTraceability | null> {
+  async getBatchTraceability(
+    shortCode: string,
+  ): Promise<PublicBatchTraceability | null> {
     // Find the link and increment view count
     const link = await this.linkRepository.findByShortCode(shortCode);
     if (!link || !link.isActive) {
@@ -241,30 +250,30 @@ export class PublicTraceabilityService {
           },
         },
         verificationStages: {
-          orderBy: { timestamp: 'asc' },
+          orderBy: { timestamp: "asc" },
         },
         qualityCertificates: {
-          orderBy: { issuedAt: 'desc' },
+          orderBy: { issuedAt: "desc" },
           take: 1,
         },
         transitSessions: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: 1,
           include: {
             locations: {
-              orderBy: { timestamp: 'desc' },
+              orderBy: { timestamp: "desc" },
               take: 1,
             },
           },
         },
         temperatureReadings: {
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           take: 50, // For chart
         },
         nfcSeals: {
           include: {
             verifications: {
-              orderBy: { verifiedAt: 'desc' },
+              orderBy: { verifiedAt: "desc" },
               take: 1,
             },
           },
@@ -282,7 +291,11 @@ export class PublicTraceabilityService {
   /**
    * Build the public batch response from raw data
    */
-  private buildPublicBatchResponse(batch: any, shortCode: string, publicUrl: string): PublicBatchTraceability {
+  private buildPublicBatchResponse(
+    batch: any,
+    shortCode: string,
+    publicUrl: string,
+  ): PublicBatchTraceability {
     const producer = batch.producer;
 
     // Product Info
@@ -290,7 +303,7 @@ export class PublicTraceabilityService {
       name: getVarietyDisplayName(batch.variety),
       variety: batch.variety,
       origin: `${producer.municipality}, ${producer.state}`,
-      originFlag: getCountryFlag('MX'),
+      originFlag: getCountryFlag("MX"),
       harvestDate: batch.harvestDate,
       weightKg: Number(batch.weightKg),
       destinationCountry: null, // Would need destination field
@@ -327,7 +340,9 @@ export class PublicTraceabilityService {
     const fieldHealth = this.buildFieldHealthSummary(producer.fields?.[0]);
 
     // Certificate Summary
-    const certificate = this.buildCertificateSummary(batch.qualityCertificates?.[0]);
+    const certificate = this.buildCertificateSummary(
+      batch.qualityCertificates?.[0],
+    );
 
     // Share Info for SEO/Social
     const shareInfo = {
@@ -361,12 +376,12 @@ export class PublicTraceabilityService {
 
     // Harvest date
     facts.push({
-      icon: '📅',
-      label: 'Harvested',
-      value: batch.harvestDate.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
+      icon: "📅",
+      label: "Harvested",
+      value: batch.harvestDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       }),
     });
 
@@ -374,8 +389,8 @@ export class PublicTraceabilityService {
     if (batch.transitSessions?.[0]) {
       const session = batch.transitSessions[0];
       facts.push({
-        icon: '🚚',
-        label: 'Distance',
+        icon: "🚚",
+        label: "Distance",
         value: `${Math.round(session.distanceTraveledKm || 0)} km`,
       });
     }
@@ -383,21 +398,23 @@ export class PublicTraceabilityService {
     // Temperature (from cold chain)
     if (batch.temperatureReadings?.length > 0) {
       const temps = batch.temperatureReadings.map((r: any) => Number(r.value));
-      const avg = temps.reduce((a: number, b: number) => a + b, 0) / temps.length;
+      const avg =
+        temps.reduce((a: number, b: number) => a + b, 0) / temps.length;
       facts.push({
-        icon: '🌡️',
-        label: 'Temp Range',
+        icon: "🌡️",
+        label: "Temp Range",
         value: `${Math.min(...temps).toFixed(1)}–${Math.max(...temps).toFixed(1)}°C`,
       });
     }
 
     // Blockchain verified
-    const hasBlockchain = batch.qualityCertificates?.some((c: any) => c.hashOnChain) ||
-                          batch.stagesFinalizedHash;
+    const hasBlockchain =
+      batch.qualityCertificates?.some((c: any) => c.hashOnChain) ||
+      batch.stagesFinalizedHash;
     facts.push({
-      icon: hasBlockchain ? '✅' : '⏳',
-      label: 'Blockchain',
-      value: hasBlockchain ? 'Verified' : 'Pending',
+      icon: hasBlockchain ? "✅" : "⏳",
+      label: "Blockchain",
+      value: hasBlockchain ? "Verified" : "Pending",
       highlight: hasBlockchain,
     });
 
@@ -409,7 +426,9 @@ export class PublicTraceabilityService {
    */
   private buildVerificationBadge(batch: any): VerificationBadge {
     const stages = batch.verificationStages || [];
-    const approvedCount = stages.filter((s: any) => s.status === 'APPROVED').length;
+    const approvedCount = stages.filter(
+      (s: any) => s.status === "APPROVED",
+    ).length;
     const totalStages = 5; // HARVEST, PACKING, COLD_CHAIN, EXPORT, DELIVERY
 
     const cert = batch.qualityCertificates?.[0];
@@ -417,14 +436,14 @@ export class PublicTraceabilityService {
 
     if (approvedCount === totalStages && hash) {
       return {
-        status: 'VERIFIED',
-        label: 'Fully Verified by AgroBridge',
+        status: "VERIFIED",
+        label: "Fully Verified by AgroBridge",
         blockchainHash: hash,
         blockchainUrl: hash ? `https://etherscan.io/tx/${hash}` : null,
       };
     } else if (approvedCount > 0) {
       return {
-        status: 'PARTIAL',
+        status: "PARTIAL",
         label: `${approvedCount}/${totalStages} Stages Verified`,
         blockchainHash: hash || null,
         blockchainUrl: null,
@@ -432,8 +451,8 @@ export class PublicTraceabilityService {
     }
 
     return {
-      status: 'PENDING',
-      label: 'Verification in Progress',
+      status: "PENDING",
+      label: "Verification in Progress",
       blockchainHash: null,
       blockchainUrl: null,
     };
@@ -443,30 +462,37 @@ export class PublicTraceabilityService {
    * Build journey timeline from verification stages
    */
   private buildJourneyTimeline(stages: any[]): JourneyStage[] {
-    const stageOrder = ['HARVEST', 'PACKING', 'COLD_CHAIN', 'EXPORT', 'DELIVERY'];
+    const stageOrder = [
+      "HARVEST",
+      "PACKING",
+      "COLD_CHAIN",
+      "EXPORT",
+      "DELIVERY",
+    ];
     const stageNames: Record<string, string> = {
-      HARVEST: 'Harvest',
-      PACKING: 'Packing',
-      COLD_CHAIN: 'Cold Chain',
-      EXPORT: 'Export',
-      DELIVERY: 'Delivery',
+      HARVEST: "Harvest",
+      PACKING: "Packing",
+      COLD_CHAIN: "Cold Chain",
+      EXPORT: "Export",
+      DELIVERY: "Delivery",
     };
 
     const stageMap = new Map(stages.map((s: any) => [s.stageType, s]));
 
     return stageOrder.map((type, index) => {
       const stage = stageMap.get(type);
-      const previousStage = index > 0 ? stageMap.get(stageOrder[index - 1]) : null;
+      const previousStage =
+        index > 0 ? stageMap.get(stageOrder[index - 1]) : null;
 
-      let status: 'COMPLETED' | 'CURRENT' | 'PENDING' | 'SKIPPED';
-      if (stage?.status === 'APPROVED') {
-        status = 'COMPLETED';
-      } else if (stage?.status === 'PENDING' || stage?.status === 'FLAGGED') {
-        status = 'CURRENT';
-      } else if (previousStage?.status === 'APPROVED' && !stage) {
-        status = 'CURRENT';
+      let status: "COMPLETED" | "CURRENT" | "PENDING" | "SKIPPED";
+      if (stage?.status === "APPROVED") {
+        status = "COMPLETED";
+      } else if (stage?.status === "PENDING" || stage?.status === "FLAGGED") {
+        status = "CURRENT";
+      } else if (previousStage?.status === "APPROVED" && !stage) {
+        status = "CURRENT";
       } else {
-        status = 'PENDING';
+        status = "PENDING";
       }
 
       return {
@@ -496,7 +522,11 @@ export class PublicTraceabilityService {
       distanceTraveledKm: Number(session.distanceTraveledKm) || 0,
       totalDistanceKm: Number(session.totalDistanceKm) || 0,
       progressPercent: session.totalDistanceKm
-        ? Math.round((Number(session.distanceTraveledKm) / Number(session.totalDistanceKm)) * 100)
+        ? Math.round(
+            (Number(session.distanceTraveledKm) /
+              Number(session.totalDistanceKm)) *
+              100,
+          )
         : 0,
       estimatedArrival: session.estimatedArrival,
       lastUpdate: lastLocation?.timestamp || session.updatedAt,
@@ -518,7 +548,9 @@ export class PublicTraceabilityService {
       isCompliant: outOfRange.length === 0,
       minTemp: Math.min(...values),
       maxTemp: Math.max(...values),
-      avgTemp: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10,
+      avgTemp:
+        Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) /
+        10,
       readingCount: readings.length,
       outOfRangeCount: outOfRange.length,
       thresholdMin: Number(thresholds.minThreshold) || 0,
@@ -540,8 +572,8 @@ export class PublicTraceabilityService {
   private buildSealStatus(seals: any[]): SealStatus | null {
     if (!seals || seals.length === 0) {
       return {
-        status: 'NOT_APPLIED',
-        label: 'No NFC seal applied',
+        status: "NOT_APPLIED",
+        label: "No NFC seal applied",
         lastVerified: null,
         verificationCount: 0,
         integrityScore: 0,
@@ -549,24 +581,28 @@ export class PublicTraceabilityService {
     }
 
     // Find primary seal (most recently attached)
-    const seal = seals.reduce((latest: any, s: any) =>
-      !latest || (s.attachedAt && s.attachedAt > latest.attachedAt) ? s : latest
-    , null);
+    const seal = seals.reduce(
+      (latest: any, s: any) =>
+        !latest || (s.attachedAt && s.attachedAt > latest.attachedAt)
+          ? s
+          : latest,
+      null,
+    );
 
     const latestVerification = seal.verifications?.[0];
 
-    let status: 'INTACT' | 'VERIFIED' | 'BROKEN';
+    let status: "INTACT" | "VERIFIED" | "BROKEN";
     let label: string;
 
-    if (seal.status === 'TAMPERED' || seal.tamperIndicator !== 'NONE') {
-      status = 'BROKEN';
-      label = 'Seal integrity compromised';
+    if (seal.status === "TAMPERED" || seal.tamperIndicator !== "NONE") {
+      status = "BROKEN";
+      label = "Seal integrity compromised";
     } else if (latestVerification?.isValid) {
-      status = 'VERIFIED';
-      label = 'Seal verified & intact';
+      status = "VERIFIED";
+      label = "Seal verified & intact";
     } else {
-      status = 'INTACT';
-      label = 'Seal applied';
+      status = "INTACT";
+      label = "Seal applied";
     }
 
     return {
@@ -574,7 +610,7 @@ export class PublicTraceabilityService {
       label,
       lastVerified: latestVerification?.verifiedAt || null,
       verificationCount: seal.verifications?.length || 0,
-      integrityScore: seal.status === 'TAMPERED' ? 0 : 100,
+      integrityScore: seal.status === "TAMPERED" ? 0 : 100,
     };
   }
 
@@ -593,7 +629,7 @@ export class PublicTraceabilityService {
       ndviValue: Number(latestImagery.ndviValue) || 0,
       lastCaptureDate: latestImagery.captureDate,
       thumbnailUrl: latestImagery.ndviUrl || latestImagery.rgbUrl || null,
-      trend: 'STABLE', // Would calculate from historical data
+      trend: "STABLE", // Would calculate from historical data
     };
   }
 
@@ -614,7 +650,9 @@ export class PublicTraceabilityService {
       isValid,
       pdfUrl: cert.pdfUrl,
       blockchainHash: cert.hashOnChain,
-      blockchainUrl: cert.hashOnChain ? `https://etherscan.io/tx/${cert.hashOnChain}` : null,
+      blockchainUrl: cert.hashOnChain
+        ? `https://etherscan.io/tx/${cert.hashOnChain}`
+        : null,
     };
   }
 
@@ -634,7 +672,9 @@ export class PublicTraceabilityService {
   }): Promise<void> {
     const link = await this.linkRepository.findByShortCode(input.shortCode);
     if (!link) {
-      logger.warn('Scan recorded for unknown short code', { shortCode: input.shortCode });
+      logger.warn("Scan recorded for unknown short code", {
+        shortCode: input.shortCode,
+      });
       return;
     }
 
@@ -652,7 +692,7 @@ export class PublicTraceabilityService {
 
     await this.linkRepository.recordScan(event);
 
-    logger.info('QR scan recorded', {
+    logger.info("QR scan recorded", {
       shortCode: input.shortCode,
       country: event.country,
       deviceType: event.deviceType,
@@ -673,4 +713,4 @@ export class PublicTraceabilityService {
 }
 
 // Import crypto for UUID generation
-import crypto from 'crypto';
+import crypto from "crypto";

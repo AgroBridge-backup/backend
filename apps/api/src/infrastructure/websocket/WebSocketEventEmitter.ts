@@ -8,8 +8,13 @@
  * @author AgroBridge Engineering Team
  */
 
-import { webSocketServer, BatchUpdateEvent, EventCreatedEvent, NotificationEvent } from './WebSocketServer.js';
-import logger from '../../shared/utils/logger.js';
+import {
+  webSocketServer,
+  BatchUpdateEvent,
+  EventCreatedEvent,
+  NotificationEvent,
+} from "./WebSocketServer.js";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH EVENTS
@@ -21,10 +26,12 @@ import logger from '../../shared/utils/logger.js';
 export function emitBatchStatusUpdate(
   batchId: string,
   status: string,
-  updatedBy?: string
+  updatedBy?: string,
 ): void {
   if (!webSocketServer.isRunning()) {
-    logger.debug('[WebSocketEmitter] Server not running, skipping batch update');
+    logger.debug(
+      "[WebSocketEmitter] Server not running, skipping batch update",
+    );
     return;
   }
 
@@ -51,13 +58,13 @@ export function emitBatchCreated(batch: {
 }): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToAdmins('batch:created', {
+  webSocketServer.emitToAdmins("batch:created", {
     ...batch,
     createdAt: new Date(),
   });
 
   webSocketServer.emitProducerUpdate(batch.producerId, {
-    action: 'batch_created',
+    action: "batch_created",
     details: {
       batchId: batch.id,
       variety: batch.variety,
@@ -71,18 +78,18 @@ export function emitBatchCreated(batch: {
 export function emitBatchVerified(
   batchId: string,
   verifiedBy: string,
-  blockchainHash: string
+  blockchainHash: string,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
   webSocketServer.emitBatchUpdate(batchId, {
     batchId,
-    status: 'VERIFIED',
+    status: "VERIFIED",
     updatedAt: new Date(),
     updatedBy: verifiedBy,
   });
 
-  webSocketServer.emitToAdmins('batch:verified', {
+  webSocketServer.emitToAdmins("batch:verified", {
     batchId,
     verifiedBy,
     blockchainHash,
@@ -131,18 +138,18 @@ export function emitEventVerified(
   eventId: string,
   batchId: string,
   verifiedBy: string,
-  blockchainTxHash: string
+  blockchainTxHash: string,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
   webSocketServer.emitBatchUpdate(batchId, {
     batchId,
-    status: 'EVENT_VERIFIED',
+    status: "EVENT_VERIFIED",
     updatedAt: new Date(),
     updatedBy: verifiedBy,
   });
 
-  webSocketServer.emitToAdmins('event:verified', {
+  webSocketServer.emitToAdmins("event:verified", {
     eventId,
     batchId,
     verifiedBy,
@@ -161,12 +168,12 @@ export function emitEventVerified(
 export function emitProducerWhitelisted(
   producerId: string,
   producerName: string,
-  whitelistedBy: string
+  whitelistedBy: string,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
   webSocketServer.emitProducerUpdate(producerId, {
-    action: 'whitelisted',
+    action: "whitelisted",
     details: {
       producerName,
       whitelistedBy,
@@ -181,12 +188,12 @@ export function emitProducerWhitelisted(
 export function emitProducerSuspended(
   producerId: string,
   reason: string,
-  suspendedBy: string
+  suspendedBy: string,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
   webSocketServer.emitProducerUpdate(producerId, {
-    action: 'suspended',
+    action: "suspended",
     details: {
       reason,
       suspendedBy,
@@ -210,7 +217,7 @@ export function emitNotificationToUser(
     title: string;
     body: string;
     data?: Record<string, unknown>;
-  }
+  },
 ): void {
   if (!webSocketServer.isRunning()) return;
 
@@ -225,10 +232,13 @@ export function emitNotificationToUser(
 /**
  * Emit unread count update
  */
-export function emitUnreadCountUpdate(userId: string, unreadCount: number): void {
+export function emitUnreadCountUpdate(
+  userId: string,
+  unreadCount: number,
+): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToUser(userId, 'notifications:unreadCount', {
+  webSocketServer.emitToUser(userId, "notifications:unreadCount", {
     count: unreadCount,
     timestamp: new Date(),
   });
@@ -247,11 +257,11 @@ export function emitSubscriptionUpdated(
     tier: string;
     status: string;
     currentPeriodEnd?: Date;
-  }
+  },
 ): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToUser(userId, 'subscription:updated', {
+  webSocketServer.emitToUser(userId, "subscription:updated", {
     ...subscription,
     timestamp: new Date(),
   });
@@ -266,11 +276,11 @@ export function emitPaymentReceived(
     amount: number;
     currency: string;
     status: string;
-  }
+  },
 ): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToUser(userId, 'payment:received', {
+  webSocketServer.emitToUser(userId, "payment:received", {
     ...payment,
     timestamp: new Date(),
   });
@@ -284,11 +294,11 @@ export function emitPaymentFailed(
   error: {
     code: string;
     message: string;
-  }
+  },
 ): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToUser(userId, 'payment:failed', {
+  webSocketServer.emitToUser(userId, "payment:failed", {
     ...error,
     timestamp: new Date(),
   });
@@ -309,11 +319,11 @@ export function emitReportReady(
     type: string;
     format: string;
     downloadUrl?: string;
-  }
+  },
 ): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToUser(userId, 'report:ready', {
+  webSocketServer.emitToUser(userId, "report:ready", {
     ...report,
     timestamp: new Date(),
   });
@@ -328,11 +338,11 @@ export function emitReportFailed(
     id: string;
     name: string;
     error: string;
-  }
+  },
 ): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToUser(userId, 'report:failed', {
+  webSocketServer.emitToUser(userId, "report:failed", {
     ...report,
     timestamp: new Date(),
   });
@@ -347,7 +357,7 @@ export function emitReportFailed(
  */
 export function emitSystemAnnouncement(
   message: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
@@ -360,17 +370,17 @@ export function emitSystemAnnouncement(
 export function emitMaintenanceMode(
   enabled: boolean,
   message?: string,
-  estimatedEndTime?: Date
+  estimatedEndTime?: Date,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
   webSocketServer.emitSystemAnnouncement(
-    enabled ? 'Sistema en mantenimiento' : 'Mantenimiento completado',
+    enabled ? "Sistema en mantenimiento" : "Mantenimiento completado",
     {
       maintenanceMode: enabled,
       message,
       estimatedEndTime,
-    }
+    },
   );
 }
 
@@ -382,13 +392,13 @@ export function emitMaintenanceMode(
  * Emit admin alert
  */
 export function emitAdminAlert(
-  type: 'info' | 'warning' | 'error' | 'critical',
+  type: "info" | "warning" | "error" | "critical",
   message: string,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
-  webSocketServer.emitToAdmins('admin:alert', {
+  webSocketServer.emitToAdmins("admin:alert", {
     type,
     message,
     details,
@@ -401,15 +411,15 @@ export function emitAdminAlert(
  */
 export function emitUsageThresholdAlert(
   userId: string,
-  resourceType: 'batches' | 'apiCalls' | 'storage',
+  resourceType: "batches" | "apiCalls" | "storage",
   currentUsage: number,
   limit: number,
-  percentUsed: number
+  percentUsed: number,
 ): void {
   if (!webSocketServer.isRunning()) return;
 
   // Notify user
-  webSocketServer.emitToUser(userId, 'usage:threshold', {
+  webSocketServer.emitToUser(userId, "usage:threshold", {
     resourceType,
     currentUsage,
     limit,
@@ -419,7 +429,7 @@ export function emitUsageThresholdAlert(
 
   // Notify admins if critical
   if (percentUsed >= 90) {
-    emitAdminAlert('warning', `User approaching ${resourceType} limit`, {
+    emitAdminAlert("warning", `User approaching ${resourceType} limit`, {
       userId,
       resourceType,
       percentUsed,

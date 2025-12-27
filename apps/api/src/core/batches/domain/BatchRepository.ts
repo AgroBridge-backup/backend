@@ -1,5 +1,4 @@
-
-import { Batch } from '../../../domain/entities/Batch.js';
+import { Batch } from "../../../domain/entities/Batch.js";
 
 /**
  * The BatchRepository interface defines the contract for persistence operations
@@ -12,7 +11,11 @@ export interface BatchRepository {
    * @param batch The batch entity to save.
    * @returns A promise that resolves to the saved batch.
    */
-  save(batch: Omit<Batch, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { producerId: string }): Promise<Batch>;
+  save(
+    batch: Omit<Batch, "id" | "createdAt" | "updatedAt" | "status"> & {
+      producerId: string;
+    },
+  ): Promise<Batch>;
 
   /**
    * Finds a batch by its unique ID.

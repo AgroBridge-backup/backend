@@ -1,30 +1,30 @@
-import { IUserRepository } from '../../../domain/repositories/IUserRepository.js';
-import { IRefreshTokenRepository } from '../../../domain/repositories/IRefreshTokenRepository.js';
-import { LoginRequestDto, LoginResponseDto } from '../../dtos/auth.dtos.js';
-import { AuthenticationError } from '../../../shared/errors/AuthenticationError.js';
-import { redisClient } from '../../../infrastructure/cache/RedisClient.js';
-import logger from '../../../shared/utils/logger.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { randomUUID } from 'crypto';
-import { add } from 'date-fns';
+import { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
+import { IRefreshTokenRepository } from "../../../domain/repositories/IRefreshTokenRepository.js";
+import { LoginRequestDto, LoginResponseDto } from "../../dtos/auth.dtos.js";
+import { AuthenticationError } from "../../../shared/errors/AuthenticationError.js";
+import { redisClient } from "../../../infrastructure/cache/RedisClient.js";
+import logger from "../../../shared/utils/logger.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { randomUUID } from "crypto";
+import { add } from "date-fns";
 
 // Load private key and TTLs from environment. Crashing on startup if not set is desired.
 const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH!;
 const resolvedPath = path.resolve(process.cwd(), privateKeyPath);
 logger.debug(`[LoginUseCase] Loading Private Key from: ${resolvedPath}`);
-const JWT_PRIVATE_KEY = fs.readFileSync(resolvedPath, 'utf-8');
-const ACCESS_TOKEN_TTL = process.env.JWT_ACCESS_TOKEN_TTL || '15m';
-const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_TOKEN_TTL || '7d';
+const JWT_PRIVATE_KEY = fs.readFileSync(resolvedPath, "utf-8");
+const ACCESS_TOKEN_TTL = process.env.JWT_ACCESS_TOKEN_TTL || "15m";
+const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_TOKEN_TTL || "7d";
 const REFRESH_TOKEN_TTL_DAYS = 7; // Must match the 'd' in REFRESH_TOKEN_TTL
 const TEMP_TOKEN_TTL = 300; // 5 minutes for 2FA verification
 
 export class LoginUseCase {
   constructor(
     private readonly userRepository: IUserRepository,
-    private readonly refreshTokenRepository: IRefreshTokenRepository
+    private readonly refreshTokenRepository: IRefreshTokenRepository,
   ) {}
 
   async execute(dto: LoginRequestDto): Promise<LoginResponseDto> {
@@ -32,35 +32,48 @@ export class LoginUseCase {
     logger.debug(`[LoginUseCase] Attempting to log in user: ${email}`);
 
     // 1. Find user by email, including producer info and 2FA status
-    const user = await this.userRepository.findByEmail(email, { producer: true });
-    logger.debug('[LoginUseCase] User found in database.', { userFound: !!user, hasProducer: !!user?.producer, producerId: user?.producer?.id });
+    const user = await this.userRepository.findByEmail(email, {
+      producer: true,
+    });
+    logger.debug("[LoginUseCase] User found in database.", {
+      userFound: !!user,
+      hasProducer: !!user?.producer,
+      producerId: user?.producer?.id,
+    });
 
     if (!user || !user.isActive) {
-      throw new AuthenticationError('Invalid credentials or user inactive.');
+      throw new AuthenticationError("Invalid credentials or user inactive.");
     }
 
     // 2. Verify password (only if user has a password - OAuth users may not)
     if (!user.passwordHash) {
-      throw new AuthenticationError('Please use OAuth to login. This account has no password.');
+      throw new AuthenticationError(
+        "Please use OAuth to login. This account has no password.",
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    logger.debug(`[LoginUseCase] Password validation result for ${email}: ${isPasswordValid}`);
+    logger.debug(
+      `[LoginUseCase] Password validation result for ${email}: ${isPasswordValid}`,
+    );
 
     if (!isPasswordValid) {
-      throw new AuthenticationError('Invalid credentials or user inactive.');
+      throw new AuthenticationError("Invalid credentials or user inactive.");
     }
 
     // 3. Check if 2FA is enabled
     if (user.twoFactorEnabled) {
-      logger.debug('[LoginUseCase] User has 2FA enabled, generating temp token.', { userId: user.id });
+      logger.debug(
+        "[LoginUseCase] User has 2FA enabled, generating temp token.",
+        { userId: user.id },
+      );
 
       // Generate temporary token for 2FA verification
       const tempToken = randomUUID();
       await redisClient.client.setex(
         `2fa:temp:${tempToken}`,
         TEMP_TOKEN_TTL,
-        JSON.stringify({ userId: user.id, email: user.email })
+        JSON.stringify({ userId: user.id, email: user.email }),
       );
 
       return {
@@ -70,18 +83,32 @@ export class LoginUseCase {
     }
 
     // 4. Generate Tokens (no 2FA required)
-    logger.debug('[LoginUseCase] Generating tokens for user.', { userId: user.id, email: user.email });
+    logger.debug("[LoginUseCase] Generating tokens for user.", {
+      userId: user.id,
+      email: user.email,
+    });
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
 
     // 5. Store the refresh token in the database
-    const refreshTokenExpiresAt = add(new Date(), { days: REFRESH_TOKEN_TTL_DAYS });
-    await this.refreshTokenRepository.create(user.id, refreshToken, refreshTokenExpiresAt);
+    const refreshTokenExpiresAt = add(new Date(), {
+      days: REFRESH_TOKEN_TTL_DAYS,
+    });
+    await this.refreshTokenRepository.create(
+      user.id,
+      refreshToken,
+      refreshTokenExpiresAt,
+    );
 
     return { accessToken, refreshToken };
   }
 
-  private generateAccessToken(user: { id: string; role: string; email: string; producer?: { id: string } | null }): string {
+  private generateAccessToken(user: {
+    id: string;
+    role: string;
+    email: string;
+    producer?: { id: string } | null;
+  }): string {
     const payload = {
       sub: user.id,
       role: user.role,
@@ -92,7 +119,7 @@ export class LoginUseCase {
     const jti = randomUUID();
 
     const options: jwt.SignOptions = {
-      algorithm: 'RS256' as jwt.Algorithm,
+      algorithm: "RS256" as jwt.Algorithm,
       // @ts-ignore - Bypassing a defective type definition in @types/jsonwebtoken
       expiresIn: ACCESS_TOKEN_TTL,
       jwtid: jti,
@@ -108,7 +135,7 @@ export class LoginUseCase {
     const jti = randomUUID();
 
     const options: jwt.SignOptions = {
-      algorithm: 'RS256' as jwt.Algorithm,
+      algorithm: "RS256" as jwt.Algorithm,
       // @ts-ignore - Bypassing a defective type definition in @types/jsonwebtoken
       expiresIn: REFRESH_TOKEN_TTL,
       jwtid: jti,

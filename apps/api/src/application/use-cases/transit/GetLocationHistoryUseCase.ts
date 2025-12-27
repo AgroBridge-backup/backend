@@ -3,8 +3,8 @@
  * Use Case: Get location history for a session
  */
 
-import { TransitTrackingService } from '../../../domain/services/TransitTrackingService.js';
-import { TransitLocation } from '../../../domain/entities/TransitSession.js';
+import { TransitTrackingService } from "../../../domain/services/TransitTrackingService.js";
+import { TransitLocation } from "../../../domain/entities/TransitSession.js";
 
 export interface GetLocationHistoryRequest {
   sessionId: string;
@@ -14,7 +14,12 @@ export interface GetLocationHistoryRequest {
 export class GetLocationHistoryUseCase {
   constructor(private transitService: TransitTrackingService) {}
 
-  async execute(request: GetLocationHistoryRequest): Promise<TransitLocation[]> {
-    return this.transitService.getLocationHistory(request.sessionId, request.limit);
+  async execute(
+    request: GetLocationHistoryRequest,
+  ): Promise<TransitLocation[]> {
+    return this.transitService.getLocationHistory(
+      request.sessionId,
+      request.limit,
+    );
   }
 }

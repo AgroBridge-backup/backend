@@ -19,7 +19,7 @@ export interface ReferralRegistrationResult {
   timestamp: Date;
   gasUsed?: string | null;
   status?: string; // P1-7 FIX: BLOCKCHAIN_UNAVAILABLE when fallback
-  error?: string;  // P1-7 FIX: Error message when fallback
+  error?: string; // P1-7 FIX: Error message when fallback
 }
 
 export interface ReferralRewardData {
@@ -37,7 +37,7 @@ export interface ReferralRewardResult {
   network: string;
   timestamp: Date;
   status?: string; // P1-7 FIX: BLOCKCHAIN_UNAVAILABLE when fallback
-  error?: string;  // P1-7 FIX: Error message when fallback
+  error?: string; // P1-7 FIX: Error message when fallback
 }
 
 export interface ReferralVerificationResult {
@@ -52,7 +52,9 @@ export interface IReferralBlockchainService {
   /**
    * Register a referral on the blockchain
    */
-  registerReferral(data: ReferralBlockchainData): Promise<ReferralRegistrationResult>;
+  registerReferral(
+    data: ReferralBlockchainData,
+  ): Promise<ReferralRegistrationResult>;
 
   /**
    * Record a referral reward on the blockchain

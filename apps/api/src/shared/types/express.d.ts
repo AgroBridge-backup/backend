@@ -10,12 +10,20 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Request } from 'express';
+import { Request } from "express";
 
 /**
  * User role type (matches Prisma UserRole enum)
  */
-export type UserRole = 'ADMIN' | 'PRODUCER' | 'CERTIFIER' | 'BUYER' | 'QA' | 'EXPORTER' | 'DRIVER' | 'EXPORT_COMPANY_ADMIN';
+export type UserRole =
+  | "ADMIN"
+  | "PRODUCER"
+  | "CERTIFIER"
+  | "BUYER"
+  | "QA"
+  | "EXPORTER"
+  | "DRIVER"
+  | "EXPORT_COMPANY_ADMIN";
 
 /**
  * Authenticated user data attached to requests
@@ -46,7 +54,7 @@ export interface AuthenticatedUser {
   /** Token expiration timestamp */
   exp?: number;
   /** User's subscription tier */
-  subscriptionTier?: 'free' | 'basic' | 'premium' | 'enterprise';
+  subscriptionTier?: "free" | "basic" | "premium" | "enterprise";
 }
 
 /**

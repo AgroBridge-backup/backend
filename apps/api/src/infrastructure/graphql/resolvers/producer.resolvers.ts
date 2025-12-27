@@ -5,9 +5,15 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Producer, Prisma } from '@prisma/client';
-import { GraphQLContext, requireAuth, requireRole, isAdmin, isAdminOrAuditor } from '../context.js';
-import { NotFoundError, ForbiddenError, ConflictError } from '../errors.js';
+import { Producer, Prisma } from "@prisma/client";
+import {
+  GraphQLContext,
+  requireAuth,
+  requireRole,
+  isAdmin,
+  isAdminOrAuditor,
+} from "../context.js";
+import { NotFoundError, ForbiddenError, ConflictError } from "../errors.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -27,7 +33,7 @@ interface ProducerFilterInput {
 
 interface ProducerSortInput {
   field: string;
-  direction: 'ASC' | 'DESC';
+  direction: "ASC" | "DESC";
 }
 
 interface CreateProducerInput {
@@ -53,7 +59,9 @@ interface UpdateProducerInput {
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildProducerWhere(filter?: ProducerFilterInput): Prisma.ProducerWhereInput {
+function buildProducerWhere(
+  filter?: ProducerFilterInput,
+): Prisma.ProducerWhereInput {
   const where: Prisma.ProducerWhereInput = {};
 
   if (filter) {
@@ -61,10 +69,13 @@ function buildProducerWhere(filter?: ProducerFilterInput): Prisma.ProducerWhereI
       where.isWhitelisted = filter.isWhitelisted;
     }
     if (filter.state) {
-      where.state = { contains: filter.state, mode: 'insensitive' };
+      where.state = { contains: filter.state, mode: "insensitive" };
     }
     if (filter.municipality) {
-      where.municipality = { contains: filter.municipality, mode: 'insensitive' };
+      where.municipality = {
+        contains: filter.municipality,
+        mode: "insensitive",
+      };
     }
     if (filter.createdAt) {
       where.createdAt = {};
@@ -80,15 +91,17 @@ function buildProducerWhere(filter?: ProducerFilterInput): Prisma.ProducerWhereI
   return where;
 }
 
-function buildProducerOrderBy(sort?: ProducerSortInput): Prisma.ProducerOrderByWithRelationInput {
+function buildProducerOrderBy(
+  sort?: ProducerSortInput,
+): Prisma.ProducerOrderByWithRelationInput {
   if (!sort) {
-    return { createdAt: 'desc' };
+    return { createdAt: "desc" };
   }
-  return { [sort.field]: sort.direction.toLowerCase() as 'asc' | 'desc' };
+  return { [sort.field]: sort.direction.toLowerCase() as "asc" | "desc" };
 }
 
 function encodeCursor(id: string): string {
-  return Buffer.from(id).toString('base64');
+  return Buffer.from(id).toString("base64");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -99,7 +112,7 @@ export const producerQueries = {
   producer: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ): Promise<Producer | null> => {
     return context.loaders.producer.load(args.id);
   },
@@ -107,7 +120,7 @@ export const producerQueries = {
   producerByUserId: async (
     _parent: unknown,
     args: { userId: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ): Promise<Producer | null> => {
     return context.loaders.producerByUserId.load(args.userId);
   },
@@ -119,7 +132,7 @@ export const producerQueries = {
       filter?: ProducerFilterInput;
       sort?: ProducerSortInput;
     },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     const page = args.pagination?.page || 1;
     const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -169,21 +182,23 @@ export const producerMutations = {
   createProducer: async (
     _parent: unknown,
     args: { userId: string; input: CreateProducerInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN']);
+    requireRole(context, ["ADMIN"]);
 
     // Check if user exists
     const user = await context.loaders.user.load(args.userId);
     if (!user) {
-      throw new NotFoundError('User', args.userId);
+      throw new NotFoundError("User", args.userId);
     }
 
     // Check if user already has a producer profile
-    const existingProducer = await context.loaders.producerByUserId.load(args.userId);
+    const existingProducer = await context.loaders.producerByUserId.load(
+      args.userId,
+    );
     if (existingProducer) {
-      throw new ConflictError('User already has a producer profile');
+      throw new ConflictError("User already has a producer profile");
     }
 
     const producer = await context.prisma.producer.create({
@@ -204,12 +219,12 @@ export const producerMutations = {
     // Update user role to PRODUCER
     await context.prisma.user.update({
       where: { id: args.userId },
-      data: { role: 'PRODUCER' },
+      data: { role: "PRODUCER" },
     });
 
     return {
       success: true,
-      message: 'Producer profile created successfully',
+      message: "Producer profile created successfully",
       producer,
     };
   },
@@ -217,18 +232,18 @@ export const producerMutations = {
   updateProducer: async (
     _parent: unknown,
     args: { id: string; input: UpdateProducerInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
 
     const producer = await context.loaders.producer.load(args.id);
     if (!producer) {
-      throw new NotFoundError('Producer', args.id);
+      throw new NotFoundError("Producer", args.id);
     }
 
     // Check ownership or admin
     if (!isAdmin(context) && producer.userId !== context.user.id) {
-      throw new ForbiddenError('You can only update your own producer profile');
+      throw new ForbiddenError("You can only update your own producer profile");
     }
 
     const updatedProducer = await context.prisma.producer.update({
@@ -243,7 +258,7 @@ export const producerMutations = {
 
     return {
       success: true,
-      message: 'Producer profile updated successfully',
+      message: "Producer profile updated successfully",
       producer: updatedProducer,
     };
   },
@@ -251,18 +266,18 @@ export const producerMutations = {
   whitelistProducer: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     const producer = await context.loaders.producer.load(args.id);
     if (!producer) {
-      throw new NotFoundError('Producer', args.id);
+      throw new NotFoundError("Producer", args.id);
     }
 
     if (producer.isWhitelisted) {
-      throw new ConflictError('Producer is already whitelisted');
+      throw new ConflictError("Producer is already whitelisted");
     }
 
     const updatedProducer = await context.prisma.producer.update({
@@ -276,7 +291,7 @@ export const producerMutations = {
 
     return {
       success: true,
-      message: 'Producer whitelisted successfully',
+      message: "Producer whitelisted successfully",
       producer: updatedProducer,
     };
   },
@@ -284,20 +299,20 @@ export const producerMutations = {
   deleteProducer: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN']);
+    requireRole(context, ["ADMIN"]);
 
     const producer = await context.loaders.producer.load(args.id);
     if (!producer) {
-      throw new NotFoundError('Producer', args.id);
+      throw new NotFoundError("Producer", args.id);
     }
 
     // Check if producer has batches
     const batchCount = await context.loaders.producerBatchCount.load(args.id);
     if (batchCount > 0) {
-      throw new ConflictError('Cannot delete producer with existing batches');
+      throw new ConflictError("Cannot delete producer with existing batches");
     }
 
     await context.prisma.producer.delete({
@@ -306,7 +321,7 @@ export const producerMutations = {
 
     return {
       success: true,
-      message: 'Producer deleted successfully',
+      message: "Producer deleted successfully",
       deletedId: args.id,
     };
   },
@@ -325,7 +340,7 @@ export const producerFieldResolvers = {
     batches: async (
       parent: Producer,
       args: { pagination?: PaginationInput },
-      context: GraphQLContext
+      context: GraphQLContext,
     ) => {
       const page = args.pagination?.page || 1;
       const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -336,7 +351,7 @@ export const producerFieldResolvers = {
       const [batches, totalCount] = await Promise.all([
         context.prisma.batch.findMany({
           where,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           skip,
           take: limit,
         }),
@@ -365,18 +380,30 @@ export const producerFieldResolvers = {
       };
     },
 
-    certifications: async (parent: Producer, _args: unknown, context: GraphQLContext) => {
+    certifications: async (
+      parent: Producer,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.prisma.certification.findMany({
         where: { producerId: parent.id },
-        orderBy: { issuedAt: 'desc' },
+        orderBy: { issuedAt: "desc" },
       });
     },
 
-    batchCount: async (parent: Producer, _args: unknown, context: GraphQLContext) => {
+    batchCount: async (
+      parent: Producer,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.producerBatchCount.load(parent.id);
     },
 
-    activeBatchCount: async (parent: Producer, _args: unknown, context: GraphQLContext) => {
+    activeBatchCount: async (
+      parent: Producer,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.producerActiveBatchCount.load(parent.id);
     },
   },

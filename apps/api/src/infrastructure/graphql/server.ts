@@ -5,13 +5,13 @@
  * @author AgroBridge Engineering Team
  */
 
-import { createYoga } from 'graphql-yoga';
-import { createSchema } from 'graphql-yoga';
-import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express';
-import { typeDefs } from './schema/typeDefs.js';
-import { resolvers } from './resolvers/index.js';
-import { createContext, GraphQLContext } from './context.js';
+import { createYoga } from "graphql-yoga";
+import { createSchema } from "graphql-yoga";
+import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
+import { typeDefs } from "./schema/typeDefs.js";
+import { resolvers } from "./resolvers/index.js";
+import { createContext, GraphQLContext } from "./context.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -48,8 +48,8 @@ function buildSchema() {
 export function createGraphQLServer(options: GraphQLServerOptions) {
   const {
     prisma,
-    isDevelopment = process.env.NODE_ENV !== 'production',
-    endpoint = '/graphql',
+    isDevelopment = process.env.NODE_ENV !== "production",
+    endpoint = "/graphql",
   } = options;
 
   const schema = buildSchema();
@@ -62,7 +62,7 @@ export function createGraphQLServer(options: GraphQLServerOptions) {
 
     // Logging configuration
     logging: isDevelopment
-      ? 'debug'
+      ? "debug"
       : {
           debug: () => {},
           info: () => {},
@@ -74,7 +74,7 @@ export function createGraphQLServer(options: GraphQLServerOptions) {
     landingPage: isDevelopment,
 
     // Health check endpoint
-    healthCheckEndpoint: '/graphql/health',
+    healthCheckEndpoint: "/graphql/health",
 
     // CORS is handled by Express
     cors: false,
@@ -82,7 +82,7 @@ export function createGraphQLServer(options: GraphQLServerOptions) {
     // Response caching headers
     graphiql: isDevelopment
       ? {
-          title: 'AgroBridge GraphQL',
+          title: "AgroBridge GraphQL",
           defaultQuery: `# Welcome to AgroBridge GraphQL API
 #
 # Try these example queries:
@@ -158,9 +158,9 @@ export function createGraphQLMiddleware(options: GraphQLServerOptions) {
       new globalThis.Request(`http://localhost${req.url}`, {
         method: req.method,
         headers: req.headers as HeadersInit,
-        body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined,
+        body: req.method !== "GET" ? JSON.stringify(req.body) : undefined,
       }),
-      { req, res }
+      { req, res },
     );
 
     // Set response headers
@@ -183,8 +183,8 @@ export function createGraphQLMiddleware(options: GraphQLServerOptions) {
 /**
  * Get GraphQL endpoint info
  */
-export function getGraphQLInfo(endpoint = '/graphql') {
-  const isDevelopment = process.env.NODE_ENV !== 'production';
+export function getGraphQLInfo(endpoint = "/graphql") {
+  const isDevelopment = process.env.NODE_ENV !== "production";
 
   return {
     endpoint,
@@ -192,39 +192,39 @@ export function getGraphQLInfo(endpoint = '/graphql') {
     playgroundEnabled: isDevelopment,
     introspectionEnabled: isDevelopment,
     features: [
-      'Batches CRUD',
-      'Producers management',
-      'Events tracking',
-      'User queries',
-      'Analytics (Admin/Certifier)',
-      'Certifications',
-      'Field-level authorization',
-      'DataLoader batching',
-      'Cursor and offset pagination',
+      "Batches CRUD",
+      "Producers management",
+      "Events tracking",
+      "User queries",
+      "Analytics (Admin/Certifier)",
+      "Certifications",
+      "Field-level authorization",
+      "DataLoader batching",
+      "Cursor and offset pagination",
     ],
     documentation: {
       queries: [
-        'me - Get current authenticated user',
-        'user(id) - Get user by ID',
-        'users - List all users (Admin/Certifier)',
-        'batch(id) - Get batch by ID',
-        'batches - List batches with filtering/sorting',
-        'producer(id) - Get producer by ID',
-        'producers - List producers',
-        'event(id) - Get event by ID',
-        'events - List events',
-        'dashboard - Get dashboard statistics',
-        'search - Search across entities',
+        "me - Get current authenticated user",
+        "user(id) - Get user by ID",
+        "users - List all users (Admin/Certifier)",
+        "batch(id) - Get batch by ID",
+        "batches - List batches with filtering/sorting",
+        "producer(id) - Get producer by ID",
+        "producers - List producers",
+        "event(id) - Get event by ID",
+        "events - List events",
+        "dashboard - Get dashboard statistics",
+        "search - Search across entities",
       ],
       mutations: [
-        'createBatch - Create new batch',
-        'updateBatchStatus - Update batch status',
-        'deleteBatch - Delete batch (Admin)',
-        'createEvent - Add event to batch',
-        'createProducer - Create producer (Admin)',
-        'updateProducer - Update producer',
-        'whitelistProducer - Whitelist producer (Admin/Certifier)',
-        'addCertification - Add certification to producer',
+        "createBatch - Create new batch",
+        "updateBatchStatus - Update batch status",
+        "deleteBatch - Delete batch (Admin)",
+        "createEvent - Add event to batch",
+        "createProducer - Create producer (Admin)",
+        "updateProducer - Update producer",
+        "whitelistProducer - Whitelist producer (Admin/Certifier)",
+        "addCertification - Add certification to producer",
       ],
     },
   };

@@ -5,8 +5,14 @@
  * @author AgroBridge Engineering Team
  */
 
-export { WebSocketServer, webSocketServer } from './WebSocketServer.js';
-export type { AuthenticatedSocket, WebSocketMetrics, BatchUpdateEvent, EventCreatedEvent, NotificationEvent } from './WebSocketServer.js';
+export { WebSocketServer, webSocketServer } from "./WebSocketServer.js";
+export type {
+  AuthenticatedSocket,
+  WebSocketMetrics,
+  BatchUpdateEvent,
+  EventCreatedEvent,
+  NotificationEvent,
+} from "./WebSocketServer.js";
 
 export {
   // Batch events
@@ -35,4 +41,4 @@ export {
   // Admin events
   emitAdminAlert,
   emitUsageThresholdAlert,
-} from './WebSocketEventEmitter.js';
+} from "./WebSocketEventEmitter.js";

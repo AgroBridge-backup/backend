@@ -2,7 +2,7 @@
  * Express Request Type Augmentation
  * Provides type-safe access to authenticated user properties
  */
-import { UserRole } from '@prisma/client';
+import { UserRole } from "@prisma/client";
 
 // Make this a module so declare global works
 export {};

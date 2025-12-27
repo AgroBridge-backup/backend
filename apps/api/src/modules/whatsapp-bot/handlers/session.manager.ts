@@ -4,9 +4,14 @@
  * @module whatsapp-bot/handlers/session.manager
  */
 
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../../../infrastructure/logging/logger.js';
-import { WhatsAppSession, ConversationState, SessionContext, UserIntent } from '../types/index.js';
+import { PrismaClient } from "@prisma/client";
+import { logger } from "../../../infrastructure/logging/logger.js";
+import {
+  WhatsAppSession,
+  ConversationState,
+  SessionContext,
+  UserIntent,
+} from "../types/index.js";
 
 const prisma = new PrismaClient();
 
@@ -52,9 +57,9 @@ export class SessionManager {
       phoneNumber,
       userId: userInfo?.userId,
       producerId: userInfo?.producerId,
-      state: 'IDLE',
+      state: "IDLE",
       context: {},
-      language: 'es', // Default to Spanish
+      language: "es", // Default to Spanish
       lastMessageAt: now,
       messageCount: 0,
       createdAt: now,
@@ -63,7 +68,7 @@ export class SessionManager {
 
     sessions.set(phoneNumber, session);
 
-    logger.info('[SessionManager] Created session', {
+    logger.info("[SessionManager] Created session", {
       sessionId: session.id,
       phone: phoneNumber.slice(-4),
       userId: session.userId,
@@ -108,7 +113,7 @@ export class SessionManager {
   /**
    * Set language preference
    */
-  setLanguage(phoneNumber: string, language: 'es' | 'en'): void {
+  setLanguage(phoneNumber: string, language: "es" | "en"): void {
     const session = sessions.get(this.normalizePhone(phoneNumber));
     if (session) {
       session.language = language;
@@ -156,7 +161,7 @@ export class SessionManager {
 
       return null;
     } catch (error) {
-      logger.error('[SessionManager] Error finding user:', error);
+      logger.error("[SessionManager] Error finding user:", error);
       return null;
     }
   }
@@ -165,7 +170,7 @@ export class SessionManager {
    * Normalize phone number
    */
   private normalizePhone(phone: string): string {
-    return phone.replace(/\D/g, '');
+    return phone.replace(/\D/g, "");
   }
 
   /**
@@ -175,36 +180,50 @@ export class SessionManager {
     const lower = text.toLowerCase().trim();
 
     // Greeting patterns
-    if (/^(hola|hi|hey|buenos?\s*d[ií]as?|buenas?\s*tardes?|buenas?\s*noches?|hello|saludos)/.test(lower)) {
-      return 'GREETING';
+    if (
+      /^(hola|hi|hey|buenos?\s*d[ií]as?|buenas?\s*tardes?|buenas?\s*noches?|hello|saludos)/.test(
+        lower,
+      )
+    ) {
+      return "GREETING";
     }
 
     // Thanks patterns
-    if (/^(gracias|thanks|thank\s*you|te\s*agradezco|muchas\s*gracias)/.test(lower)) {
-      return 'THANKS';
+    if (
+      /^(gracias|thanks|thank\s*you|te\s*agradezco|muchas\s*gracias)/.test(
+        lower,
+      )
+    ) {
+      return "THANKS";
     }
 
     // Advance request patterns
-    if (/anticipo|advance|préstamo|prestamo|loan|dinero|money|capital/.test(lower)) {
-      return 'REQUEST_ADVANCE';
+    if (
+      /anticipo|advance|préstamo|prestamo|loan|dinero|money|capital/.test(lower)
+    ) {
+      return "REQUEST_ADVANCE";
     }
 
     // Balance check patterns
     if (/saldo|balance|cuenta|deuda|debo|owe|pending|pendiente/.test(lower)) {
-      return 'CHECK_BALANCE';
+      return "CHECK_BALANCE";
     }
 
     // Payment patterns
     if (/pagar|pago|pay|payment|abonar|depositar|transfer/.test(lower)) {
-      return 'MAKE_PAYMENT';
+      return "MAKE_PAYMENT";
     }
 
     // Support patterns
-    if (/ayuda|help|soporte|support|agente|agent|humano|human|problema|problem/.test(lower)) {
-      return 'CUSTOMER_SUPPORT';
+    if (
+      /ayuda|help|soporte|support|agente|agent|humano|human|problema|problem/.test(
+        lower,
+      )
+    ) {
+      return "CUSTOMER_SUPPORT";
     }
 
-    return 'UNKNOWN';
+    return "UNKNOWN";
   }
 
   /**
@@ -214,9 +233,9 @@ export class SessionManager {
     action: string;
     data?: string;
   } {
-    const parts = replyId.split('_');
+    const parts = replyId.split("_");
     return {
-      action: parts.slice(0, -1).join('_') || replyId,
+      action: parts.slice(0, -1).join("_") || replyId,
       data: parts.length > 1 ? parts[parts.length - 1] : undefined,
     };
   }
@@ -254,7 +273,9 @@ export class SessionManager {
     });
 
     if (cleaned > 0) {
-      logger.info('[SessionManager] Cleaned up expired sessions', { count: cleaned });
+      logger.info("[SessionManager] Cleaned up expired sessions", {
+        count: cleaned,
+      });
     }
 
     return cleaned;

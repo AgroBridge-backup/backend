@@ -3,8 +3,8 @@
  * This package doesn't have official TypeScript types.
  */
 
-declare module 'winston-datadog' {
-  import Transport from 'winston-transport';
+declare module "winston-datadog" {
+  import Transport from "winston-transport";
 
   interface DatadogTransportOptions {
     /** Datadog API key */

@@ -8,53 +8,53 @@
  * Certificate status workflow
  */
 export enum OrganicCertificateStatus {
-  DRAFT = 'DRAFT',                     // Certificate created, not submitted
-  PROCESSING = 'PROCESSING',           // PDF/blockchain generation in progress
-  PENDING_REVIEW = 'PENDING_REVIEW',   // Submitted, awaiting export company review
-  APPROVED = 'APPROVED',               // Export company approved, blockchain anchored
-  REJECTED = 'REJECTED',               // Export company rejected
-  REVOKED = 'REVOKED',                 // Certificate revoked post-approval
-  BLOCKCHAIN_FAILED = 'BLOCKCHAIN_FAILED', // Blockchain anchoring failed (retryable)
+  DRAFT = "DRAFT", // Certificate created, not submitted
+  PROCESSING = "PROCESSING", // PDF/blockchain generation in progress
+  PENDING_REVIEW = "PENDING_REVIEW", // Submitted, awaiting export company review
+  APPROVED = "APPROVED", // Export company approved, blockchain anchored
+  REJECTED = "REJECTED", // Export company rejected
+  REVOKED = "REVOKED", // Certificate revoked post-approval
+  BLOCKCHAIN_FAILED = "BLOCKCHAIN_FAILED", // Blockchain anchoring failed (retryable)
 }
 
 /**
  * Certification standards supported
  */
 export enum CertificationStandard {
-  USDA_ORGANIC = 'ORGANIC_USDA',   // US market - 60% of exports
-  EU_ORGANIC = 'ORGANIC_EU',       // EU Regulation 2018/848
-  SENASICA = 'SENASICA',           // Mexico domestic + LATAM
+  USDA_ORGANIC = "ORGANIC_USDA", // US market - 60% of exports
+  EU_ORGANIC = "ORGANIC_EU", // EU Regulation 2018/848
+  SENASICA = "SENASICA", // Mexico domestic + LATAM
 }
 
 /**
  * Crop types for Mexican export (primary revenue crops)
  */
 export enum CropType {
-  AVOCADO = 'AVOCADO',       // Hass avocados - Michoacán
-  BLUEBERRY = 'BLUEBERRY',   // Berries - Jalisco
-  RASPBERRY = 'RASPBERRY',   // Berries - Jalisco
-  STRAWBERRY = 'STRAWBERRY', // Berries - Baja California
-  BLACKBERRY = 'BLACKBERRY', // Berries
-  OTHER = 'OTHER',
+  AVOCADO = "AVOCADO", // Hass avocados - Michoacán
+  BLUEBERRY = "BLUEBERRY", // Berries - Jalisco
+  RASPBERRY = "RASPBERRY", // Berries - Jalisco
+  STRAWBERRY = "STRAWBERRY", // Berries - Baja California
+  BLACKBERRY = "BLACKBERRY", // Berries
+  OTHER = "OTHER",
 }
 
 /**
  * Blockchain networks supported
  */
 export enum BlockchainNetwork {
-  POLYGON = 'POLYGON',     // Primary - low gas fees
-  BASE = 'BASE',           // Coinbase L2 - backup
-  ETHEREUM = 'ETHEREUM',   // Mainnet - high-value certs
+  POLYGON = "POLYGON", // Primary - low gas fees
+  BASE = "BASE", // Coinbase L2 - backup
+  ETHEREUM = "ETHEREUM", // Mainnet - high-value certs
 }
 
 /**
  * Minimum inspection requirements for certificate generation
  */
 export const CERTIFICATE_REQUIREMENTS = {
-  minInspections: 4,          // At least 4 field inspections in last 90 days
-  minPhotos: 12,              // At least 12 photos across all inspections
-  minOrganicInputs: 3,        // At least 3 verified organic inputs
-  inspectionWindowDays: 90,   // Inspections must be within this window
+  minInspections: 4, // At least 4 field inspections in last 90 days
+  minPhotos: 12, // At least 12 photos across all inspections
+  minOrganicInputs: 3, // At least 3 verified organic inputs
+  inspectionWindowDays: 90, // Inspections must be within this window
   certificateValidityDays: 365, // Certificate valid for 1 year
 } as const;
 
@@ -63,7 +63,7 @@ export const CERTIFICATE_REQUIREMENTS = {
  */
 export interface OrganicCertificate {
   id: string;
-  certificateNumber: string;   // Format: AGB-MX-2025-001234
+  certificateNumber: string; // Format: AGB-MX-2025-001234
 
   // Parties
   farmerId: string;
@@ -100,7 +100,7 @@ export interface OrganicCertificate {
   qrCodeShortUrl?: string | null;
 
   // Blockchain anchoring
-  contentHash?: string | null;        // SHA-256 of payload
+  contentHash?: string | null; // SHA-256 of payload
   blockchainTxHash?: string | null;
   blockchainNetwork?: string | null;
   blockchainTimestamp?: Date | null;
@@ -476,25 +476,25 @@ export interface ViewData {
  * Explorer URLs by network
  */
 export const BLOCKCHAIN_EXPLORERS: Record<string, string> = {
-  POLYGON: 'https://polygonscan.com/tx/',
-  BASE: 'https://basescan.org/tx/',
-  ETHEREUM: 'https://etherscan.io/tx/',
+  POLYGON: "https://polygonscan.com/tx/",
+  BASE: "https://basescan.org/tx/",
+  ETHEREUM: "https://etherscan.io/tx/",
 };
 
 /**
  * IPFS gateway URLs
  */
 export const IPFS_GATEWAYS = {
-  pinata: 'https://gateway.pinata.cloud/ipfs/',
-  cloudflare: 'https://cloudflare-ipfs.com/ipfs/',
-  ipfsio: 'https://ipfs.io/ipfs/',
+  pinata: "https://gateway.pinata.cloud/ipfs/",
+  cloudflare: "https://cloudflare-ipfs.com/ipfs/",
+  ipfsio: "https://ipfs.io/ipfs/",
 } as const;
 
 /**
  * Certification standard display names
  */
 export const CERTIFICATION_DISPLAY_NAMES: Record<string, string> = {
-  ORGANIC_USDA: 'USDA Organic',
-  ORGANIC_EU: 'EU Organic',
-  SENASICA: 'SENASICA Mexico',
+  ORGANIC_USDA: "USDA Organic",
+  ORGANIC_EU: "EU Organic",
+  SENASICA: "SENASICA Mexico",
 };

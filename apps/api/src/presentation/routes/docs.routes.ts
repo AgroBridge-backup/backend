@@ -3,9 +3,9 @@
  * @description Serve Swagger UI and OpenAPI specification
  */
 
-import { Router, Request, Response } from 'express';
-import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from '../../infrastructure/docs/swagger/config.js';
+import { Router, Request, Response } from "express";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "../../infrastructure/docs/swagger/config.js";
 
 const router = Router();
 
@@ -19,58 +19,58 @@ const swaggerUiOptions = {
     .swagger-ui .info .description { margin-top: 20px }
     .swagger-ui .opblock-tag { font-size: 18px }
   `,
-  customSiteTitle: 'AgroBridge API Documentation',
-  customfavIcon: '/favicon.ico',
+  customSiteTitle: "AgroBridge API Documentation",
+  customfavIcon: "/favicon.ico",
   swaggerOptions: {
     persistAuthorization: true,
     displayRequestDuration: true,
     filter: true,
     syntaxHighlight: {
-      theme: 'monokai',
+      theme: "monokai",
     },
-    docExpansion: 'list',
+    docExpansion: "list",
     defaultModelsExpandDepth: 2,
     defaultModelExpandDepth: 2,
   },
 };
 
 // Serve Swagger UI
-router.use('/api-docs', swaggerUi.serve);
-router.get('/api-docs', swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+router.use("/api-docs", swaggerUi.serve);
+router.get("/api-docs", swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
 // Serve OpenAPI spec as JSON
-router.get('/openapi.json', (req: Request, res: Response) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+router.get("/openapi.json", (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.send(swaggerSpec);
 });
 
 // Serve OpenAPI spec as YAML
-router.get('/openapi.yaml', async (req: Request, res: Response) => {
+router.get("/openapi.yaml", async (req: Request, res: Response) => {
   try {
-    const yaml = await import('js-yaml');
+    const yaml = await import("js-yaml");
     const yamlSpec = yaml.dump(swaggerSpec);
-    res.setHeader('Content-Type', 'text/yaml');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader("Content-Type", "text/yaml");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.send(yamlSpec);
   } catch (error) {
     res.status(500).json({
       success: false,
       error: {
-        code: 'YAML_GENERATION_ERROR',
-        message: 'Failed to generate YAML spec'
-      }
+        code: "YAML_GENERATION_ERROR",
+        message: "Failed to generate YAML spec",
+      },
     });
   }
 });
 
 // Redirect /docs to /api-docs
-router.get('/docs', (req: Request, res: Response) => {
-  res.redirect('/api-docs');
+router.get("/docs", (req: Request, res: Response) => {
+  res.redirect("/api-docs");
 });
 
 // API documentation landing page
-router.get('/docs/api', (req: Request, res: Response) => {
+router.get("/docs/api", (req: Request, res: Response) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="en">
@@ -310,16 +310,16 @@ router.get('/docs/api', (req: Request, res: Response) => {
 });
 
 // Health check for docs
-router.get('/docs/health', (req: Request, res: Response) => {
+router.get("/docs/health", (req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      documentation: 'available',
-      swagger: '/api-docs',
-      graphql: '/graphql',
+      documentation: "available",
+      swagger: "/api-docs",
+      graphql: "/graphql",
       openapi: {
-        json: '/openapi.json',
-        yaml: '/openapi.yaml',
+        json: "/openapi.json",
+        yaml: "/openapi.yaml",
       },
     },
   });

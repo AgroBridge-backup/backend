@@ -5,12 +5,12 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { QueryBuilder } from '../../../infrastructure/http/QueryBuilder.js';
-import { ResponseFormatter } from '../../../infrastructure/http/ResponseFormatter.js';
-import { authenticate } from '../../middlewares/auth.middleware.js';
-import { prisma } from '../../../infrastructure/database/prisma/client.js';
-import logger from '../../../shared/utils/logger.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { QueryBuilder } from "../../../infrastructure/http/QueryBuilder.js";
+import { ResponseFormatter } from "../../../infrastructure/http/ResponseFormatter.js";
+import { authenticate } from "../../middlewares/auth.middleware.js";
+import { prisma } from "../../../infrastructure/database/prisma/client.js";
+import logger from "../../../shared/utils/logger.js";
 
 // Auth payload type matching the middleware
 interface AuthPayload {
@@ -34,35 +34,38 @@ const router = Router();
  * @access Private (Admin, Auditor)
  */
 router.get(
-  '/',
+  "/",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as AuthPayload;
 
       // Only admins and certifiers can list all producers
-      if (user.role !== 'ADMIN' && user.role !== 'CERTIFIER') {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied', req.path)
-        );
+      if (user.role !== "ADMIN" && user.role !== "CERTIFIER") {
+        return res
+          .status(403)
+          .json(ResponseFormatter.forbidden("Access denied", req.path));
       }
 
       // Parse query parameters
       const queryOptions = QueryBuilder.parse(req.query);
 
       // Validate query options
-      const validationErrors = QueryBuilder.validate(queryOptions, 'Producer');
+      const validationErrors = QueryBuilder.validate(queryOptions, "Producer");
       if (validationErrors.length > 0) {
         return res.status(400).json(
           ResponseFormatter.validationError(
-            validationErrors.map((msg) => ({ field: 'query', message: msg })),
-            req.path
-          )
+            validationErrors.map((msg) => ({ field: "query", message: msg })),
+            req.path,
+          ),
         );
       }
 
       // Build Prisma query
-      const prismaQuery = QueryBuilder.applyToPrismaQuery('Producer', queryOptions);
+      const prismaQuery = QueryBuilder.applyToPrismaQuery(
+        "Producer",
+        queryOptions,
+      );
 
       // Get total count
       const total = await prisma.producer.count({
@@ -75,9 +78,9 @@ router.get(
         ...(prismaQuery.select
           ? { select: prismaQuery.select }
           : prismaQuery.include
-          ? { include: prismaQuery.include }
-          : {}),
-        orderBy: prismaQuery.orderBy || [{ createdAt: 'desc' }],
+            ? { include: prismaQuery.include }
+            : {}),
+        orderBy: prismaQuery.orderBy || [{ createdAt: "desc" }],
         skip: prismaQuery.skip,
         take: prismaQuery.take,
       });
@@ -88,15 +91,15 @@ router.get(
           total,
           queryOptions.page,
           queryOptions.limit,
-          '/api/v2/producers',
-          req.query as Record<string, unknown>
-        )
+          "/api/v2/producers",
+          req.query as Record<string, unknown>,
+        ),
       );
     } catch (error) {
-      logger.error('[ProducersV2] List error:', error);
+      logger.error("[ProducersV2] List error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -109,7 +112,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/:id',
+  "/:id",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -118,7 +121,10 @@ router.get(
 
       // Parse query parameters
       const queryOptions = QueryBuilder.parse(req.query);
-      const prismaQuery = QueryBuilder.applyToPrismaQuery('Producer', queryOptions);
+      const prismaQuery = QueryBuilder.applyToPrismaQuery(
+        "Producer",
+        queryOptions,
+      );
 
       // Fetch producer - use only select OR include, not both
       const producer = await prisma.producer.findUnique({
@@ -126,30 +132,35 @@ router.get(
         ...(prismaQuery.select
           ? { select: prismaQuery.select }
           : prismaQuery.include
-          ? { include: prismaQuery.include }
-          : {}),
+            ? { include: prismaQuery.include }
+            : {}),
       });
 
       if (!producer) {
-        return res.status(404).json(
-          ResponseFormatter.notFound('Producer', id, req.path)
-        );
+        return res
+          .status(404)
+          .json(ResponseFormatter.notFound("Producer", id, req.path));
       }
 
       // Check access - only admin, auditor, or the producer themselves
       const hasAccess = await checkProducerAccess(user, producer);
       if (!hasAccess) {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied to this producer', req.path)
-        );
+        return res
+          .status(403)
+          .json(
+            ResponseFormatter.forbidden(
+              "Access denied to this producer",
+              req.path,
+            ),
+          );
       }
 
       res.json(ResponseFormatter.success(producer));
     } catch (error) {
-      logger.error('[ProducersV2] Get error:', error);
+      logger.error("[ProducersV2] Get error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -162,7 +173,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/:id/batches',
+  "/:id/batches",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -176,22 +187,25 @@ router.get(
       });
 
       if (!producer) {
-        return res.status(404).json(
-          ResponseFormatter.notFound('Producer', id, req.path)
-        );
+        return res
+          .status(404)
+          .json(ResponseFormatter.notFound("Producer", id, req.path));
       }
 
       // Check access
       const hasAccess = await checkProducerAccess(user, producer);
       if (!hasAccess) {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied', req.path)
-        );
+        return res
+          .status(403)
+          .json(ResponseFormatter.forbidden("Access denied", req.path));
       }
 
       // Parse query options for batches
       const queryOptions = QueryBuilder.parse(req.query);
-      const prismaQuery = QueryBuilder.applyToPrismaQuery('Batch', queryOptions);
+      const prismaQuery = QueryBuilder.applyToPrismaQuery(
+        "Batch",
+        queryOptions,
+      );
 
       // Add producer filter
       prismaQuery.where = {
@@ -208,7 +222,7 @@ router.get(
       const batches = await prisma.batch.findMany({
         where: prismaQuery.where,
         select: prismaQuery.select,
-        orderBy: prismaQuery.orderBy || [{ createdAt: 'desc' }],
+        orderBy: prismaQuery.orderBy || [{ createdAt: "desc" }],
         skip: prismaQuery.skip,
         take: prismaQuery.take,
       });
@@ -220,14 +234,14 @@ router.get(
           queryOptions.page,
           queryOptions.limit,
           `/api/v2/producers/${id}/batches`,
-          req.query as Record<string, unknown>
-        )
+          req.query as Record<string, unknown>,
+        ),
       );
     } catch (error) {
-      logger.error('[ProducersV2] Get batches error:', error);
+      logger.error("[ProducersV2] Get batches error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -240,7 +254,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/:id/stats',
+  "/:id/stats",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -254,17 +268,17 @@ router.get(
       });
 
       if (!producer) {
-        return res.status(404).json(
-          ResponseFormatter.notFound('Producer', id, req.path)
-        );
+        return res
+          .status(404)
+          .json(ResponseFormatter.notFound("Producer", id, req.path));
       }
 
       // Check access
       const hasAccess = await checkProducerAccess(user, producer);
       if (!hasAccess) {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied', req.path)
-        );
+        return res
+          .status(403)
+          .json(ResponseFormatter.forbidden("Access denied", req.path));
       }
 
       // Get statistics
@@ -277,7 +291,7 @@ router.get(
       ] = await Promise.all([
         prisma.batch.count({ where: { producerId: id } }),
         prisma.batch.groupBy({
-          by: ['status'],
+          by: ["status"],
           where: { producerId: id },
           _count: true,
         }),
@@ -296,7 +310,7 @@ router.get(
             status: true,
             createdAt: true,
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: 5,
         }),
       ]);
@@ -313,15 +327,16 @@ router.get(
               ...acc,
               [item.status]: item._count,
             }),
-            {} as Record<string, number>
+            {} as Record<string, number>,
           ),
         },
         events: {
           total: totalEvents,
           verified: verifiedEvents,
-          verificationRate: totalEvents > 0
-            ? Math.round((verifiedEvents / totalEvents) * 100)
-            : 0,
+          verificationRate:
+            totalEvents > 0
+              ? Math.round((verifiedEvents / totalEvents) * 100)
+              : 0,
         },
         recent: {
           batches: recentBatches,
@@ -330,10 +345,10 @@ router.get(
 
       res.json(ResponseFormatter.success(stats));
     } catch (error) {
-      logger.error('[ProducersV2] Get stats error:', error);
+      logger.error("[ProducersV2] Get stats error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -345,10 +360,10 @@ router.get(
  */
 async function checkProducerAccess(
   user: AuthPayload,
-  producer: { userId?: string }
+  producer: { userId?: string },
 ): Promise<boolean> {
   // Admins and certifiers have access to all
-  if (user.role === 'ADMIN' || user.role === 'CERTIFIER') {
+  if (user.role === "ADMIN" || user.role === "CERTIFIER") {
     return true;
   }
 

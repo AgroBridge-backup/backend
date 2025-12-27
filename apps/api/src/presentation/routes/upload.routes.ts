@@ -5,22 +5,22 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import * as Prisma from '@prisma/client';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { validateRequest } from '../middlewares/validator.middleware.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import * as Prisma from "@prisma/client";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { validateRequest } from "../middlewares/validator.middleware.js";
 import {
   uploadImage,
   uploadAvatar,
   uploadDocument,
   uploadCertificate,
-} from '../../infrastructure/http/middleware/upload.middleware.js';
+} from "../../infrastructure/http/middleware/upload.middleware.js";
 import {
   storageService,
   type UploadType,
-} from '../../infrastructure/storage/index.js';
-import logger from '../../shared/utils/logger.js';
+} from "../../infrastructure/storage/index.js";
+import logger from "../../shared/utils/logger.js";
 
 export function createUploadRouter(): Router {
   const router = Router();
@@ -37,18 +37,27 @@ export function createUploadRouter(): Router {
     body: z.object({
       filename: z.string().min(1).max(255),
       contentType: z.string().min(1),
-      type: z.enum(['image', 'document', 'certificate', 'avatar', 'batch_photo', 'general']).optional(),
+      type: z
+        .enum([
+          "image",
+          "document",
+          "certificate",
+          "avatar",
+          "batch_photo",
+          "general",
+        ])
+        .optional(),
       prefix: z.string().max(255).optional(),
     }),
   });
 
   router.post(
-    '/presigned',
+    "/presigned",
     authenticate(),
     validateRequest(presignedSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { filename, contentType, type = 'general', prefix } = req.body;
+        const { filename, contentType, type = "general", prefix } = req.body;
 
         const result = await storageService.getPresignedUploadUrl({
           filename,
@@ -57,13 +66,13 @@ export function createUploadRouter(): Router {
           prefix,
           expiresIn: 3600, // 1 hour
           metadata: {
-            uploadedBy: req.user?.userId || 'unknown',
+            uploadedBy: req.user?.userId || "unknown",
           },
         });
 
         if (!result.validation.valid) {
           return res.status(400).json({
-            error: 'Validation failed',
+            error: "Validation failed",
             details: result.validation.errors,
           });
         }
@@ -77,7 +86,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -89,13 +98,13 @@ export function createUploadRouter(): Router {
    * Upload an image directly
    */
   router.post(
-    '/image',
+    "/image",
     authenticate(),
-    uploadImage.single('file'),
+    uploadImage.single("file"),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No file provided' });
+          return res.status(400).json({ error: "No file provided" });
         }
 
         const result = await storageService.upload(
@@ -103,14 +112,14 @@ export function createUploadRouter(): Router {
           req.file.originalname,
           req.file.mimetype,
           {
-            type: 'image',
+            type: "image",
             optimize: true,
-            generateThumbnail: req.query.thumbnail === 'true',
-            generateResponsive: req.query.responsive === 'true',
+            generateThumbnail: req.query.thumbnail === "true",
+            generateResponsive: req.query.responsive === "true",
             metadata: {
-              uploadedBy: req.user?.userId || 'unknown',
+              uploadedBy: req.user?.userId || "unknown",
             },
-          }
+          },
         );
 
         if (!result.success) {
@@ -121,7 +130,7 @@ export function createUploadRouter(): Router {
         }
 
         logger.info({
-          message: 'Image uploaded via API',
+          message: "Image uploaded via API",
           meta: { key: result.file?.key, userId: req.user?.userId },
         });
 
@@ -129,7 +138,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -137,24 +146,24 @@ export function createUploadRouter(): Router {
    * Upload user avatar
    */
   router.post(
-    '/avatar',
+    "/avatar",
     authenticate(),
-    uploadAvatar.single('file'),
+    uploadAvatar.single("file"),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No file provided' });
+          return res.status(400).json({ error: "No file provided" });
         }
 
         const userId = req.user?.userId;
         if (!userId) {
-          return res.status(401).json({ error: 'User ID not found' });
+          return res.status(401).json({ error: "User ID not found" });
         }
 
         const result = await storageService.uploadAvatar(
           req.file.buffer,
           req.file.originalname,
-          userId
+          userId,
         );
 
         if (!result.success) {
@@ -165,7 +174,7 @@ export function createUploadRouter(): Router {
         }
 
         logger.info({
-          message: 'Avatar uploaded',
+          message: "Avatar uploaded",
           meta: { key: result.file?.key, userId },
         });
 
@@ -173,7 +182,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -181,13 +190,13 @@ export function createUploadRouter(): Router {
    * Upload batch photo (producers only)
    */
   router.post(
-    '/batch/:batchId/photo',
+    "/batch/:batchId/photo",
     authenticate([Prisma.UserRole.PRODUCER]),
-    uploadImage.single('file'),
+    uploadImage.single("file"),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No file provided' });
+          return res.status(400).json({ error: "No file provided" });
         }
 
         const { batchId } = req.params;
@@ -195,7 +204,7 @@ export function createUploadRouter(): Router {
         const result = await storageService.uploadBatchPhoto(
           req.file.buffer,
           req.file.originalname,
-          batchId
+          batchId,
         );
 
         if (!result.success) {
@@ -206,7 +215,7 @@ export function createUploadRouter(): Router {
         }
 
         logger.info({
-          message: 'Batch photo uploaded',
+          message: "Batch photo uploaded",
           meta: { key: result.file?.key, batchId, userId: req.user?.userId },
         });
 
@@ -214,7 +223,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -222,25 +231,25 @@ export function createUploadRouter(): Router {
    * Upload certification document (producers only)
    */
   router.post(
-    '/certificate',
+    "/certificate",
     authenticate([Prisma.UserRole.PRODUCER]),
-    uploadCertificate.single('file'),
+    uploadCertificate.single("file"),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No file provided' });
+          return res.status(400).json({ error: "No file provided" });
         }
 
         const producerId = req.user?.producerId;
         if (!producerId) {
-          return res.status(403).json({ error: 'Producer ID not found' });
+          return res.status(403).json({ error: "Producer ID not found" });
         }
 
         const result = await storageService.uploadCertificate(
           req.file.buffer,
           req.file.originalname,
           producerId,
-          req.file.mimetype
+          req.file.mimetype,
         );
 
         if (!result.success) {
@@ -251,7 +260,7 @@ export function createUploadRouter(): Router {
         }
 
         logger.info({
-          message: 'Certificate uploaded',
+          message: "Certificate uploaded",
           meta: { key: result.file?.key, producerId, userId: req.user?.userId },
         });
 
@@ -259,7 +268,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -267,13 +276,13 @@ export function createUploadRouter(): Router {
    * Upload general document
    */
   router.post(
-    '/document',
+    "/document",
     authenticate(),
-    uploadDocument.single('file'),
+    uploadDocument.single("file"),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         if (!req.file) {
-          return res.status(400).json({ error: 'No file provided' });
+          return res.status(400).json({ error: "No file provided" });
         }
 
         const result = await storageService.upload(
@@ -281,12 +290,12 @@ export function createUploadRouter(): Router {
           req.file.originalname,
           req.file.mimetype,
           {
-            type: 'document',
+            type: "document",
             optimize: false,
             metadata: {
-              uploadedBy: req.user?.userId || 'unknown',
+              uploadedBy: req.user?.userId || "unknown",
             },
-          }
+          },
         );
 
         if (!result.success) {
@@ -297,7 +306,7 @@ export function createUploadRouter(): Router {
         }
 
         logger.info({
-          message: 'Document uploaded',
+          message: "Document uploaded",
           meta: { key: result.file?.key, userId: req.user?.userId },
         });
 
@@ -305,7 +314,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -317,19 +326,19 @@ export function createUploadRouter(): Router {
    * Get presigned download URL for a file
    */
   router.get(
-    '/download/*',
+    "/download/*",
     authenticate(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const key = req.params[0];
 
         if (!key) {
-          return res.status(400).json({ error: 'File key is required' });
+          return res.status(400).json({ error: "File key is required" });
         }
 
         const exists = await storageService.exists(key);
         if (!exists) {
-          return res.status(404).json({ error: 'File not found' });
+          return res.status(404).json({ error: "File not found" });
         }
 
         const downloadUrl = await storageService.getPresignedDownloadUrl(key);
@@ -338,7 +347,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -346,26 +355,26 @@ export function createUploadRouter(): Router {
    * Delete a file (admin only)
    */
   router.delete(
-    '/*',
+    "/*",
     authenticate([Prisma.UserRole.ADMIN]),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const key = req.params[0];
 
         if (!key) {
-          return res.status(400).json({ error: 'File key is required' });
+          return res.status(400).json({ error: "File key is required" });
         }
 
         const exists = await storageService.exists(key);
         if (!exists) {
-          return res.status(404).json({ error: 'File not found' });
+          return res.status(404).json({ error: "File not found" });
         }
 
         // Delete with variants (thumbnails, responsive images)
         await storageService.deleteWithVariants(key);
 
         logger.info({
-          message: 'File deleted',
+          message: "File deleted",
           meta: { key, userId: req.user?.userId },
         });
 
@@ -373,7 +382,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -381,19 +390,19 @@ export function createUploadRouter(): Router {
    * Get file metadata
    */
   router.get(
-    '/metadata/*',
+    "/metadata/*",
     authenticate(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const key = req.params[0];
 
         if (!key) {
-          return res.status(400).json({ error: 'File key is required' });
+          return res.status(400).json({ error: "File key is required" });
         }
 
         const exists = await storageService.exists(key);
         if (!exists) {
-          return res.status(404).json({ error: 'File not found' });
+          return res.status(404).json({ error: "File not found" });
         }
 
         const metadata = await storageService.getMetadata(key);
@@ -402,7 +411,7 @@ export function createUploadRouter(): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

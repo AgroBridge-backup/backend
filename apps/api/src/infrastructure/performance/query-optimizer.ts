@@ -3,9 +3,9 @@
  * N+1 detection, query analysis, and performance optimization
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import { Redis } from 'ioredis';
-import { logger } from '../logging/logger.js';
+import { PrismaClient, Prisma } from "@prisma/client";
+import { Redis } from "ioredis";
+import { logger } from "../logging/logger.js";
 
 // Clients
 let prisma: PrismaClient | null = null;
@@ -14,10 +14,13 @@ let redis: Redis | null = null;
 /**
  * Initialize query optimizer
  */
-export function initQueryOptimizer(prismaClient: PrismaClient, redisClient?: Redis): void {
+export function initQueryOptimizer(
+  prismaClient: PrismaClient,
+  redisClient?: Redis,
+): void {
   prisma = prismaClient;
   redis = redisClient || null;
-  logger.info('Query optimizer initialized');
+  logger.info("Query optimizer initialized");
 }
 
 /**
@@ -67,7 +70,7 @@ export function trackQuery(pattern: string): void {
 
   // Alert if threshold exceeded
   if (count === n1State.threshold) {
-    logger.warn('Potential N+1 query detected', {
+    logger.warn("Potential N+1 query detected", {
       pattern,
       count,
       windowMs: n1State.windowMs,
@@ -81,10 +84,10 @@ export function trackQuery(pattern: string): void {
 export function generateCacheKey(
   model: string,
   operation: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ): string {
   const paramHash = JSON.stringify(params);
-  return `query:${model}:${operation}:${Buffer.from(paramHash).toString('base64').substring(0, 32)}`;
+  return `query:${model}:${operation}:${Buffer.from(paramHash).toString("base64").substring(0, 32)}`;
 }
 
 /**
@@ -93,18 +96,18 @@ export function generateCacheKey(
 export async function cachedQuery<T>(
   cacheKey: string,
   queryFn: () => Promise<T>,
-  ttlSeconds: number = 60
+  ttlSeconds: number = 60,
 ): Promise<T> {
   if (redis) {
     try {
       // Check cache
       const cached = await redis.get(cacheKey);
       if (cached) {
-        logger.debug('Cache hit', { cacheKey });
+        logger.debug("Cache hit", { cacheKey });
         return JSON.parse(cached);
       }
     } catch (error) {
-      logger.error('Cache read error', { error, cacheKey });
+      logger.error("Cache read error", { error, cacheKey });
     }
   }
 
@@ -115,9 +118,9 @@ export async function cachedQuery<T>(
   if (redis && result !== null && result !== undefined) {
     try {
       await redis.setex(cacheKey, ttlSeconds, JSON.stringify(result));
-      logger.debug('Cache set', { cacheKey, ttlSeconds });
+      logger.debug("Cache set", { cacheKey, ttlSeconds });
     } catch (error) {
-      logger.error('Cache write error', { error, cacheKey });
+      logger.error("Cache write error", { error, cacheKey });
     }
   }
 
@@ -134,11 +137,11 @@ export async function invalidateCache(pattern: string): Promise<number> {
     const keys = await redis.keys(pattern);
     if (keys.length > 0) {
       await redis.del(...keys);
-      logger.debug('Cache invalidated', { pattern, count: keys.length });
+      logger.debug("Cache invalidated", { pattern, count: keys.length });
     }
     return keys.length;
   } catch (error) {
-    logger.error('Cache invalidation error', { error, pattern });
+    logger.error("Cache invalidation error", { error, pattern });
     return 0;
   }
 }
@@ -168,9 +171,10 @@ export interface PaginatedResult<T> {
 /**
  * Create optimized pagination query
  */
-export function createPaginationQuery<T>(
-  options: PaginationOptions
-): { skip: number; take: number } {
+export function createPaginationQuery<T>(options: PaginationOptions): {
+  skip: number;
+  take: number;
+} {
   const { page, limit } = options;
   return {
     skip: (page - 1) * limit,
@@ -183,7 +187,7 @@ export function createPaginationQuery<T>(
  */
 export function createCursorPaginationQuery<T>(
   cursor: string | undefined,
-  limit: number
+  limit: number,
 ): { cursor?: { id: string }; skip?: number; take: number } {
   if (cursor) {
     return {
@@ -201,7 +205,7 @@ export function createCursorPaginationQuery<T>(
 export function buildPaginatedResult<T extends { id: string }>(
   data: T[],
   total: number,
-  options: PaginationOptions
+  options: PaginationOptions,
 ): PaginatedResult<T> {
   const { page, limit } = options;
   const totalPages = Math.ceil(total / limit);
@@ -225,11 +229,11 @@ export function buildPaginatedResult<T extends { id: string }>(
  */
 export function parseFieldSelection(
   fields: string | undefined,
-  allowedFields: string[]
+  allowedFields: string[],
 ): Record<string, boolean> | undefined {
   if (!fields) return undefined;
 
-  const requested = fields.split(',').map((f) => f.trim());
+  const requested = fields.split(",").map((f) => f.trim());
   const selection: Record<string, boolean> = {};
 
   for (const field of requested) {
@@ -255,17 +259,25 @@ export function analyzeQueryComplexity(query: Record<string, unknown>): {
   let complexity = 1;
 
   // Check for include depth
-  const countIncludes = (obj: Record<string, unknown>, depth: number = 0): number => {
+  const countIncludes = (
+    obj: Record<string, unknown>,
+    depth: number = 0,
+  ): number => {
     if (depth > 3) {
-      warnings.push('Include depth exceeds 3 levels');
+      warnings.push("Include depth exceeds 3 levels");
       return depth;
     }
 
     let maxDepth = depth;
-    if (obj.include && typeof obj.include === 'object') {
-      for (const value of Object.values(obj.include as Record<string, unknown>)) {
-        if (typeof value === 'object' && value !== null) {
-          const childDepth = countIncludes(value as Record<string, unknown>, depth + 1);
+    if (obj.include && typeof obj.include === "object") {
+      for (const value of Object.values(
+        obj.include as Record<string, unknown>,
+      )) {
+        if (typeof value === "object" && value !== null) {
+          const childDepth = countIncludes(
+            value as Record<string, unknown>,
+            depth + 1,
+          );
           maxDepth = Math.max(maxDepth, childDepth);
         }
       }
@@ -278,27 +290,27 @@ export function analyzeQueryComplexity(query: Record<string, unknown>): {
 
   // Check for large take values
   if (query.take && (query.take as number) > 100) {
-    warnings.push('Large result set requested (>100 items)');
+    warnings.push("Large result set requested (>100 items)");
     complexity += Math.floor((query.take as number) / 100);
   }
 
   // Check for missing pagination
   if (!query.take && !query.first && !query.last) {
-    warnings.push('No pagination specified - may return large result set');
+    warnings.push("No pagination specified - may return large result set");
     complexity += 5;
   }
 
   // Check for complex where clauses
-  if (query.where && typeof query.where === 'object') {
+  if (query.where && typeof query.where === "object") {
     const whereKeys = Object.keys(query.where as object);
     if (whereKeys.length > 5) {
-      warnings.push('Complex where clause with many conditions');
+      warnings.push("Complex where clause with many conditions");
       complexity += whereKeys.length;
     }
 
     // Check for OR conditions
     if ((query.where as any).OR) {
-      warnings.push('OR conditions may result in full table scan');
+      warnings.push("OR conditions may result in full table scan");
       complexity += 3;
     }
   }
@@ -311,7 +323,7 @@ export function analyzeQueryComplexity(query: Record<string, unknown>): {
  */
 export async function batchQueries<T>(
   queries: Array<() => Promise<T>>,
-  batchSize: number = 10
+  batchSize: number = 10,
 ): Promise<T[]> {
   const results: T[] = [];
 
@@ -329,16 +341,22 @@ export async function batchQueries<T>(
  */
 export async function timedQuery<T>(
   name: string,
-  queryFn: () => Promise<T>
+  queryFn: () => Promise<T>,
 ): Promise<{ result: T; duration: number }> {
   const start = performance.now();
   const result = await queryFn();
   const duration = performance.now() - start;
 
   if (duration > 1000) {
-    logger.warn('Slow query detected', { name, duration: `${duration.toFixed(2)}ms` });
+    logger.warn("Slow query detected", {
+      name,
+      duration: `${duration.toFixed(2)}ms`,
+    });
   } else {
-    logger.debug('Query executed', { name, duration: `${duration.toFixed(2)}ms` });
+    logger.debug("Query executed", {
+      name,
+      duration: `${duration.toFixed(2)}ms`,
+    });
   }
 
   return { result, duration };
@@ -349,25 +367,25 @@ export async function timedQuery<T>(
  * SECURITY: Only allow known model names to prevent SQL injection
  */
 const VALID_PRISMA_MODELS = new Set([
-  'User',
-  'Batch',
-  'Producer',
-  'Order',
-  'Subscription',
-  'Payment',
-  'Invoice',
-  'LiquidityPool',
-  'PoolTransaction',
-  'Investor',
-  'AdvanceContract',
-  'Repayment',
-  'CreditScore',
-  'QualityCertificate',
-  'TransitSession',
-  'BlockchainEvent',
-  'AuditLog',
-  'PublicTraceabilityLink',
-  'QrScanEvent',
+  "User",
+  "Batch",
+  "Producer",
+  "Order",
+  "Subscription",
+  "Payment",
+  "Invoice",
+  "LiquidityPool",
+  "PoolTransaction",
+  "Investor",
+  "AdvanceContract",
+  "Repayment",
+  "CreditScore",
+  "QualityCertificate",
+  "TransitSession",
+  "BlockchainEvent",
+  "AuditLog",
+  "PublicTraceabilityLink",
+  "QrScanEvent",
 ] as const);
 
 /**
@@ -378,19 +396,21 @@ const VALID_PRISMA_MODELS = new Set([
  */
 export async function optimizedCount(
   model: string,
-  where: Record<string, unknown> = {}
+  where: Record<string, unknown> = {},
 ): Promise<number> {
   if (!prisma) {
-    throw new Error('Prisma client not initialized');
+    throw new Error("Prisma client not initialized");
   }
 
   // SECURITY: Validate model name against whitelist to prevent SQL injection
   if (!VALID_PRISMA_MODELS.has(model as any)) {
-    logger.error('Invalid model name attempted in optimizedCount', { model });
-    throw new Error(`Invalid model name: ${model}. Model must be one of the allowed Prisma models.`);
+    logger.error("Invalid model name attempted in optimizedCount", { model });
+    throw new Error(
+      `Invalid model name: ${model}. Model must be one of the allowed Prisma models.`,
+    );
   }
 
-  const cacheKey = generateCacheKey(model, 'count', where);
+  const cacheKey = generateCacheKey(model, "count", where);
   const prismaClient = prisma; // Local variable for closure
 
   return cachedQuery(
@@ -398,16 +418,18 @@ export async function optimizedCount(
     async () => {
       // SECURITY: Use Prisma ORM methods instead of raw SQL
       // This is SQL-injection-safe because Prisma handles parameterization internally
-      const modelDelegate = (prismaClient as any)[model.charAt(0).toLowerCase() + model.slice(1)];
+      const modelDelegate = (prismaClient as any)[
+        model.charAt(0).toLowerCase() + model.slice(1)
+      ];
 
-      if (!modelDelegate || typeof modelDelegate.count !== 'function') {
+      if (!modelDelegate || typeof modelDelegate.count !== "function") {
         // Fallback: model might use different casing
         throw new Error(`Model ${model} does not support count operation`);
       }
 
       return modelDelegate.count({ where });
     },
-    30 // Cache for 30 seconds
+    30, // Cache for 30 seconds
   );
 }
 
@@ -416,7 +438,7 @@ export async function optimizedCount(
  */
 export async function preloadRelations<T extends { id: string }>(
   items: T[],
-  relationLoader: (ids: string[]) => Promise<Map<string, unknown>>
+  relationLoader: (ids: string[]) => Promise<Map<string, unknown>>,
 ): Promise<T[]> {
   if (items.length === 0) return items;
 
@@ -441,7 +463,7 @@ export class QueryBatcher<K, V> {
 
   constructor(
     loader: (keys: K[]) => Promise<Map<K, V>>,
-    options: { maxBatchSize?: number; batchScheduleMs?: number } = {}
+    options: { maxBatchSize?: number; batchScheduleMs?: number } = {},
   ) {
     this.loader = loader;
     this.maxBatchSize = options.maxBatchSize || 100;
@@ -475,7 +497,7 @@ export class QueryBatcher<K, V> {
         if (value !== undefined) {
           results.set(key, value);
         }
-      })
+      }),
     );
     return results;
   }
@@ -486,7 +508,7 @@ export class QueryBatcher<K, V> {
  */
 export function queryOptimizerMiddleware() {
   return Prisma.defineExtension({
-    name: 'query-optimizer',
+    name: "query-optimizer",
     query: {
       $allModels: {
         async $allOperations({ operation, model, args, query }) {
@@ -499,7 +521,12 @@ export function queryOptimizerMiddleware() {
           // Analyze query complexity
           const { complexity, warnings } = analyzeQueryComplexity(args);
           if (warnings.length > 0) {
-            logger.debug('Query complexity warnings', { model, operation, warnings, complexity });
+            logger.debug("Query complexity warnings", {
+              model,
+              operation,
+              warnings,
+              complexity,
+            });
           }
 
           // Execute query
@@ -508,7 +535,7 @@ export function queryOptimizerMiddleware() {
           // Log slow queries
           const duration = performance.now() - start;
           if (duration > 500) {
-            logger.warn('Slow query', {
+            logger.warn("Slow query", {
               model,
               operation,
               duration: `${duration.toFixed(2)}ms`,

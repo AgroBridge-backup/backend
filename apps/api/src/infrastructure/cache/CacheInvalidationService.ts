@@ -11,28 +11,28 @@
  * @author AgroBridge Engineering Team
  */
 
-import logger from '../../shared/utils/logger.js';
-import { redisCacheService, RedisCacheService } from './RedisCacheService.js';
-import { CacheKeys } from './CacheKeys.js';
+import logger from "../../shared/utils/logger.js";
+import { redisCacheService, RedisCacheService } from "./RedisCacheService.js";
+import { CacheKeys } from "./CacheKeys.js";
 
 /**
  * Invalidation event types for tracking
  */
 export type InvalidationEvent =
-  | 'BATCH_CREATED'
-  | 'BATCH_UPDATED'
-  | 'BATCH_DELETED'
-  | 'BATCH_STATUS_CHANGED'
-  | 'PRODUCER_CREATED'
-  | 'PRODUCER_UPDATED'
-  | 'PRODUCER_DELETED'
-  | 'PRODUCER_WHITELISTED'
-  | 'EVENT_CREATED'
-  | 'EVENT_UPDATED'
-  | 'EVENT_VERIFIED'
-  | 'USER_UPDATED'
-  | 'CERTIFICATION_ADDED'
-  | 'CERTIFICATION_REMOVED';
+  | "BATCH_CREATED"
+  | "BATCH_UPDATED"
+  | "BATCH_DELETED"
+  | "BATCH_STATUS_CHANGED"
+  | "PRODUCER_CREATED"
+  | "PRODUCER_UPDATED"
+  | "PRODUCER_DELETED"
+  | "PRODUCER_WHITELISTED"
+  | "EVENT_CREATED"
+  | "EVENT_UPDATED"
+  | "EVENT_VERIFIED"
+  | "USER_UPDATED"
+  | "CERTIFICATION_ADDED"
+  | "CERTIFICATION_REMOVED";
 
 /**
  * Invalidation context passed to handlers
@@ -71,51 +71,51 @@ export class CacheInvalidationService {
    */
   async onEvent(context: InvalidationContext): Promise<void> {
     logger.debug({
-      message: 'Cache invalidation triggered',
+      message: "Cache invalidation triggered",
       meta: { event: context.event, entityId: context.entityId },
     });
 
     switch (context.event) {
       // Batch events
-      case 'BATCH_CREATED':
-      case 'BATCH_UPDATED':
-      case 'BATCH_DELETED':
-      case 'BATCH_STATUS_CHANGED':
+      case "BATCH_CREATED":
+      case "BATCH_UPDATED":
+      case "BATCH_DELETED":
+      case "BATCH_STATUS_CHANGED":
         await this.invalidateBatchCascade(
           context.entityId,
-          context.relatedIds?.producerId
+          context.relatedIds?.producerId,
         );
         break;
 
       // Producer events
-      case 'PRODUCER_CREATED':
-      case 'PRODUCER_UPDATED':
-      case 'PRODUCER_DELETED':
-      case 'PRODUCER_WHITELISTED':
+      case "PRODUCER_CREATED":
+      case "PRODUCER_UPDATED":
+      case "PRODUCER_DELETED":
+      case "PRODUCER_WHITELISTED":
         await this.invalidateProducerCascade(
           context.entityId,
-          context.relatedIds?.userId
+          context.relatedIds?.userId,
         );
         break;
 
       // Event (traceability) events
-      case 'EVENT_CREATED':
-      case 'EVENT_UPDATED':
-      case 'EVENT_VERIFIED':
+      case "EVENT_CREATED":
+      case "EVENT_UPDATED":
+      case "EVENT_VERIFIED":
         await this.invalidateEventCascade(
           context.entityId,
-          context.relatedIds?.batchId
+          context.relatedIds?.batchId,
         );
         break;
 
       // User events
-      case 'USER_UPDATED':
+      case "USER_UPDATED":
         await this.invalidateUserCascade(context.entityId);
         break;
 
       // Certification events
-      case 'CERTIFICATION_ADDED':
-      case 'CERTIFICATION_REMOVED':
+      case "CERTIFICATION_ADDED":
+      case "CERTIFICATION_REMOVED":
         if (context.relatedIds?.producerId) {
           await this.invalidateProducerCascade(context.relatedIds.producerId);
         }
@@ -142,7 +142,7 @@ export class CacheInvalidationService {
    */
   async invalidateBatchCascade(
     batchId: string,
-    producerId?: string
+    producerId?: string,
   ): Promise<void> {
     const promises: Promise<unknown>[] = [];
 
@@ -153,24 +153,24 @@ export class CacheInvalidationService {
     promises.push(this.cacheService.del(CacheKeys.batchHistory(batchId)));
 
     // Invalidate all batch list caches
-    promises.push(this.cacheService.invalidatePattern('batch:list:*'));
+    promises.push(this.cacheService.invalidatePattern("batch:list:*"));
 
     // Invalidate batch statistics
-    promises.push(this.cacheService.invalidatePattern('stats:batches:*'));
+    promises.push(this.cacheService.invalidatePattern("stats:batches:*"));
 
     // If producer ID is known, invalidate producer-specific batch lists
     if (producerId) {
       promises.push(
         this.cacheService.invalidatePattern(
-          `batch:list:producer:${producerId}*`
-        )
+          `batch:list:producer:${producerId}*`,
+        ),
       );
     }
 
     await Promise.all(promises);
 
     logger.debug({
-      message: 'Batch cache cascade invalidated',
+      message: "Batch cache cascade invalidated",
       meta: { batchId, producerId },
     });
   }
@@ -191,7 +191,7 @@ export class CacheInvalidationService {
    */
   async invalidateProducerCascade(
     producerId: string,
-    userId?: string
+    userId?: string,
   ): Promise<void> {
     const promises: Promise<unknown>[] = [];
 
@@ -204,22 +204,20 @@ export class CacheInvalidationService {
     }
 
     // Invalidate all producer list caches
-    promises.push(this.cacheService.invalidatePattern('producer:list:*'));
+    promises.push(this.cacheService.invalidatePattern("producer:list:*"));
 
     // Invalidate producer statistics
-    promises.push(this.cacheService.invalidatePattern('stats:producers*'));
+    promises.push(this.cacheService.invalidatePattern("stats:producers*"));
 
     // Invalidate batch lists for this producer
     promises.push(
-      this.cacheService.invalidatePattern(
-        `batch:list:producer:${producerId}*`
-      )
+      this.cacheService.invalidatePattern(`batch:list:producer:${producerId}*`),
     );
 
     await Promise.all(promises);
 
     logger.debug({
-      message: 'Producer cache cascade invalidated',
+      message: "Producer cache cascade invalidated",
       meta: { producerId, userId },
     });
   }
@@ -236,7 +234,10 @@ export class CacheInvalidationService {
    * @param eventId - The event ID to invalidate
    * @param batchId - Optional batch ID for cascade
    */
-  async invalidateEventCascade(eventId: string, batchId?: string): Promise<void> {
+  async invalidateEventCascade(
+    eventId: string,
+    batchId?: string,
+  ): Promise<void> {
     const promises: Promise<unknown>[] = [];
 
     // Invalidate specific event
@@ -249,12 +250,12 @@ export class CacheInvalidationService {
     }
 
     // Invalidate event statistics
-    promises.push(this.cacheService.invalidatePattern('stats:events:*'));
+    promises.push(this.cacheService.invalidatePattern("stats:events:*"));
 
     await Promise.all(promises);
 
     logger.debug({
-      message: 'Event cache cascade invalidated',
+      message: "Event cache cascade invalidated",
       meta: { eventId, batchId },
     });
   }
@@ -284,7 +285,7 @@ export class CacheInvalidationService {
     await Promise.all(promises);
 
     logger.debug({
-      message: 'User cache cascade invalidated',
+      message: "User cache cascade invalidated",
       meta: { userId },
     });
   }
@@ -308,11 +309,11 @@ export class CacheInvalidationService {
     await this.cacheService.delMultiple(keys);
 
     // Also invalidate list caches
-    await this.cacheService.invalidatePattern('batch:list:*');
-    await this.cacheService.invalidatePattern('stats:batches:*');
+    await this.cacheService.invalidatePattern("batch:list:*");
+    await this.cacheService.invalidatePattern("stats:batches:*");
 
     logger.debug({
-      message: 'Bulk batch cache invalidation completed',
+      message: "Bulk batch cache invalidation completed",
       meta: { count: batchIds.length },
     });
   }
@@ -329,11 +330,11 @@ export class CacheInvalidationService {
     await this.cacheService.delMultiple(keys);
 
     // Also invalidate list caches
-    await this.cacheService.invalidatePattern('producer:list:*');
-    await this.cacheService.invalidatePattern('stats:producers*');
+    await this.cacheService.invalidatePattern("producer:list:*");
+    await this.cacheService.invalidatePattern("stats:producers*");
 
     logger.debug({
-      message: 'Bulk producer cache invalidation completed',
+      message: "Bulk producer cache invalidation completed",
       meta: { count: producerIds.length },
     });
   }
@@ -350,10 +351,10 @@ export class CacheInvalidationService {
     await this.cacheService.delMultiple(keys);
 
     // Also invalidate event-related caches
-    await this.cacheService.invalidatePattern('stats:events:*');
+    await this.cacheService.invalidatePattern("stats:events:*");
 
     logger.debug({
-      message: 'Bulk event cache invalidation completed',
+      message: "Bulk event cache invalidation completed",
       meta: { count: eventIds.length },
     });
   }
@@ -380,7 +381,7 @@ export class CacheInvalidationService {
       ...options,
     };
 
-    logger.info({ message: 'Starting cache warming...' });
+    logger.info({ message: "Starting cache warming..." });
 
     // Note: Actual warming requires access to repositories
     // This method is designed to be called from the application layer
@@ -390,12 +391,16 @@ export class CacheInvalidationService {
 
     if (opts.stats) {
       // Pre-warm health check
-      await this.cacheService.set(CacheKeys.health(), { status: 'warming' }, 30);
+      await this.cacheService.set(
+        CacheKeys.health(),
+        { status: "warming" },
+        30,
+      );
     }
 
     await Promise.all(tasks);
 
-    logger.info({ message: 'Cache warming completed' });
+    logger.info({ message: "Cache warming completed" });
   }
 }
 

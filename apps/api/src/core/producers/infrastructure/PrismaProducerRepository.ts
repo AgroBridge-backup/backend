@@ -1,7 +1,11 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-import { Producer } from '@/domain/entities/Producer.js';
-import { IProducerRepository, ProducerList, FindProducersCriteria } from '@/domain/repositories/IProducerRepository.js';
-import { User } from '@/domain/entities/User.js';
+import { PrismaClient, Prisma } from "@prisma/client";
+import { Producer } from "@/domain/entities/Producer.js";
+import {
+  IProducerRepository,
+  ProducerList,
+  FindProducersCriteria,
+} from "@/domain/repositories/IProducerRepository.js";
+import { User } from "@/domain/entities/User.js";
 
 type ProducerWithUser = Prisma.ProducerGetPayload<{
   include: { user: true };
@@ -27,12 +31,15 @@ export class PrismaProducerRepository implements IProducerRepository {
 
     const where: Prisma.ProducerWhereInput = {};
     if (isWhitelisted !== undefined) {
-      where.isWhitelisted = typeof isWhitelisted === 'string' ? isWhitelisted === 'true' : isWhitelisted;
+      where.isWhitelisted =
+        typeof isWhitelisted === "string"
+          ? isWhitelisted === "true"
+          : isWhitelisted;
     }
     if (state) {
       where.state = {
         equals: state,
-        mode: 'insensitive',
+        mode: "insensitive",
       };
     }
 
@@ -44,7 +51,7 @@ export class PrismaProducerRepository implements IProducerRepository {
           skip: (page - 1) * limit,
           take: limit,
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
           include: {
             user: true,
@@ -60,7 +67,7 @@ export class PrismaProducerRepository implements IProducerRepository {
       throw error;
     }
   }
-  
+
   async save(producer: Producer): Promise<Producer> {
     const savedProducer = await this.prisma.producer.create({
       data: {
@@ -81,21 +88,21 @@ export class PrismaProducerRepository implements IProducerRepository {
 
   private toDomain(prismaProducer: ProducerWithUser): Producer {
     const user: User = {
-        id: prismaProducer.user.id,
-        email: prismaProducer.user.email,
-        passwordHash: prismaProducer.user.passwordHash,
-        role: prismaProducer.user.role,
-        isActive: prismaProducer.user.isActive,
-        createdAt: prismaProducer.user.createdAt,
-        updatedAt: prismaProducer.user.updatedAt,
-        walletAddress: prismaProducer.user.walletAddress,
-        // Two-Factor Authentication fields
-        twoFactorEnabled: prismaProducer.user.twoFactorEnabled,
-        twoFactorSecret: prismaProducer.user.twoFactorSecret,
-        backupCodes: prismaProducer.user.backupCodes,
-        twoFactorEnabledAt: prismaProducer.user.twoFactorEnabledAt,
+      id: prismaProducer.user.id,
+      email: prismaProducer.user.email,
+      passwordHash: prismaProducer.user.passwordHash,
+      role: prismaProducer.user.role,
+      isActive: prismaProducer.user.isActive,
+      createdAt: prismaProducer.user.createdAt,
+      updatedAt: prismaProducer.user.updatedAt,
+      walletAddress: prismaProducer.user.walletAddress,
+      // Two-Factor Authentication fields
+      twoFactorEnabled: prismaProducer.user.twoFactorEnabled,
+      twoFactorSecret: prismaProducer.user.twoFactorSecret,
+      backupCodes: prismaProducer.user.backupCodes,
+      twoFactorEnabledAt: prismaProducer.user.twoFactorEnabledAt,
     };
-    
+
     return {
       id: prismaProducer.id,
       userId: prismaProducer.userId,
@@ -108,8 +115,12 @@ export class PrismaProducerRepository implements IProducerRepository {
       createdAt: prismaProducer.createdAt,
       updatedAt: prismaProducer.updatedAt,
       // FIX: Defensive mapping for potentially null decimal values
-      latitude: prismaProducer.latitude ? prismaProducer.latitude.toNumber() : 0,
-      longitude: prismaProducer.longitude ? prismaProducer.longitude.toNumber() : 0,
+      latitude: prismaProducer.latitude
+        ? prismaProducer.latitude.toNumber()
+        : 0,
+      longitude: prismaProducer.longitude
+        ? prismaProducer.longitude.toNumber()
+        : 0,
       user: user,
     };
   }

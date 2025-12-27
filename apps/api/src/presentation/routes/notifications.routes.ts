@@ -20,14 +20,19 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient, Platform, NotificationChannel, UserRole } from '@prisma/client';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { notificationOrchestrator } from '../../infrastructure/notifications/NotificationOrchestrator.js';
-import { notificationQueue } from '../../infrastructure/notifications/queue/NotificationQueue.js';
-import logger from '../../shared/utils/logger.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import {
+  PrismaClient,
+  Platform,
+  NotificationChannel,
+  UserRole,
+} from "@prisma/client";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import { notificationOrchestrator } from "../../infrastructure/notifications/NotificationOrchestrator.js";
+import { notificationQueue } from "../../infrastructure/notifications/queue/NotificationQueue.js";
+import logger from "../../shared/utils/logger.js";
 
 // Type alias for authenticated requests (uses global Express.Request augmentation)
 type AuthenticatedRequest = Request;
@@ -43,21 +48,23 @@ export function createNotificationsRouter() {
 
   const registerDeviceSchema = z.object({
     body: z.object({
-      token: z.string().min(1, 'Device token is required'),
-      platform: z.enum(['IOS', 'ANDROID', 'WEB']),
+      token: z.string().min(1, "Device token is required"),
+      platform: z.enum(["IOS", "ANDROID", "WEB"]),
       deviceInfo: z.record(z.unknown()).optional(),
     }),
   });
 
   const sendNotificationSchema = z.object({
     body: z.object({
-      userId: z.string().uuid('Invalid user ID'),
+      userId: z.string().uuid("Invalid user ID"),
       type: z.string(),
       title: z.string().min(1).max(255),
       body: z.string().min(1).max(5000),
       data: z.record(z.unknown()).optional(),
-      channels: z.array(z.enum(['PUSH', 'EMAIL', 'SMS', 'WHATSAPP', 'IN_APP'])).min(1),
-      priority: z.enum(['CRITICAL', 'HIGH', 'NORMAL', 'LOW']).optional(),
+      channels: z
+        .array(z.enum(["PUSH", "EMAIL", "SMS", "WHATSAPP", "IN_APP"]))
+        .min(1),
+      priority: z.enum(["CRITICAL", "HIGH", "NORMAL", "LOW"]).optional(),
     }),
   });
 
@@ -67,10 +74,19 @@ export function createNotificationsRouter() {
       emailEnabled: z.boolean().optional(),
       smsEnabled: z.boolean().optional(),
       whatsappEnabled: z.boolean().optional(),
-      phoneNumber: z.string().regex(/^\+[1-9]\d{7,14}$/, 'Invalid phone number format').optional(),
+      phoneNumber: z
+        .string()
+        .regex(/^\+[1-9]\d{7,14}$/, "Invalid phone number format")
+        .optional(),
       quietHoursEnabled: z.boolean().optional(),
-      quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:MM)').optional(),
-      quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:MM)').optional(),
+      quietHoursStart: z
+        .string()
+        .regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)")
+        .optional(),
+      quietHoursEnd: z
+        .string()
+        .regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)")
+        .optional(),
       timezone: z.string().optional(),
     }),
   });
@@ -84,7 +100,7 @@ export function createNotificationsRouter() {
    * Register device token for push notifications
    */
   router.post(
-    '/devices',
+    "/devices",
     authenticate(),
     validateRequest(registerDeviceSchema),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -110,7 +126,7 @@ export function createNotificationsRouter() {
           },
         });
 
-        logger.info('[NotificationsRoute] Device registered', {
+        logger.info("[NotificationsRoute] Device registered", {
           userId,
           deviceId: device.id,
           platform,
@@ -123,7 +139,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -131,7 +147,7 @@ export function createNotificationsRouter() {
    * Unregister device token
    */
   router.delete(
-    '/devices/:token',
+    "/devices/:token",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -148,7 +164,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -160,22 +176,24 @@ export function createNotificationsRouter() {
    * Get user notifications with pagination
    */
   router.get(
-    '/',
+    "/",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const userId = req.user!.userId;
         const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
         const offset = parseInt(req.query.offset as string) || 0;
-        const unreadOnly = req.query.unreadOnly === 'true';
+        const unreadOnly = req.query.unreadOnly === "true";
 
-        const notifications = await notificationOrchestrator.getUserNotifications(userId, {
-          limit,
-          offset,
-          unreadOnly,
-        });
+        const notifications =
+          await notificationOrchestrator.getUserNotifications(userId, {
+            limit,
+            offset,
+            unreadOnly,
+          });
 
-        const unreadCount = await notificationOrchestrator.getUnreadCount(userId);
+        const unreadCount =
+          await notificationOrchestrator.getUnreadCount(userId);
 
         res.status(200).json({
           notifications,
@@ -189,7 +207,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -197,7 +215,7 @@ export function createNotificationsRouter() {
    * Get unread notification count
    */
   router.get(
-    '/unread-count',
+    "/unread-count",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -208,7 +226,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -216,7 +234,7 @@ export function createNotificationsRouter() {
    * Get notification statistics for user
    */
   router.get(
-    '/stats',
+    "/stats",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -227,7 +245,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -235,7 +253,7 @@ export function createNotificationsRouter() {
    * Get user notification preferences
    */
   router.get(
-    '/preferences',
+    "/preferences",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -262,7 +280,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -270,7 +288,7 @@ export function createNotificationsRouter() {
    * Update user notification preferences
    */
   router.put(
-    '/preferences',
+    "/preferences",
     authenticate(),
     validateRequest(updatePreferencesSchema),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -286,7 +304,7 @@ export function createNotificationsRouter() {
           },
         });
 
-        logger.info('[NotificationsRoute] Preferences updated', {
+        logger.info("[NotificationsRoute] Preferences updated", {
           userId,
           changes: Object.keys(req.body),
         });
@@ -295,7 +313,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -303,7 +321,7 @@ export function createNotificationsRouter() {
    * Get notification by ID
    */
   router.get(
-    '/:id',
+    "/:id",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -313,19 +331,19 @@ export function createNotificationsRouter() {
         const notification = await notificationOrchestrator.getNotification(id);
 
         if (!notification) {
-          return res.status(404).json({ error: 'Notification not found' });
+          return res.status(404).json({ error: "Notification not found" });
         }
 
         // Check ownership
         if (notification.userId !== userId) {
-          return res.status(403).json({ error: 'Access denied' });
+          return res.status(403).json({ error: "Access denied" });
         }
 
         res.status(200).json(notification);
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -333,7 +351,7 @@ export function createNotificationsRouter() {
    * Mark notification as read
    */
   router.put(
-    '/:id/read',
+    "/:id/read",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -343,11 +361,11 @@ export function createNotificationsRouter() {
         const notification = await notificationOrchestrator.getNotification(id);
 
         if (!notification) {
-          return res.status(404).json({ error: 'Notification not found' });
+          return res.status(404).json({ error: "Notification not found" });
         }
 
         if (notification.userId !== userId) {
-          return res.status(403).json({ error: 'Access denied' });
+          return res.status(403).json({ error: "Access denied" });
         }
 
         await notificationOrchestrator.markAsRead(id);
@@ -356,7 +374,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -364,7 +382,7 @@ export function createNotificationsRouter() {
    * Mark notification as clicked
    */
   router.put(
-    '/:id/clicked',
+    "/:id/clicked",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -374,11 +392,11 @@ export function createNotificationsRouter() {
         const notification = await notificationOrchestrator.getNotification(id);
 
         if (!notification) {
-          return res.status(404).json({ error: 'Notification not found' });
+          return res.status(404).json({ error: "Notification not found" });
         }
 
         if (notification.userId !== userId) {
-          return res.status(403).json({ error: 'Access denied' });
+          return res.status(403).json({ error: "Access denied" });
         }
 
         await notificationOrchestrator.markAsClicked(id);
@@ -387,7 +405,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -395,7 +413,7 @@ export function createNotificationsRouter() {
    * Mark all notifications as read
    */
   router.put(
-    '/read-all',
+    "/read-all",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -406,7 +424,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -414,7 +432,7 @@ export function createNotificationsRouter() {
    * Delete notification
    */
   router.delete(
-    '/:id',
+    "/:id",
     authenticate(),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -424,11 +442,11 @@ export function createNotificationsRouter() {
         const notification = await notificationOrchestrator.getNotification(id);
 
         if (!notification) {
-          return res.status(404).json({ error: 'Notification not found' });
+          return res.status(404).json({ error: "Notification not found" });
         }
 
         if (notification.userId !== userId) {
-          return res.status(403).json({ error: 'Access denied' });
+          return res.status(403).json({ error: "Access denied" });
         }
 
         await notificationOrchestrator.deleteNotification(id);
@@ -437,7 +455,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -449,12 +467,13 @@ export function createNotificationsRouter() {
    * Send test notification (admin only)
    */
   router.post(
-    '/test',
+    "/test",
     authenticate([UserRole.ADMIN]),
     validateRequest(sendNotificationSchema),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
-        const { userId, type, title, body, data, channels, priority } = req.body;
+        const { userId, type, title, body, data, channels, priority } =
+          req.body;
 
         const result = await notificationOrchestrator.sendNotification({
           userId,
@@ -470,7 +489,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -478,7 +497,7 @@ export function createNotificationsRouter() {
    * Get queue statistics (admin only)
    */
   router.get(
-    '/queue/stats',
+    "/queue/stats",
     authenticate([UserRole.ADMIN]),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -487,7 +506,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -495,16 +514,16 @@ export function createNotificationsRouter() {
    * Pause notification queue (admin only)
    */
   router.post(
-    '/queue/pause',
+    "/queue/pause",
     authenticate([UserRole.ADMIN]),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         await notificationQueue.pause();
-        res.status(200).json({ success: true, message: 'Queue paused' });
+        res.status(200).json({ success: true, message: "Queue paused" });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -512,16 +531,16 @@ export function createNotificationsRouter() {
    * Resume notification queue (admin only)
    */
   router.post(
-    '/queue/resume',
+    "/queue/resume",
     authenticate([UserRole.ADMIN]),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         await notificationQueue.resume();
-        res.status(200).json({ success: true, message: 'Queue resumed' });
+        res.status(200).json({ success: true, message: "Queue resumed" });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -529,7 +548,7 @@ export function createNotificationsRouter() {
    * Clean old jobs from queue (admin only)
    */
   router.post(
-    '/queue/clean',
+    "/queue/clean",
     authenticate([UserRole.ADMIN]),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
@@ -542,7 +561,7 @@ export function createNotificationsRouter() {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -550,23 +569,27 @@ export function createNotificationsRouter() {
    * Send notification to all users (admin only)
    */
   router.post(
-    '/broadcast',
+    "/broadcast",
     authenticate([UserRole.ADMIN]),
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const { title, body, data } = req.body;
 
         if (!title || !body) {
-          return res.status(400).json({ error: 'title and body are required' });
+          return res.status(400).json({ error: "title and body are required" });
         }
 
-        const result = await notificationOrchestrator.sendSystemAnnouncement(title, body, data);
+        const result = await notificationOrchestrator.sendSystemAnnouncement(
+          title,
+          body,
+          data,
+        );
 
         res.status(200).json(result);
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

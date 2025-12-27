@@ -5,7 +5,7 @@
  * @author AgroBridge Engineering Team
  */
 
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from "graphql";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUTHENTICATION ERROR
@@ -15,10 +15,10 @@ import { GraphQLError } from 'graphql';
  * Authentication required error
  */
 export class AuthenticationError extends GraphQLError {
-  constructor(message: string = 'Authentication required') {
+  constructor(message: string = "Authentication required") {
     super(message, {
       extensions: {
-        code: 'UNAUTHENTICATED',
+        code: "UNAUTHENTICATED",
         http: { status: 401 },
       },
     });
@@ -33,10 +33,10 @@ export class AuthenticationError extends GraphQLError {
  * Access forbidden error
  */
 export class ForbiddenError extends GraphQLError {
-  constructor(message: string = 'Access denied') {
+  constructor(message: string = "Access denied") {
     super(message, {
       extensions: {
-        code: 'FORBIDDEN',
+        code: "FORBIDDEN",
         http: { status: 403 },
       },
     });
@@ -54,7 +54,7 @@ export class ValidationError extends GraphQLError {
   constructor(message: string, fields?: Record<string, string>) {
     super(message, {
       extensions: {
-        code: 'VALIDATION_ERROR',
+        code: "VALIDATION_ERROR",
         fields,
         http: { status: 400 },
       },
@@ -77,7 +77,7 @@ export class NotFoundError extends GraphQLError {
 
     super(message, {
       extensions: {
-        code: 'NOT_FOUND',
+        code: "NOT_FOUND",
         resource,
         id,
         http: { status: 404 },
@@ -97,7 +97,7 @@ export class ConflictError extends GraphQLError {
   constructor(message: string, details?: Record<string, unknown>) {
     super(message, {
       extensions: {
-        code: 'CONFLICT',
+        code: "CONFLICT",
         details,
         http: { status: 409 },
       },
@@ -114,9 +114,9 @@ export class ConflictError extends GraphQLError {
  */
 export class RateLimitError extends GraphQLError {
   constructor(retryAfter?: number) {
-    super('Too many requests. Please try again later.', {
+    super("Too many requests. Please try again later.", {
       extensions: {
-        code: 'RATE_LIMITED',
+        code: "RATE_LIMITED",
         retryAfter,
         http: { status: 429 },
       },
@@ -132,10 +132,10 @@ export class RateLimitError extends GraphQLError {
  * Internal server error
  */
 export class InternalError extends GraphQLError {
-  constructor(message: string = 'An unexpected error occurred') {
+  constructor(message: string = "An unexpected error occurred") {
     super(message, {
       extensions: {
-        code: 'INTERNAL_ERROR',
+        code: "INTERNAL_ERROR",
         http: { status: 500 },
       },
     });
@@ -161,7 +161,7 @@ export function formatGraphQLError(error: unknown): GraphQLError {
   }
 
   // Unknown error
-  return new InternalError('An unexpected error occurred');
+  return new InternalError("An unexpected error occurred");
 }
 
 /**
@@ -169,7 +169,12 @@ export function formatGraphQLError(error: unknown): GraphQLError {
  */
 export function isUserError(error: GraphQLError): boolean {
   const code = error.extensions?.code;
-  return ['UNAUTHENTICATED', 'FORBIDDEN', 'VALIDATION_ERROR', 'NOT_FOUND', 'CONFLICT', 'RATE_LIMITED'].includes(
-    code as string
-  );
+  return [
+    "UNAUTHENTICATED",
+    "FORBIDDEN",
+    "VALIDATION_ERROR",
+    "NOT_FOUND",
+    "CONFLICT",
+    "RATE_LIMITED",
+  ].includes(code as string);
 }

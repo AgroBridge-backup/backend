@@ -11,9 +11,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import crypto from 'crypto';
-import { PrismaClient, ApiKeyStatus, ApiKeyScope } from '@prisma/client';
-import logger from '../../shared/utils/logger.js';
+import crypto from "crypto";
+import { PrismaClient, ApiKeyStatus, ApiKeyScope } from "@prisma/client";
+import logger from "../../shared/utils/logger.js";
 
 export interface CreateApiKeyDto {
   userId: string;
@@ -66,8 +66,8 @@ export interface ValidateApiKeyResult {
  * with additional authentication factors (e.g., mutual TLS, IP restrictions).
  */
 export class ApiKeyService {
-  private readonly KEY_PREFIX_LIVE = 'ab_live_';
-  private readonly KEY_PREFIX_TEST = 'ab_test_';
+  private readonly KEY_PREFIX_LIVE = "ab_live_";
+  private readonly KEY_PREFIX_TEST = "ab_test_";
   private readonly KEY_BYTES = 32; // 256 bits of entropy
 
   constructor(private readonly prisma: PrismaClient) {}
@@ -79,12 +79,12 @@ export class ApiKeyService {
    * @returns Created key with the full key value (shown only once)
    */
   async createKey(dto: CreateApiKeyDto): Promise<CreateApiKeyResponse> {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === "production";
     const prefix = isProduction ? this.KEY_PREFIX_LIVE : this.KEY_PREFIX_TEST;
 
     // Generate cryptographically secure random bytes
     const randomBytes = crypto.randomBytes(this.KEY_BYTES);
-    const randomPart = randomBytes.toString('base64url').slice(0, 32);
+    const randomPart = randomBytes.toString("base64url").slice(0, 32);
 
     // Full key format: ab_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx (44 chars total)
     const fullKey = `${prefix}${randomPart}`;
@@ -95,7 +95,7 @@ export class ApiKeyService {
     // Store only the first 12 characters as prefix for identification
     const keyPrefix = fullKey.slice(0, 12);
 
-    logger.debug('[ApiKeyService] Creating new API key', {
+    logger.debug("[ApiKeyService] Creating new API key", {
       userId: dto.userId,
       label: dto.label,
       keyPrefix,
@@ -117,7 +117,7 @@ export class ApiKeyService {
       },
     });
 
-    logger.info('[ApiKeyService] API key created', {
+    logger.info("[ApiKeyService] API key created", {
       keyId: apiKey.id,
       userId: dto.userId,
       label: dto.label,
@@ -149,8 +149,8 @@ export class ApiKeyService {
    * @returns Validation result with user info and scopes
    */
   async validateKey(key: string, ip?: string): Promise<ValidateApiKeyResult> {
-    if (!key || !key.startsWith('ab_')) {
-      return { valid: false, error: 'Invalid key format' };
+    if (!key || !key.startsWith("ab_")) {
+      return { valid: false, error: "Invalid key format" };
     }
 
     const keyHash = this.hashKey(key);
@@ -160,21 +160,24 @@ export class ApiKeyService {
     });
 
     if (!apiKey) {
-      logger.warn('[ApiKeyService] Invalid API key attempted', {
+      logger.warn("[ApiKeyService] Invalid API key attempted", {
         keyPrefix: key.slice(0, 12),
         ip,
       });
-      return { valid: false, error: 'Invalid API key' };
+      return { valid: false, error: "Invalid API key" };
     }
 
     // Check status
     if (apiKey.status !== ApiKeyStatus.ACTIVE) {
-      logger.warn('[ApiKeyService] Inactive API key used', {
+      logger.warn("[ApiKeyService] Inactive API key used", {
         keyId: apiKey.id,
         status: apiKey.status,
         ip,
       });
-      return { valid: false, error: `API key is ${apiKey.status.toLowerCase()}` };
+      return {
+        valid: false,
+        error: `API key is ${apiKey.status.toLowerCase()}`,
+      };
     }
 
     // Check expiration
@@ -184,18 +187,18 @@ export class ApiKeyService {
         where: { id: apiKey.id },
         data: { status: ApiKeyStatus.EXPIRED },
       });
-      return { valid: false, error: 'API key has expired' };
+      return { valid: false, error: "API key has expired" };
     }
 
     // Check IP whitelist
     if (apiKey.allowedIps.length > 0 && ip) {
       if (!apiKey.allowedIps.includes(ip)) {
-        logger.warn('[ApiKeyService] API key used from unauthorized IP', {
+        logger.warn("[ApiKeyService] API key used from unauthorized IP", {
           keyId: apiKey.id,
           ip,
           allowedIps: apiKey.allowedIps,
         });
-        return { valid: false, error: 'IP address not authorized' };
+        return { valid: false, error: "IP address not authorized" };
       }
     }
 
@@ -210,7 +213,9 @@ export class ApiKeyService {
         },
       })
       .catch((err) => {
-        logger.error('[ApiKeyService] Failed to update usage stats', { error: err.message });
+        logger.error("[ApiKeyService] Failed to update usage stats", {
+          error: err.message,
+        });
       });
 
     return {
@@ -230,7 +235,7 @@ export class ApiKeyService {
   async listKeys(userId: string): Promise<ApiKeyResponse[]> {
     const keys = await this.prisma.apiKey.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return keys.map((key) => ({
@@ -262,18 +267,18 @@ export class ApiKeyService {
     keyId: string,
     userId: string,
     revokedBy: string,
-    reason?: string
+    reason?: string,
   ): Promise<void> {
     const key = await this.prisma.apiKey.findFirst({
       where: { id: keyId, userId },
     });
 
     if (!key) {
-      throw new Error('API key not found or unauthorized');
+      throw new Error("API key not found or unauthorized");
     }
 
     if (key.status === ApiKeyStatus.REVOKED) {
-      throw new Error('API key is already revoked');
+      throw new Error("API key is already revoked");
     }
 
     await this.prisma.apiKey.update({
@@ -286,7 +291,7 @@ export class ApiKeyService {
       },
     });
 
-    logger.info('[ApiKeyService] API key revoked', {
+    logger.info("[ApiKeyService] API key revoked", {
       keyId,
       userId,
       revokedBy,
@@ -338,14 +343,14 @@ export class ApiKeyService {
       rateLimitRpm?: number;
       allowedIps?: string[];
       allowedOrigins?: string[];
-    }
+    },
   ): Promise<ApiKeyResponse> {
     const key = await this.prisma.apiKey.findFirst({
       where: { id: keyId, userId },
     });
 
     if (!key) {
-      throw new Error('API key not found or unauthorized');
+      throw new Error("API key not found or unauthorized");
     }
 
     const updated = await this.prisma.apiKey.update({
@@ -374,7 +379,7 @@ export class ApiKeyService {
    * Hash an API key using SHA-256
    */
   private hashKey(key: string): string {
-    return crypto.createHash('sha256').update(key).digest('hex');
+    return crypto.createHash("sha256").update(key).digest("hex");
   }
 }
 

@@ -11,7 +11,7 @@ import {
   OrganicInput,
   FieldActivity,
   InspectionType,
-} from '../entities/FieldInspection.js';
+} from "../entities/FieldInspection.js";
 
 export interface CreateFieldInspectionData {
   id: string;
@@ -108,12 +108,20 @@ export interface IFieldInspectionRepository {
   /**
    * List inspections for a field
    */
-  listByField(fieldId: string, filter?: Omit<FieldInspectionFilter, 'fieldId'>): Promise<FieldInspectionListResult>;
+  listByField(
+    fieldId: string,
+    filter?: Omit<FieldInspectionFilter, "fieldId">,
+  ): Promise<FieldInspectionListResult>;
 
   /**
    * Update inspection notes/issues/recommendations
    */
-  updateNotes(id: string, notes?: string, issues?: string, recommendations?: string): Promise<FieldInspection>;
+  updateNotes(
+    id: string,
+    notes?: string,
+    issues?: string,
+    recommendations?: string,
+  ): Promise<FieldInspection>;
 
   /**
    * Verify inspection
@@ -153,7 +161,12 @@ export interface IFieldInspectionRepository {
   /**
    * Verify organic input
    */
-  verifyOrganicInput(inputId: string, verifiedBy: string, approved: boolean, rejectionReason?: string): Promise<OrganicInput>;
+  verifyOrganicInput(
+    inputId: string,
+    verifiedBy: string,
+    approved: boolean,
+    rejectionReason?: string,
+  ): Promise<OrganicInput>;
 
   /**
    * Count inspections for a field

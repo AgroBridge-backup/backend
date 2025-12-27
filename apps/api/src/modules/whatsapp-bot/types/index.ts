@@ -8,7 +8,7 @@
 // ============================================================================
 
 export interface WhatsAppWebhookPayload {
-  object: 'whatsapp_business_account';
+  object: "whatsapp_business_account";
   entry: WebhookEntry[];
 }
 
@@ -19,7 +19,7 @@ export interface WebhookEntry {
 
 export interface WebhookChange {
   value: {
-    messaging_product: 'whatsapp';
+    messaging_product: "whatsapp";
     metadata: {
       display_phone_number: string;
       phone_number_id: string;
@@ -28,7 +28,7 @@ export interface WebhookChange {
     messages?: IncomingMessage[];
     statuses?: MessageStatus[];
   };
-  field: 'messages';
+  field: "messages";
 }
 
 export interface WebhookContact {
@@ -42,12 +42,12 @@ export interface IncomingMessage {
   from: string;
   id: string;
   timestamp: string;
-  type: 'text' | 'interactive' | 'button' | 'image' | 'document' | 'location';
+  type: "text" | "interactive" | "button" | "image" | "document" | "location";
   text?: {
     body: string;
   };
   interactive?: {
-    type: 'button_reply' | 'list_reply';
+    type: "button_reply" | "list_reply";
     button_reply?: {
       id: string;
       title: string;
@@ -77,7 +77,7 @@ export interface IncomingMessage {
 
 export interface MessageStatus {
   id: string;
-  status: 'sent' | 'delivered' | 'read' | 'failed';
+  status: "sent" | "delivered" | "read" | "failed";
   timestamp: string;
   recipient_id: string;
   errors?: Array<{
@@ -92,10 +92,10 @@ export interface MessageStatus {
 // ============================================================================
 
 export interface SendMessageRequest {
-  messaging_product: 'whatsapp';
-  recipient_type: 'individual';
+  messaging_product: "whatsapp";
+  recipient_type: "individual";
   to: string;
-  type: 'text' | 'interactive' | 'template';
+  type: "text" | "interactive" | "template";
   text?: {
     preview_url?: boolean;
     body: string;
@@ -105,9 +105,9 @@ export interface SendMessageRequest {
 }
 
 export interface InteractiveMessage {
-  type: 'button' | 'list';
+  type: "button" | "list";
   header?: {
-    type: 'text' | 'image' | 'document';
+    type: "text" | "image" | "document";
     text?: string;
   };
   body: {
@@ -122,7 +122,7 @@ export interface InteractiveMessage {
 export interface InteractiveAction {
   button?: string;
   buttons?: Array<{
-    type: 'reply';
+    type: "reply";
     reply: {
       id: string;
       title: string;
@@ -147,9 +147,9 @@ export interface TemplateMessage {
 }
 
 export interface TemplateComponent {
-  type: 'header' | 'body' | 'button';
+  type: "header" | "body" | "button";
   parameters?: Array<{
-    type: 'text' | 'currency' | 'date_time' | 'image';
+    type: "text" | "currency" | "date_time" | "image";
     text?: string;
     currency?: {
       fallback_value: string;
@@ -157,7 +157,7 @@ export interface TemplateComponent {
       amount_1000: number;
     };
   }>;
-  sub_type?: 'url' | 'quick_reply';
+  sub_type?: "url" | "quick_reply";
   index?: number;
 }
 
@@ -166,16 +166,16 @@ export interface TemplateComponent {
 // ============================================================================
 
 export type ConversationState =
-  | 'IDLE'
-  | 'MAIN_MENU'
-  | 'REQUESTING_ADVANCE'
-  | 'SELECTING_ORDER'
-  | 'CONFIRMING_ADVANCE'
-  | 'CHECKING_BALANCE'
-  | 'VIEWING_PAYMENTS'
-  | 'MAKING_PAYMENT'
-  | 'CUSTOMER_SUPPORT'
-  | 'AWAITING_RESPONSE';
+  | "IDLE"
+  | "MAIN_MENU"
+  | "REQUESTING_ADVANCE"
+  | "SELECTING_ORDER"
+  | "CONFIRMING_ADVANCE"
+  | "CHECKING_BALANCE"
+  | "VIEWING_PAYMENTS"
+  | "MAKING_PAYMENT"
+  | "CUSTOMER_SUPPORT"
+  | "AWAITING_RESPONSE";
 
 export interface WhatsAppSession {
   id: string;
@@ -184,7 +184,7 @@ export interface WhatsAppSession {
   producerId?: string;
   state: ConversationState;
   context: SessionContext;
-  language: 'es' | 'en';
+  language: "es" | "en";
   lastMessageAt: Date;
   messageCount: number;
   createdAt: Date;
@@ -201,14 +201,14 @@ export interface SessionContext {
 }
 
 export type UserIntent =
-  | 'REQUEST_ADVANCE'
-  | 'CHECK_BALANCE'
-  | 'VIEW_PAYMENTS'
-  | 'MAKE_PAYMENT'
-  | 'CUSTOMER_SUPPORT'
-  | 'GREETING'
-  | 'THANKS'
-  | 'UNKNOWN';
+  | "REQUEST_ADVANCE"
+  | "CHECK_BALANCE"
+  | "VIEW_PAYMENTS"
+  | "MAKE_PAYMENT"
+  | "CUSTOMER_SUPPORT"
+  | "GREETING"
+  | "THANKS"
+  | "UNKNOWN";
 
 // ============================================================================
 // BOT CONFIGURATION
@@ -232,7 +232,7 @@ export interface WhatsAppConfig {
 // ============================================================================
 
 export interface BotResponse {
-  type: 'text' | 'interactive' | 'template';
+  type: "text" | "interactive" | "template";
   content: string | InteractiveMessage | TemplateMessage;
   quickReplies?: string[];
 }

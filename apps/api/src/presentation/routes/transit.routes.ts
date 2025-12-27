@@ -3,18 +3,18 @@
  * API Routes for Transit Session Management
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { UserRole, TransitStatus } from '@prisma/client';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { CreateTransitSessionUseCase } from '../../application/use-cases/transit/CreateTransitSessionUseCase.js';
-import { GetTransitSessionUseCase } from '../../application/use-cases/transit/GetTransitSessionUseCase.js';
-import { UpdateTransitStatusUseCase } from '../../application/use-cases/transit/UpdateTransitStatusUseCase.js';
-import { AddLocationUpdateUseCase } from '../../application/use-cases/transit/AddLocationUpdateUseCase.js';
-import { GetLocationHistoryUseCase } from '../../application/use-cases/transit/GetLocationHistoryUseCase.js';
-import { TransitTrackingService } from '../../domain/services/TransitTrackingService.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import { UserRole, TransitStatus } from "@prisma/client";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { CreateTransitSessionUseCase } from "../../application/use-cases/transit/CreateTransitSessionUseCase.js";
+import { GetTransitSessionUseCase } from "../../application/use-cases/transit/GetTransitSessionUseCase.js";
+import { UpdateTransitStatusUseCase } from "../../application/use-cases/transit/UpdateTransitStatusUseCase.js";
+import { AddLocationUpdateUseCase } from "../../application/use-cases/transit/AddLocationUpdateUseCase.js";
+import { GetLocationHistoryUseCase } from "../../application/use-cases/transit/GetLocationHistoryUseCase.js";
+import { TransitTrackingService } from "../../domain/services/TransitTrackingService.js";
 
 export interface TransitUseCases {
   createTransitSessionUseCase: CreateTransitSessionUseCase;
@@ -96,7 +96,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Requires DRIVER or ADMIN role
    */
   router.post(
-    '/batches/:id/transit',
+    "/batches/:id/transit",
     authenticate([UserRole.DRIVER, UserRole.ADMIN]),
     RateLimiterConfig.creation(),
     validateRequest(createSessionSchema),
@@ -112,8 +112,12 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
           destinationName: req.body.destinationName,
           destinationLat: req.body.destinationLat,
           destinationLng: req.body.destinationLng,
-          scheduledDeparture: req.body.scheduledDeparture ? new Date(req.body.scheduledDeparture) : undefined,
-          scheduledArrival: req.body.scheduledArrival ? new Date(req.body.scheduledArrival) : undefined,
+          scheduledDeparture: req.body.scheduledDeparture
+            ? new Date(req.body.scheduledDeparture)
+            : undefined,
+          scheduledArrival: req.body.scheduledArrival
+            ? new Date(req.body.scheduledArrival)
+            : undefined,
           totalDistanceKm: req.body.totalDistanceKm,
           maxDeviationKm: req.body.maxDeviationKm,
           alertOnDeviation: req.body.alertOnDeviation,
@@ -122,12 +126,12 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
         res.status(201).json({
           success: true,
           data: session,
-          message: 'Transit session created successfully.',
+          message: "Transit session created successfully.",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -135,12 +139,14 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Get all transit sessions for a batch
    */
   router.get(
-    '/batches/:id/transit',
+    "/batches/:id/transit",
     authenticate(),
     validateRequest(batchIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const sessions = await useCases.transitService.getBatchSessions(req.params.id);
+        const sessions = await useCases.transitService.getBatchSessions(
+          req.params.id,
+        );
 
         res.status(200).json({
           success: true,
@@ -152,7 +158,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -160,7 +166,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Get transit session details with progress
    */
   router.get(
-    '/transit/:sessionId',
+    "/transit/:sessionId",
     authenticate(),
     validateRequest(sessionIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -176,7 +182,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -185,7 +191,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Requires DRIVER or ADMIN role
    */
   router.patch(
-    '/transit/:sessionId/status',
+    "/transit/:sessionId/status",
     authenticate([UserRole.DRIVER, UserRole.ADMIN]),
     validateRequest(updateStatusSchema),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -204,7 +210,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -212,25 +218,25 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Start transit (shorthand for status update)
    */
   router.post(
-    '/transit/:sessionId/start',
+    "/transit/:sessionId/start",
     authenticate([UserRole.DRIVER, UserRole.ADMIN]),
     validateRequest(sessionIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const session = await useCases.transitService.startTransit(
           req.params.sessionId,
-          req.user!.userId
+          req.user!.userId,
         );
 
         res.status(200).json({
           success: true,
           data: session,
-          message: 'Transit started.',
+          message: "Transit started.",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -238,25 +244,25 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Complete transit
    */
   router.post(
-    '/transit/:sessionId/complete',
+    "/transit/:sessionId/complete",
     authenticate([UserRole.DRIVER, UserRole.ADMIN]),
     validateRequest(sessionIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const session = await useCases.transitService.completeTransit(
           req.params.sessionId,
-          req.user!.userId
+          req.user!.userId,
         );
 
         res.status(200).json({
           success: true,
           data: session,
-          message: 'Transit completed.',
+          message: "Transit completed.",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -265,7 +271,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Rate limited to prevent excessive updates
    */
   router.post(
-    '/transit/:sessionId/location',
+    "/transit/:sessionId/location",
     authenticate([UserRole.DRIVER, UserRole.ADMIN]),
     RateLimiterConfig.api(), // Limit to 60/min
     validateRequest(addLocationSchema),
@@ -289,7 +295,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -297,12 +303,14 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Get location history for a session
    */
   router.get(
-    '/transit/:sessionId/locations',
+    "/transit/:sessionId/locations",
     authenticate(),
     validateRequest(sessionIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+        const limit = req.query.limit
+          ? parseInt(req.query.limit as string, 10)
+          : 100;
         const locations = await useCases.getLocationHistoryUseCase.execute({
           sessionId: req.params.sessionId,
           limit,
@@ -318,7 +326,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -326,12 +334,14 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Get the current (latest) location for a session
    */
   router.get(
-    '/transit/:sessionId/current-location',
+    "/transit/:sessionId/current-location",
     authenticate(),
     validateRequest(sessionIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const location = await useCases.transitService.getCurrentLocation(req.params.sessionId);
+        const location = await useCases.transitService.getCurrentLocation(
+          req.params.sessionId,
+        );
 
         res.status(200).json({
           success: true,
@@ -340,7 +350,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -348,11 +358,13 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
    * Get active transit sessions for the current driver
    */
   router.get(
-    '/drivers/me/transit',
+    "/drivers/me/transit",
     authenticate([UserRole.DRIVER, UserRole.ADMIN]),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const sessions = await useCases.transitService.getDriverActiveSessions(req.user!.userId);
+        const sessions = await useCases.transitService.getDriverActiveSessions(
+          req.user!.userId,
+        );
 
         res.status(200).json({
           success: true,
@@ -364,7 +376,7 @@ export function createTransitRouter(useCases?: TransitUseCases): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

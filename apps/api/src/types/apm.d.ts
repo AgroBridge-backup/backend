@@ -4,7 +4,7 @@
  * when the packages are not installed.
  */
 
-declare module 'dd-trace' {
+declare module "dd-trace" {
   interface TracerOptions {
     service?: string;
     env?: string;
@@ -33,10 +33,12 @@ declare module 'dd-trace' {
   export default tracer;
 }
 
-declare module 'newrelic' {
+declare module "newrelic" {
   interface NewRelic {
     recordMetric(name: string, value: number): void;
-    addCustomAttributes(attributes: Record<string, string | number | boolean>): void;
+    addCustomAttributes(
+      attributes: Record<string, string | number | boolean>,
+    ): void;
     startWebTransaction(name: string, callback: () => void): void;
     endTransaction(): void;
     noticeError(error: Error): void;
@@ -46,7 +48,7 @@ declare module 'newrelic' {
   export default newrelic;
 }
 
-declare module 'aws-xray-sdk' {
+declare module "aws-xray-sdk" {
   interface Segment {
     addNewSubsegment(name: string): Subsegment;
     addAnnotation(key: string, value: string | number | boolean): void;

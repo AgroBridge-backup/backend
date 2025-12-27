@@ -25,18 +25,18 @@
  * @see https://github.com/OptimalBits/bull
  */
 
-import Bull, { Queue, Job, JobOptions } from 'bull';
-import { PrismaClient } from '@prisma/client';
-import logger from '../../../shared/utils/logger.js';
-import { fcmService } from '../services/FCMService.js';
-import { apnsService } from '../services/APNsService.js';
-import { emailService } from '../services/EmailService.js';
-import { smsService } from '../services/SMSService.js';
+import Bull, { Queue, Job, JobOptions } from "bull";
+import { PrismaClient } from "@prisma/client";
+import logger from "../../../shared/utils/logger.js";
+import { fcmService } from "../services/FCMService.js";
+import { apnsService } from "../services/APNsService.js";
+import { emailService } from "../services/EmailService.js";
+import { smsService } from "../services/SMSService.js";
 import type {
   NotificationJobData,
   QueueStats,
   NotificationChannel,
-} from '../types/index.js';
+} from "../types/index.js";
 
 // Prisma client for database operations
 const prisma = new PrismaClient();
@@ -75,25 +75,25 @@ export class NotificationQueue {
 
     try {
       const redisConfig = {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
+        host: process.env.REDIS_HOST || "localhost",
+        port: parseInt(process.env.REDIS_PORT || "6379"),
         password: process.env.REDIS_PASSWORD || undefined,
-        db: parseInt(process.env.REDIS_DB || '0'),
+        db: parseInt(process.env.REDIS_DB || "0"),
       };
 
-      this.queue = new Bull<NotificationJobData>('notifications', {
+      this.queue = new Bull<NotificationJobData>("notifications", {
         redis: redisConfig,
         defaultJobOptions: {
-          attempts: parseInt(process.env.NOTIFICATION_RETRY_ATTEMPTS || '3'),
+          attempts: parseInt(process.env.NOTIFICATION_RETRY_ATTEMPTS || "3"),
           backoff: {
-            type: 'exponential',
-            delay: parseInt(process.env.NOTIFICATION_RETRY_DELAY || '2000'),
+            type: "exponential",
+            delay: parseInt(process.env.NOTIFICATION_RETRY_DELAY || "2000"),
           },
           removeOnComplete: 100, // Keep last 100 completed jobs
           removeOnFail: 500, // Keep last 500 failed jobs for debugging
         },
         limiter: {
-          max: parseInt(process.env.NOTIFICATION_RATE_LIMIT || '1000'),
+          max: parseInt(process.env.NOTIFICATION_RATE_LIMIT || "1000"),
           duration: 60000, // 1 minute
         },
         settings: {
@@ -105,13 +105,13 @@ export class NotificationQueue {
       this.setupEventHandlers();
       this.initialized = true;
 
-      logger.info('[NotificationQueue] Queue initialized successfully', {
+      logger.info("[NotificationQueue] Queue initialized successfully", {
         redis: `${redisConfig.host}:${redisConfig.port}`,
         db: redisConfig.db,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationQueue] Failed to initialize queue', {
+      logger.error("[NotificationQueue] Failed to initialize queue", {
         error: err.message,
         stack: err.stack,
       });
@@ -125,12 +125,13 @@ export class NotificationQueue {
     if (!this.queue) return;
 
     // Job completed successfully
-    this.queue.on('completed', (job: Job, result: unknown) => {
-      const duration = job.finishedOn && job.processedOn
-        ? job.finishedOn - job.processedOn
-        : 0;
+    this.queue.on("completed", (job: Job, result: unknown) => {
+      const duration =
+        job.finishedOn && job.processedOn
+          ? job.finishedOn - job.processedOn
+          : 0;
 
-      logger.info('[NotificationQueue] Job completed', {
+      logger.info("[NotificationQueue] Job completed", {
         jobId: job.id,
         notificationId: job.data.notificationId,
         duration: `${duration}ms`,
@@ -139,8 +140,8 @@ export class NotificationQueue {
     });
 
     // Job failed after all retries
-    this.queue.on('failed', (job: Job, error: Error) => {
-      logger.error('[NotificationQueue] Job failed', {
+    this.queue.on("failed", (job: Job, error: Error) => {
+      logger.error("[NotificationQueue] Job failed", {
         jobId: job.id,
         notificationId: job.data.notificationId,
         error: error.message,
@@ -150,28 +151,28 @@ export class NotificationQueue {
     });
 
     // Job stalled (worker died mid-processing)
-    this.queue.on('stalled', (job: Job) => {
-      logger.warn('[NotificationQueue] Job stalled', {
+    this.queue.on("stalled", (job: Job) => {
+      logger.warn("[NotificationQueue] Job stalled", {
         jobId: job.id,
         notificationId: job.data.notificationId,
       });
     });
 
     // Queue error
-    this.queue.on('error', (error: Error) => {
-      logger.error('[NotificationQueue] Queue error', {
+    this.queue.on("error", (error: Error) => {
+      logger.error("[NotificationQueue] Queue error", {
         error: error.message,
       });
     });
 
     // Job waiting too long
-    this.queue.on('waiting', (jobId: string) => {
-      logger.debug('[NotificationQueue] Job waiting', { jobId });
+    this.queue.on("waiting", (jobId: string) => {
+      logger.debug("[NotificationQueue] Job waiting", { jobId });
     });
 
     // Job active (started processing)
-    this.queue.on('active', (job: Job) => {
-      logger.debug('[NotificationQueue] Job active', {
+    this.queue.on("active", (job: Job) => {
+      logger.debug("[NotificationQueue] Job active", {
         jobId: job.id,
         notificationId: job.data.notificationId,
       });
@@ -193,7 +194,7 @@ export class NotificationQueue {
       return await this.processNotification(job);
     });
 
-    logger.info('[NotificationQueue] Started processing jobs', {
+    logger.info("[NotificationQueue] Started processing jobs", {
       concurrency,
     });
   }
@@ -206,12 +207,12 @@ export class NotificationQueue {
    */
   async enqueue(
     job: NotificationJobData,
-    options?: Partial<JobOptions>
+    options?: Partial<JobOptions>,
   ): Promise<string | null> {
     this.initialize();
 
     if (!this.queue) {
-      logger.error('[NotificationQueue] Queue not initialized');
+      logger.error("[NotificationQueue] Queue not initialized");
       return null;
     }
 
@@ -224,7 +225,7 @@ export class NotificationQueue {
 
       const queuedJob = await this.queue.add(job, jobOptions);
 
-      logger.info('[NotificationQueue] Job enqueued', {
+      logger.info("[NotificationQueue] Job enqueued", {
         jobId: queuedJob.id,
         notificationId: job.notificationId,
         channels: job.channels,
@@ -234,7 +235,7 @@ export class NotificationQueue {
       return queuedJob.id as string;
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationQueue] Failed to enqueue job', {
+      logger.error("[NotificationQueue] Failed to enqueue job", {
         error: err.message,
         notificationId: job.notificationId,
       });
@@ -246,10 +247,21 @@ export class NotificationQueue {
    * Process a notification job
    * This is the main worker function
    */
-  private async processNotification(job: Job<NotificationJobData>): Promise<void> {
-    const { notificationId, userId, channels, title, body, data, type, priority } = job.data;
+  private async processNotification(
+    job: Job<NotificationJobData>,
+  ): Promise<void> {
+    const {
+      notificationId,
+      userId,
+      channels,
+      title,
+      body,
+      data,
+      type,
+      priority,
+    } = job.data;
 
-    logger.info('[NotificationQueue] Processing notification', {
+    logger.info("[NotificationQueue] Processing notification", {
       jobId: job.id,
       notificationId,
       channels,
@@ -261,7 +273,7 @@ export class NotificationQueue {
       await prisma.notification.update({
         where: { id: notificationId },
         data: {
-          status: 'SENT',
+          status: "SENT",
           sentAt: new Date(),
           retryCount: job.attemptsMade,
         },
@@ -269,22 +281,36 @@ export class NotificationQueue {
 
       // Send via all channels in parallel
       const results = await Promise.allSettled([
-        channels.includes('PUSH') ? this.sendPush(job.data) : Promise.resolve(null),
-        channels.includes('EMAIL') ? this.sendEmail(job.data) : Promise.resolve(null),
-        channels.includes('SMS') ? this.sendSMS(job.data) : Promise.resolve(null),
-        channels.includes('WHATSAPP') ? this.sendWhatsApp(job.data) : Promise.resolve(null),
+        channels.includes("PUSH")
+          ? this.sendPush(job.data)
+          : Promise.resolve(null),
+        channels.includes("EMAIL")
+          ? this.sendEmail(job.data)
+          : Promise.resolve(null),
+        channels.includes("SMS")
+          ? this.sendSMS(job.data)
+          : Promise.resolve(null),
+        channels.includes("WHATSAPP")
+          ? this.sendWhatsApp(job.data)
+          : Promise.resolve(null),
       ]);
 
       // Check if at least one channel succeeded
-      const channelResults = results.map((r, index) => {
-        const channel = ['PUSH', 'EMAIL', 'SMS', 'WHATSAPP'][index];
-        if (r.status === 'fulfilled' && r.value !== null) {
-          return { channel, success: r.value, error: null };
-        } else if (r.status === 'rejected') {
-          return { channel, success: false, error: r.reason?.message || 'Unknown error' };
-        }
-        return null;
-      }).filter(Boolean);
+      const channelResults = results
+        .map((r, index) => {
+          const channel = ["PUSH", "EMAIL", "SMS", "WHATSAPP"][index];
+          if (r.status === "fulfilled" && r.value !== null) {
+            return { channel, success: r.value, error: null };
+          } else if (r.status === "rejected") {
+            return {
+              channel,
+              success: false,
+              error: r.reason?.message || "Unknown error",
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
 
       const anySuccess = channelResults.some((r) => r?.success);
       const allFailed = channelResults.length > 0 && !anySuccess;
@@ -297,7 +323,7 @@ export class NotificationQueue {
           data: {
             notificationId,
             channel: result.channel as NotificationChannel,
-            status: result.success ? 'SUCCESS' : 'FAILED',
+            status: result.success ? "SUCCESS" : "FAILED",
             providerError: result.error || undefined,
             attemptedAt: new Date(),
             deliveredAt: result.success ? new Date() : undefined,
@@ -310,22 +336,24 @@ export class NotificationQueue {
         await prisma.notification.update({
           where: { id: notificationId },
           data: {
-            status: 'DELIVERED',
+            status: "DELIVERED",
             deliveredAt: new Date(),
           },
         });
 
-        logger.info('[NotificationQueue] Notification delivered', {
+        logger.info("[NotificationQueue] Notification delivered", {
           notificationId,
-          successChannels: channelResults.filter((r) => r?.success).map((r) => r?.channel),
+          successChannels: channelResults
+            .filter((r) => r?.success)
+            .map((r) => r?.channel),
         });
       } else if (allFailed) {
-        throw new Error('All channels failed');
+        throw new Error("All channels failed");
       }
     } catch (error) {
       const err = error as Error;
 
-      logger.error('[NotificationQueue] Notification processing failed', {
+      logger.error("[NotificationQueue] Notification processing failed", {
         notificationId,
         error: err.message,
         attempt: job.attemptsMade + 1,
@@ -336,7 +364,7 @@ export class NotificationQueue {
         await prisma.notification.update({
           where: { id: notificationId },
           data: {
-            status: 'FAILED',
+            status: "FAILED",
             failedAt: new Date(),
             errorMessage: err.message,
           },
@@ -363,17 +391,17 @@ export class NotificationQueue {
       });
 
       if (devices.length === 0) {
-        logger.warn('[NotificationQueue] No device tokens found', { userId });
+        logger.warn("[NotificationQueue] No device tokens found", { userId });
         return false;
       }
 
       // Separate iOS and Android tokens
       const iosTokens = devices
-        .filter((d) => d.platform === 'IOS')
+        .filter((d) => d.platform === "IOS")
         .map((d) => d.token);
 
       const androidTokens = devices
-        .filter((d) => d.platform === 'ANDROID' || d.platform === 'WEB')
+        .filter((d) => d.platform === "ANDROID" || d.platform === "WEB")
         .map((d) => d.token);
 
       let anySuccess = false;
@@ -394,7 +422,7 @@ export class NotificationQueue {
             where: { token: { in: result.invalidTokens } },
             data: { active: false },
           });
-          logger.info('[NotificationQueue] Deactivated invalid APNs tokens', {
+          logger.info("[NotificationQueue] Deactivated invalid APNs tokens", {
             count: result.invalidTokens.length,
           });
         }
@@ -417,7 +445,7 @@ export class NotificationQueue {
             where: { token: { in: result.invalidTokens } },
             data: { active: false },
           });
-          logger.info('[NotificationQueue] Deactivated invalid FCM tokens', {
+          logger.info("[NotificationQueue] Deactivated invalid FCM tokens", {
             count: result.invalidTokens.length,
           });
         }
@@ -426,7 +454,7 @@ export class NotificationQueue {
       return anySuccess;
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationQueue] Push notification failed', {
+      logger.error("[NotificationQueue] Push notification failed", {
         error: err.message,
         userId,
       });
@@ -447,12 +475,12 @@ export class NotificationQueue {
       });
 
       if (!user?.email) {
-        logger.warn('[NotificationQueue] User has no email', { userId });
+        logger.warn("[NotificationQueue] User has no email", { userId });
         return false;
       }
 
       if (!emailService.isAvailable()) {
-        logger.warn('[NotificationQueue] Email service not available');
+        logger.warn("[NotificationQueue] Email service not available");
         return false;
       }
 
@@ -461,7 +489,7 @@ export class NotificationQueue {
         to: user.email,
         subject: title,
         html: this.generateEmailHtml(title, body, data, type, user.firstName),
-        categories: [type, 'notification'],
+        categories: [type, "notification"],
         customArgs: {
           notificationType: type,
           ...(data?.entityId && { entityId: data.entityId as string }),
@@ -471,7 +499,7 @@ export class NotificationQueue {
       return result.success;
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationQueue] Email notification failed', {
+      logger.error("[NotificationQueue] Email notification failed", {
         error: err.message,
         userId,
       });
@@ -493,12 +521,15 @@ export class NotificationQueue {
       });
 
       if (!preferences?.phoneNumber || !preferences.smsEnabled) {
-        logger.warn('[NotificationQueue] User has no verified phone or SMS disabled', { userId });
+        logger.warn(
+          "[NotificationQueue] User has no verified phone or SMS disabled",
+          { userId },
+        );
         return false;
       }
 
       if (!smsService.isAvailable()) {
-        logger.warn('[NotificationQueue] SMS service not available');
+        logger.warn("[NotificationQueue] SMS service not available");
         return false;
       }
 
@@ -506,7 +537,7 @@ export class NotificationQueue {
       return result.success;
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationQueue] SMS notification failed', {
+      logger.error("[NotificationQueue] SMS notification failed", {
         error: err.message,
         userId,
       });
@@ -528,20 +559,26 @@ export class NotificationQueue {
       });
 
       if (!preferences?.phoneNumber || !preferences.whatsappEnabled) {
-        logger.warn('[NotificationQueue] User has no phone or WhatsApp disabled', { userId });
+        logger.warn(
+          "[NotificationQueue] User has no phone or WhatsApp disabled",
+          { userId },
+        );
         return false;
       }
 
       if (!smsService.isWhatsAppAvailable()) {
-        logger.warn('[NotificationQueue] WhatsApp service not available');
+        logger.warn("[NotificationQueue] WhatsApp service not available");
         return false;
       }
 
-      const result = await smsService.sendWhatsApp(preferences.phoneNumber, body);
+      const result = await smsService.sendWhatsApp(
+        preferences.phoneNumber,
+        body,
+      );
       return result.success;
     } catch (error) {
       const err = error as Error;
-      logger.error('[NotificationQueue] WhatsApp notification failed', {
+      logger.error("[NotificationQueue] WhatsApp notification failed", {
         error: err.message,
         userId,
       });
@@ -557,9 +594,9 @@ export class NotificationQueue {
     body: string,
     data: Record<string, unknown> | undefined,
     type: string,
-    userName?: string
+    userName?: string,
   ): string {
-    const appUrl = process.env.APP_URL || 'https://app.agrobridge.io';
+    const appUrl = process.env.APP_URL || "https://app.agrobridge.io";
 
     return `
 <!DOCTYPE html>
@@ -580,9 +617,11 @@ export class NotificationQueue {
           </tr>
           <tr>
             <td style="padding: 30px;">
-              ${userName ? `<p style="margin-bottom: 16px;">Hola ${userName},</p>` : ''}
+              ${userName ? `<p style="margin-bottom: 16px;">Hola ${userName},</p>` : ""}
               <p style="margin-bottom: 24px;">${body}</p>
-              ${data?.deepLink ? `
+              ${
+                data?.deepLink
+                  ? `
               <table role="presentation" style="width: 100%;">
                 <tr>
                   <td align="center">
@@ -592,7 +631,9 @@ export class NotificationQueue {
                   </td>
                 </tr>
               </table>
-              ` : ''}
+              `
+                  : ""
+              }
             </td>
           </tr>
           <tr>
@@ -614,11 +655,11 @@ export class NotificationQueue {
    */
   private getPriorityNumber(priority: string): number {
     switch (priority) {
-      case 'CRITICAL':
+      case "CRITICAL":
         return 1;
-      case 'HIGH':
+      case "HIGH":
         return 5;
-      case 'LOW':
+      case "LOW":
         return 15;
       default: // NORMAL
         return 10;
@@ -659,7 +700,7 @@ export class NotificationQueue {
     if (!this.queue) return;
 
     await this.queue.pause();
-    logger.info('[NotificationQueue] Queue paused');
+    logger.info("[NotificationQueue] Queue paused");
   }
 
   /**
@@ -669,7 +710,7 @@ export class NotificationQueue {
     if (!this.queue) return;
 
     await this.queue.resume();
-    logger.info('[NotificationQueue] Queue resumed');
+    logger.info("[NotificationQueue] Queue resumed");
   }
 
   /**
@@ -683,11 +724,11 @@ export class NotificationQueue {
     const timestamp = ageInHours * 60 * 60 * 1000;
 
     await Promise.all([
-      this.queue.clean(timestamp, 'completed'),
-      this.queue.clean(timestamp, 'failed'),
+      this.queue.clean(timestamp, "completed"),
+      this.queue.clean(timestamp, "failed"),
     ]);
 
-    logger.info('[NotificationQueue] Queue cleaned', { ageInHours });
+    logger.info("[NotificationQueue] Queue cleaned", { ageInHours });
   }
 
   /**
@@ -701,7 +742,7 @@ export class NotificationQueue {
     this.initialized = false;
     this.processing = false;
 
-    logger.info('[NotificationQueue] Queue shutdown complete');
+    logger.info("[NotificationQueue] Queue shutdown complete");
   }
 
   /**

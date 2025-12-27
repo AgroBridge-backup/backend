@@ -5,9 +5,15 @@
  * @author AgroBridge Engineering Team
  */
 
-import { TraceabilityEvent, EventType, Prisma } from '@prisma/client';
-import { GraphQLContext, requireAuth, requireRole, isAdmin, isAdminOrAuditor } from '../context.js';
-import { NotFoundError, ForbiddenError } from '../errors.js';
+import { TraceabilityEvent, EventType, Prisma } from "@prisma/client";
+import {
+  GraphQLContext,
+  requireAuth,
+  requireRole,
+  isAdmin,
+  isAdminOrAuditor,
+} from "../context.js";
+import { NotFoundError, ForbiddenError } from "../errors.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -27,7 +33,7 @@ interface EventFilterInput {
 
 interface EventSortInput {
   field: string;
-  direction: 'ASC' | 'DESC';
+  direction: "ASC" | "DESC";
 }
 
 interface CreateEventInput {
@@ -48,7 +54,7 @@ interface CreateEventInput {
 
 function buildEventWhere(
   filter?: EventFilterInput,
-  context?: GraphQLContext
+  context?: GraphQLContext,
 ): Prisma.TraceabilityEventWhereInput {
   const where: Prisma.TraceabilityEventWhereInput = {};
 
@@ -75,7 +81,7 @@ function buildEventWhere(
 
   // Role-based filtering
   if (context?.user && !isAdminOrAuditor(context)) {
-    if (context.user.role === 'PRODUCER') {
+    if (context.user.role === "PRODUCER") {
       where.batch = { producer: { userId: context.user.id } };
     }
   }
@@ -83,15 +89,17 @@ function buildEventWhere(
   return where;
 }
 
-function buildEventOrderBy(sort?: EventSortInput): Prisma.TraceabilityEventOrderByWithRelationInput {
+function buildEventOrderBy(
+  sort?: EventSortInput,
+): Prisma.TraceabilityEventOrderByWithRelationInput {
   if (!sort) {
-    return { timestamp: 'desc' };
+    return { timestamp: "desc" };
   }
-  return { [sort.field]: sort.direction.toLowerCase() as 'asc' | 'desc' };
+  return { [sort.field]: sort.direction.toLowerCase() as "asc" | "desc" };
 }
 
 function encodeCursor(id: string): string {
-  return Buffer.from(id).toString('base64');
+  return Buffer.from(id).toString("base64");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -102,7 +110,7 @@ export const eventQueries = {
   event: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ): Promise<TraceabilityEvent | null> => {
     return context.loaders.event.load(args.id);
   },
@@ -114,7 +122,7 @@ export const eventQueries = {
       filter?: EventFilterInput;
       sort?: EventSortInput;
     },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     const page = args.pagination?.page || 1;
     const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -158,7 +166,7 @@ export const eventQueries = {
   eventsByBatch: async (
     _parent: unknown,
     args: { batchId: string; pagination?: PaginationInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     const page = args.pagination?.page || 1;
     const limit = Math.min(args.pagination?.limit || 20, 100);
@@ -169,7 +177,7 @@ export const eventQueries = {
     const [events, totalCount] = await Promise.all([
       context.prisma.traceabilityEvent.findMany({
         where,
-        orderBy: { timestamp: 'asc' },
+        orderBy: { timestamp: "asc" },
         skip,
         take: limit,
       }),
@@ -207,21 +215,21 @@ export const eventMutations = {
   createEvent: async (
     _parent: unknown,
     args: { input: CreateEventInput },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
 
     // Verify batch exists
     const batch = await context.loaders.batch.load(args.input.batchId);
     if (!batch) {
-      throw new NotFoundError('Batch', args.input.batchId);
+      throw new NotFoundError("Batch", args.input.batchId);
     }
 
     // Check authorization - producer can only add events to their batches
-    if (!isAdmin(context) && context.user.role === 'PRODUCER') {
+    if (!isAdmin(context) && context.user.role === "PRODUCER") {
       const producer = await context.loaders.producer.load(batch.producerId);
       if (!producer || producer.userId !== context.user.id) {
-        throw new ForbiddenError('You can only add events to your own batches');
+        throw new ForbiddenError("You can only add events to your own batches");
       }
     }
 
@@ -243,7 +251,7 @@ export const eventMutations = {
 
     return {
       success: true,
-      message: 'Event created successfully',
+      message: "Event created successfully",
       event,
     };
   },
@@ -251,14 +259,14 @@ export const eventMutations = {
   verifyEvent: async (
     _parent: unknown,
     args: { id: string },
-    context: GraphQLContext
+    context: GraphQLContext,
   ) => {
     requireAuth(context);
-    requireRole(context, ['ADMIN', 'CERTIFIER']);
+    requireRole(context, ["ADMIN", "CERTIFIER"]);
 
     const event = await context.loaders.event.load(args.id);
     if (!event) {
-      throw new NotFoundError('Event', args.id);
+      throw new NotFoundError("Event", args.id);
     }
 
     const updatedEvent = await context.prisma.traceabilityEvent.update({
@@ -272,7 +280,7 @@ export const eventMutations = {
 
     return {
       success: true,
-      message: 'Event verified successfully',
+      message: "Event verified successfully",
       event: updatedEvent,
     };
   },
@@ -284,15 +292,27 @@ export const eventMutations = {
 
 export const eventFieldResolvers = {
   TraceabilityEvent: {
-    batch: async (parent: TraceabilityEvent, _args: unknown, context: GraphQLContext) => {
+    batch: async (
+      parent: TraceabilityEvent,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.batch.load(parent.batchId);
     },
 
-    createdBy: async (parent: TraceabilityEvent, _args: unknown, context: GraphQLContext) => {
+    createdBy: async (
+      parent: TraceabilityEvent,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       return context.loaders.user.load(parent.createdById);
     },
 
-    verifier: async (parent: TraceabilityEvent, _args: unknown, context: GraphQLContext) => {
+    verifier: async (
+      parent: TraceabilityEvent,
+      _args: unknown,
+      context: GraphQLContext,
+    ) => {
       if (!parent.verifiedBy) return null;
       return context.loaders.user.load(parent.verifiedBy);
     },

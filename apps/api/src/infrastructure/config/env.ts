@@ -1,11 +1,14 @@
-import dotenv from 'dotenv';
-import { z } from 'zod';
-import path from 'path';
+import dotenv from "dotenv";
+import { z } from "zod";
+import path from "path";
 
 // Load .env file based on the environment (e.g., .env.test if NODE_ENV='test')
 // Vitest automatically sets NODE_ENV to 'test'
 dotenv.config({
-  path: path.resolve(process.cwd(), `.env.${process.env.NODE_ENV || 'development'}`),
+  path: path.resolve(
+    process.cwd(),
+    `.env.${process.env.NODE_ENV || "development"}`,
+  ),
 });
 
 /**
@@ -18,7 +21,9 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, "JWT_SECRET cannot be empty."),
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET cannot be empty."),
   JWT_EXPIRATION: z.string().min(1, "JWT_EXPIRATION cannot be empty."),
-  JWT_REFRESH_EXPIRATION: z.string().min(1, "JWT_REFRESH_EXPIRATION cannot be empty."),
+  JWT_REFRESH_EXPIRATION: z
+    .string()
+    .min(1, "JWT_REFRESH_EXPIRATION cannot be empty."),
 });
 
 // Parse the environment variables from process.env
@@ -26,12 +31,14 @@ const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
   console.error(
-    '❌ Invalid environment variables:',
+    "❌ Invalid environment variables:",
     parsedEnv.error.flatten().fieldErrors,
   );
   // In a test environment, we might have partial envs, but for key components we must fail.
   // This ensures the application does not start with a misconfiguration.
-  throw new Error('Invalid or missing environment variables. Please check your .env file.');
+  throw new Error(
+    "Invalid or missing environment variables. Please check your .env file.",
+  );
 }
 
 /**

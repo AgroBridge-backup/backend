@@ -4,8 +4,13 @@
  * @module repayments/services
  */
 
-import { PrismaClient, AdvanceStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
-import { logger } from '../../../infrastructure/logging/logger.js';
+import {
+  PrismaClient,
+  AdvanceStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "@prisma/client";
+import { logger } from "../../../infrastructure/logging/logger.js";
 
 const prisma = new PrismaClient();
 
@@ -20,7 +25,7 @@ export interface RepaymentRequest {
   referenceNumber?: string;
   paidAt?: Date;
   notes?: string;
-  processedBy?: string;            // Admin user ID for manual entries
+  processedBy?: string; // Admin user ID for manual entries
 }
 
 export interface RepaymentResult {
@@ -62,7 +67,7 @@ export interface Installment {
   amount: number;
   principal: number;
   interest: number;
-  status: 'PENDING' | 'PAID' | 'PARTIAL' | 'OVERDUE';
+  status: "PENDING" | "PAID" | "PARTIAL" | "OVERDUE";
   paidAmount: number;
   paidAt?: Date;
 }
@@ -81,7 +86,7 @@ export interface PaymentRecord {
   method: PaymentMethod;
   reference?: string;
   paidAt: Date;
-  type: 'PRINCIPAL' | 'INTEREST' | 'LATE_FEE' | 'REFUND';
+  type: "PRINCIPAL" | "INTEREST" | "LATE_FEE" | "REFUND";
   status: PaymentStatus;
 }
 
@@ -101,9 +106,17 @@ export class RepaymentService {
    * Record a payment for an advance
    */
   async recordPayment(request: RepaymentRequest): Promise<RepaymentResult> {
-    const { advanceId, amount, paymentMethod, referenceNumber, paidAt, notes, processedBy } = request;
+    const {
+      advanceId,
+      amount,
+      paymentMethod,
+      referenceNumber,
+      paidAt,
+      notes,
+      processedBy,
+    } = request;
 
-    logger.info('[Repayment] Recording payment', {
+    logger.info("[Repayment] Recording payment", {
       advanceId,
       amount,
       method: paymentMethod,
@@ -119,51 +132,65 @@ export class RepaymentService {
     });
 
     if (!advance) {
-      throw new Error('Advance not found');
+      throw new Error("Advance not found");
     }
 
     // Validate status
     const validStatuses: AdvanceStatus[] = [
-      'DISBURSED',
-      'ACTIVE',
-      'DELIVERY_CONFIRMED',
-      'PARTIALLY_REPAID',
-      'OVERDUE',
-      'DEFAULT_WARNING',
+      "DISBURSED",
+      "ACTIVE",
+      "DELIVERY_CONFIRMED",
+      "PARTIALLY_REPAID",
+      "OVERDUE",
+      "DEFAULT_WARNING",
     ];
 
     if (!validStatuses.includes(advance.status)) {
-      throw new Error(`Cannot record payment for advance in status: ${advance.status}`);
+      throw new Error(
+        `Cannot record payment for advance in status: ${advance.status}`,
+      );
     }
 
     // Calculate current balance with late fees
     const balance = await this.getBalanceBreakdown(advanceId);
 
     if (amount <= 0) {
-      throw new Error('Payment amount must be positive');
+      throw new Error("Payment amount must be positive");
     }
 
     if (amount > balance.totalDue) {
-      throw new Error(`Payment amount $${amount} exceeds total due $${balance.totalDue}`);
+      throw new Error(
+        `Payment amount $${amount} exceeds total due $${balance.totalDue}`,
+      );
     }
 
     // Generate transaction number
     const txnCount = await prisma.advanceTransaction.count();
-    const transactionNumber = `TXN-${new Date().getFullYear()}-${String(txnCount + 1).padStart(6, '0')}`;
+    const transactionNumber = `TXN-${new Date().getFullYear()}-${String(txnCount + 1).padStart(6, "0")}`;
 
     // Create transaction
     const transaction = await prisma.advanceTransaction.create({
       data: {
         advanceId,
         transactionNumber,
-        type: balance.remainingBalance - amount <= 0 ? 'FINAL_REPAYMENT' : 'PARTIAL_REPAYMENT',
+        type:
+          balance.remainingBalance - amount <= 0
+            ? "FINAL_REPAYMENT"
+            : "PARTIAL_REPAYMENT",
         amount,
         balanceBefore: balance.remainingBalance,
         balanceAfter: balance.remainingBalance - amount,
         description: notes || `Payment via ${paymentMethod}`,
-        paymentStatus: 'COMPLETED',
+        paymentStatus: "COMPLETED",
         paymentMethod,
-        paymentProvider: paymentMethod === 'STRIPE' ? 'Stripe' : paymentMethod === 'OPENPAY' ? 'OpenPay' : paymentMethod === 'SPEI' ? 'SPEI' : 'Manual',
+        paymentProvider:
+          paymentMethod === "STRIPE"
+            ? "Stripe"
+            : paymentMethod === "OPENPAY"
+              ? "OpenPay"
+              : paymentMethod === "SPEI"
+                ? "SPEI"
+                : "Manual",
         paymentReference: referenceNumber || `REF-${Date.now()}`,
         processedAt: paidAt || new Date(),
         metadata: {
@@ -183,7 +210,7 @@ export class RepaymentService {
       data: {
         amountRepaid: { increment: amount },
         remainingBalance: Math.max(0, newBalance),
-        status: isFullyPaid ? 'COMPLETED' : 'PARTIALLY_REPAID',
+        status: isFullyPaid ? "COMPLETED" : "PARTIALLY_REPAID",
         repaidAt: isFullyPaid ? new Date() : undefined,
         repaymentMethod: paymentMethod,
         repaymentReference: referenceNumber,
@@ -196,7 +223,9 @@ export class RepaymentService {
         where: { id: advance.poolId },
         data: {
           availableCapital: { increment: amount },
-          deployedCapital: { decrement: isFullyPaid ? advance.advanceAmount.toNumber() : amount },
+          deployedCapital: {
+            decrement: isFullyPaid ? advance.advanceAmount.toNumber() : amount,
+          },
           totalRepaid: { increment: amount },
           totalAdvancesCompleted: isFullyPaid ? { increment: 1 } : undefined,
           totalAdvancesActive: isFullyPaid ? { decrement: 1 } : undefined,
@@ -207,7 +236,7 @@ export class RepaymentService {
       await prisma.poolTransaction.create({
         data: {
           poolId: advance.poolId,
-          type: 'ADVANCE_REPAYMENT',
+          type: "ADVANCE_REPAYMENT",
           amount,
           balanceBefore: advance.pool.availableCapital.toNumber(),
           balanceAfter: advance.pool.availableCapital.toNumber() + amount,
@@ -223,14 +252,14 @@ export class RepaymentService {
         data: {
           advanceId,
           fromStatus: advance.status,
-          toStatus: 'COMPLETED',
-          reason: 'Full payment received',
+          toStatus: "COMPLETED",
+          reason: "Full payment received",
           changedBy: processedBy,
         },
       });
     }
 
-    logger.info('[Repayment] Payment recorded successfully', {
+    logger.info("[Repayment] Payment recorded successfully", {
       advanceId,
       transactionId: transaction.id,
       previousBalance: balance.remainingBalance,
@@ -246,7 +275,7 @@ export class RepaymentService {
       isFullyPaid,
       lateFees: balance.lateFees,
       message: isFullyPaid
-        ? 'Advance fully paid! Thank you.'
+        ? "Advance fully paid! Thank you."
         : `Payment of $${amount} recorded. Remaining balance: $${newBalance.toFixed(2)}`,
     };
   }
@@ -260,12 +289,15 @@ export class RepaymentService {
     });
 
     if (!advance) {
-      throw new Error('Advance not found');
+      throw new Error("Advance not found");
     }
 
     const today = new Date();
     const dueDate = new Date(advance.dueDate);
-    const daysOverdue = Math.max(0, Math.floor((today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000)));
+    const daysOverdue = Math.max(
+      0,
+      Math.floor((today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000)),
+    );
 
     // Calculate late fees
     let lateFees = 0;
@@ -273,7 +305,7 @@ export class RepaymentService {
       const weeksOverdue = Math.ceil(daysOverdue / 7);
       const feePercentage = Math.min(
         weeksOverdue * LATE_FEE_CONFIG.percentagePerWeek,
-        LATE_FEE_CONFIG.maxPercentage
+        LATE_FEE_CONFIG.maxPercentage,
       );
       lateFees = advance.remainingBalance.toNumber() * (feePercentage / 100);
     }
@@ -308,7 +340,7 @@ export class RepaymentService {
     });
 
     if (!advance) {
-      throw new Error('Advance not found');
+      throw new Error("Advance not found");
     }
 
     // Check if there's a stored schedule
@@ -319,14 +351,17 @@ export class RepaymentService {
         advanceId,
         contractNumber: advance.contractNumber,
         installments: storedSchedule,
-        totalAmount: advance.advanceAmount.toNumber() + advance.implicitInterest.toNumber(),
+        totalAmount:
+          advance.advanceAmount.toNumber() +
+          advance.implicitInterest.toNumber(),
         paidAmount: advance.amountRepaid.toNumber(),
         remainingAmount: advance.remainingBalance.toNumber(),
       };
     }
 
     // Generate single payment schedule (default)
-    const totalAmount = advance.advanceAmount.toNumber() + advance.implicitInterest.toNumber();
+    const totalAmount =
+      advance.advanceAmount.toNumber() + advance.implicitInterest.toNumber();
 
     return {
       advanceId,
@@ -338,7 +373,14 @@ export class RepaymentService {
           amount: totalAmount,
           principal: advance.advanceAmount.toNumber(),
           interest: advance.implicitInterest.toNumber(),
-          status: advance.status === 'COMPLETED' ? 'PAID' : advance.amountRepaid.toNumber() > 0 ? 'PARTIAL' : new Date() > advance.dueDate ? 'OVERDUE' : 'PENDING',
+          status:
+            advance.status === "COMPLETED"
+              ? "PAID"
+              : advance.amountRepaid.toNumber() > 0
+                ? "PARTIAL"
+                : new Date() > advance.dueDate
+                  ? "OVERDUE"
+                  : "PENDING",
           paidAmount: advance.amountRepaid.toNumber(),
           paidAt: advance.repaidAt || undefined,
         },
@@ -357,24 +399,24 @@ export class RepaymentService {
       where: { id: advanceId },
       include: {
         transactions: {
-          orderBy: { processedAt: 'desc' },
+          orderBy: { processedAt: "desc" },
         },
       },
     });
 
     if (!advance) {
-      throw new Error('Advance not found');
+      throw new Error("Advance not found");
     }
 
     const payments: PaymentRecord[] = advance.transactions
-      .filter((t) => ['PARTIAL_REPAYMENT', 'FINAL_REPAYMENT'].includes(t.type))
+      .filter((t) => ["PARTIAL_REPAYMENT", "FINAL_REPAYMENT"].includes(t.type))
       .map((t) => ({
         id: t.id,
         amount: t.amount.toNumber(),
         method: t.paymentMethod as PaymentMethod,
         reference: t.paymentReference || undefined,
         paidAt: t.processedAt || t.createdAt,
-        type: 'PRINCIPAL' as const,
+        type: "PRINCIPAL" as const,
         status: t.paymentStatus as PaymentStatus,
       }));
 
@@ -394,26 +436,28 @@ export class RepaymentService {
     advanceId: string,
     newDueDate: Date,
     reason: string,
-    extendedBy: string
+    extendedBy: string,
   ): Promise<{ success: boolean; message: string }> {
     const advance = await prisma.advanceContract.findUnique({
       where: { id: advanceId },
     });
 
     if (!advance) {
-      throw new Error('Advance not found');
+      throw new Error("Advance not found");
     }
 
     if (newDueDate <= advance.dueDate) {
-      throw new Error('New due date must be after current due date');
+      throw new Error("New due date must be after current due date");
     }
 
     // Calculate additional interest for extension
     const extensionDays = Math.floor(
-      (newDueDate.getTime() - advance.dueDate.getTime()) / (24 * 60 * 60 * 1000)
+      (newDueDate.getTime() - advance.dueDate.getTime()) /
+        (24 * 60 * 60 * 1000),
     );
     const dailyRate = 0.08 / 365; // 8% annual
-    const additionalInterest = advance.remainingBalance.toNumber() * dailyRate * extensionDays;
+    const additionalInterest =
+      advance.remainingBalance.toNumber() * dailyRate * extensionDays;
 
     await prisma.advanceContract.update({
       where: { id: advanceId },
@@ -421,7 +465,7 @@ export class RepaymentService {
         dueDate: newDueDate,
         implicitInterest: { increment: additionalInterest },
         remainingBalance: { increment: additionalInterest },
-        status: 'ACTIVE', // Remove overdue status
+        status: "ACTIVE", // Remove overdue status
         internalNotes: `Extended by ${extendedBy}: ${reason}. Previous due: ${advance.dueDate.toISOString()}`,
       },
     });
@@ -431,13 +475,13 @@ export class RepaymentService {
       data: {
         advanceId,
         fromStatus: advance.status,
-        toStatus: 'ACTIVE',
+        toStatus: "ACTIVE",
         reason: `Due date extended: ${reason}`,
         changedBy: extendedBy,
       },
     });
 
-    logger.info('[Repayment] Due date extended', {
+    logger.info("[Repayment] Due date extended", {
       advanceId,
       oldDueDate: advance.dueDate,
       newDueDate,
@@ -456,17 +500,17 @@ export class RepaymentService {
    * Process webhook from payment provider (Stripe, MercadoPago)
    */
   async processPaymentWebhook(
-    provider: 'stripe' | 'mercadopago',
-    event: any
+    provider: "stripe" | "mercadopago",
+    event: any,
   ): Promise<{ processed: boolean; advanceId?: string }> {
-    logger.info('[Repayment] Processing payment webhook', {
+    logger.info("[Repayment] Processing payment webhook", {
       provider,
       eventType: event.type || event.action,
     });
 
     // Handle Stripe webhook
-    if (provider === 'stripe') {
-      if (event.type === 'payment_intent.succeeded') {
+    if (provider === "stripe") {
+      if (event.type === "payment_intent.succeeded") {
         const paymentIntent = event.data.object;
         const advanceId = paymentIntent.metadata?.advanceId;
 
@@ -474,7 +518,7 @@ export class RepaymentService {
           await this.recordPayment({
             advanceId,
             amount: paymentIntent.amount / 100, // Cents to dollars
-            paymentMethod: 'STRIPE',
+            paymentMethod: "STRIPE",
             referenceNumber: paymentIntent.id,
             paidAt: new Date(paymentIntent.created * 1000),
           });
@@ -485,8 +529,11 @@ export class RepaymentService {
     }
 
     // Handle MercadoPago webhook
-    if (provider === 'mercadopago') {
-      if (event.action === 'payment.updated' || event.action === 'payment.created') {
+    if (provider === "mercadopago") {
+      if (
+        event.action === "payment.updated" ||
+        event.action === "payment.created"
+      ) {
         const paymentId = event.data?.id;
         // Would fetch payment details from MercadoPago API
         // Then call recordPayment
@@ -518,7 +565,13 @@ export class RepaymentService {
     const advances = await prisma.advanceContract.findMany({
       where: {
         status: {
-          in: ['DISBURSED', 'ACTIVE', 'PARTIALLY_REPAID', 'OVERDUE', 'DEFAULT_WARNING'],
+          in: [
+            "DISBURSED",
+            "ACTIVE",
+            "PARTIALLY_REPAID",
+            "OVERDUE",
+            "DEFAULT_WARNING",
+          ],
         },
       },
     });
@@ -552,7 +605,15 @@ export class RepaymentService {
       overdue31to60: Math.round(overdue31to60 * 100) / 100,
       overdue61to90: Math.round(overdue61to90 * 100) / 100,
       overdue90plus: Math.round(overdue90plus * 100) / 100,
-      totalOutstanding: Math.round((current + overdue1to30 + overdue31to60 + overdue61to90 + overdue90plus) * 100) / 100,
+      totalOutstanding:
+        Math.round(
+          (current +
+            overdue1to30 +
+            overdue31to60 +
+            overdue61to90 +
+            overdue90plus) *
+            100,
+        ) / 100,
       advanceCount: advances.length,
     };
   }

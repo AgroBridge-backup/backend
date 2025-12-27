@@ -3,10 +3,10 @@
  * Cancels a pending invitation
  */
 
-import { FarmerInvitationService } from '../../../domain/services/FarmerInvitationService.js';
-import { FarmerInvitation } from '../../../domain/entities/FarmerInvitation.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
-import { ILogger } from '../../../domain/services/ILogger.js';
+import { FarmerInvitationService } from "../../../domain/services/FarmerInvitationService.js";
+import { FarmerInvitation } from "../../../domain/entities/FarmerInvitation.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
+import { ILogger } from "../../../domain/services/ILogger.js";
 
 export interface CancelInvitationRequest {
   invitationId: string;
@@ -21,29 +21,31 @@ export interface CancelInvitationResponse {
 export class CancelInvitationUseCase {
   constructor(
     private readonly invitationService: FarmerInvitationService,
-    private readonly logger?: ILogger
+    private readonly logger?: ILogger,
   ) {}
 
-  async execute(request: CancelInvitationRequest): Promise<CancelInvitationResponse> {
+  async execute(
+    request: CancelInvitationRequest,
+  ): Promise<CancelInvitationResponse> {
     if (!request.invitationId) {
-      throw new ValidationError('Invitation ID is required');
+      throw new ValidationError("Invitation ID is required");
     }
     if (!request.exportCompanyId) {
-      throw new ValidationError('Export company ID is required');
+      throw new ValidationError("Export company ID is required");
     }
 
-    this.logger?.info('Cancelling farmer invitation', {
+    this.logger?.info("Cancelling farmer invitation", {
       invitationId: request.invitationId,
     });
 
     const invitation = await this.invitationService.cancelInvitation(
       request.invitationId,
-      request.exportCompanyId
+      request.exportCompanyId,
     );
 
     return {
       invitation,
-      message: 'Invitation cancelled successfully',
+      message: "Invitation cancelled successfully",
     };
   }
 }

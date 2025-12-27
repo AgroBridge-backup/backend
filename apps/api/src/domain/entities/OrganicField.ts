@@ -5,18 +5,18 @@
  */
 
 export enum OrganicFieldStatus {
-  PENDING_VERIFICATION = 'PENDING_VERIFICATION', // Newly declared, needs initial inspection
-  TRANSITIONAL = 'TRANSITIONAL',                 // In 36-month organic transition period
-  CERTIFIED = 'CERTIFIED',                       // Fully organic certified
-  SUSPENDED = 'SUSPENDED',                       // Certification suspended (violation)
-  REVOKED = 'REVOKED',                           // Certification revoked
+  PENDING_VERIFICATION = "PENDING_VERIFICATION", // Newly declared, needs initial inspection
+  TRANSITIONAL = "TRANSITIONAL", // In 36-month organic transition period
+  CERTIFIED = "CERTIFIED", // Fully organic certified
+  SUSPENDED = "SUSPENDED", // Certification suspended (violation)
+  REVOKED = "REVOKED", // Certification revoked
 }
 
 export enum InspectionType {
-  ROUTINE = 'ROUTINE',                 // Regular weekly/monthly inspection by farmer
-  PRE_CERTIFICATION = 'PRE_CERTIFICATION', // Before issuing organic certificate
-  AUDIT = 'AUDIT',                     // Third-party audit inspection
-  COMPLAINT = 'COMPLAINT',             // Investigation of complaint/issue
+  ROUTINE = "ROUTINE", // Regular weekly/monthly inspection by farmer
+  PRE_CERTIFICATION = "PRE_CERTIFICATION", // Before issuing organic certificate
+  AUDIT = "AUDIT", // Third-party audit inspection
+  COMPLAINT = "COMPLAINT", // Investigation of complaint/issue
 }
 
 export interface OrganicField {
@@ -129,29 +129,29 @@ export interface OrganicFieldWithStats extends OrganicField {
 
 // Crop types supported for organic certification
 export const SUPPORTED_CROP_TYPES = [
-  'AVOCADO',
-  'BLUEBERRY',
-  'RASPBERRY',
-  'STRAWBERRY',
-  'BLACKBERRY',
+  "AVOCADO",
+  "BLUEBERRY",
+  "RASPBERRY",
+  "STRAWBERRY",
+  "BLACKBERRY",
 ] as const;
 
 // Water source options
 export const WATER_SOURCES = [
-  'WELL',
-  'RIVER',
-  'RAIN',
-  'MUNICIPAL',
-  'RESERVOIR',
+  "WELL",
+  "RIVER",
+  "RAIN",
+  "MUNICIPAL",
+  "RESERVOIR",
 ] as const;
 
 // Irrigation types
 export const IRRIGATION_TYPES = [
-  'DRIP',
-  'SPRINKLER',
-  'FLOOD',
-  'MICRO_SPRAY',
-  'NONE',
+  "DRIP",
+  "SPRINKLER",
+  "FLOOD",
+  "MICRO_SPRAY",
+  "NONE",
 ] as const;
 
 // Transition period for organic certification (36 months)

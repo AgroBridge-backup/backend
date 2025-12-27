@@ -4,15 +4,15 @@
  * @module whatsapp-bot/whatsapp.service
  */
 
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../../infrastructure/logging/logger.js';
+import { PrismaClient } from "@prisma/client";
+import { logger } from "../../infrastructure/logging/logger.js";
 import {
   SendMessageRequest,
   InteractiveMessage,
   TemplateMessage,
   WhatsAppConfig,
   MenuOption,
-} from './types/index.js';
+} from "./types/index.js";
 
 const prisma = new PrismaClient();
 
@@ -21,16 +21,16 @@ const prisma = new PrismaClient();
 // ============================================================================
 
 const config: WhatsAppConfig = {
-  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
-  accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
-  verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'agrobridge_verify_2025',
-  businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
-  apiVersion: 'v18.0',
-  baseUrl: 'https://graph.facebook.com',
-  webhookPath: '/webhook/whatsapp',
+  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
+  accessToken: process.env.WHATSAPP_ACCESS_TOKEN || "",
+  verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || "agrobridge_verify_2025",
+  businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || "",
+  apiVersion: "v18.0",
+  baseUrl: "https://graph.facebook.com",
+  webhookPath: "/webhook/whatsapp",
   maxSessionDuration: 24 * 60, // 24 hours
   maxMessagesPerDay: 1000, // Meta's free tier limit
-  supportedLanguages: ['es', 'en'],
+  supportedLanguages: ["es", "en"],
 };
 
 // ============================================================================
@@ -45,7 +45,9 @@ export class WhatsAppService {
     this.baseUrl = `${config.baseUrl}/${config.apiVersion}/${config.phoneNumberId}`;
 
     if (!config.phoneNumberId || !config.accessToken) {
-      logger.warn('[WhatsApp] Service not fully configured - missing credentials');
+      logger.warn(
+        "[WhatsApp] Service not fully configured - missing credentials",
+      );
     }
   }
 
@@ -58,10 +60,10 @@ export class WhatsAppService {
    */
   async sendText(to: string, text: string): Promise<string | null> {
     return this.sendMessage({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
       to: this.formatPhoneNumber(to),
-      type: 'text',
+      type: "text",
       text: { body: text, preview_url: false },
     });
   }
@@ -74,27 +76,27 @@ export class WhatsAppService {
     body: string,
     buttons: Array<{ id: string; title: string }>,
     header?: string,
-    footer?: string
+    footer?: string,
   ): Promise<string | null> {
     const interactive: InteractiveMessage = {
-      type: 'button',
+      type: "button",
       body: { text: body },
       action: {
         buttons: buttons.slice(0, 3).map((btn) => ({
-          type: 'reply' as const,
+          type: "reply" as const,
           reply: { id: btn.id, title: btn.title.slice(0, 20) },
         })),
       },
     };
 
-    if (header) interactive.header = { type: 'text', text: header };
+    if (header) interactive.header = { type: "text", text: header };
     if (footer) interactive.footer = { text: footer };
 
     return this.sendMessage({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
       to: this.formatPhoneNumber(to),
-      type: 'interactive',
+      type: "interactive",
       interactive,
     });
   }
@@ -108,10 +110,10 @@ export class WhatsAppService {
     buttonText: string,
     sections: Array<{ title: string; items: MenuOption[] }>,
     header?: string,
-    footer?: string
+    footer?: string,
   ): Promise<string | null> {
     const interactive: InteractiveMessage = {
-      type: 'list',
+      type: "list",
       body: { text: body },
       action: {
         button: buttonText,
@@ -119,21 +121,21 @@ export class WhatsAppService {
           title: section.title,
           rows: section.items.slice(0, 10).map((item) => ({
             id: item.id,
-            title: `${item.emoji || ''} ${item.title}`.trim().slice(0, 24),
+            title: `${item.emoji || ""} ${item.title}`.trim().slice(0, 24),
             description: item.description?.slice(0, 72),
           })),
         })),
       },
     };
 
-    if (header) interactive.header = { type: 'text', text: header };
+    if (header) interactive.header = { type: "text", text: header };
     if (footer) interactive.footer = { text: footer };
 
     return this.sendMessage({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
       to: this.formatPhoneNumber(to),
-      type: 'interactive',
+      type: "interactive",
       interactive,
     });
   }
@@ -144,8 +146,8 @@ export class WhatsAppService {
   async sendTemplate(
     to: string,
     templateName: string,
-    languageCode: string = 'es',
-    parameters?: Array<{ type: 'text'; text: string }>
+    languageCode: string = "es",
+    parameters?: Array<{ type: "text"; text: string }>,
   ): Promise<string | null> {
     const template: TemplateMessage = {
       name: templateName,
@@ -155,17 +157,17 @@ export class WhatsAppService {
     if (parameters && parameters.length > 0) {
       template.components = [
         {
-          type: 'body',
+          type: "body",
           parameters,
         },
       ];
     }
 
     return this.sendMessage({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
       to: this.formatPhoneNumber(to),
-      type: 'template',
+      type: "template",
       template,
     });
   }
@@ -177,23 +179,25 @@ export class WhatsAppService {
   /**
    * Send any message type via Meta Graph API
    */
-  private async sendMessage(payload: SendMessageRequest): Promise<string | null> {
+  private async sendMessage(
+    payload: SendMessageRequest,
+  ): Promise<string | null> {
     // Rate limiting check
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const dailyKey = `${today}`;
     const currentCount = this.messageCount.get(dailyKey) || 0;
 
     if (currentCount >= config.maxMessagesPerDay) {
-      logger.warn('[WhatsApp] Daily message limit reached');
+      logger.warn("[WhatsApp] Daily message limit reached");
       return null;
     }
 
     try {
       const response = await fetch(`${this.baseUrl}/messages`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${config.accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.accessToken}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
@@ -201,13 +205,13 @@ export class WhatsAppService {
       const data = await response.json();
 
       if (!response.ok) {
-        logger.error('[WhatsApp] API Error:', {
+        logger.error("[WhatsApp] API Error:", {
           status: response.status,
           error: data.error,
         });
 
         // Log to database for monitoring
-        await this.logMessageAttempt(payload.to, 'FAILED', data.error?.message);
+        await this.logMessageAttempt(payload.to, "FAILED", data.error?.message);
         return null;
       }
 
@@ -217,14 +221,17 @@ export class WhatsAppService {
       this.messageCount.set(dailyKey, currentCount + 1);
 
       // Log success
-      await this.logMessageAttempt(payload.to, 'SENT', undefined, messageId);
+      await this.logMessageAttempt(payload.to, "SENT", undefined, messageId);
 
-      logger.info('[WhatsApp] Message sent', { to: payload.to, messageId });
+      logger.info("[WhatsApp] Message sent", { to: payload.to, messageId });
       return messageId;
-
     } catch (error) {
-      logger.error('[WhatsApp] Send failed:', error);
-      await this.logMessageAttempt(payload.to, 'FAILED', (error as Error).message);
+      logger.error("[WhatsApp] Send failed:", error);
+      await this.logMessageAttempt(
+        payload.to,
+        "FAILED",
+        (error as Error).message,
+      );
       return null;
     }
   }
@@ -235,19 +242,19 @@ export class WhatsAppService {
   async markAsRead(messageId: string): Promise<void> {
     try {
       await fetch(`${this.baseUrl}/messages`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${config.accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.accessToken}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          status: 'read',
+          messaging_product: "whatsapp",
+          status: "read",
           message_id: messageId,
         }),
       });
     } catch (error) {
-      logger.warn('[WhatsApp] Failed to mark as read:', error);
+      logger.warn("[WhatsApp] Failed to mark as read:", error);
     }
   }
 
@@ -260,10 +267,10 @@ export class WhatsAppService {
    */
   private formatPhoneNumber(phone: string): string {
     // Remove all non-digits
-    let cleaned = phone.replace(/\D/g, '');
+    let cleaned = phone.replace(/\D/g, "");
 
     // Handle Mexican numbers
-    if (cleaned.startsWith('52') && cleaned.length === 12) {
+    if (cleaned.startsWith("52") && cleaned.length === 12) {
       return cleaned; // Already formatted
     }
 
@@ -281,9 +288,9 @@ export class WhatsAppService {
    */
   private async logMessageAttempt(
     to: string,
-    status: 'SENT' | 'FAILED' | 'DELIVERED',
+    status: "SENT" | "FAILED" | "DELIVERED",
     error?: string,
-    messageId?: string
+    messageId?: string,
   ): Promise<void> {
     try {
       // Find user by phone
@@ -297,16 +304,16 @@ export class WhatsAppService {
             notification: {
               create: {
                 userId: preference.userId,
-                type: 'CUSTOM',
-                title: 'WhatsApp Bot Message',
-                body: 'Automated bot message',
-                channels: ['WHATSAPP'],
-                status: status === 'SENT' ? 'SENT' : 'FAILED',
-                priority: 'NORMAL',
+                type: "CUSTOM",
+                title: "WhatsApp Bot Message",
+                body: "Automated bot message",
+                channels: ["WHATSAPP"],
+                status: status === "SENT" ? "SENT" : "FAILED",
+                priority: "NORMAL",
               },
             },
-            channel: 'WHATSAPP',
-            status: status === 'SENT' ? 'SUCCESS' : 'FAILED',
+            channel: "WHATSAPP",
+            status: status === "SENT" ? "SUCCESS" : "FAILED",
             providerId: messageId,
             providerError: error,
           },
@@ -314,7 +321,7 @@ export class WhatsAppService {
       }
     } catch (err) {
       // Non-critical, just log
-      logger.debug('[WhatsApp] Failed to log message attempt:', err);
+      logger.debug("[WhatsApp] Failed to log message attempt:", err);
     }
   }
 
@@ -322,11 +329,11 @@ export class WhatsAppService {
    * Verify webhook signature from Meta
    */
   verifyWebhook(mode: string, token: string, challenge: string): string | null {
-    if (mode === 'subscribe' && token === config.verifyToken) {
-      logger.info('[WhatsApp] Webhook verified');
+    if (mode === "subscribe" && token === config.verifyToken) {
+      logger.info("[WhatsApp] Webhook verified");
       return challenge;
     }
-    logger.warn('[WhatsApp] Webhook verification failed');
+    logger.warn("[WhatsApp] Webhook verification failed");
     return null;
   }
 
@@ -335,8 +342,8 @@ export class WhatsAppService {
    */
   getConfig(): Partial<WhatsAppConfig> {
     return {
-      phoneNumberId: config.phoneNumberId ? '***configured***' : 'NOT SET',
-      accessToken: config.accessToken ? '***configured***' : 'NOT SET',
+      phoneNumberId: config.phoneNumberId ? "***configured***" : "NOT SET",
+      accessToken: config.accessToken ? "***configured***" : "NOT SET",
       apiVersion: config.apiVersion,
       maxMessagesPerDay: config.maxMessagesPerDay,
     };

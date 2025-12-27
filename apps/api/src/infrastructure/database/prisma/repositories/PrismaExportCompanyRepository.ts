@@ -8,20 +8,20 @@ import {
   ExportCompanyTier as PrismaTier,
   ExportCompanyStatus as PrismaStatus,
   CertificationType,
-} from '@prisma/client';
+} from "@prisma/client";
 import {
   IExportCompanyRepository,
   CreateExportCompanyData,
   UpdateExportCompanyData,
   ExportCompanyListResult,
-} from '../../../../domain/repositories/IExportCompanyRepository.js';
+} from "../../../../domain/repositories/IExportCompanyRepository.js";
 import {
   ExportCompany,
   ExportCompanyFilter,
   ExportCompanyStatus,
   ExportCompanyTier,
   ExportCompanyWithStats,
-} from '../../../../domain/entities/ExportCompany.js';
+} from "../../../../domain/entities/ExportCompany.js";
 
 export class PrismaExportCompanyRepository implements IExportCompanyRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -112,7 +112,9 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
     return company ? this.mapToDomain(company) : null;
   }
 
-  async findByStripeCustomerId(stripeCustomerId: string): Promise<ExportCompany | null> {
+  async findByStripeCustomerId(
+    stripeCustomerId: string,
+  ): Promise<ExportCompany | null> {
     const company = await this.prisma.exportCompany.findUnique({
       where: { stripeCustomerId },
     });
@@ -132,16 +134,16 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
 
     if (filter?.search) {
       where.OR = [
-        { name: { contains: filter.search, mode: 'insensitive' } },
-        { rfc: { contains: filter.search, mode: 'insensitive' } },
-        { email: { contains: filter.search, mode: 'insensitive' } },
+        { name: { contains: filter.search, mode: "insensitive" } },
+        { rfc: { contains: filter.search, mode: "insensitive" } },
+        { email: { contains: filter.search, mode: "insensitive" } },
       ];
     }
 
     const [companies, total] = await Promise.all([
       this.prisma.exportCompany.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: filter?.limit || 50,
         skip: filter?.offset || 0,
       }),
@@ -154,7 +156,10 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
     };
   }
 
-  async update(id: string, data: UpdateExportCompanyData): Promise<ExportCompany> {
+  async update(
+    id: string,
+    data: UpdateExportCompanyData,
+  ): Promise<ExportCompany> {
     const updateData: any = {};
 
     if (data.name !== undefined) updateData.name = data.name;
@@ -165,21 +170,34 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
     if (data.city !== undefined) updateData.city = data.city;
     if (data.address !== undefined) updateData.address = data.address;
     if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
-    if (data.contactName !== undefined) updateData.contactName = data.contactName;
-    if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
-    if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
+    if (data.contactName !== undefined)
+      updateData.contactName = data.contactName;
+    if (data.contactEmail !== undefined)
+      updateData.contactEmail = data.contactEmail;
+    if (data.contactPhone !== undefined)
+      updateData.contactPhone = data.contactPhone;
     if (data.tier !== undefined) updateData.tier = data.tier as PrismaTier;
-    if (data.status !== undefined) updateData.status = data.status as PrismaStatus;
-    if (data.trialEndsAt !== undefined) updateData.trialEndsAt = data.trialEndsAt;
+    if (data.status !== undefined)
+      updateData.status = data.status as PrismaStatus;
+    if (data.trialEndsAt !== undefined)
+      updateData.trialEndsAt = data.trialEndsAt;
     if (data.monthlyFee !== undefined) updateData.monthlyFee = data.monthlyFee;
-    if (data.certificateFee !== undefined) updateData.certificateFee = data.certificateFee;
-    if (data.farmersIncluded !== undefined) updateData.farmersIncluded = data.farmersIncluded;
-    if (data.certsIncluded !== undefined) updateData.certsIncluded = data.certsIncluded;
-    if (data.stripeCustomerId !== undefined) updateData.stripeCustomerId = data.stripeCustomerId;
-    if (data.stripeSubscriptionId !== undefined) updateData.stripeSubscriptionId = data.stripeSubscriptionId;
-    if (data.enabledStandards !== undefined) updateData.enabledStandards = data.enabledStandards as CertificationType[];
+    if (data.certificateFee !== undefined)
+      updateData.certificateFee = data.certificateFee;
+    if (data.farmersIncluded !== undefined)
+      updateData.farmersIncluded = data.farmersIncluded;
+    if (data.certsIncluded !== undefined)
+      updateData.certsIncluded = data.certsIncluded;
+    if (data.stripeCustomerId !== undefined)
+      updateData.stripeCustomerId = data.stripeCustomerId;
+    if (data.stripeSubscriptionId !== undefined)
+      updateData.stripeSubscriptionId = data.stripeSubscriptionId;
+    if (data.enabledStandards !== undefined)
+      updateData.enabledStandards =
+        data.enabledStandards as CertificationType[];
     if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl;
-    if (data.primaryColor !== undefined) updateData.primaryColor = data.primaryColor;
+    if (data.primaryColor !== undefined)
+      updateData.primaryColor = data.primaryColor;
 
     const company = await this.prisma.exportCompany.update({
       where: { id },
@@ -236,7 +254,11 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
     });
   }
 
-  async countCertificatesInMonth(id: string, year: number, month: number): Promise<number> {
+  async countCertificatesInMonth(
+    id: string,
+    year: number,
+    month: number,
+  ): Promise<number> {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0);
 
@@ -257,13 +279,13 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
 
     const companies = await this.prisma.exportCompany.findMany({
       where: {
-        status: 'TRIAL',
+        status: "TRIAL",
         trialEndsAt: {
           lte: expiryDate,
           gte: new Date(),
         },
       },
-      orderBy: { trialEndsAt: 'asc' },
+      orderBy: { trialEndsAt: "asc" },
     });
 
     return companies.map((c) => this.mapToDomain(c));
@@ -272,12 +294,12 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
   async activate(
     id: string,
     stripeCustomerId: string,
-    stripeSubscriptionId: string
+    stripeSubscriptionId: string,
   ): Promise<ExportCompany> {
     const company = await this.prisma.exportCompany.update({
       where: { id },
       data: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         stripeCustomerId,
         stripeSubscriptionId,
         trialEndsAt: null,
@@ -289,7 +311,7 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
   async suspend(id: string): Promise<ExportCompany> {
     const company = await this.prisma.exportCompany.update({
       where: { id },
-      data: { status: 'SUSPENDED' },
+      data: { status: "SUSPENDED" },
     });
     return this.mapToDomain(company);
   }
@@ -298,7 +320,7 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
     const company = await this.prisma.exportCompany.update({
       where: { id },
       data: {
-        status: 'CANCELLED',
+        status: "CANCELLED",
         stripeSubscriptionId: null,
       },
     });
@@ -337,7 +359,7 @@ export class PrismaExportCompanyRepository implements IExportCompanyRepository {
     const monthlyCount = await this.countCertificatesInMonth(
       id,
       now.getFullYear(),
-      now.getMonth() + 1
+      now.getMonth() + 1,
     );
 
     return monthlyCount < company.certsIncluded;

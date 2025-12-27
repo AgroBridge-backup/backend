@@ -6,7 +6,7 @@
 import {
   PrismaClient,
   InspectionType as PrismaInspectionType,
-} from '@prisma/client';
+} from "@prisma/client";
 import {
   IFieldInspectionRepository,
   CreateFieldInspectionData,
@@ -14,7 +14,7 @@ import {
   CreateOrganicInputData,
   CreateFieldActivityData,
   FieldInspectionListResult,
-} from '../../../../domain/repositories/IFieldInspectionRepository.js';
+} from "../../../../domain/repositories/IFieldInspectionRepository.js";
 import {
   FieldInspection,
   FieldInspectionWithDetails,
@@ -23,9 +23,11 @@ import {
   OrganicInput,
   FieldActivity,
   InspectionType,
-} from '../../../../domain/entities/FieldInspection.js';
+} from "../../../../domain/entities/FieldInspection.js";
 
-export class PrismaFieldInspectionRepository implements IFieldInspectionRepository {
+export class PrismaFieldInspectionRepository
+  implements IFieldInspectionRepository
+{
   constructor(private readonly prisma: PrismaClient) {}
 
   private mapInspectionToDomain(prismaInspection: any): FieldInspection {
@@ -38,12 +40,20 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
       inspectionType: prismaInspection.inspectionType as InspectionType,
       inspectionDate: prismaInspection.inspectionDate,
       duration: prismaInspection.duration,
-      inspectorLat: prismaInspection.inspectorLat ? Number(prismaInspection.inspectorLat) : null,
-      inspectorLng: prismaInspection.inspectorLng ? Number(prismaInspection.inspectorLng) : null,
-      gpsAccuracy: prismaInspection.gpsAccuracy ? Number(prismaInspection.gpsAccuracy) : null,
+      inspectorLat: prismaInspection.inspectorLat
+        ? Number(prismaInspection.inspectorLat)
+        : null,
+      inspectorLng: prismaInspection.inspectorLng
+        ? Number(prismaInspection.inspectorLng)
+        : null,
+      gpsAccuracy: prismaInspection.gpsAccuracy
+        ? Number(prismaInspection.gpsAccuracy)
+        : null,
       gpsVerified: prismaInspection.gpsVerified,
       weatherCondition: prismaInspection.weatherCondition,
-      temperature: prismaInspection.temperature ? Number(prismaInspection.temperature) : null,
+      temperature: prismaInspection.temperature
+        ? Number(prismaInspection.temperature)
+        : null,
       notes: prismaInspection.notes,
       issues: prismaInspection.issues,
       recommendations: prismaInspection.recommendations,
@@ -68,7 +78,9 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
       caption: prismaPhoto.caption,
       photoType: prismaPhoto.photoType,
       withinFieldBoundary: prismaPhoto.withinFieldBoundary,
-      distanceFromField: prismaPhoto.distanceFromField ? Number(prismaPhoto.distanceFromField) : null,
+      distanceFromField: prismaPhoto.distanceFromField
+        ? Number(prismaPhoto.distanceFromField)
+        : null,
       createdAt: prismaPhoto.createdAt,
     };
   }
@@ -89,7 +101,9 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
       quantity: prismaInput.quantity,
       supplier: prismaInput.supplier,
       ocrExtractedData: prismaInput.ocrExtractedData,
-      ocrConfidence: prismaInput.ocrConfidence ? Number(prismaInput.ocrConfidence) : null,
+      ocrConfidence: prismaInput.ocrConfidence
+        ? Number(prismaInput.ocrConfidence)
+        : null,
       verificationStatus: prismaInput.verificationStatus,
       verifiedBy: prismaInput.verifiedBy,
       verifiedAt: prismaInput.verifiedAt,
@@ -106,7 +120,9 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
       description: prismaActivity.description,
       activityDate: prismaActivity.activityDate,
       duration: prismaActivity.duration,
-      areaCovered: prismaActivity.areaCovered ? Number(prismaActivity.areaCovered) : null,
+      areaCovered: prismaActivity.areaCovered
+        ? Number(prismaActivity.areaCovered)
+        : null,
       workerCount: prismaActivity.workerCount,
       notes: prismaActivity.notes,
       createdAt: prismaActivity.createdAt,
@@ -145,7 +161,9 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
     return inspection ? this.mapInspectionToDomain(inspection) : null;
   }
 
-  async findByIdWithDetails(id: string): Promise<FieldInspectionWithDetails | null> {
+  async findByIdWithDetails(
+    id: string,
+  ): Promise<FieldInspectionWithDetails | null> {
     const inspection = await this.prisma.fieldInspection.findUnique({
       where: { id },
       include: {
@@ -160,17 +178,22 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
     return {
       ...this.mapInspectionToDomain(inspection),
       photos: inspection.photos.map((p) => this.mapPhotoToDomain(p)),
-      organicInputs: inspection.organicInputs.map((i) => this.mapInputToDomain(i)),
+      organicInputs: inspection.organicInputs.map((i) =>
+        this.mapInputToDomain(i),
+      ),
       activities: inspection.activities.map((a) => this.mapActivityToDomain(a)),
     };
   }
 
-  async list(filter: FieldInspectionFilter): Promise<FieldInspectionListResult> {
+  async list(
+    filter: FieldInspectionFilter,
+  ): Promise<FieldInspectionListResult> {
     const where: any = {};
 
     if (filter.fieldId) where.fieldId = filter.fieldId;
     if (filter.inspectorId) where.inspectorId = filter.inspectorId;
-    if (filter.inspectionType) where.inspectionType = filter.inspectionType as PrismaInspectionType;
+    if (filter.inspectionType)
+      where.inspectionType = filter.inspectionType as PrismaInspectionType;
     if (filter.isVerified !== undefined) where.isVerified = filter.isVerified;
     if (filter.fromDate || filter.toDate) {
       where.inspectionDate = {};
@@ -181,7 +204,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
     const [inspections, total] = await Promise.all([
       this.prisma.fieldInspection.findMany({
         where,
-        orderBy: { inspectionDate: 'desc' },
+        orderBy: { inspectionDate: "desc" },
         take: filter.limit || 50,
         skip: filter.offset || 0,
       }),
@@ -196,7 +219,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
 
   async listByField(
     fieldId: string,
-    filter?: Omit<FieldInspectionFilter, 'fieldId'>
+    filter?: Omit<FieldInspectionFilter, "fieldId">,
   ): Promise<FieldInspectionListResult> {
     return this.list({ ...filter, fieldId });
   }
@@ -205,7 +228,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
     id: string,
     notes?: string,
     issues?: string,
-    recommendations?: string
+    recommendations?: string,
   ): Promise<FieldInspection> {
     const inspection = await this.prisma.fieldInspection.update({
       where: { id },
@@ -294,7 +317,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
   async getPhotos(inspectionId: string): Promise<InspectionPhoto[]> {
     const photos = await this.prisma.inspectionPhoto.findMany({
       where: { inspectionId },
-      orderBy: { capturedAt: 'asc' },
+      orderBy: { capturedAt: "asc" },
     });
     return photos.map((p) => this.mapPhotoToDomain(p));
   }
@@ -302,7 +325,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
   async getOrganicInputs(inspectionId: string): Promise<OrganicInput[]> {
     const inputs = await this.prisma.organicInput.findMany({
       where: { inspectionId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
     return inputs.map((i) => this.mapInputToDomain(i));
   }
@@ -310,7 +333,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
   async getActivities(inspectionId: string): Promise<FieldActivity[]> {
     const activities = await this.prisma.fieldActivity.findMany({
       where: { inspectionId },
-      orderBy: { activityDate: 'asc' },
+      orderBy: { activityDate: "asc" },
     });
     return activities.map((a) => this.mapActivityToDomain(a));
   }
@@ -319,12 +342,12 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
     inputId: string,
     verifiedBy: string,
     approved: boolean,
-    rejectionReason?: string
+    rejectionReason?: string,
   ): Promise<OrganicInput> {
     const input = await this.prisma.organicInput.update({
       where: { id: inputId },
       data: {
-        verificationStatus: approved ? 'VERIFIED' : 'REJECTED',
+        verificationStatus: approved ? "VERIFIED" : "REJECTED",
         verifiedBy,
         verifiedAt: new Date(),
         rejectionReason: approved ? null : rejectionReason,
@@ -340,7 +363,7 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
   async getLastInspectionDate(fieldId: string): Promise<Date | null> {
     const inspection = await this.prisma.fieldInspection.findFirst({
       where: { fieldId },
-      orderBy: { inspectionDate: 'desc' },
+      orderBy: { inspectionDate: "desc" },
       select: { inspectionDate: true },
     });
     return inspection?.inspectionDate || null;
@@ -355,10 +378,12 @@ export class PrismaFieldInspectionRepository implements IFieldInspectionReposito
   }> {
     const [total, verified, lastDate, byTypeResult] = await Promise.all([
       this.prisma.fieldInspection.count({ where: { fieldId } }),
-      this.prisma.fieldInspection.count({ where: { fieldId, isVerified: true } }),
+      this.prisma.fieldInspection.count({
+        where: { fieldId, isVerified: true },
+      }),
       this.getLastInspectionDate(fieldId),
       this.prisma.fieldInspection.groupBy({
-        by: ['inspectionType'],
+        by: ["inspectionType"],
         where: { fieldId },
         _count: true,
       }),

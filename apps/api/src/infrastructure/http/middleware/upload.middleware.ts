@@ -5,9 +5,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import multer from 'multer';
-import { Request } from 'express';
-import { AppError } from '../../../shared/errors/AppError.js';
+import multer from "multer";
+import { Request } from "express";
+import { AppError } from "../../../shared/errors/AppError.js";
 
 /**
  * Multer memory storage for buffer-based processing
@@ -20,36 +20,52 @@ const storage = multer.memoryStorage();
 const imageFilter = (
   _req: Request,
   file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  cb: multer.FileFilterCallback,
 ) => {
-  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+  const allowedMimes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/avif",
+  ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError(`Invalid file type: ${file.mimetype}. Allowed: ${allowedMimes.join(', ')}`, 400));
+    cb(
+      new AppError(
+        `Invalid file type: ${file.mimetype}. Allowed: ${allowedMimes.join(", ")}`,
+        400,
+      ),
+    );
   }
 };
 
 const documentFilter = (
   _req: Request,
   file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  cb: multer.FileFilterCallback,
 ) => {
   const allowedMimes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'image/jpeg',
-    'image/png',
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "image/jpeg",
+    "image/png",
   ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError(`Invalid file type: ${file.mimetype}. Allowed: ${allowedMimes.join(', ')}`, 400));
+    cb(
+      new AppError(
+        `Invalid file type: ${file.mimetype}. Allowed: ${allowedMimes.join(", ")}`,
+        400,
+      ),
+    );
   }
 };
 

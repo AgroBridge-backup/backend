@@ -21,12 +21,12 @@
 export {
   CreditScoreController,
   createCreditScoreRouter,
-} from './controllers/credit-score.controller.js';
+} from "./controllers/credit-score.controller.js";
 
 export {
   AdvanceController,
   createAdvanceRouter,
-} from './controllers/advance.controller.js';
+} from "./controllers/advance.controller.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // SERVICES
@@ -43,7 +43,7 @@ export {
   type AdvanceContractDetails,
   type RepaymentInput,
   type StatusTransitionResult,
-} from './services/AdvanceContractService.js';
+} from "./services/AdvanceContractService.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // RE-EXPORTS FROM SUBMODULES
@@ -57,7 +57,7 @@ export {
   createBlockchainVerifierService,
   CreditScoreCalculator,
   createCreditScoreCalculator,
-} from '../credit-scoring/index.js';
+} from "../credit-scoring/index.js";
 
 // Credit scoring types (exclude RiskTier to avoid conflict with liquidity-pools)
 export type {
@@ -78,7 +78,7 @@ export type {
   ScoreSimulationInput,
   ScoreSimulationOutput,
   ScoreHistoryEntry,
-} from '../credit-scoring/index.js';
+} from "../credit-scoring/index.js";
 
 export {
   ScoreTrend,
@@ -89,7 +89,7 @@ export {
   getScoreTrend,
   clampScore,
   getCreditLimitsForTier,
-} from '../credit-scoring/index.js';
+} from "../credit-scoring/index.js";
 
 // Liquidity Pools Module (includes RiskTier)
-export * from '../liquidity-pools/index.js';
+export * from "../liquidity-pools/index.js";

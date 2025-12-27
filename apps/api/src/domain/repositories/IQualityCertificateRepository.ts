@@ -7,7 +7,7 @@ import {
   QualityCertificate,
   CreateCertificateInput,
   CertificateGrade,
-} from '../entities/QualityCertificate.js';
+} from "../entities/QualityCertificate.js";
 
 export interface IQualityCertificateRepository {
   /**
@@ -33,11 +33,13 @@ export interface IQualityCertificateRepository {
   /**
    * Create a new certificate
    */
-  create(input: CreateCertificateInput & {
-    hashOnChain?: string;
-    pdfUrl?: string;
-    payloadSnapshot?: string;
-  }): Promise<QualityCertificate>;
+  create(
+    input: CreateCertificateInput & {
+      hashOnChain?: string;
+      pdfUrl?: string;
+      payloadSnapshot?: string;
+    },
+  ): Promise<QualityCertificate>;
 
   /**
    * Update certificate with blockchain hash
@@ -57,5 +59,8 @@ export interface IQualityCertificateRepository {
   /**
    * Check if batch has a valid certificate of a specific grade
    */
-  hasValidCertificate(batchId: string, grade: CertificateGrade): Promise<boolean>;
+  hasValidCertificate(
+    batchId: string,
+    grade: CertificateGrade,
+  ): Promise<boolean>;
 }

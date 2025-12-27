@@ -1,5 +1,5 @@
-import { Redis } from 'ioredis';
-import logger from '../../shared/utils/logger.js';
+import { Redis } from "ioredis";
+import logger from "../../shared/utils/logger.js";
 
 /**
  * In-memory rate limit entry
@@ -62,7 +62,9 @@ class InMemoryRateLimiter {
     }
 
     if (cleaned > 0) {
-      logger.debug('[InMemoryRateLimiter] Cleaned expired entries', { count: cleaned });
+      logger.debug("[InMemoryRateLimiter] Cleaned expired entries", {
+        count: cleaned,
+      });
     }
   }
 
@@ -81,26 +83,26 @@ export class RedisClient {
   private redisAvailable: boolean = true;
 
   constructor() {
-    this.client = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.client = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
     this.inMemoryFallback = new InMemoryRateLimiter();
 
-    this.client.on('error', (err: Error) => {
-      logger.error({ message: 'Redis Client Error', meta: { error: err } });
+    this.client.on("error", (err: Error) => {
+      logger.error({ message: "Redis Client Error", meta: { error: err } });
       this.redisAvailable = false;
     });
 
-    this.client.on('connect', () => {
-      logger.info('Redis client connected');
+    this.client.on("connect", () => {
+      logger.info("Redis client connected");
       this.redisAvailable = true;
     });
 
-    this.client.on('ready', () => {
+    this.client.on("ready", () => {
       this.redisAvailable = true;
     });
 
-    this.client.on('close', () => {
+    this.client.on("close", () => {
       this.redisAvailable = false;
-      logger.warn('Redis connection closed, using in-memory fallback');
+      logger.warn("Redis connection closed, using in-memory fallback");
     });
   }
 
@@ -108,7 +110,7 @@ export class RedisClient {
     const now = Math.floor(Date.now() / 1000);
     const ttl = exp - now;
     if (ttl > 0) {
-      await this.client.set(jti, 'blacklisted', 'EX', ttl);
+      await this.client.set(jti, "blacklisted", "EX", ttl);
     }
   }
 
@@ -121,7 +123,11 @@ export class RedisClient {
    * Check rate limit with in-memory fallback
    * SECURITY: Fails closed (blocks requests) when both Redis and memory checks fail
    */
-  async checkRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+  async checkRateLimit(
+    key: string,
+    limit: number,
+    windowSeconds: number,
+  ): Promise<boolean> {
     try {
       const current = await this.client.incr(key);
       if (current === 1) {
@@ -130,8 +136,11 @@ export class RedisClient {
       return current <= limit;
     } catch (error) {
       logger.warn({
-        message: 'Redis rate limit unavailable, using in-memory fallback',
-        meta: { key, error: error instanceof Error ? error.message : 'Unknown' },
+        message: "Redis rate limit unavailable, using in-memory fallback",
+        meta: {
+          key,
+          error: error instanceof Error ? error.message : "Unknown",
+        },
       });
 
       // Use in-memory fallback instead of failing open
@@ -139,7 +148,8 @@ export class RedisClient {
         return this.inMemoryFallback.check(key, limit, windowSeconds);
       } catch (fallbackError) {
         logger.error({
-          message: 'Both Redis and in-memory rate limit failed - blocking request',
+          message:
+            "Both Redis and in-memory rate limit failed - blocking request",
           meta: { key },
         });
         // SECURITY: Fail closed - block the request when both methods fail

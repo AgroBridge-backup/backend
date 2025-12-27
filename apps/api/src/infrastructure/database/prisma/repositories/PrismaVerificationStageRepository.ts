@@ -3,18 +3,24 @@
  * Prisma Repository Implementation for VerificationStage
  */
 
-import { PrismaClient, StageType as PrismaStageType, StageStatus as PrismaStageStatus } from '@prisma/client';
-import { IVerificationStageRepository } from '../../../../domain/repositories/IVerificationStageRepository.js';
+import {
+  PrismaClient,
+  StageType as PrismaStageType,
+  StageStatus as PrismaStageStatus,
+} from "@prisma/client";
+import { IVerificationStageRepository } from "../../../../domain/repositories/IVerificationStageRepository.js";
 import {
   VerificationStage,
   CreateVerificationStageInput,
   UpdateVerificationStageInput,
   StageType,
   StageStatus,
-  STAGE_ORDER
-} from '../../../../domain/entities/VerificationStage.js';
+  STAGE_ORDER,
+} from "../../../../domain/entities/VerificationStage.js";
 
-export class PrismaVerificationStageRepository implements IVerificationStageRepository {
+export class PrismaVerificationStageRepository
+  implements IVerificationStageRepository
+{
   constructor(private prisma: PrismaClient) {}
 
   private mapToDomain(stage: any): VerificationStage {
@@ -45,20 +51,21 @@ export class PrismaVerificationStageRepository implements IVerificationStageRepo
   async findByBatchId(batchId: string): Promise<VerificationStage[]> {
     const stages = await this.prisma.verificationStage.findMany({
       where: { batchId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
 
     // Sort by stage order
-    return stages
-      .map(this.mapToDomain)
-      .sort((a, b) => {
-        const indexA = STAGE_ORDER.indexOf(a.stageType);
-        const indexB = STAGE_ORDER.indexOf(b.stageType);
-        return indexA - indexB;
-      });
+    return stages.map(this.mapToDomain).sort((a, b) => {
+      const indexA = STAGE_ORDER.indexOf(a.stageType);
+      const indexB = STAGE_ORDER.indexOf(b.stageType);
+      return indexA - indexB;
+    });
   }
 
-  async findByBatchAndType(batchId: string, stageType: StageType): Promise<VerificationStage | null> {
+  async findByBatchAndType(
+    batchId: string,
+    stageType: StageType,
+  ): Promise<VerificationStage | null> {
     const stage = await this.prisma.verificationStage.findUnique({
       where: {
         batchId_stageType: {
@@ -70,13 +77,15 @@ export class PrismaVerificationStageRepository implements IVerificationStageRepo
     return stage ? this.mapToDomain(stage) : null;
   }
 
-  async findLatestApprovedStage(batchId: string): Promise<VerificationStage | null> {
+  async findLatestApprovedStage(
+    batchId: string,
+  ): Promise<VerificationStage | null> {
     const stages = await this.prisma.verificationStage.findMany({
       where: {
         batchId,
-        status: 'APPROVED',
+        status: "APPROVED",
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     if (stages.length === 0) {
@@ -99,13 +108,15 @@ export class PrismaVerificationStageRepository implements IVerificationStageRepo
     return latestStage;
   }
 
-  async create(input: CreateVerificationStageInput): Promise<VerificationStage> {
+  async create(
+    input: CreateVerificationStageInput,
+  ): Promise<VerificationStage> {
     const stage = await this.prisma.verificationStage.create({
       data: {
         batchId: input.batchId,
         stageType: input.stageType as PrismaStageType,
         actorId: input.actorId,
-        status: 'PENDING',
+        status: "PENDING",
         location: input.location,
         latitude: input.latitude,
         longitude: input.longitude,
@@ -116,7 +127,10 @@ export class PrismaVerificationStageRepository implements IVerificationStageRepo
     return this.mapToDomain(stage);
   }
 
-  async update(id: string, input: UpdateVerificationStageInput): Promise<VerificationStage> {
+  async update(
+    id: string,
+    input: UpdateVerificationStageInput,
+  ): Promise<VerificationStage> {
     const stage = await this.prisma.verificationStage.update({
       where: { id },
       data: {
@@ -135,7 +149,7 @@ export class PrismaVerificationStageRepository implements IVerificationStageRepo
     const approvedCount = await this.prisma.verificationStage.count({
       where: {
         batchId,
-        status: 'APPROVED',
+        status: "APPROVED",
       },
     });
     return approvedCount === STAGE_ORDER.length;

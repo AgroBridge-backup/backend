@@ -8,7 +8,7 @@ import {
   FarmerInvitationFilter,
   FarmerInvitationStatus,
   FarmerInvitationWithCompany,
-} from '../entities/FarmerInvitation.js';
+} from "../entities/FarmerInvitation.js";
 
 export interface CreateFarmerInvitationData {
   id: string;
@@ -45,7 +45,10 @@ export interface IFarmerInvitationRepository {
   /**
    * Find invitation by email for a specific company
    */
-  findByEmailAndCompany(email: string, exportCompanyId: string): Promise<FarmerInvitation | null>;
+  findByEmailAndCompany(
+    email: string,
+    exportCompanyId: string,
+  ): Promise<FarmerInvitation | null>;
 
   /**
    * List invitations with filtering
@@ -55,7 +58,10 @@ export interface IFarmerInvitationRepository {
   /**
    * List invitations for a company
    */
-  listByCompany(exportCompanyId: string, filter?: Omit<FarmerInvitationFilter, 'exportCompanyId'>): Promise<FarmerInvitationListResult>;
+  listByCompany(
+    exportCompanyId: string,
+    filter?: Omit<FarmerInvitationFilter, "exportCompanyId">,
+  ): Promise<FarmerInvitationListResult>;
 
   /**
    * Mark invitation as accepted and link to farmer
@@ -75,7 +81,11 @@ export interface IFarmerInvitationRepository {
   /**
    * Resend invitation (update token and expiry)
    */
-  resend(id: string, newToken: string, newExpiresAt: Date): Promise<FarmerInvitation>;
+  resend(
+    id: string,
+    newToken: string,
+    newExpiresAt: Date,
+  ): Promise<FarmerInvitation>;
 
   /**
    * Count pending invitations for a company
@@ -85,5 +95,8 @@ export interface IFarmerInvitationRepository {
   /**
    * Check if email already has pending invitation for company
    */
-  hasPendingInvitation(email: string, exportCompanyId: string): Promise<boolean>;
+  hasPendingInvitation(
+    email: string,
+    exportCompanyId: string,
+  ): Promise<boolean>;
 }

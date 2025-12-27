@@ -3,8 +3,11 @@
  * Use Case: Update transit session status
  */
 
-import { TransitTrackingService } from '../../../domain/services/TransitTrackingService.js';
-import { TransitSession, TransitStatus } from '../../../domain/entities/TransitSession.js';
+import { TransitTrackingService } from "../../../domain/services/TransitTrackingService.js";
+import {
+  TransitSession,
+  TransitStatus,
+} from "../../../domain/entities/TransitSession.js";
 
 export interface UpdateTransitStatusRequest {
   sessionId: string;
@@ -19,7 +22,7 @@ export class UpdateTransitStatusUseCase {
     return this.transitService.updateSessionStatus(
       request.sessionId,
       request.status,
-      request.userId
+      request.userId,
     );
   }
 }

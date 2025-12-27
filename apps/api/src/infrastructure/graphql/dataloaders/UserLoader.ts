@@ -5,19 +5,22 @@
  * @author AgroBridge Engineering Team
  */
 
-import DataLoader from 'dataloader';
-import { PrismaClient, User } from '@prisma/client';
+import DataLoader from "dataloader";
+import { PrismaClient, User } from "@prisma/client";
 
 /**
  * User type without passwordHash
  */
-export type SafeUser = Omit<User, 'passwordHash' | 'twoFactorSecret' | 'backupCodes'>;
+export type SafeUser = Omit<
+  User,
+  "passwordHash" | "twoFactorSecret" | "backupCodes"
+>;
 
 /**
  * Create user loader (excludes sensitive fields)
  */
 export function createUserLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, SafeUser | null> {
   return new DataLoader<string, SafeUser | null>(
     async (ids: readonly string[]) => {
@@ -50,7 +53,7 @@ export function createUserLoader(
 
       return ids.map((id) => userMap.get(id) || null);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -58,7 +61,7 @@ export function createUserLoader(
  * Create user loader by email
  */
 export function createUserByEmailLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, SafeUser | null> {
   return new DataLoader<string, SafeUser | null>(
     async (emails: readonly string[]) => {
@@ -91,7 +94,7 @@ export function createUserByEmailLoader(
 
       return emails.map((email) => userMap.get(email) || null);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 

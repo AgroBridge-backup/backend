@@ -3,8 +3,8 @@
  * GDPR-compliant data handling, anonymization, and consent management
  */
 
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../logging/logger.js';
+import { PrismaClient } from "@prisma/client";
+import { logger } from "../logging/logger.js";
 import {
   encryptToString,
   decryptFromString,
@@ -12,8 +12,8 @@ import {
   maskEmail,
   maskPhone,
   maskSensitiveData,
-} from './encryption.service.js';
-import { audit, AuditEventType } from './audit-logger.js';
+} from "./encryption.service.js";
+import { audit, AuditEventType } from "./audit-logger.js";
 
 // Prisma client reference
 let prisma: PrismaClient | null = null;
@@ -23,51 +23,51 @@ let prisma: PrismaClient | null = null;
  */
 export function initPiiHandler(prismaClient: PrismaClient): void {
   prisma = prismaClient;
-  logger.info('PII handler initialized');
+  logger.info("PII handler initialized");
 }
 
 /**
  * PII field types
  */
 export enum PiiFieldType {
-  EMAIL = 'EMAIL',
-  PHONE = 'PHONE',
-  NAME = 'NAME',
-  ADDRESS = 'ADDRESS',
-  SSN = 'SSN',
-  PASSPORT = 'PASSPORT',
-  ID_NUMBER = 'ID_NUMBER',
-  FINANCIAL = 'FINANCIAL',
-  HEALTH = 'HEALTH',
-  BIOMETRIC = 'BIOMETRIC',
-  LOCATION = 'LOCATION',
-  IP_ADDRESS = 'IP_ADDRESS',
-  CUSTOM = 'CUSTOM',
+  EMAIL = "EMAIL",
+  PHONE = "PHONE",
+  NAME = "NAME",
+  ADDRESS = "ADDRESS",
+  SSN = "SSN",
+  PASSPORT = "PASSPORT",
+  ID_NUMBER = "ID_NUMBER",
+  FINANCIAL = "FINANCIAL",
+  HEALTH = "HEALTH",
+  BIOMETRIC = "BIOMETRIC",
+  LOCATION = "LOCATION",
+  IP_ADDRESS = "IP_ADDRESS",
+  CUSTOM = "CUSTOM",
 }
 
 /**
  * Consent type
  */
 export enum ConsentType {
-  MARKETING = 'MARKETING',
-  ANALYTICS = 'ANALYTICS',
-  THIRD_PARTY = 'THIRD_PARTY',
-  DATA_PROCESSING = 'DATA_PROCESSING',
-  PROFILING = 'PROFILING',
-  COOKIES = 'COOKIES',
-  NEWSLETTER = 'NEWSLETTER',
+  MARKETING = "MARKETING",
+  ANALYTICS = "ANALYTICS",
+  THIRD_PARTY = "THIRD_PARTY",
+  DATA_PROCESSING = "DATA_PROCESSING",
+  PROFILING = "PROFILING",
+  COOKIES = "COOKIES",
+  NEWSLETTER = "NEWSLETTER",
 }
 
 /**
  * Data subject rights
  */
 export enum DataSubjectRight {
-  ACCESS = 'ACCESS',
-  RECTIFICATION = 'RECTIFICATION',
-  ERASURE = 'ERASURE',
-  PORTABILITY = 'PORTABILITY',
-  RESTRICTION = 'RESTRICTION',
-  OBJECTION = 'OBJECTION',
+  ACCESS = "ACCESS",
+  RECTIFICATION = "RECTIFICATION",
+  ERASURE = "ERASURE",
+  PORTABILITY = "PORTABILITY",
+  RESTRICTION = "RESTRICTION",
+  OBJECTION = "OBJECTION",
 }
 
 /**
@@ -127,7 +127,7 @@ const PII_FIELD_CONFIGS: Record<string, PiiFieldConfig> = {
     type: PiiFieldType.IP_ADDRESS,
     encrypted: false,
     retention: 90, // 90 days
-    maskFunction: (v) => v.replace(/\.\d+$/, '.xxx'),
+    maskFunction: (v) => v.replace(/\.\d+$/, ".xxx"),
   },
 };
 
@@ -152,8 +152,8 @@ export interface DataExportRecord {
   userId: string;
   requestDate: Date;
   completedDate?: Date;
-  format: 'JSON' | 'CSV' | 'PDF';
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  format: "JSON" | "CSV" | "PDF";
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
   downloadUrl?: string;
   expiresAt?: Date;
 }
@@ -166,7 +166,10 @@ export class PiiHandler {
    * Encrypt PII field
    */
   encryptPii(value: string, fieldName: string): string {
-    const config = PII_FIELD_CONFIGS[fieldName] || { type: PiiFieldType.CUSTOM, encrypted: true };
+    const config = PII_FIELD_CONFIGS[fieldName] || {
+      type: PiiFieldType.CUSTOM,
+      encrypted: true,
+    };
 
     if (!config.encrypted) {
       return value;
@@ -179,7 +182,7 @@ export class PiiHandler {
    * Decrypt PII field
    */
   decryptPii(encryptedValue: string, fieldName: string): string {
-    if (!encryptedValue.startsWith('v1:')) {
+    if (!encryptedValue.startsWith("v1:")) {
       return encryptedValue;
     }
 
@@ -209,14 +212,14 @@ export class PiiHandler {
    */
   async anonymizeUserData(userId: string): Promise<void> {
     if (!prisma) {
-      throw new Error('Prisma client not initialized');
+      throw new Error("Prisma client not initialized");
     }
 
     const anonymizedEmail = `deleted_${hash(userId).substring(0, 12)}@anonymized.local`;
     const anonymizedData = {
       email: anonymizedEmail,
-      firstName: 'Deleted',
-      lastName: 'User',
+      firstName: "Deleted",
+      lastName: "User",
       passwordHash: null,
       walletAddress: null,
       isActive: false,
@@ -233,15 +236,15 @@ export class PiiHandler {
 
       await audit()
         .eventType(AuditEventType.GDPR_DATA_DELETION_REQUEST)
-        .resource('User', userId)
-        .action('anonymize')
-        .description('User data anonymized per GDPR request')
+        .resource("User", userId)
+        .action("anonymize")
+        .description("User data anonymized per GDPR request")
         .success()
         .log();
 
-      logger.info('User data anonymized', { userId });
+      logger.info("User data anonymized", { userId });
     } catch (error) {
-      logger.error('Failed to anonymize user data', { error, userId });
+      logger.error("Failed to anonymize user data", { error, userId });
       throw error;
     }
   }
@@ -251,7 +254,7 @@ export class PiiHandler {
    */
   async exportUserData(userId: string): Promise<Record<string, unknown>> {
     if (!prisma) {
-      throw new Error('Prisma client not initialized');
+      throw new Error("Prisma client not initialized");
     }
 
     try {
@@ -269,7 +272,7 @@ export class PiiHandler {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       // Prepare export data
@@ -283,18 +286,20 @@ export class PiiHandler {
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },
-        producerProfile: user.producer ? {
-          businessName: user.producer.businessName,
-          state: user.producer.state,
-          municipality: user.producer.municipality,
-          address: user.producer.address,
-          certifications: user.producer.certifications.map((c) => ({
-            type: c.type,
-            certifier: c.certifier,
-            issuedAt: c.issuedAt,
-            expiresAt: c.expiresAt,
-          })),
-        } : null,
+        producerProfile: user.producer
+          ? {
+              businessName: user.producer.businessName,
+              state: user.producer.state,
+              municipality: user.producer.municipality,
+              address: user.producer.address,
+              certifications: user.producer.certifications.map((c) => ({
+                type: c.type,
+                certifier: c.certifier,
+                issuedAt: c.issuedAt,
+                expiresAt: c.expiresAt,
+              })),
+            }
+          : null,
         notifications: user.notifications.map((n) => ({
           type: n.type,
           title: n.title,
@@ -302,22 +307,22 @@ export class PiiHandler {
         })),
         exportMetadata: {
           exportDate: new Date().toISOString(),
-          format: 'JSON',
-          version: '1.0',
+          format: "JSON",
+          version: "1.0",
         },
       };
 
       await audit()
         .eventType(AuditEventType.GDPR_DATA_EXPORT_REQUEST)
-        .resource('User', userId)
-        .action('export')
-        .description('User data exported per GDPR request')
+        .resource("User", userId)
+        .action("export")
+        .description("User data exported per GDPR request")
         .success()
         .log();
 
       return exportData;
     } catch (error) {
-      logger.error('Failed to export user data', { error, userId });
+      logger.error("Failed to export user data", { error, userId });
       throw error;
     }
   }
@@ -327,32 +332,40 @@ export class PiiHandler {
    */
   async recordConsent(consent: ConsentRecord): Promise<void> {
     if (!prisma) {
-      throw new Error('Prisma client not initialized');
+      throw new Error("Prisma client not initialized");
     }
 
     try {
       // Store consent record (assuming Consent model exists)
-      await (prisma as any).consent?.create({
-        data: {
-          userId: consent.userId,
-          type: consent.consentType,
-          granted: consent.granted,
-          version: consent.version,
-          source: consent.source,
-          ipAddress: consent.ipAddress,
-          userAgent: consent.userAgent,
-          timestamp: consent.timestamp,
-        },
-      }).catch(() => {
-        // Log to audit if model doesn't exist
-        logger.info('Consent recorded', consent);
-      });
+      await (prisma as any).consent
+        ?.create({
+          data: {
+            userId: consent.userId,
+            type: consent.consentType,
+            granted: consent.granted,
+            version: consent.version,
+            source: consent.source,
+            ipAddress: consent.ipAddress,
+            userAgent: consent.userAgent,
+            timestamp: consent.timestamp,
+          },
+        })
+        .catch(() => {
+          // Log to audit if model doesn't exist
+          logger.info("Consent recorded", consent);
+        });
 
       await audit()
-        .eventType(consent.granted ? AuditEventType.GDPR_CONSENT_GIVEN : AuditEventType.GDPR_CONSENT_WITHDRAWN)
+        .eventType(
+          consent.granted
+            ? AuditEventType.GDPR_CONSENT_GIVEN
+            : AuditEventType.GDPR_CONSENT_WITHDRAWN,
+        )
         .user(consent.userId)
-        .action(consent.granted ? 'grant_consent' : 'withdraw_consent')
-        .description(`Consent ${consent.granted ? 'granted' : 'withdrawn'} for ${consent.consentType}`)
+        .action(consent.granted ? "grant_consent" : "withdraw_consent")
+        .description(
+          `Consent ${consent.granted ? "granted" : "withdrawn"} for ${consent.consentType}`,
+        )
         .metadata({
           consentType: consent.consentType,
           version: consent.version,
@@ -361,7 +374,7 @@ export class PiiHandler {
         .success()
         .log();
     } catch (error) {
-      logger.error('Failed to record consent', { error, consent });
+      logger.error("Failed to record consent", { error, consent });
       throw error;
     }
   }
@@ -380,12 +393,12 @@ export class PiiHandler {
           userId,
           type: consentType,
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { timestamp: "desc" },
       });
 
       return consent?.granted ?? false;
     } catch (error) {
-      logger.error('Failed to check consent', { error, userId, consentType });
+      logger.error("Failed to check consent", { error, userId, consentType });
       return false;
     }
   }
@@ -409,17 +422,18 @@ export class PiiHandler {
     }
 
     try {
-      const records = await (prisma as any).consent?.findMany({
-        where: { userId },
-        orderBy: { timestamp: 'desc' },
-        distinct: ['type'],
-      }) || [];
+      const records =
+        (await (prisma as any).consent?.findMany({
+          where: { userId },
+          orderBy: { timestamp: "desc" },
+          distinct: ["type"],
+        })) || [];
 
       for (const record of records) {
         consents[record.type as ConsentType] = record.granted;
       }
     } catch (error) {
-      logger.error('Failed to get user consents', { error, userId });
+      logger.error("Failed to get user consents", { error, userId });
     }
 
     return consents;
@@ -428,7 +442,10 @@ export class PiiHandler {
   /**
    * Handle data subject access request (DSAR)
    */
-  async handleDataAccessRequest(userId: string, requesterId: string): Promise<{
+  async handleDataAccessRequest(
+    userId: string,
+    requesterId: string,
+  ): Promise<{
     requestId: string;
     status: string;
     data?: Record<string, unknown>;
@@ -438,9 +455,9 @@ export class PiiHandler {
     await audit()
       .eventType(AuditEventType.GDPR_DATA_ACCESS_REQUEST)
       .user(requesterId)
-      .resource('User', userId)
-      .action('data_access_request')
-      .description('Data subject access request initiated')
+      .resource("User", userId)
+      .action("data_access_request")
+      .description("Data subject access request initiated")
       .metadata({ requestId })
       .success()
       .log();
@@ -450,7 +467,7 @@ export class PiiHandler {
 
     return {
       requestId,
-      status: 'COMPLETED',
+      status: "COMPLETED",
       data,
     };
   }
@@ -458,7 +475,10 @@ export class PiiHandler {
   /**
    * Handle right to erasure request
    */
-  async handleErasureRequest(userId: string, requesterId: string): Promise<{
+  async handleErasureRequest(
+    userId: string,
+    requesterId: string,
+  ): Promise<{
     requestId: string;
     status: string;
   }> {
@@ -467,9 +487,9 @@ export class PiiHandler {
     await audit()
       .eventType(AuditEventType.GDPR_DATA_DELETION_REQUEST)
       .user(requesterId)
-      .resource('User', userId)
-      .action('erasure_request')
-      .description('Right to erasure request initiated')
+      .resource("User", userId)
+      .action("erasure_request")
+      .description("Right to erasure request initiated")
       .metadata({ requestId })
       .success()
       .log();
@@ -479,7 +499,7 @@ export class PiiHandler {
 
     return {
       requestId,
-      status: 'COMPLETED',
+      status: "COMPLETED",
     };
   }
 
@@ -504,7 +524,7 @@ export class PiiHandler {
         where: {
           isActive: false,
           lastLoginAt: { lte: cutoffDate },
-          email: { not: { contains: '@anonymized.local' } },
+          email: { not: { contains: "@anonymized.local" } },
         },
         select: { id: true },
       });
@@ -514,9 +534,9 @@ export class PiiHandler {
         purgedCount++;
       }
 
-      logger.info('Expired PII data purged', { purgedCount });
+      logger.info("Expired PII data purged", { purgedCount });
     } catch (error) {
-      logger.error('Failed to purge expired data', { error });
+      logger.error("Failed to purge expired data", { error });
     }
 
     return { purgedCount };
@@ -530,12 +550,14 @@ export class PiiHandler {
       case PiiFieldType.EMAIL:
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
       case PiiFieldType.PHONE:
-        return /^\+?[1-9]\d{1,14}$/.test(value.replace(/[\s-]/g, ''));
+        return /^\+?[1-9]\d{1,14}$/.test(value.replace(/[\s-]/g, ""));
       case PiiFieldType.SSN:
         return /^\d{3}-?\d{2}-?\d{4}$/.test(value);
       case PiiFieldType.IP_ADDRESS:
-        return /^(\d{1,3}\.){3}\d{1,3}$/.test(value) ||
-               /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(value);
+        return (
+          /^(\d{1,3}\.){3}\d{1,3}$/.test(value) ||
+          /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(value)
+        );
       default:
         return value.length > 0 && value.length < 1000;
     }

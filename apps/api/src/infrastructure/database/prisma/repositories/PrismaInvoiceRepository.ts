@@ -3,13 +3,20 @@
  * Implements IInvoiceRepository using Prisma ORM
  */
 
-import { PrismaClient, InvoiceStatus as PrismaInvoiceStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  InvoiceStatus as PrismaInvoiceStatus,
+} from "@prisma/client";
 import {
   IInvoiceRepository,
   CreateInvoiceData,
   UpdateInvoiceData,
-} from '../../../../domain/repositories/IInvoiceRepository.js';
-import { Invoice, InvoiceStatus, InvoiceFilter } from '../../../../domain/entities/Invoice.js';
+} from "../../../../domain/repositories/IInvoiceRepository.js";
+import {
+  Invoice,
+  InvoiceStatus,
+  InvoiceFilter,
+} from "../../../../domain/entities/Invoice.js";
 
 export class PrismaInvoiceRepository implements IInvoiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -30,7 +37,9 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
       isr: Number(prismaInvoice.isr || 0),
       total: Number(prismaInvoice.total),
       currency: prismaInvoice.currency,
-      exchangeRate: prismaInvoice.exchangeRate ? Number(prismaInvoice.exchangeRate) : null,
+      exchangeRate: prismaInvoice.exchangeRate
+        ? Number(prismaInvoice.exchangeRate)
+        : null,
       recipientRfc: prismaInvoice.recipientRfc,
       recipientName: prismaInvoice.recipientName,
       recipientEmail: prismaInvoice.recipientEmail,
@@ -111,14 +120,17 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
         ...(filter?.fromDate && { createdAt: { gte: filter.fromDate } }),
         ...(filter?.toDate && { createdAt: { lte: filter.toDate } }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: filter?.limit || 50,
       skip: filter?.offset || 0,
     });
     return invoices.map(this.mapToDomain);
   }
 
-  async listByProducer(producerId: string, filter?: InvoiceFilter): Promise<Invoice[]> {
+  async listByProducer(
+    producerId: string,
+    filter?: InvoiceFilter,
+  ): Promise<Invoice[]> {
     const invoices = await this.prisma.invoice.findMany({
       where: {
         producerId,
@@ -126,7 +138,7 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
         ...(filter?.fromDate && { createdAt: { gte: filter.fromDate } }),
         ...(filter?.toDate && { createdAt: { lte: filter.toDate } }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: filter?.limit || 50,
       skip: filter?.offset || 0,
     });
@@ -143,23 +155,45 @@ export class PrismaInvoiceRepository implements IInvoiceRepository {
         ...(data.qrCodeUrl !== undefined && { qrCodeUrl: data.qrCodeUrl }),
         ...(data.cfdiSeal !== undefined && { cfdiSeal: data.cfdiSeal }),
         ...(data.satSeal !== undefined && { satSeal: data.satSeal }),
-        ...(data.satCertNumber !== undefined && { satCertNumber: data.satCertNumber }),
+        ...(data.satCertNumber !== undefined && {
+          satCertNumber: data.satCertNumber,
+        }),
         ...(data.stampDate !== undefined && { stampDate: data.stampDate }),
-        ...(data.blockchainHash !== undefined && { blockchainHash: data.blockchainHash }),
-        ...(data.blockchainTxHash !== undefined && { blockchainTxHash: data.blockchainTxHash }),
-        ...(data.blockchainNetwork !== undefined && { blockchainNetwork: data.blockchainNetwork }),
-        ...(data.blockchainVerified !== undefined && { blockchainVerified: data.blockchainVerified }),
-        ...(data.blockchainTimestamp !== undefined && { blockchainTimestamp: data.blockchainTimestamp }),
-        ...(data.status !== undefined && { status: data.status as PrismaInvoiceStatus }),
+        ...(data.blockchainHash !== undefined && {
+          blockchainHash: data.blockchainHash,
+        }),
+        ...(data.blockchainTxHash !== undefined && {
+          blockchainTxHash: data.blockchainTxHash,
+        }),
+        ...(data.blockchainNetwork !== undefined && {
+          blockchainNetwork: data.blockchainNetwork,
+        }),
+        ...(data.blockchainVerified !== undefined && {
+          blockchainVerified: data.blockchainVerified,
+        }),
+        ...(data.blockchainTimestamp !== undefined && {
+          blockchainTimestamp: data.blockchainTimestamp,
+        }),
+        ...(data.status !== undefined && {
+          status: data.status as PrismaInvoiceStatus,
+        }),
         ...(data.issuedAt !== undefined && { issuedAt: data.issuedAt }),
-        ...(data.cancelledAt !== undefined && { cancelledAt: data.cancelledAt }),
-        ...(data.cancellationReason !== undefined && { cancellationReason: data.cancellationReason }),
+        ...(data.cancelledAt !== undefined && {
+          cancelledAt: data.cancelledAt,
+        }),
+        ...(data.cancellationReason !== undefined && {
+          cancellationReason: data.cancellationReason,
+        }),
       },
     });
     return this.mapToDomain(invoice);
   }
 
-  async markAsPaid(id: string, paidAt: Date, txHash?: string): Promise<Invoice> {
+  async markAsPaid(
+    id: string,
+    paidAt: Date,
+    txHash?: string,
+  ): Promise<Invoice> {
     const invoice = await this.prisma.invoice.update({
       where: { id },
       data: {

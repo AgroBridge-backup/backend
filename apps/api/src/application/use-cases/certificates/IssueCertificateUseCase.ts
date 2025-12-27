@@ -3,8 +3,11 @@
  * Use Case: Issue a new quality certificate
  */
 
-import { QualityCertificateService, IssueCertificateResult } from '../../../domain/services/QualityCertificateService.js';
-import { CertificateGrade } from '../../../domain/entities/QualityCertificate.js';
+import {
+  QualityCertificateService,
+  IssueCertificateResult,
+} from "../../../domain/services/QualityCertificateService.js";
+import { CertificateGrade } from "../../../domain/entities/QualityCertificate.js";
 
 export interface IssueCertificateRequest {
   batchId: string;
@@ -17,7 +20,9 @@ export interface IssueCertificateRequest {
 export class IssueCertificateUseCase {
   constructor(private certificateService: QualityCertificateService) {}
 
-  async execute(request: IssueCertificateRequest): Promise<IssueCertificateResult> {
+  async execute(
+    request: IssueCertificateRequest,
+  ): Promise<IssueCertificateResult> {
     return this.certificateService.issueCertificate({
       batchId: request.batchId,
       grade: request.grade,

@@ -20,10 +20,10 @@ import {
   HeadObjectCommand,
   ListObjectsV2Command,
   CopyObjectCommand,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Readable } from 'stream';
-import logger from '../../../shared/utils/logger.js';
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Readable } from "stream";
+import logger from "../../../shared/utils/logger.js";
 
 /**
  * Upload options for S3
@@ -34,7 +34,7 @@ export interface S3UploadOptions {
   contentType?: string;
   metadata?: Record<string, string>;
   cacheControl?: string;
-  acl?: 'private' | 'public-read' | 'public-read-write';
+  acl?: "private" | "public-read" | "public-read-write";
   tagging?: string;
 }
 
@@ -101,8 +101,8 @@ export class S3StorageProvider {
   private region: string;
 
   constructor() {
-    this.region = process.env.AWS_REGION || 'us-east-1';
-    this.defaultBucket = process.env.AWS_S3_BUCKET || 'agrobridge-uploads';
+    this.region = process.env.AWS_REGION || "us-east-1";
+    this.defaultBucket = process.env.AWS_S3_BUCKET || "agrobridge-uploads";
     this.cdnDomain = process.env.AWS_CLOUDFRONT_DOMAIN || null;
 
     this.client = new S3Client({
@@ -110,13 +110,13 @@ export class S3StorageProvider {
       credentials: process.env.AWS_ACCESS_KEY_ID
         ? {
             accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
           }
         : undefined, // Use IAM role if no credentials
     });
 
     logger.info({
-      message: 'S3 Storage Provider initialized',
+      message: "S3 Storage Provider initialized",
       meta: { bucket: this.defaultBucket, region: this.region },
     });
   }
@@ -134,7 +134,7 @@ export class S3StorageProvider {
    */
   async upload(
     buffer: Buffer,
-    options: S3UploadOptions
+    options: S3UploadOptions,
   ): Promise<S3UploadResult> {
     const bucket = options.bucket || this.defaultBucket;
 
@@ -143,9 +143,9 @@ export class S3StorageProvider {
         Bucket: bucket,
         Key: options.key,
         Body: buffer,
-        ContentType: options.contentType || 'application/octet-stream',
+        ContentType: options.contentType || "application/octet-stream",
         Metadata: options.metadata,
-        CacheControl: options.cacheControl || 'max-age=31536000',
+        CacheControl: options.cacheControl || "max-age=31536000",
         ACL: options.acl,
         Tagging: options.tagging,
       });
@@ -158,7 +158,7 @@ export class S3StorageProvider {
         : undefined;
 
       logger.info({
-        message: 'File uploaded to S3',
+        message: "File uploaded to S3",
         meta: { bucket, key: options.key, size: buffer.length },
       });
 
@@ -172,7 +172,7 @@ export class S3StorageProvider {
       };
     } catch (error) {
       logger.error({
-        message: 'S3 upload failed',
+        message: "S3 upload failed",
         meta: { bucket, key: options.key, error: (error as Error).message },
       });
       throw error;
@@ -188,7 +188,7 @@ export class S3StorageProvider {
    */
   async uploadStream(
     stream: Readable,
-    options: S3UploadOptions
+    options: S3UploadOptions,
   ): Promise<S3UploadResult> {
     const bucket = options.bucket || this.defaultBucket;
 
@@ -197,9 +197,9 @@ export class S3StorageProvider {
         Bucket: bucket,
         Key: options.key,
         Body: stream,
-        ContentType: options.contentType || 'application/octet-stream',
+        ContentType: options.contentType || "application/octet-stream",
         Metadata: options.metadata,
-        CacheControl: options.cacheControl || 'max-age=31536000',
+        CacheControl: options.cacheControl || "max-age=31536000",
         ACL: options.acl,
       });
 
@@ -220,7 +220,7 @@ export class S3StorageProvider {
       };
     } catch (error) {
       logger.error({
-        message: 'S3 stream upload failed',
+        message: "S3 stream upload failed",
         meta: { bucket, key: options.key, error: (error as Error).message },
       });
       throw error;
@@ -238,7 +238,7 @@ export class S3StorageProvider {
    * @returns Presigned URLs for upload and download
    */
   async getPresignedUploadUrl(
-    options: PresignedUrlOptions
+    options: PresignedUrlOptions,
   ): Promise<PresignedUrlResult> {
     const bucket = options.bucket || this.defaultBucket;
     const expiresIn = options.expiresIn || 3600; // 1 hour default
@@ -269,7 +269,7 @@ export class S3StorageProvider {
       const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
       logger.debug({
-        message: 'Presigned URL generated',
+        message: "Presigned URL generated",
         meta: { bucket, key: options.key, expiresIn },
       });
 
@@ -282,7 +282,7 @@ export class S3StorageProvider {
       };
     } catch (error) {
       logger.error({
-        message: 'Failed to generate presigned URL',
+        message: "Failed to generate presigned URL",
         meta: { bucket, key: options.key, error: (error as Error).message },
       });
       throw error;
@@ -300,7 +300,7 @@ export class S3StorageProvider {
   async getPresignedDownloadUrl(
     key: string,
     bucket?: string,
-    expiresIn: number = 3600
+    expiresIn: number = 3600,
   ): Promise<string> {
     const targetBucket = bucket || this.defaultBucket;
 
@@ -343,7 +343,7 @@ export class S3StorageProvider {
       return Buffer.concat(chunks);
     } catch (error) {
       logger.error({
-        message: 'S3 download failed',
+        message: "S3 download failed",
         meta: { bucket: targetBucket, key, error: (error as Error).message },
       });
       throw error;
@@ -368,12 +368,12 @@ export class S3StorageProvider {
       await this.client.send(command);
 
       logger.info({
-        message: 'File deleted from S3',
+        message: "File deleted from S3",
         meta: { bucket: targetBucket, key },
       });
     } catch (error) {
       logger.error({
-        message: 'S3 delete failed',
+        message: "S3 delete failed",
         meta: { bucket: targetBucket, key, error: (error as Error).message },
       });
       throw error;
@@ -399,7 +399,7 @@ export class S3StorageProvider {
       await this.client.send(command);
       return true;
     } catch (error: unknown) {
-      if ((error as { name?: string }).name === 'NotFound') {
+      if ((error as { name?: string }).name === "NotFound") {
         return false;
       }
       throw error;
@@ -442,7 +442,7 @@ export class S3StorageProvider {
       };
     } catch (error) {
       logger.error({
-        message: 'Failed to get S3 metadata',
+        message: "Failed to get S3 metadata",
         meta: { bucket: targetBucket, key, error: (error as Error).message },
       });
       throw error;
@@ -459,7 +459,7 @@ export class S3StorageProvider {
   async copy(
     sourceKey: string,
     destinationKey: string,
-    bucket?: string
+    bucket?: string,
   ): Promise<S3UploadResult> {
     const targetBucket = bucket || this.defaultBucket;
 
@@ -486,7 +486,7 @@ export class S3StorageProvider {
       };
     } catch (error) {
       logger.error({
-        message: 'S3 copy failed',
+        message: "S3 copy failed",
         meta: {
           bucket: targetBucket,
           sourceKey,
@@ -509,7 +509,7 @@ export class S3StorageProvider {
   async list(
     prefix: string,
     bucket?: string,
-    maxKeys: number = 1000
+    maxKeys: number = 1000,
   ): Promise<string[]> {
     const targetBucket = bucket || this.defaultBucket;
 
@@ -521,10 +521,10 @@ export class S3StorageProvider {
       });
 
       const response = await this.client.send(command);
-      return response.Contents?.map((item) => item.Key || '') || [];
+      return response.Contents?.map((item) => item.Key || "") || [];
     } catch (error) {
       logger.error({
-        message: 'S3 list failed',
+        message: "S3 list failed",
         meta: { bucket: targetBucket, prefix, error: (error as Error).message },
       });
       throw error;
@@ -542,12 +542,12 @@ export class S3StorageProvider {
    * @param prefix - Directory prefix (e.g., "batches", "producers")
    * @returns Unique S3 key
    */
-  generateKey(filename: string, prefix: string = 'uploads'): string {
+  generateKey(filename: string, prefix: string = "uploads"): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
-    const extension = filename.split('.').pop() || '';
+    const extension = filename.split(".").pop() || "";
     const sanitizedName = filename
-      .replace(/[^a-zA-Z0-9.-]/g, '_')
+      .replace(/[^a-zA-Z0-9.-]/g, "_")
       .substring(0, 50);
 
     return `${prefix}/${timestamp}-${random}-${sanitizedName}`;

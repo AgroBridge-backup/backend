@@ -6,7 +6,7 @@
 import {
   PrismaClient,
   OrganicCertificateStatus as PrismaStatus,
-} from '@prisma/client';
+} from "@prisma/client";
 import {
   IOrganicCertificateRepository,
   CreateOrganicCertificateData,
@@ -14,15 +14,17 @@ import {
   OrganicCertificateListResult,
   CreateVerificationLogData,
   OrganicCertificateWithDetails,
-} from '../../../../domain/repositories/IOrganicCertificateRepository.js';
+} from "../../../../domain/repositories/IOrganicCertificateRepository.js";
 import {
   OrganicCertificate,
   OrganicCertificateStatus,
   CertificateFilter,
   CertificateVerification,
-} from '../../../../domain/entities/OrganicCertificate.js';
+} from "../../../../domain/entities/OrganicCertificate.js";
 
-export class PrismaOrganicCertificateRepository implements IOrganicCertificateRepository {
+export class PrismaOrganicCertificateRepository
+  implements IOrganicCertificateRepository
+{
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
@@ -38,7 +40,9 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
       cropType: prismaCert.cropType,
       variety: prismaCert.variety,
       harvestDate: prismaCert.harvestDate,
-      estimatedWeight: prismaCert.estimatedWeight ? Number(prismaCert.estimatedWeight) : null,
+      estimatedWeight: prismaCert.estimatedWeight
+        ? Number(prismaCert.estimatedWeight)
+        : null,
       certificationStandard: prismaCert.certificationStandard,
       validFrom: prismaCert.validFrom,
       validTo: prismaCert.validTo,
@@ -66,7 +70,9 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
   /**
    * Map to domain with details
    */
-  private mapToDomainWithDetails(prismaCert: any): OrganicCertificateWithDetails {
+  private mapToDomainWithDetails(
+    prismaCert: any,
+  ): OrganicCertificateWithDetails {
     return {
       ...this.mapToDomain(prismaCert),
       farmer: {
@@ -87,7 +93,9 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
   /**
    * Map verification to domain
    */
-  private mapVerificationToDomain(prismaVerification: any): CertificateVerification {
+  private mapVerificationToDomain(
+    prismaVerification: any,
+  ): CertificateVerification {
     return {
       id: prismaVerification.id,
       certificateId: prismaVerification.certificateId,
@@ -99,7 +107,9 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     };
   }
 
-  async create(data: CreateOrganicCertificateData): Promise<OrganicCertificate> {
+  async create(
+    data: CreateOrganicCertificateData,
+  ): Promise<OrganicCertificate> {
     const certificate = await this.prisma.organicCertificate.create({
       data: {
         id: data.id,
@@ -129,31 +139,54 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     return certificate ? this.mapToDomain(certificate) : null;
   }
 
-  async findByCertificateNumber(certificateNumber: string): Promise<OrganicCertificate | null> {
+  async findByCertificateNumber(
+    certificateNumber: string,
+  ): Promise<OrganicCertificate | null> {
     const certificate = await this.prisma.organicCertificate.findUnique({
       where: { certificateNumber },
     });
     return certificate ? this.mapToDomain(certificate) : null;
   }
 
-  async update(id: string, data: UpdateOrganicCertificateData): Promise<OrganicCertificate> {
+  async update(
+    id: string,
+    data: UpdateOrganicCertificateData,
+  ): Promise<OrganicCertificate> {
     const certificate = await this.prisma.organicCertificate.update({
       where: { id },
       data: {
-        ...(data.status !== undefined && { status: data.status as PrismaStatus }),
-        ...(data.submittedAt !== undefined && { submittedAt: data.submittedAt }),
+        ...(data.status !== undefined && {
+          status: data.status as PrismaStatus,
+        }),
+        ...(data.submittedAt !== undefined && {
+          submittedAt: data.submittedAt,
+        }),
         ...(data.reviewedBy !== undefined && { reviewedBy: data.reviewedBy }),
         ...(data.reviewedAt !== undefined && { reviewedAt: data.reviewedAt }),
-        ...(data.rejectionReason !== undefined && { rejectionReason: data.rejectionReason }),
+        ...(data.rejectionReason !== undefined && {
+          rejectionReason: data.rejectionReason,
+        }),
         ...(data.pdfUrl !== undefined && { pdfUrl: data.pdfUrl }),
         ...(data.qrCodeUrl !== undefined && { qrCodeUrl: data.qrCodeUrl }),
-        ...(data.qrCodeShortUrl !== undefined && { qrCodeShortUrl: data.qrCodeShortUrl }),
-        ...(data.contentHash !== undefined && { contentHash: data.contentHash }),
-        ...(data.blockchainTxHash !== undefined && { blockchainTxHash: data.blockchainTxHash }),
-        ...(data.blockchainNetwork !== undefined && { blockchainNetwork: data.blockchainNetwork }),
-        ...(data.blockchainTimestamp !== undefined && { blockchainTimestamp: data.blockchainTimestamp }),
+        ...(data.qrCodeShortUrl !== undefined && {
+          qrCodeShortUrl: data.qrCodeShortUrl,
+        }),
+        ...(data.contentHash !== undefined && {
+          contentHash: data.contentHash,
+        }),
+        ...(data.blockchainTxHash !== undefined && {
+          blockchainTxHash: data.blockchainTxHash,
+        }),
+        ...(data.blockchainNetwork !== undefined && {
+          blockchainNetwork: data.blockchainNetwork,
+        }),
+        ...(data.blockchainTimestamp !== undefined && {
+          blockchainTimestamp: data.blockchainTimestamp,
+        }),
         ...(data.ipfsHash !== undefined && { ipfsHash: data.ipfsHash }),
-        ...(data.payloadSnapshot !== undefined && { payloadSnapshot: data.payloadSnapshot }),
+        ...(data.payloadSnapshot !== undefined && {
+          payloadSnapshot: data.payloadSnapshot,
+        }),
       },
     });
     return this.mapToDomain(certificate);
@@ -166,7 +199,8 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     if (filter.exportCompanyId) where.exportCompanyId = filter.exportCompanyId;
     if (filter.status) where.status = filter.status as PrismaStatus;
     if (filter.cropType) where.cropType = filter.cropType;
-    if (filter.certificationStandard) where.certificationStandard = filter.certificationStandard;
+    if (filter.certificationStandard)
+      where.certificationStandard = filter.certificationStandard;
     if (filter.fromDate || filter.toDate) {
       where.createdAt = {};
       if (filter.fromDate) where.createdAt.gte = filter.fromDate;
@@ -176,7 +210,7 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     const [certificates, total] = await Promise.all([
       this.prisma.organicCertificate.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: filter.limit || 50,
         skip: filter.offset || 0,
       }),
@@ -191,19 +225,21 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
 
   async listByFarmer(
     farmerId: string,
-    filter?: Omit<CertificateFilter, 'farmerId'>
+    filter?: Omit<CertificateFilter, "farmerId">,
   ): Promise<OrganicCertificateListResult> {
     return this.list({ ...filter, farmerId });
   }
 
   async listByExportCompany(
     exportCompanyId: string,
-    filter?: Omit<CertificateFilter, 'exportCompanyId'>
+    filter?: Omit<CertificateFilter, "exportCompanyId">,
   ): Promise<OrganicCertificateListResult> {
     return this.list({ ...filter, exportCompanyId });
   }
 
-  async findByIdWithDetails(id: string): Promise<OrganicCertificateWithDetails | null> {
+  async findByIdWithDetails(
+    id: string,
+  ): Promise<OrganicCertificateWithDetails | null> {
     const certificate = await this.prisma.organicCertificate.findUnique({
       where: { id },
       include: {
@@ -229,7 +265,7 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
   }
 
   async findByCertificateNumberWithDetails(
-    certificateNumber: string
+    certificateNumber: string,
   ): Promise<OrganicCertificateWithDetails | null> {
     const certificate = await this.prisma.organicCertificate.findUnique({
       where: { certificateNumber },
@@ -255,7 +291,10 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     return certificate ? this.mapToDomainWithDetails(certificate) : null;
   }
 
-  async hasPendingCertificateForFields(farmerId: string, fieldIds: string[]): Promise<boolean> {
+  async hasPendingCertificateForFields(
+    farmerId: string,
+    fieldIds: string[],
+  ): Promise<boolean> {
     // Check for existing certificates that are not completed (APPROVED/REJECTED/REVOKED)
     const pendingStatuses = [
       OrganicCertificateStatus.DRAFT,
@@ -296,16 +335,19 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     });
   }
 
-  async logVerification(data: CreateVerificationLogData): Promise<CertificateVerification> {
-    const verification = await this.prisma.organicCertificateVerification.create({
-      data: {
-        certificateId: data.certificateId,
-        verifierType: data.verifierType,
-        country: data.country,
-        deviceType: data.deviceType,
-        referrer: data.referrer,
-      },
-    });
+  async logVerification(
+    data: CreateVerificationLogData,
+  ): Promise<CertificateVerification> {
+    const verification =
+      await this.prisma.organicCertificateVerification.create({
+        data: {
+          certificateId: data.certificateId,
+          verifierType: data.verifierType,
+          country: data.country,
+          deviceType: data.deviceType,
+          referrer: data.referrer,
+        },
+      });
     return this.mapVerificationToDomain(verification);
   }
 
@@ -316,11 +358,12 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
   }
 
   async getLastVerificationDate(certificateId: string): Promise<Date | null> {
-    const verification = await this.prisma.organicCertificateVerification.findFirst({
-      where: { certificateId },
-      orderBy: { verifiedAt: 'desc' },
-      select: { verifiedAt: true },
-    });
+    const verification =
+      await this.prisma.organicCertificateVerification.findFirst({
+        where: { certificateId },
+        orderBy: { verifiedAt: "desc" },
+        select: { verifiedAt: true },
+      });
     return verification?.verifiedAt || null;
   }
 
@@ -342,13 +385,15 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
     });
   }
 
-  async getPendingReviewForExportCompany(exportCompanyId: string): Promise<OrganicCertificate[]> {
+  async getPendingReviewForExportCompany(
+    exportCompanyId: string,
+  ): Promise<OrganicCertificate[]> {
     const certificates = await this.prisma.organicCertificate.findMany({
       where: {
         exportCompanyId,
         status: OrganicCertificateStatus.PENDING_REVIEW as PrismaStatus,
       },
-      orderBy: { submittedAt: 'asc' },
+      orderBy: { submittedAt: "asc" },
     });
     return certificates.map((c) => this.mapToDomain(c));
   }
@@ -358,7 +403,7 @@ export class PrismaOrganicCertificateRepository implements IOrganicCertificateRe
       where: {
         status: OrganicCertificateStatus.BLOCKCHAIN_FAILED as PrismaStatus,
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
     return certificates.map((c) => this.mapToDomain(c));
   }

@@ -13,7 +13,7 @@ export {
   type BackupCodesResult,
   type TwoFactorVerifyResult,
   type TwoFactorStatus,
-} from './TwoFactorService.js';
+} from "./TwoFactorService.js";
 
 // OAuth Providers
 export {
@@ -21,14 +21,14 @@ export {
   googleOAuthProvider,
   type GoogleUserProfile,
   type GoogleTokens,
-} from './oauth/GoogleOAuthProvider.js';
+} from "./oauth/GoogleOAuthProvider.js";
 
 export {
   GitHubOAuthProvider,
   gitHubOAuthProvider,
   type GitHubUserProfile,
   type GitHubTokens,
-} from './oauth/GitHubOAuthProvider.js';
+} from "./oauth/GitHubOAuthProvider.js";
 
 // OAuth Service
 export {
@@ -38,4 +38,4 @@ export {
   type OAuthAuthResult,
   type OAuthLinkResult,
   type LinkedProvider,
-} from './oauth/OAuthService.js';
+} from "./oauth/OAuthService.js";

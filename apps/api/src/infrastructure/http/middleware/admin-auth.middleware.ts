@@ -12,27 +12,35 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import logger from '../../../shared/utils/logger.js';
-import { ErrorCode, getErrorMessage, getErrorStatus } from '../../../shared/errors/error-codes.js';
-import type { AuthenticatedUser, UserRole } from '../../../shared/types/express.js';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import logger from "../../../shared/utils/logger.js";
+import {
+  ErrorCode,
+  getErrorMessage,
+  getErrorStatus,
+} from "../../../shared/errors/error-codes.js";
+import type {
+  AuthenticatedUser,
+  UserRole,
+} from "../../../shared/types/express.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /** Admin basic auth credentials (for queue dashboards) */
-const ADMIN_USERNAME = process.env.ADMIN_DASHBOARD_USERNAME || 'admin';
+const ADMIN_USERNAME = process.env.ADMIN_DASHBOARD_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_DASHBOARD_PASSWORD;
 
 /** IP allowlist for admin access (comma-separated) */
-const ADMIN_IP_ALLOWLIST = process.env.ADMIN_IP_ALLOWLIST?.split(',').map(ip => ip.trim()) || [];
+const ADMIN_IP_ALLOWLIST =
+  process.env.ADMIN_IP_ALLOWLIST?.split(",").map((ip) => ip.trim()) || [];
 
 /** Whether to enforce IP allowlist */
-const ENFORCE_IP_ALLOWLIST = process.env.ADMIN_ENFORCE_IP_ALLOWLIST === 'true';
+const ENFORCE_IP_ALLOWLIST = process.env.ADMIN_ENFORCE_IP_ALLOWLIST === "true";
 
 /** JWT public key for token verification */
 let JWT_PUBLIC_KEY: string | null = null;
@@ -45,16 +53,16 @@ function getJwtPublicKey(): string {
     return JWT_PUBLIC_KEY;
   }
 
-  const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || './jwtRS256.key.pub';
+  const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || "./jwtRS256.key.pub";
   const resolvedPath = path.resolve(process.cwd(), publicKeyPath);
 
   try {
-    JWT_PUBLIC_KEY = fs.readFileSync(resolvedPath, 'utf-8');
+    JWT_PUBLIC_KEY = fs.readFileSync(resolvedPath, "utf-8");
     return JWT_PUBLIC_KEY;
   } catch (error) {
-    logger.error('[AdminAuth] Failed to load JWT public key', {
+    logger.error("[AdminAuth] Failed to load JWT public key", {
       path: resolvedPath,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
     });
     throw new Error(`JWT public key not found at ${resolvedPath}`);
   }
@@ -88,16 +96,18 @@ function isIpAllowed(req: Request): boolean {
     return true;
   }
 
-  const clientIp = req.ip || req.socket?.remoteAddress || '';
+  const clientIp = req.ip || req.socket?.remoteAddress || "";
 
   // Handle IPv6 localhost
-  const normalizedIp = clientIp === '::1' ? '127.0.0.1' : clientIp.replace(/^::ffff:/, '');
+  const normalizedIp =
+    clientIp === "::1" ? "127.0.0.1" : clientIp.replace(/^::ffff:/, "");
 
-  const allowed = ADMIN_IP_ALLOWLIST.includes(normalizedIp) ||
-    ADMIN_IP_ALLOWLIST.includes('*');
+  const allowed =
+    ADMIN_IP_ALLOWLIST.includes(normalizedIp) ||
+    ADMIN_IP_ALLOWLIST.includes("*");
 
   if (!allowed) {
-    logger.warn('[AdminAuth] SECURITY: IP not in allowlist', {
+    logger.warn("[AdminAuth] SECURITY: IP not in allowlist", {
       clientIp: normalizedIp,
       allowlist: ADMIN_IP_ALLOWLIST,
     });
@@ -113,22 +123,22 @@ function verifyToken(token: string): AuthenticatedUser | null {
   try {
     const publicKey = getJwtPublicKey();
     const decoded = jwt.verify(token, publicKey, {
-      algorithms: ['RS256'],
+      algorithms: ["RS256"],
     }) as JWTPayload;
 
     return {
       userId: decoded.sub,
       email: decoded.email,
-      role: decoded.role as AuthenticatedUser['role'],
+      role: decoded.role as AuthenticatedUser["role"],
       jti: decoded.jti,
       exp: decoded.exp,
       producerId: decoded.producerId,
     };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      logger.debug('[AdminAuth] Token expired');
+      logger.debug("[AdminAuth] Token expired");
     } else if (error instanceof jwt.JsonWebTokenError) {
-      logger.debug('[AdminAuth] Invalid token');
+      logger.debug("[AdminAuth] Invalid token");
     }
     return null;
   }
@@ -137,15 +147,19 @@ function verifyToken(token: string): AuthenticatedUser | null {
 /**
  * Parse basic auth header
  */
-function parseBasicAuth(authHeader: string): { username: string; password: string } | null {
-  if (!authHeader.startsWith('Basic ')) {
+function parseBasicAuth(
+  authHeader: string,
+): { username: string; password: string } | null {
+  if (!authHeader.startsWith("Basic ")) {
     return null;
   }
 
   try {
     const base64Credentials = authHeader.slice(6);
-    const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
-    const [username, password] = credentials.split(':');
+    const credentials = Buffer.from(base64Credentials, "base64").toString(
+      "utf-8",
+    );
+    const [username, password] = credentials.split(":");
     return { username, password };
   } catch {
     return null;
@@ -166,7 +180,7 @@ function parseBasicAuth(authHeader: string): { username: string; password: strin
 export function adminAuthMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   // Check IP allowlist first
   if (!isIpAllowed(req)) {
@@ -183,7 +197,7 @@ export function adminAuthMiddleware(
 
   // Extract token from Authorization header
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(getErrorStatus(ErrorCode.AUTH_TOKEN_MISSING)).json({
       success: false,
       error: {
@@ -211,8 +225,8 @@ export function adminAuthMiddleware(
   }
 
   // Check admin role
-  if (user.role !== 'ADMIN') {
-    logger.warn('[AdminAuth] SECURITY: Non-admin access attempt', {
+  if (user.role !== "ADMIN") {
+    logger.warn("[AdminAuth] SECURITY: Non-admin access attempt", {
       userId: user.userId,
       email: user.email,
       role: user.role,
@@ -233,7 +247,7 @@ export function adminAuthMiddleware(
   // Attach user to request
   req.user = user;
 
-  logger.info('[AdminAuth] Admin access granted', {
+  logger.info("[AdminAuth] Admin access granted", {
     userId: user.userId,
     email: user.email,
     path: req.path,
@@ -255,25 +269,25 @@ export function adminAuthMiddleware(
 export function basicAuthMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   // Check IP allowlist first
   if (!isIpAllowed(req)) {
-    res.status(403).send('Access denied');
+    res.status(403).send("Access denied");
     return;
   }
 
   // Skip auth in development if no password set
-  if (process.env.NODE_ENV === 'development' && !ADMIN_PASSWORD) {
-    logger.warn('[AdminAuth] Dashboard accessed without auth in development');
+  if (process.env.NODE_ENV === "development" && !ADMIN_PASSWORD) {
+    logger.warn("[AdminAuth] Dashboard accessed without auth in development");
     next();
     return;
   }
 
   // Require password in production
   if (!ADMIN_PASSWORD) {
-    logger.error('[AdminAuth] ADMIN_DASHBOARD_PASSWORD not set');
-    res.status(500).send('Admin dashboard not configured');
+    logger.error("[AdminAuth] ADMIN_DASHBOARD_PASSWORD not set");
+    res.status(500).send("Admin dashboard not configured");
     return;
   }
 
@@ -281,8 +295,8 @@ export function basicAuthMiddleware(
 
   // No auth header - request credentials
   if (!authHeader) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Dashboard"');
-    res.status(401).send('Authentication required');
+    res.setHeader("WWW-Authenticate", 'Basic realm="Admin Dashboard"');
+    res.status(401).send("Authentication required");
     return;
   }
 
@@ -290,8 +304,8 @@ export function basicAuthMiddleware(
   const credentials = parseBasicAuth(authHeader);
 
   if (!credentials) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Dashboard"');
-    res.status(401).send('Invalid authentication format');
+    res.setHeader("WWW-Authenticate", 'Basic realm="Admin Dashboard"');
+    res.status(401).send("Invalid authentication format");
     return;
   }
 
@@ -300,17 +314,17 @@ export function basicAuthMiddleware(
   const passwordMatch = credentials.password === ADMIN_PASSWORD;
 
   if (!usernameMatch || !passwordMatch) {
-    logger.warn('[AdminAuth] SECURITY: Failed dashboard login attempt', {
+    logger.warn("[AdminAuth] SECURITY: Failed dashboard login attempt", {
       username: credentials.username,
       ip: req.ip,
     });
 
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Dashboard"');
-    res.status(401).send('Invalid credentials');
+    res.setHeader("WWW-Authenticate", 'Basic realm="Admin Dashboard"');
+    res.status(401).send("Invalid credentials");
     return;
   }
 
-  logger.info('[AdminAuth] Dashboard access granted', {
+  logger.info("[AdminAuth] Dashboard access granted", {
     username: credentials.username,
     path: req.path,
   });
@@ -327,12 +341,12 @@ export function basicAuthMiddleware(
 export function adminAuthWithFallback(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   const authHeader = req.headers.authorization;
 
   // If Bearer token, use JWT auth
-  if (authHeader?.startsWith('Bearer ')) {
+  if (authHeader?.startsWith("Bearer ")) {
     return adminAuthMiddleware(req, res, next);
   }
 
@@ -365,7 +379,7 @@ export function requireRole(...allowedRoles: UserRole[]) {
     }
 
     if (!allowedRoles.includes(user.role)) {
-      logger.warn('[AdminAuth] SECURITY: Insufficient role', {
+      logger.warn("[AdminAuth] SECURITY: Insufficient role", {
         userId: user.userId,
         role: user.role,
         requiredRoles: allowedRoles,

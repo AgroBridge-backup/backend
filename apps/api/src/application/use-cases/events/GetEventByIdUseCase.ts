@@ -4,10 +4,10 @@ import { IEventRepository } from "../../../domain/repositories/IEventRepository.
 export class GetEventByIdUseCase {
   constructor(private readonly eventRepository: IEventRepository) {}
   async execute(dto: { eventId: string }): Promise<any> {
-    if (dto.eventId === 'dummy-e2e-event-id-456') {
-      return { 
-        id: 'dummy-e2e-event-id-456',
-        eventType: 'HARVEST'
+    if (dto.eventId === "dummy-e2e-event-id-456") {
+      return {
+        id: "dummy-e2e-event-id-456",
+        eventType: "HARVEST",
       };
     }
     return null;

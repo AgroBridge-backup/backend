@@ -5,8 +5,8 @@
  * @author AgroBridge Engineering Team
  */
 
-import { z } from 'zod';
-import { ReportType, ReportFormat, ReportStatus } from '@prisma/client';
+import { z } from "zod";
+import { ReportType, ReportFormat, ReportStatus } from "@prisma/client";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -30,13 +30,15 @@ export const reportStatusSchema = z.nativeEnum(ReportStatus);
 /**
  * Report filters schema
  */
-export const reportFiltersSchema = z.object({
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
-  producerId: z.string().uuid().optional(),
-  status: z.string().optional(),
-  variety: z.string().optional(),
-}).optional();
+export const reportFiltersSchema = z
+  .object({
+    dateFrom: z.string().datetime().optional(),
+    dateTo: z.string().datetime().optional(),
+    producerId: z.string().uuid().optional(),
+    status: z.string().optional(),
+    variety: z.string().optional(),
+  })
+  .optional();
 
 /**
  * Create report request schema
@@ -55,16 +57,30 @@ export const createReportSchema = z.object({
  */
 export const listReportsSchema = z.object({
   query: z.object({
-    type: z.string().optional().transform((val) => {
-      if (!val) return undefined;
-      return val as ReportType;
-    }),
-    status: z.string().optional().transform((val) => {
-      if (!val) return undefined;
-      return val as ReportStatus;
-    }),
-    limit: z.string().optional().default('20').transform((val) => parseInt(val, 10)),
-    offset: z.string().optional().default('0').transform((val) => parseInt(val, 10)),
+    type: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val) return undefined;
+        return val as ReportType;
+      }),
+    status: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (!val) return undefined;
+        return val as ReportStatus;
+      }),
+    limit: z
+      .string()
+      .optional()
+      .default("20")
+      .transform((val) => parseInt(val, 10)),
+    offset: z
+      .string()
+      .optional()
+      .default("0")
+      .transform((val) => parseInt(val, 10)),
   }),
 });
 
@@ -73,7 +89,7 @@ export const listReportsSchema = z.object({
  */
 export const getReportSchema = z.object({
   params: z.object({
-    reportId: z.string().uuid('Invalid report ID'),
+    reportId: z.string().uuid("Invalid report ID"),
   }),
 });
 
@@ -82,7 +98,7 @@ export const getReportSchema = z.object({
  */
 export const deleteReportSchema = z.object({
   params: z.object({
-    reportId: z.string().uuid('Invalid report ID'),
+    reportId: z.string().uuid("Invalid report ID"),
   }),
 });
 
@@ -91,7 +107,7 @@ export const deleteReportSchema = z.object({
  */
 export const downloadReportSchema = z.object({
   params: z.object({
-    reportId: z.string().uuid('Invalid report ID'),
+    reportId: z.string().uuid("Invalid report ID"),
   }),
 });
 

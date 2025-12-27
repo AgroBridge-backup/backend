@@ -3,16 +3,21 @@
  * Prisma Repository Implementation for TemperatureReading
  */
 
-import { PrismaClient, TemperatureSource as PrismaTemperatureSource } from '@prisma/client';
-import { ITemperatureReadingRepository } from '../../../../domain/repositories/ITemperatureReadingRepository.js';
+import {
+  PrismaClient,
+  TemperatureSource as PrismaTemperatureSource,
+} from "@prisma/client";
+import { ITemperatureReadingRepository } from "../../../../domain/repositories/ITemperatureReadingRepository.js";
 import {
   TemperatureReading,
   TemperatureSource,
   CreateTemperatureReadingInput,
   isTemperatureInRange,
-} from '../../../../domain/entities/TemperatureReading.js';
+} from "../../../../domain/entities/TemperatureReading.js";
 
-export class PrismaTemperatureReadingRepository implements ITemperatureReadingRepository {
+export class PrismaTemperatureReadingRepository
+  implements ITemperatureReadingRepository
+{
   constructor(private prisma: PrismaClient) {}
 
   private mapToDomain(reading: any): TemperatureReading {
@@ -44,18 +49,18 @@ export class PrismaTemperatureReadingRepository implements ITemperatureReadingRe
   async findByBatchId(batchId: string): Promise<TemperatureReading[]> {
     const readings = await this.prisma.temperatureReading.findMany({
       where: { batchId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
     return readings.map(this.mapToDomain);
   }
 
   async findByBatchIdPaginated(
     batchId: string,
-    options?: { limit?: number; offset?: number; orderBy?: 'asc' | 'desc' }
+    options?: { limit?: number; offset?: number; orderBy?: "asc" | "desc" },
   ): Promise<TemperatureReading[]> {
     const readings = await this.prisma.temperatureReading.findMany({
       where: { batchId },
-      orderBy: { timestamp: options?.orderBy ?? 'desc' },
+      orderBy: { timestamp: options?.orderBy ?? "desc" },
       take: options?.limit,
       skip: options?.offset,
     });
@@ -65,7 +70,7 @@ export class PrismaTemperatureReadingRepository implements ITemperatureReadingRe
   async findByBatchIdAndTimeRange(
     batchId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<TemperatureReading[]> {
     const readings = await this.prisma.temperatureReading.findMany({
       where: {
@@ -75,18 +80,20 @@ export class PrismaTemperatureReadingRepository implements ITemperatureReadingRe
           lte: endTime,
         },
       },
-      orderBy: { timestamp: 'asc' },
+      orderBy: { timestamp: "asc" },
     });
     return readings.map(this.mapToDomain);
   }
 
-  async findOutOfRangeByBatchId(batchId: string): Promise<TemperatureReading[]> {
+  async findOutOfRangeByBatchId(
+    batchId: string,
+  ): Promise<TemperatureReading[]> {
     const readings = await this.prisma.temperatureReading.findMany({
       where: {
         batchId,
         isOutOfRange: true,
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
     return readings.map(this.mapToDomain);
   }
@@ -94,23 +101,31 @@ export class PrismaTemperatureReadingRepository implements ITemperatureReadingRe
   async findBySensorId(sensorId: string): Promise<TemperatureReading[]> {
     const readings = await this.prisma.temperatureReading.findMany({
       where: { sensorId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
     return readings.map(this.mapToDomain);
   }
 
-  async findLatestByBatchId(batchId: string): Promise<TemperatureReading | null> {
+  async findLatestByBatchId(
+    batchId: string,
+  ): Promise<TemperatureReading | null> {
     const reading = await this.prisma.temperatureReading.findFirst({
       where: { batchId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
     });
     return reading ? this.mapToDomain(reading) : null;
   }
 
-  async create(input: CreateTemperatureReadingInput): Promise<TemperatureReading> {
+  async create(
+    input: CreateTemperatureReadingInput,
+  ): Promise<TemperatureReading> {
     const minThreshold = input.minThreshold ?? 0;
     const maxThreshold = input.maxThreshold ?? 8;
-    const isOutOfRange = !isTemperatureInRange(input.value, minThreshold, maxThreshold);
+    const isOutOfRange = !isTemperatureInRange(
+      input.value,
+      minThreshold,
+      maxThreshold,
+    );
 
     const reading = await this.prisma.temperatureReading.create({
       data: {
@@ -133,7 +148,7 @@ export class PrismaTemperatureReadingRepository implements ITemperatureReadingRe
   }
 
   async createMany(inputs: CreateTemperatureReadingInput[]): Promise<number> {
-    const data = inputs.map(input => {
+    const data = inputs.map((input) => {
       const minThreshold = input.minThreshold ?? 0;
       const maxThreshold = input.maxThreshold ?? 8;
       return {
@@ -143,7 +158,11 @@ export class PrismaTemperatureReadingRepository implements ITemperatureReadingRe
         source: input.source as PrismaTemperatureSource,
         minThreshold,
         maxThreshold,
-        isOutOfRange: !isTemperatureInRange(input.value, minThreshold, maxThreshold),
+        isOutOfRange: !isTemperatureInRange(
+          input.value,
+          minThreshold,
+          maxThreshold,
+        ),
         sensorId: input.sensorId,
         deviceId: input.deviceId,
         latitude: input.latitude,

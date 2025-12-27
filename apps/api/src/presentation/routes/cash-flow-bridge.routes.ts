@@ -10,15 +10,15 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient, UserRole } from '@prisma/client';
-import type { Redis } from 'ioredis';
-import { z } from 'zod';
-import rateLimit from 'express-rate-limit';
-import { createCreditScoreRouter } from '../../modules/cash-flow-bridge/controllers/credit-score.controller.js';
-import { createAdvanceRouter } from '../../modules/cash-flow-bridge/controllers/advance.controller.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import logger from '../../shared/utils/logger.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { PrismaClient, UserRole } from "@prisma/client";
+import type { Redis } from "ioredis";
+import { z } from "zod";
+import rateLimit from "express-rate-limit";
+import { createCreditScoreRouter } from "../../modules/cash-flow-bridge/controllers/credit-score.controller.js";
+import { createAdvanceRouter } from "../../modules/cash-flow-bridge/controllers/advance.controller.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import logger from "../../shared/utils/logger.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // RATE LIMITERS FOR FINANCIAL OPERATIONS
@@ -33,7 +33,8 @@ const advanceCalculationLimiter = rateLimit({
   max: 10, // 10 calculations per minute
   message: {
     success: false,
-    error: 'Rate limit exceeded for advance calculations. Try again in 1 minute.',
+    error:
+      "Rate limit exceeded for advance calculations. Try again in 1 minute.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -52,7 +53,7 @@ const advanceRequestLimiter = rateLimit({
   max: 5, // 5 advance requests per hour
   message: {
     success: false,
-    error: 'Rate limit exceeded for advance requests. Maximum 5 per hour.',
+    error: "Rate limit exceeded for advance requests. Maximum 5 per hour.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -68,7 +69,7 @@ const advanceRequestLimiter = rateLimit({
     });
     res.status(429).json({
       success: false,
-      error: 'Rate limit exceeded for advance requests. Maximum 5 per hour.',
+      error: "Rate limit exceeded for advance requests. Maximum 5 per hour.",
     });
   },
 });
@@ -81,7 +82,7 @@ const financialOperationLimiter = rateLimit({
   max: 20, // 20 operations per minute
   message: {
     success: false,
-    error: 'Rate limit exceeded for financial operations.',
+    error: "Rate limit exceeded for financial operations.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -98,10 +99,14 @@ const financialOperationLimiter = rateLimit({
 /**
  * Middleware to require admin or operator role
  */
-const requireAdminOrOperator = (req: Request, res: Response, next: NextFunction): void => {
+const requireAdminOrOperator = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   const user = req.user;
   if (!user) {
-    res.status(401).json({ success: false, error: 'Authentication required' });
+    res.status(401).json({ success: false, error: "Authentication required" });
     return;
   }
 
@@ -116,7 +121,7 @@ const requireAdminOrOperator = (req: Request, res: Response, next: NextFunction)
     });
     res.status(403).json({
       success: false,
-      error: 'Insufficient permissions. Admin role required.'
+      error: "Insufficient permissions. Admin role required.",
     });
     return;
   }
@@ -127,11 +132,13 @@ const requireAdminOrOperator = (req: Request, res: Response, next: NextFunction)
 /**
  * Middleware to verify farmer owns the resource or user is admin
  */
-const requireFarmerOwnershipOrAdmin = (farmerIdParam: string = 'farmerId') => {
+const requireFarmerOwnershipOrAdmin = (farmerIdParam: string = "farmerId") => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const user = req.user;
     if (!user) {
-      res.status(401).json({ success: false, error: 'Authentication required' });
+      res
+        .status(401)
+        .json({ success: false, error: "Authentication required" });
       return;
     }
 
@@ -148,7 +155,7 @@ const requireFarmerOwnershipOrAdmin = (farmerIdParam: string = 'farmerId') => {
       });
       res.status(403).json({
         success: false,
-        error: 'You can only access your own resources'
+        error: "You can only access your own resources",
       });
       return;
     }
@@ -177,14 +184,14 @@ function createOrdersRouter(prisma: PrismaClient): Router {
    * GET /orders/farmer/:farmerId
    * Get orders for a farmer with optional advance eligibility filter
    */
-  router.get('/farmer/:farmerId', async (req: Request, res: Response) => {
+  router.get("/farmer/:farmerId", async (req: Request, res: Response) => {
     try {
       const { farmerId } = req.params;
       const { advanceEligible, status } = req.query;
 
       const where: Record<string, unknown> = { producerId: farmerId };
 
-      if (advanceEligible === 'true') {
+      if (advanceEligible === "true") {
         where.advanceEligible = true;
       }
 
@@ -194,7 +201,7 @@ function createOrdersRouter(prisma: PrismaClient): Router {
 
       const orders = await prisma.order.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           advanceContract: {
             select: {
@@ -208,7 +215,7 @@ function createOrdersRouter(prisma: PrismaClient): Router {
 
       res.json({
         success: true,
-        data: orders.map(order => ({
+        data: orders.map((order) => ({
           ...order,
           totalAmount: Number(order.totalAmount),
           quantity: Number(order.quantity),
@@ -216,8 +223,8 @@ function createOrdersRouter(prisma: PrismaClient): Router {
         })),
       });
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -225,7 +232,7 @@ function createOrdersRouter(prisma: PrismaClient): Router {
    * GET /orders/:orderId
    * Get a single order by ID
    */
-  router.get('/:orderId', async (req: Request, res: Response) => {
+  router.get("/:orderId", async (req: Request, res: Response) => {
     try {
       const { orderId } = req.params;
 
@@ -242,7 +249,7 @@ function createOrdersRouter(prisma: PrismaClient): Router {
       });
 
       if (!order) {
-        res.status(404).json({ success: false, error: 'Order not found' });
+        res.status(404).json({ success: false, error: "Order not found" });
         return;
       }
 
@@ -256,8 +263,8 @@ function createOrdersRouter(prisma: PrismaClient): Router {
         },
       });
     } catch (error) {
-      console.error('Error fetching order:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching order:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -265,25 +272,30 @@ function createOrdersRouter(prisma: PrismaClient): Router {
    * PATCH /orders/:orderId/mark-advance-eligible
    * Mark an order as eligible for advance
    */
-  router.patch('/:orderId/mark-advance-eligible', async (req: Request, res: Response) => {
-    try {
-      const { orderId } = req.params;
+  router.patch(
+    "/:orderId/mark-advance-eligible",
+    async (req: Request, res: Response) => {
+      try {
+        const { orderId } = req.params;
 
-      const order = await prisma.order.update({
-        where: { id: orderId },
-        data: { advanceEligible: true },
-      });
+        const order = await prisma.order.update({
+          where: { id: orderId },
+          data: { advanceEligible: true },
+        });
 
-      res.json({
-        success: true,
-        data: order,
-        message: 'Order marked as advance eligible',
-      });
-    } catch (error) {
-      console.error('Error updating order:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
-    }
-  });
+        res.json({
+          success: true,
+          data: order,
+          message: "Order marked as advance eligible",
+        });
+      } catch (error) {
+        console.error("Error updating order:", error);
+        res
+          .status(500)
+          .json({ success: false, error: "Internal server error" });
+      }
+    },
+  );
 
   return router;
 }
@@ -299,15 +311,15 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
    * GET /liquidity-pools
    * List all liquidity pools
    */
-  router.get('/', async (req: Request, res: Response) => {
+  router.get("/", async (req: Request, res: Response) => {
     try {
       const pools = await prisma.liquidityPool.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       res.json({
         success: true,
-        data: pools.map(pool => ({
+        data: pools.map((pool) => ({
           ...pool,
           totalCapital: Number(pool.totalCapital),
           availableCapital: Number(pool.availableCapital),
@@ -315,14 +327,20 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
           reservedCapital: Number(pool.reservedCapital),
           targetReturnRate: Number(pool.targetReturnRate),
           actualReturnRate: Number(pool.actualReturnRate),
-          utilizationRate: Number(pool.totalCapital) > 0
-            ? Number(((Number(pool.deployedCapital) / Number(pool.totalCapital)) * 100).toFixed(2))
-            : 0,
+          utilizationRate:
+            Number(pool.totalCapital) > 0
+              ? Number(
+                  (
+                    (Number(pool.deployedCapital) / Number(pool.totalCapital)) *
+                    100
+                  ).toFixed(2),
+                )
+              : 0,
         })),
       });
     } catch (error) {
-      console.error('Error fetching pools:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching pools:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -330,7 +348,7 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
    * GET /liquidity-pools/:poolId
    * Get a single pool by ID
    */
-  router.get('/:poolId', async (req: Request, res: Response) => {
+  router.get("/:poolId", async (req: Request, res: Response) => {
     try {
       const { poolId } = req.params;
 
@@ -346,11 +364,11 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
               remainingBalance: true,
               createdAt: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             take: 10,
           },
           transactions: {
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             take: 20,
           },
           _count: {
@@ -360,7 +378,7 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
       });
 
       if (!pool) {
-        res.status(404).json({ success: false, error: 'Pool not found' });
+        res.status(404).json({ success: false, error: "Pool not found" });
         return;
       }
 
@@ -374,14 +392,20 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
           reservedCapital: Number(pool.reservedCapital),
           targetReturnRate: Number(pool.targetReturnRate),
           actualReturnRate: Number(pool.actualReturnRate),
-          utilizationRate: Number(pool.totalCapital) > 0
-            ? Number(((Number(pool.deployedCapital) / Number(pool.totalCapital)) * 100).toFixed(2))
-            : 0,
+          utilizationRate:
+            Number(pool.totalCapital) > 0
+              ? Number(
+                  (
+                    (Number(pool.deployedCapital) / Number(pool.totalCapital)) *
+                    100
+                  ).toFixed(2),
+                )
+              : 0,
         },
       });
     } catch (error) {
-      console.error('Error fetching pool:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching pool:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -389,7 +413,7 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
    * GET /liquidity-pools/:poolId/metrics
    * Get pool performance metrics
    */
-  router.get('/:poolId/metrics', async (req: Request, res: Response) => {
+  router.get("/:poolId/metrics", async (req: Request, res: Response) => {
     try {
       const { poolId } = req.params;
 
@@ -398,21 +422,24 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
       });
 
       if (!pool) {
-        res.status(404).json({ success: false, error: 'Pool not found' });
+        res.status(404).json({ success: false, error: "Pool not found" });
         return;
       }
 
       // Calculate metrics
       const activeAdvances = await prisma.advanceContract.count({
-        where: { poolId, status: { in: ['ACTIVE', 'DISBURSED', 'DELIVERY_IN_PROGRESS'] } },
+        where: {
+          poolId,
+          status: { in: ["ACTIVE", "DISBURSED", "DELIVERY_IN_PROGRESS"] },
+        },
       });
 
       const completedAdvances = await prisma.advanceContract.count({
-        where: { poolId, status: 'COMPLETED' },
+        where: { poolId, status: "COMPLETED" },
       });
 
       const defaultedAdvances = await prisma.advanceContract.count({
-        where: { poolId, status: { in: ['DEFAULTED', 'IN_COLLECTIONS'] } },
+        where: { poolId, status: { in: ["DEFAULTED", "IN_COLLECTIONS"] } },
       });
 
       const totalDisbursed = await prisma.advanceContract.aggregate({
@@ -432,15 +459,30 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
           totalCapital: Number(pool.totalCapital),
           availableCapital: Number(pool.availableCapital),
           deployedCapital: Number(pool.deployedCapital),
-          utilizationRate: Number(pool.totalCapital) > 0
-            ? Number(((Number(pool.deployedCapital) / Number(pool.totalCapital)) * 100).toFixed(2))
-            : 0,
+          utilizationRate:
+            Number(pool.totalCapital) > 0
+              ? Number(
+                  (
+                    (Number(pool.deployedCapital) / Number(pool.totalCapital)) *
+                    100
+                  ).toFixed(2),
+                )
+              : 0,
           activeAdvances,
           completedAdvances,
           defaultedAdvances,
-          defaultRate: (activeAdvances + completedAdvances + defaultedAdvances) > 0
-            ? Number(((defaultedAdvances / (activeAdvances + completedAdvances + defaultedAdvances)) * 100).toFixed(2))
-            : 0,
+          defaultRate:
+            activeAdvances + completedAdvances + defaultedAdvances > 0
+              ? Number(
+                  (
+                    (defaultedAdvances /
+                      (activeAdvances +
+                        completedAdvances +
+                        defaultedAdvances)) *
+                    100
+                  ).toFixed(2),
+                )
+              : 0,
           totalDisbursed: Number(totalDisbursed._sum.advanceAmount || 0),
           totalRepaid: Number(totalRepaid._sum.amountRepaid || 0),
           targetReturnRate: Number(pool.targetReturnRate),
@@ -448,8 +490,8 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
         },
       });
     } catch (error) {
-      console.error('Error fetching pool metrics:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching pool metrics:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -457,7 +499,7 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
    * GET /liquidity-pools/:poolId/transactions
    * Get pool transaction history
    */
-  router.get('/:poolId/transactions', async (req: Request, res: Response) => {
+  router.get("/:poolId/transactions", async (req: Request, res: Response) => {
     try {
       const { poolId } = req.params;
       const paginationResult = paginationSchema.safeParse(req.query);
@@ -468,7 +510,7 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
 
       const transactions = await prisma.poolTransaction.findMany({
         where: { poolId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       });
@@ -477,7 +519,7 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
 
       res.json({
         success: true,
-        data: transactions.map(tx => ({
+        data: transactions.map((tx) => ({
           ...tx,
           amount: Number(tx.amount),
           balanceBefore: Number(tx.balanceBefore),
@@ -491,8 +533,8 @@ function createLiquidityPoolRouter(prisma: PrismaClient): Router {
         },
       });
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -510,13 +552,14 @@ function createUsersRouter(prisma: PrismaClient): Router {
    * GET /users/me
    * Get current user with producer profile
    */
-  router.get('/me', async (req: Request, res: Response) => {
+  router.get("/me", async (req: Request, res: Response) => {
     try {
       // Get user ID from JWT (assumes auth middleware sets req.user)
-      const userId = (req as Request & { user?: { userId: string } }).user?.userId;
+      const userId = (req as Request & { user?: { userId: string } }).user
+        ?.userId;
 
       if (!userId) {
-        res.status(401).json({ success: false, error: 'Unauthorized' });
+        res.status(401).json({ success: false, error: "Unauthorized" });
         return;
       }
 
@@ -532,7 +575,7 @@ function createUsersRouter(prisma: PrismaClient): Router {
       });
 
       if (!user) {
-        res.status(404).json({ success: false, error: 'User not found' });
+        res.status(404).json({ success: false, error: "User not found" });
         return;
       }
 
@@ -544,24 +587,34 @@ function createUsersRouter(prisma: PrismaClient): Router {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
-          producer: user.producer ? {
-            id: user.producer.id,
-            businessName: user.producer.businessName,
-            state: user.producer.state,
-            municipality: user.producer.municipality,
-            isWhitelisted: user.producer.isWhitelisted,
-            creditScore: user.producer.creditScore ? {
-              overallScore: Number(user.producer.creditScore.overallScore),
-              riskTier: user.producer.creditScore.riskTier,
-              maxAdvanceAmount: Number(user.producer.creditScore.maxAdvanceAmount),
-              availableCredit: Number(user.producer.creditScore.availableCredit),
-            } : null,
-          } : null,
+          producer: user.producer
+            ? {
+                id: user.producer.id,
+                businessName: user.producer.businessName,
+                state: user.producer.state,
+                municipality: user.producer.municipality,
+                isWhitelisted: user.producer.isWhitelisted,
+                creditScore: user.producer.creditScore
+                  ? {
+                      overallScore: Number(
+                        user.producer.creditScore.overallScore,
+                      ),
+                      riskTier: user.producer.creditScore.riskTier,
+                      maxAdvanceAmount: Number(
+                        user.producer.creditScore.maxAdvanceAmount,
+                      ),
+                      availableCredit: Number(
+                        user.producer.creditScore.availableCredit,
+                      ),
+                    }
+                  : null,
+              }
+            : null,
         },
       });
     } catch (error) {
-      console.error('Error fetching current user:', error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
+      console.error("Error fetching current user:", error);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
   });
 
@@ -584,19 +637,19 @@ export function createCashFlowBridgeRouter(
   router.use(authenticate);
 
   // Credit Scores - with ownership verification
-  router.use('/credit-scores', createCreditScoreRouter(prisma, redis));
+  router.use("/credit-scores", createCreditScoreRouter(prisma, redis));
 
   // Advances - with rate limiting and ownership verification
-  router.use('/advances', createAdvanceRouter(prisma, redis));
+  router.use("/advances", createAdvanceRouter(prisma, redis));
 
   // Orders - farmers can only access their own orders
-  router.use('/orders', createOrdersRouter(prisma));
+  router.use("/orders", createOrdersRouter(prisma));
 
   // Liquidity Pools - admin only for write operations
-  router.use('/liquidity-pools', createLiquidityPoolRouter(prisma));
+  router.use("/liquidity-pools", createLiquidityPoolRouter(prisma));
 
   // Users extension
-  router.use('/users', createUsersRouter(prisma));
+  router.use("/users", createUsersRouter(prisma));
 
   return router;
 }

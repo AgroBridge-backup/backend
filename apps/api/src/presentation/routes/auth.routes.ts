@@ -5,12 +5,12 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response } from 'express';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { Password } from '../../domain/value-objects/Password.js';
-import { oAuthService } from '../../infrastructure/auth/oauth/OAuthService.js';
+import { Router, Request, Response } from "express";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { Password } from "../../domain/value-objects/Password.js";
+import { oAuthService } from "../../infrastructure/auth/oauth/OAuthService.js";
 import {
   loginSchema,
   registerSchema,
@@ -21,12 +21,12 @@ import {
   disable2FASchema,
   regenerateBackupCodesSchema,
   oauthCallbackSchema,
-} from '../validators/auth.validator.js';
+} from "../validators/auth.validator.js";
 
 // Types for extended auth use cases - using AllUseCases['auth'] for type compatibility
-import { AllUseCases } from '../../application/use-cases/index.js';
+import { AllUseCases } from "../../application/use-cases/index.js";
 
-type AuthUseCases = AllUseCases['auth'];
+type AuthUseCases = AllUseCases["auth"];
 
 export function createAuthRouter(useCases: AuthUseCases) {
   const router = Router();
@@ -44,7 +44,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Otherwise returns { accessToken, refreshToken }
    */
   router.post(
-    '/login',
+    "/login",
     RateLimiterConfig.auth(),
     validateRequest(loginSchema),
     async (req: Request, res: Response, next) => {
@@ -57,7 +57,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -66,7 +66,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Rate limited: 3 attempts per 15 minutes
    */
   router.post(
-    '/register',
+    "/register",
     RateLimiterConfig.auth(),
     validateRequest(registerSchema),
     async (req: Request, res: Response, next) => {
@@ -79,7 +79,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -88,7 +88,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Rate limited: 10 attempts per 15 minutes
    */
   router.post(
-    '/refresh',
+    "/refresh",
     RateLimiterConfig.tokenRefresh(),
     validateRequest(refreshTokenSchema),
     async (req: Request, res: Response, next) => {
@@ -101,45 +101,58 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
    * POST /api/v1/auth/logout
    * Logout and revoke current token
    */
-  router.post('/logout', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (req.user?.jti && req.user?.exp) {
-        await useCases.logoutUseCase.execute({ jti: req.user.jti, exp: req.user.exp });
+  router.post(
+    "/logout",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (req.user?.jti && req.user?.exp) {
+          await useCases.logoutUseCase.execute({
+            jti: req.user.jti,
+            exp: req.user.exp,
+          });
+        }
+        res.status(204).send();
+      } catch (error) {
+        next(error);
       }
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  });
+    },
+  );
 
   /**
    * GET /api/v1/auth/me
    * Get current authenticated user info
    */
-  router.get('/me', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (!req.user?.userId) {
-        return res.status(401).json({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+  router.get(
+    "/me",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (!req.user?.userId) {
+          return res.status(401).json({
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
+          });
+        }
+        const result = await useCases.getCurrentUserUseCase.execute({
+          userId: req.user.userId,
         });
+        res.json({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        next(error);
       }
-      const result = await useCases.getCurrentUserUseCase.execute({ userId: req.user.userId });
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
+    },
+  );
 
   /**
    * POST /api/v1/auth/password-strength
@@ -147,7 +160,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Public endpoint, moderately rate limited
    */
   router.post(
-    '/password-strength',
+    "/password-strength",
     RateLimiterConfig.api(),
     validateRequest(passwordStrengthSchema),
     async (req: Request, res: Response) => {
@@ -164,7 +177,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
           errors: errors.length > 0 ? errors : undefined,
         },
       });
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -177,7 +190,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Rate limited: 5 attempts per 5 minutes
    */
   router.post(
-    '/2fa/verify',
+    "/2fa/verify",
     RateLimiterConfig.twoFactor(),
     validateRequest(verify2FASchema),
     async (req: Request, res: Response, next) => {
@@ -190,7 +203,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -198,24 +211,30 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Initialize 2FA setup - generates secret and QR code
    * Requires authentication
    */
-  router.post('/2fa/setup', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (!req.user?.userId) {
-        return res.status(401).json({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
-        });
-      }
+  router.post(
+    "/2fa/setup",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (!req.user?.userId) {
+          return res.status(401).json({
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
+          });
+        }
 
-      const result = await useCases.setup2FAUseCase.execute({ userId: req.user.userId });
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
+        const result = await useCases.setup2FAUseCase.execute({
+          userId: req.user.userId,
+        });
+        res.json({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   /**
    * POST /api/v1/auth/2fa/enable
@@ -224,7 +243,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Requires authentication
    */
   router.post(
-    '/2fa/enable',
+    "/2fa/enable",
     authenticate(),
     validateRequest(enable2FASchema),
     async (req: Request, res: Response, next) => {
@@ -232,7 +251,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -247,7 +266,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -256,7 +275,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Requires authentication
    */
   router.post(
-    '/2fa/disable',
+    "/2fa/disable",
     authenticate(),
     validateRequest(disable2FASchema),
     async (req: Request, res: Response, next) => {
@@ -264,7 +283,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -279,7 +298,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -287,24 +306,30 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Get current 2FA status for the user
    * Requires authentication
    */
-  router.get('/2fa/status', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (!req.user?.userId) {
-        return res.status(401).json({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
-        });
-      }
+  router.get(
+    "/2fa/status",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (!req.user?.userId) {
+          return res.status(401).json({
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
+          });
+        }
 
-      const result = await useCases.get2FAStatusUseCase.execute({ userId: req.user.userId });
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
+        const result = await useCases.get2FAStatusUseCase.execute({
+          userId: req.user.userId,
+        });
+        res.json({
+          success: true,
+          data: result,
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   /**
    * POST /api/v1/auth/2fa/backup-codes
@@ -313,7 +338,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Requires authentication
    */
   router.post(
-    '/2fa/backup-codes',
+    "/2fa/backup-codes",
     authenticate(),
     validateRequest(regenerateBackupCodesSchema),
     async (req: Request, res: Response, next) => {
@@ -321,7 +346,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
@@ -336,7 +361,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -347,14 +372,18 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * GET /api/v1/auth/oauth/google
    * Redirect to Google OAuth login
    */
-  router.get('/oauth/google', RateLimiterConfig.oauth(), async (req: Request, res: Response, next) => {
-    try {
-      const authUrl = await oAuthService.getLoginUrl('google');
-      res.redirect(authUrl);
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.get(
+    "/oauth/google",
+    RateLimiterConfig.oauth(),
+    async (req: Request, res: Response, next) => {
+      try {
+        const authUrl = await oAuthService.getLoginUrl("google");
+        res.redirect(authUrl);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   /**
    * GET /api/v1/auth/oauth/google/callback
@@ -362,21 +391,27 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * SECURITY: Uses one-time code exchange instead of exposing tokens in URL
    */
   router.get(
-    '/oauth/google/callback',
+    "/oauth/google/callback",
     validateRequest(oauthCallbackSchema),
     async (req: Request, res: Response, next) => {
       try {
         const { code, state } = req.query as { code: string; state: string };
         const result = await oAuthService.handleCallback(code, state);
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         if (!result.success) {
-          res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(result.error || 'Authentication failed')}`);
+          res.redirect(
+            `${frontendUrl}/auth/callback?error=${encodeURIComponent(result.error || "Authentication failed")}`,
+          );
           return;
         }
 
         // Check if this is an auth result (has tokens) or link result
-        if ('accessToken' in result && result.accessToken && result.refreshToken) {
+        if (
+          "accessToken" in result &&
+          result.accessToken &&
+          result.refreshToken
+        ) {
           // SECURITY: Store tokens in Redis and return a one-time code
           // Tokens are never exposed in the URL
           const exchangeCode = await oAuthService.storeTokensForExchange(
@@ -386,39 +421,52 @@ export function createAuthRouter(useCases: AuthUseCases) {
               isNewUser: result.isNewUser,
               requires2FA: result.requires2FA,
               tempToken: result.tempToken,
-            }
+            },
           );
 
           if (result.requires2FA) {
             // 2FA required - include tempToken for verification flow
-            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}&requires2FA=true`);
+            res.redirect(
+              `${frontendUrl}/auth/callback?code=${exchangeCode}&requires2FA=true`,
+            );
           } else {
-            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}${result.isNewUser ? '&newUser=true' : ''}`);
+            res.redirect(
+              `${frontendUrl}/auth/callback?code=${exchangeCode}${result.isNewUser ? "&newUser=true" : ""}`,
+            );
           }
         } else {
           // Link result - redirect with success message
-          res.redirect(`${frontendUrl}/auth/callback?linked=true&provider=google`);
+          res.redirect(
+            `${frontendUrl}/auth/callback?linked=true&provider=google`,
+          );
         }
       } catch (error) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-        res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        const errorMessage =
+          error instanceof Error ? error.message : "Authentication failed";
+        res.redirect(
+          `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
+        );
       }
-    }
+    },
   );
 
   /**
    * GET /api/v1/auth/oauth/github
    * Redirect to GitHub OAuth login
    */
-  router.get('/oauth/github', RateLimiterConfig.oauth(), async (req: Request, res: Response, next) => {
-    try {
-      const authUrl = await oAuthService.getLoginUrl('github');
-      res.redirect(authUrl);
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.get(
+    "/oauth/github",
+    RateLimiterConfig.oauth(),
+    async (req: Request, res: Response, next) => {
+      try {
+        const authUrl = await oAuthService.getLoginUrl("github");
+        res.redirect(authUrl);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   /**
    * GET /api/v1/auth/oauth/github/callback
@@ -426,21 +474,27 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * SECURITY: Uses one-time code exchange instead of exposing tokens in URL
    */
   router.get(
-    '/oauth/github/callback',
+    "/oauth/github/callback",
     validateRequest(oauthCallbackSchema),
     async (req: Request, res: Response, next) => {
       try {
         const { code, state } = req.query as { code: string; state: string };
         const result = await oAuthService.handleCallback(code, state);
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
         if (!result.success) {
-          res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(result.error || 'Authentication failed')}`);
+          res.redirect(
+            `${frontendUrl}/auth/callback?error=${encodeURIComponent(result.error || "Authentication failed")}`,
+          );
           return;
         }
 
         // Check if this is an auth result (has tokens) or link result
-        if ('accessToken' in result && result.accessToken && result.refreshToken) {
+        if (
+          "accessToken" in result &&
+          result.accessToken &&
+          result.refreshToken
+        ) {
           // SECURITY: Store tokens in Redis and return a one-time code
           // Tokens are never exposed in the URL
           const exchangeCode = await oAuthService.storeTokensForExchange(
@@ -450,25 +504,34 @@ export function createAuthRouter(useCases: AuthUseCases) {
               isNewUser: result.isNewUser,
               requires2FA: result.requires2FA,
               tempToken: result.tempToken,
-            }
+            },
           );
 
           if (result.requires2FA) {
             // 2FA required - include tempToken for verification flow
-            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}&requires2FA=true`);
+            res.redirect(
+              `${frontendUrl}/auth/callback?code=${exchangeCode}&requires2FA=true`,
+            );
           } else {
-            res.redirect(`${frontendUrl}/auth/callback?code=${exchangeCode}${result.isNewUser ? '&newUser=true' : ''}`);
+            res.redirect(
+              `${frontendUrl}/auth/callback?code=${exchangeCode}${result.isNewUser ? "&newUser=true" : ""}`,
+            );
           }
         } else {
           // Link result - redirect with success message
-          res.redirect(`${frontendUrl}/auth/callback?linked=true&provider=github`);
+          res.redirect(
+            `${frontendUrl}/auth/callback?linked=true&provider=github`,
+          );
         }
       } catch (error) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-        res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        const errorMessage =
+          error instanceof Error ? error.message : "Authentication failed";
+        res.redirect(
+          `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
+        );
       }
-    }
+    },
   );
 
   /**
@@ -476,48 +539,62 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Link Google account to existing user
    * Requires authentication
    */
-  router.post('/oauth/link/google', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (!req.user?.userId) {
-        return res.status(401).json({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
-        });
-      }
+  router.post(
+    "/oauth/link/google",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (!req.user?.userId) {
+          return res.status(401).json({
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
+          });
+        }
 
-      const authUrl = await oAuthService.getLinkUrl('google', req.user.userId);
-      res.json({
-        success: true,
-        data: { authUrl },
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
+        const authUrl = await oAuthService.getLinkUrl(
+          "google",
+          req.user.userId,
+        );
+        res.json({
+          success: true,
+          data: { authUrl },
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   /**
    * POST /api/v1/auth/oauth/link/github
    * Link GitHub account to existing user
    * Requires authentication
    */
-  router.post('/oauth/link/github', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (!req.user?.userId) {
-        return res.status(401).json({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
-        });
-      }
+  router.post(
+    "/oauth/link/github",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (!req.user?.userId) {
+          return res.status(401).json({
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
+          });
+        }
 
-      const authUrl = await oAuthService.getLinkUrl('github', req.user.userId);
-      res.json({
-        success: true,
-        data: { authUrl },
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
+        const authUrl = await oAuthService.getLinkUrl(
+          "github",
+          req.user.userId,
+        );
+        res.json({
+          success: true,
+          data: { authUrl },
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   /**
    * DELETE /api/v1/auth/oauth/unlink/:provider
@@ -525,26 +602,32 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Requires authentication
    */
   router.delete(
-    '/oauth/unlink/:provider',
+    "/oauth/unlink/:provider",
     authenticate(),
     async (req: Request, res: Response, next) => {
       try {
         if (!req.user?.userId) {
           return res.status(401).json({
             success: false,
-            error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
           });
         }
 
-        const provider = req.params.provider as 'google' | 'github';
-        if (!['google', 'github'].includes(provider)) {
+        const provider = req.params.provider as "google" | "github";
+        if (!["google", "github"].includes(provider)) {
           return res.status(400).json({
             success: false,
-            error: { code: 'INVALID_PROVIDER', message: 'Invalid OAuth provider' },
+            error: {
+              code: "INVALID_PROVIDER",
+              message: "Invalid OAuth provider",
+            },
           });
         }
 
-        const result = await oAuthService.unlinkAccount(req.user.userId, provider);
+        const result = await oAuthService.unlinkAccount(
+          req.user.userId,
+          provider,
+        );
         res.json({
           success: true,
           data: result,
@@ -552,7 +635,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -560,24 +643,30 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * Get linked OAuth providers for user
    * Requires authentication
    */
-  router.get('/oauth/providers', authenticate(), async (req: Request, res: Response, next) => {
-    try {
-      if (!req.user?.userId) {
-        return res.status(401).json({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
-        });
-      }
+  router.get(
+    "/oauth/providers",
+    authenticate(),
+    async (req: Request, res: Response, next) => {
+      try {
+        if (!req.user?.userId) {
+          return res.status(401).json({
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "User not authenticated" },
+          });
+        }
 
-      const providers = await oAuthService.getLinkedProviders(req.user.userId);
-      res.json({
-        success: true,
-        data: { providers },
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
+        const providers = await oAuthService.getLinkedProviders(
+          req.user.userId,
+        );
+        res.json({
+          success: true,
+          data: { providers },
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // SECURE TOKEN EXCHANGE ENDPOINT
@@ -592,16 +681,19 @@ export function createAuthRouter(useCases: AuthUseCases) {
    * authorization code from the OAuth callback redirect.
    */
   router.post(
-    '/oauth/exchange',
+    "/oauth/exchange",
     RateLimiterConfig.auth(),
     async (req: Request, res: Response, next) => {
       try {
         const { code } = req.body;
 
-        if (!code || typeof code !== 'string') {
+        if (!code || typeof code !== "string") {
           return res.status(400).json({
             success: false,
-            error: { code: 'INVALID_REQUEST', message: 'Authorization code is required' },
+            error: {
+              code: "INVALID_REQUEST",
+              message: "Authorization code is required",
+            },
           });
         }
 
@@ -611,8 +703,9 @@ export function createAuthRouter(useCases: AuthUseCases) {
           return res.status(400).json({
             success: false,
             error: {
-              code: 'INVALID_CODE',
-              message: 'Invalid or expired authorization code. Please try logging in again.',
+              code: "INVALID_CODE",
+              message:
+                "Invalid or expired authorization code. Please try logging in again.",
             },
           });
         }
@@ -625,7 +718,7 @@ export function createAuthRouter(useCases: AuthUseCases) {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

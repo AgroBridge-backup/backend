@@ -4,14 +4,14 @@
  * Handles inspection creation, photo evidence, organic input tracking, and verification
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import {
   IFieldInspectionRepository,
   CreateFieldInspectionData,
   CreateInspectionPhotoData,
   CreateOrganicInputData,
   CreateFieldActivityData,
-} from '../repositories/IFieldInspectionRepository.js';
+} from "../repositories/IFieldInspectionRepository.js";
 import {
   FieldInspection,
   FieldInspectionWithDetails,
@@ -24,8 +24,8 @@ import {
   CreateOrganicInputInput,
   CreateFieldActivityInput,
   InspectionType,
-} from '../entities/FieldInspection.js';
-import { IOrganicFieldRepository } from '../repositories/IOrganicFieldRepository.js';
+} from "../entities/FieldInspection.js";
+import { IOrganicFieldRepository } from "../repositories/IOrganicFieldRepository.js";
 
 export interface FieldInspectionServiceDeps {
   inspectionRepository: IFieldInspectionRepository;
@@ -62,7 +62,7 @@ export class FieldInspectionService {
       gpsVerified = await this.fieldRepository.isPointWithinBoundary(
         input.fieldId,
         input.inspectorLat,
-        input.inspectorLng
+        input.inspectorLng,
       );
     }
 
@@ -92,10 +92,10 @@ export class FieldInspectionService {
       inspection,
       gpsVerified,
       message: gpsVerified
-        ? 'Inspection created with verified GPS location'
+        ? "Inspection created with verified GPS location"
         : input.inspectorLat !== undefined
-          ? 'Inspection created but GPS location is outside field boundary'
-          : 'Inspection created without GPS verification',
+          ? "Inspection created but GPS location is outside field boundary"
+          : "Inspection created without GPS verification",
     };
   }
 
@@ -109,7 +109,9 @@ export class FieldInspectionService {
   /**
    * Get inspection with all details (photos, inputs, activities)
    */
-  async getInspectionWithDetails(id: string): Promise<FieldInspectionWithDetails | null> {
+  async getInspectionWithDetails(
+    id: string,
+  ): Promise<FieldInspectionWithDetails | null> {
     return this.inspectionRepository.findByIdWithDetails(id);
   }
 
@@ -132,7 +134,7 @@ export class FieldInspectionService {
    */
   async listFieldInspections(
     fieldId: string,
-    filter?: Omit<FieldInspectionFilter, 'fieldId'>
+    filter?: Omit<FieldInspectionFilter, "fieldId">,
   ): Promise<{
     inspections: FieldInspection[];
     total: number;
@@ -151,20 +153,28 @@ export class FieldInspectionService {
     id: string,
     notes?: string,
     issues?: string,
-    recommendations?: string
+    recommendations?: string,
   ): Promise<FieldInspection> {
     const inspection = await this.inspectionRepository.findById(id);
     if (!inspection) {
       throw new Error(`Inspection not found: ${id}`);
     }
 
-    return this.inspectionRepository.updateNotes(id, notes, issues, recommendations);
+    return this.inspectionRepository.updateNotes(
+      id,
+      notes,
+      issues,
+      recommendations,
+    );
   }
 
   /**
    * Verify an inspection (by supervisor/certifier)
    */
-  async verifyInspection(id: string, verifiedBy: string): Promise<{
+  async verifyInspection(
+    id: string,
+    verifiedBy: string,
+  ): Promise<{
     inspection: FieldInspection;
     message: string;
   }> {
@@ -174,14 +184,17 @@ export class FieldInspectionService {
     }
 
     if (inspection.isVerified) {
-      throw new Error('Inspection is already verified');
+      throw new Error("Inspection is already verified");
     }
 
-    const verifiedInspection = await this.inspectionRepository.verify(id, verifiedBy);
+    const verifiedInspection = await this.inspectionRepository.verify(
+      id,
+      verifiedBy,
+    );
 
     return {
       inspection: verifiedInspection,
-      message: 'Inspection verified successfully',
+      message: "Inspection verified successfully",
     };
   }
 
@@ -193,7 +206,9 @@ export class FieldInspectionService {
     withinBoundary: boolean;
     distanceFromField?: number;
   }> {
-    const inspection = await this.inspectionRepository.findById(input.inspectionId);
+    const inspection = await this.inspectionRepository.findById(
+      input.inspectionId,
+    );
     if (!inspection) {
       throw new Error(`Inspection not found: ${input.inspectionId}`);
     }
@@ -206,7 +221,7 @@ export class FieldInspectionService {
       withinBoundary = await this.fieldRepository.isPointWithinBoundary(
         inspection.fieldId,
         input.latitude,
-        input.longitude
+        input.longitude,
       );
 
       if (!withinBoundary) {
@@ -217,7 +232,7 @@ export class FieldInspectionService {
             input.latitude,
             input.longitude,
             field.centerLat,
-            field.centerLng
+            field.centerLng,
           );
         }
       }
@@ -254,7 +269,9 @@ export class FieldInspectionService {
     organicInput: OrganicInput;
     message: string;
   }> {
-    const inspection = await this.inspectionRepository.findById(input.inspectionId);
+    const inspection = await this.inspectionRepository.findById(
+      input.inspectionId,
+    );
     if (!inspection) {
       throw new Error(`Inspection not found: ${input.inspectionId}`);
     }
@@ -275,16 +292,17 @@ export class FieldInspectionService {
       supplier: input.supplier,
       ocrExtractedData: input.ocrExtractedData,
       ocrConfidence: input.ocrConfidence,
-      verificationStatus: 'PENDING',
+      verificationStatus: "PENDING",
     };
 
     const organicInput = await this.inspectionRepository.addOrganicInput(data);
 
     return {
       organicInput,
-      message: organicInput.isOmriListed || organicInput.isOrganicApproved
-        ? 'Organic input recorded with certification'
-        : 'Organic input recorded - pending verification',
+      message:
+        organicInput.isOmriListed || organicInput.isOrganicApproved
+          ? "Organic input recorded with certification"
+          : "Organic input recorded - pending verification",
     };
   }
 
@@ -295,7 +313,7 @@ export class FieldInspectionService {
     inputId: string,
     verifiedBy: string,
     approved: boolean,
-    rejectionReason?: string
+    rejectionReason?: string,
   ): Promise<{
     organicInput: OrganicInput;
     message: string;
@@ -304,14 +322,14 @@ export class FieldInspectionService {
       inputId,
       verifiedBy,
       approved,
-      rejectionReason
+      rejectionReason,
     );
 
     return {
       organicInput,
       message: approved
-        ? 'Organic input verified and approved'
-        : `Organic input rejected: ${rejectionReason || 'No reason provided'}`,
+        ? "Organic input verified and approved"
+        : `Organic input rejected: ${rejectionReason || "No reason provided"}`,
     };
   }
 
@@ -322,7 +340,9 @@ export class FieldInspectionService {
     activity: FieldActivity;
     message: string;
   }> {
-    const inspection = await this.inspectionRepository.findById(input.inspectionId);
+    const inspection = await this.inspectionRepository.findById(
+      input.inspectionId,
+    );
     if (!inspection) {
       throw new Error(`Inspection not found: ${input.inspectionId}`);
     }
@@ -398,12 +418,16 @@ export class FieldInspectionService {
   /**
    * Check if field needs inspection (based on days since last inspection)
    */
-  async fieldNeedsInspection(fieldId: string, maxDaysSinceInspection: number = 30): Promise<{
+  async fieldNeedsInspection(
+    fieldId: string,
+    maxDaysSinceInspection: number = 30,
+  ): Promise<{
     needsInspection: boolean;
     daysSinceLastInspection: number | null;
     lastInspectionDate: Date | null;
   }> {
-    const lastInspectionDate = await this.inspectionRepository.getLastInspectionDate(fieldId);
+    const lastInspectionDate =
+      await this.inspectionRepository.getLastInspectionDate(fieldId);
 
     if (!lastInspectionDate) {
       return {
@@ -414,7 +438,7 @@ export class FieldInspectionService {
     }
 
     const daysSinceLastInspection = Math.floor(
-      (Date.now() - lastInspectionDate.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - lastInspectionDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     return {
@@ -427,7 +451,12 @@ export class FieldInspectionService {
   /**
    * Calculate Haversine distance between two GPS coordinates (in meters)
    */
-  private haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  private haversineDistance(
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number,
+  ): number {
     const R = 6371000; // Earth radius in meters
     const φ1 = (lat1 * Math.PI) / 180;
     const φ2 = (lat2 * Math.PI) / 180;

@@ -3,6 +3,6 @@ import { IBatchRepository } from "../../../domain/repositories/IBatchRepository.
 export class GetBatchByNumberUseCase {
   constructor(private readonly batchRepository: IBatchRepository) {}
   async execute(dto: any): Promise<any> {
-    return { id: 'dummy-batch-id', batchNumber: dto.batchNumber };
+    return { id: "dummy-batch-id", batchNumber: dto.batchNumber };
   }
 }

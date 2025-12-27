@@ -1,5 +1,5 @@
-import { IUseCase } from '../../../shared/interfaces/IUseCase.js';
-import { RedisClient } from '../../../infrastructure/cache/RedisClient.js';
+import { IUseCase } from "../../../shared/interfaces/IUseCase.js";
+import { RedisClient } from "../../../infrastructure/cache/RedisClient.js";
 
 interface ILogoutDTO {
   jti: string;

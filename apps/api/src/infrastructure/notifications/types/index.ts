@@ -17,7 +17,7 @@ import type {
   NotificationPriority,
   Platform,
   DeliveryStatus,
-} from '@prisma/client';
+} from "@prisma/client";
 
 // Re-export Prisma types for convenience
 export type {
@@ -213,7 +213,7 @@ export interface EmailAttachment {
   /** MIME type */
   type: string;
   /** Disposition: attachment or inline */
-  disposition: 'attachment' | 'inline';
+  disposition: "attachment" | "inline";
   /** Content ID for inline images */
   contentId?: string;
 }
@@ -225,7 +225,7 @@ export interface EmailSendResult extends BaseSendResult {
   /** HTTP status code from provider */
   statusCode?: number;
   /** Email provider used (ses, sendgrid) */
-  provider?: 'ses' | 'sendgrid';
+  provider?: "ses" | "sendgrid";
   /** Number of retry attempts (for resilient service) */
   attempt?: number;
 }

@@ -3,19 +3,25 @@
  * API Routes for Certificate Issuance and Verification
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { UserRole, CertificateGrade as PrismaCertificateGrade } from '@prisma/client';
-import { CertificateGrade } from '../../domain/entities/QualityCertificate.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { IssueCertificateUseCase } from '../../application/use-cases/certificates/IssueCertificateUseCase.js';
-import { GetCertificateUseCase } from '../../application/use-cases/certificates/GetCertificateUseCase.js';
-import { ListBatchCertificatesUseCase } from '../../application/use-cases/certificates/ListBatchCertificatesUseCase.js';
-import { VerifyCertificateUseCase } from '../../application/use-cases/certificates/VerifyCertificateUseCase.js';
-import { CheckCertificateEligibilityUseCase } from '../../application/use-cases/certificates/CheckCertificateEligibilityUseCase.js';
-import { isValidCertificateGrade, VALID_CERTIFICATE_GRADES } from '../validation/certificate.schemas.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import {
+  UserRole,
+  CertificateGrade as PrismaCertificateGrade,
+} from "@prisma/client";
+import { CertificateGrade } from "../../domain/entities/QualityCertificate.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { IssueCertificateUseCase } from "../../application/use-cases/certificates/IssueCertificateUseCase.js";
+import { GetCertificateUseCase } from "../../application/use-cases/certificates/GetCertificateUseCase.js";
+import { ListBatchCertificatesUseCase } from "../../application/use-cases/certificates/ListBatchCertificatesUseCase.js";
+import { VerifyCertificateUseCase } from "../../application/use-cases/certificates/VerifyCertificateUseCase.js";
+import { CheckCertificateEligibilityUseCase } from "../../application/use-cases/certificates/CheckCertificateEligibilityUseCase.js";
+import {
+  isValidCertificateGrade,
+  VALID_CERTIFICATE_GRADES,
+} from "../validation/certificate.schemas.js";
 
 export interface CertificatesUseCases {
   issueCertificateUseCase: IssueCertificateUseCase;
@@ -25,7 +31,9 @@ export interface CertificatesUseCases {
   checkCertificateEligibilityUseCase: CheckCertificateEligibilityUseCase;
 }
 
-export function createCertificatesRouter(useCases?: CertificatesUseCases): Router {
+export function createCertificatesRouter(
+  useCases?: CertificatesUseCases,
+): Router {
   const router = Router();
 
   // Guard: Return empty router if use cases not provided
@@ -51,7 +59,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
     }),
     query: z.object({
       grade: z.string().refine(isValidCertificateGrade, {
-        message: `Invalid grade. Must be one of: ${VALID_CERTIFICATE_GRADES.join(', ')}`,
+        message: `Invalid grade. Must be one of: ${VALID_CERTIFICATE_GRADES.join(", ")}`,
       }),
     }),
   });
@@ -67,7 +75,10 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
       id: z.string().uuid(),
     }),
     query: z.object({
-      validOnly: z.string().optional().transform(val => val === 'true'),
+      validOnly: z
+        .string()
+        .optional()
+        .transform((val) => val === "true"),
     }),
   });
 
@@ -78,7 +89,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
    * Validates required stages are approved based on grade
    */
   router.post(
-    '/batches/:id/certificates',
+    "/batches/:id/certificates",
     authenticate([UserRole.CERTIFIER, UserRole.ADMIN]),
     RateLimiterConfig.creation(),
     validateRequest(issueCertificateSchema),
@@ -100,13 +111,13 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
             blockchainTxId: result.blockchainTxId,
           },
           message: result.blockchainTxId
-            ? 'Certificate issued and stored on blockchain.'
-            : 'Certificate issued. Blockchain storage pending.',
+            ? "Certificate issued and stored on blockchain."
+            : "Certificate issued. Blockchain storage pending.",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -115,15 +126,16 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
    * Optional query param: validOnly=true to filter non-expired certificates
    */
   router.get(
-    '/batches/:id/certificates',
+    "/batches/:id/certificates",
     authenticate(),
     validateRequest(listCertificatesSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const certificates = await useCases.listBatchCertificatesUseCase.execute({
-          batchId: req.params.id,
-          validOnly: req.query.validOnly === 'true',
-        });
+        const certificates =
+          await useCases.listBatchCertificatesUseCase.execute({
+            batchId: req.params.id,
+            validOnly: req.query.validOnly === "true",
+          });
 
         res.status(200).json({
           success: true,
@@ -135,7 +147,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -143,17 +155,18 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
    * Check if a batch can receive a certificate of a specific grade
    */
   router.get(
-    '/batches/:id/certificates/eligibility',
+    "/batches/:id/certificates/eligibility",
     authenticate(),
     validateRequest(checkEligibilitySchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         // Grade has already been validated by Zod schema
         const validatedGrade = req.query.grade as CertificateGrade;
-        const result = await useCases.checkCertificateEligibilityUseCase.execute({
-          batchId: req.params.id,
-          grade: validatedGrade,
-        });
+        const result =
+          await useCases.checkCertificateEligibilityUseCase.execute({
+            batchId: req.params.id,
+            grade: validatedGrade,
+          });
 
         res.status(200).json({
           success: true,
@@ -162,7 +175,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -170,7 +183,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
    * Get certificate details by ID
    */
   router.get(
-    '/certificates/:certificateId',
+    "/certificates/:certificateId",
     authenticate(),
     validateRequest(certificateIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -186,7 +199,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -196,7 +209,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
    * Public endpoint for external verification (rate limited to prevent abuse)
    */
   router.get(
-    '/certificates/:certificateId/verify',
+    "/certificates/:certificateId/verify",
     RateLimiterConfig.api(), // Rate limit public endpoint to prevent DoS
     validateRequest(certificateIdSchema),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -232,7 +245,7 @@ export function createCertificatesRouter(useCases?: CertificatesUseCases): Route
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

@@ -14,11 +14,18 @@
  * @author AgroBridge Engineering Team
  */
 
-import { PrismaClient, SubscriptionTier, SubscriptionStatus } from '@prisma/client';
-import Stripe from 'stripe';
-import { stripeProvider, StripeProviderError } from '../providers/StripeProvider.js';
-import { TIER_CONFIGS } from '../PaymentService.js';
-import logger from '../../../shared/utils/logger.js';
+import {
+  PrismaClient,
+  SubscriptionTier,
+  SubscriptionStatus,
+} from "@prisma/client";
+import Stripe from "stripe";
+import {
+  stripeProvider,
+  StripeProviderError,
+} from "../providers/StripeProvider.js";
+import { TIER_CONFIGS } from "../PaymentService.js";
+import logger from "../../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -41,10 +48,10 @@ export class WebhookHandlerError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly statusCode: number = 400
+    public readonly statusCode: number = 400,
   ) {
     super(message);
-    this.name = 'WebhookHandlerError';
+    this.name = "WebhookHandlerError";
   }
 }
 
@@ -60,7 +67,7 @@ export class StripeWebhookHandler {
    */
   async handleWebhook(
     payload: string | Buffer,
-    signature: string
+    signature: string,
   ): Promise<WebhookResult> {
     // Verify webhook signature and construct event
     let event: Stripe.Event;
@@ -71,13 +78,13 @@ export class StripeWebhookHandler {
         throw new WebhookHandlerError(
           error.message,
           error.code,
-          error.statusCode
+          error.statusCode,
         );
       }
       throw error;
     }
 
-    logger.info('[StripeWebhook] Received event', {
+    logger.info("[StripeWebhook] Received event", {
       type: event.type,
       id: event.id,
     });
@@ -86,50 +93,52 @@ export class StripeWebhookHandler {
     try {
       switch (event.type) {
         // Subscription events
-        case 'customer.subscription.created':
+        case "customer.subscription.created":
           return await this.handleSubscriptionCreated(event);
-        case 'customer.subscription.updated':
+        case "customer.subscription.updated":
           return await this.handleSubscriptionUpdated(event);
-        case 'customer.subscription.deleted':
+        case "customer.subscription.deleted":
           return await this.handleSubscriptionDeleted(event);
 
         // Invoice events
-        case 'invoice.payment_succeeded':
+        case "invoice.payment_succeeded":
           return await this.handleInvoicePaymentSucceeded(event);
-        case 'invoice.payment_failed':
+        case "invoice.payment_failed":
           return await this.handleInvoicePaymentFailed(event);
-        case 'invoice.finalized':
+        case "invoice.finalized":
           return await this.handleInvoiceFinalized(event);
 
         // Payment intent events
-        case 'payment_intent.succeeded':
+        case "payment_intent.succeeded":
           return await this.handlePaymentIntentSucceeded(event);
-        case 'payment_intent.payment_failed':
+        case "payment_intent.payment_failed":
           return await this.handlePaymentIntentFailed(event);
 
         // Customer events
-        case 'customer.updated':
+        case "customer.updated":
           return await this.handleCustomerUpdated(event);
-        case 'customer.deleted':
+        case "customer.deleted":
           return await this.handleCustomerDeleted(event);
 
         // Checkout session events
-        case 'checkout.session.completed':
+        case "checkout.session.completed":
           return await this.handleCheckoutSessionCompleted(event);
 
         default:
-          logger.debug('[StripeWebhook] Unhandled event type', { type: event.type });
+          logger.debug("[StripeWebhook] Unhandled event type", {
+            type: event.type,
+          });
           return {
             success: true,
             eventType: event.type,
-            message: 'Event received but not processed',
+            message: "Event received but not processed",
           };
       }
     } catch (error) {
-      logger.error('[StripeWebhook] Error processing event', {
+      logger.error("[StripeWebhook] Error processing event", {
         type: event.type,
         id: event.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       });
       throw error;
     }
@@ -142,25 +151,28 @@ export class StripeWebhookHandler {
   /**
    * Handle subscription created event
    */
-  private async handleSubscriptionCreated(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleSubscriptionCreated(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const subscription = event.data.object as Stripe.Subscription;
-    const customerId = typeof subscription.customer === 'string'
-      ? subscription.customer
-      : subscription.customer.id;
+    const customerId =
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : subscription.customer.id;
 
     const dbSubscription = await this.prisma.subscription.findUnique({
       where: { stripeCustomerId: customerId },
     });
 
     if (!dbSubscription) {
-      logger.warn('[StripeWebhook] Subscription created for unknown customer', {
+      logger.warn("[StripeWebhook] Subscription created for unknown customer", {
         customerId,
         subscriptionId: subscription.id,
       });
       return {
         success: true,
         eventType: event.type,
-        message: 'Customer not found in database',
+        message: "Customer not found in database",
       };
     }
 
@@ -175,8 +187,14 @@ export class StripeWebhookHandler {
         stripePriceId: subscription.items.data[0]?.price?.id,
         tier,
         status: this.mapStripeStatus(subscription.status),
-        currentPeriodStart: new Date((subscription.items.data[0]?.current_period_start ?? Math.floor(Date.now() / 1000)) * 1000),
-        currentPeriodEnd: new Date((subscription.items.data[0]?.current_period_end ?? Math.floor(Date.now() / 1000)) * 1000),
+        currentPeriodStart: new Date(
+          (subscription.items.data[0]?.current_period_start ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
+        currentPeriodEnd: new Date(
+          (subscription.items.data[0]?.current_period_end ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         trialEnd: subscription.trial_end
           ? new Date(subscription.trial_end * 1000)
@@ -187,7 +205,7 @@ export class StripeWebhookHandler {
       },
     });
 
-    logger.info('[StripeWebhook] Subscription created in database', {
+    logger.info("[StripeWebhook] Subscription created in database", {
       customerId,
       subscriptionId: subscription.id,
       tier,
@@ -196,7 +214,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Subscription created',
+      message: "Subscription created",
       data: { subscriptionId: subscription.id, tier },
     };
   }
@@ -204,25 +222,28 @@ export class StripeWebhookHandler {
   /**
    * Handle subscription updated event
    */
-  private async handleSubscriptionUpdated(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleSubscriptionUpdated(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const subscription = event.data.object as Stripe.Subscription;
-    const customerId = typeof subscription.customer === 'string'
-      ? subscription.customer
-      : subscription.customer.id;
+    const customerId =
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : subscription.customer.id;
 
     const dbSubscription = await this.prisma.subscription.findUnique({
       where: { stripeCustomerId: customerId },
     });
 
     if (!dbSubscription) {
-      logger.warn('[StripeWebhook] Subscription updated for unknown customer', {
+      logger.warn("[StripeWebhook] Subscription updated for unknown customer", {
         customerId,
         subscriptionId: subscription.id,
       });
       return {
         success: true,
         eventType: event.type,
-        message: 'Customer not found in database',
+        message: "Customer not found in database",
       };
     }
 
@@ -236,8 +257,14 @@ export class StripeWebhookHandler {
         stripePriceId: subscription.items.data[0]?.price?.id,
         tier,
         status: this.mapStripeStatus(subscription.status),
-        currentPeriodStart: new Date((subscription.items.data[0]?.current_period_start ?? Math.floor(Date.now() / 1000)) * 1000),
-        currentPeriodEnd: new Date((subscription.items.data[0]?.current_period_end ?? Math.floor(Date.now() / 1000)) * 1000),
+        currentPeriodStart: new Date(
+          (subscription.items.data[0]?.current_period_start ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
+        currentPeriodEnd: new Date(
+          (subscription.items.data[0]?.current_period_end ??
+            Math.floor(Date.now() / 1000)) * 1000,
+        ),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         canceledAt: subscription.canceled_at
           ? new Date(subscription.canceled_at * 1000)
@@ -251,7 +278,7 @@ export class StripeWebhookHandler {
       },
     });
 
-    logger.info('[StripeWebhook] Subscription updated', {
+    logger.info("[StripeWebhook] Subscription updated", {
       customerId,
       subscriptionId: subscription.id,
       status: subscription.status,
@@ -261,33 +288,40 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Subscription updated',
-      data: { subscriptionId: subscription.id, status: subscription.status, tier },
+      message: "Subscription updated",
+      data: {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        tier,
+      },
     };
   }
 
   /**
    * Handle subscription deleted event
    */
-  private async handleSubscriptionDeleted(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleSubscriptionDeleted(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const subscription = event.data.object as Stripe.Subscription;
-    const customerId = typeof subscription.customer === 'string'
-      ? subscription.customer
-      : subscription.customer.id;
+    const customerId =
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : subscription.customer.id;
 
     const dbSubscription = await this.prisma.subscription.findUnique({
       where: { stripeCustomerId: customerId },
     });
 
     if (!dbSubscription) {
-      logger.warn('[StripeWebhook] Subscription deleted for unknown customer', {
+      logger.warn("[StripeWebhook] Subscription deleted for unknown customer", {
         customerId,
         subscriptionId: subscription.id,
       });
       return {
         success: true,
         eventType: event.type,
-        message: 'Customer not found in database',
+        message: "Customer not found in database",
       };
     }
 
@@ -308,7 +342,7 @@ export class StripeWebhookHandler {
       },
     });
 
-    logger.info('[StripeWebhook] Subscription deleted, reverted to FREE', {
+    logger.info("[StripeWebhook] Subscription deleted, reverted to FREE", {
       customerId,
       subscriptionId: subscription.id,
     });
@@ -316,7 +350,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Subscription deleted, reverted to FREE tier',
+      message: "Subscription deleted, reverted to FREE tier",
       data: { subscriptionId: subscription.id },
     };
   }
@@ -328,18 +362,23 @@ export class StripeWebhookHandler {
   /**
    * Handle invoice payment succeeded event
    */
-  private async handleInvoicePaymentSucceeded(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleInvoicePaymentSucceeded(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const invoice = event.data.object as Stripe.Invoice;
-    const customerId = typeof invoice.customer === 'string'
-      ? invoice.customer
-      : invoice.customer?.id;
+    const customerId =
+      typeof invoice.customer === "string"
+        ? invoice.customer
+        : invoice.customer?.id;
 
     if (!customerId) {
-      logger.warn('[StripeWebhook] Invoice without customer', { invoiceId: invoice.id });
+      logger.warn("[StripeWebhook] Invoice without customer", {
+        invoiceId: invoice.id,
+      });
       return {
         success: true,
         eventType: event.type,
-        message: 'Invoice has no customer',
+        message: "Invoice has no customer",
       };
     }
 
@@ -348,23 +387,26 @@ export class StripeWebhookHandler {
     });
 
     if (!dbSubscription) {
-      logger.warn('[StripeWebhook] Invoice payment for unknown customer', {
+      logger.warn("[StripeWebhook] Invoice payment for unknown customer", {
         customerId,
         invoiceId: invoice.id,
       });
       return {
         success: true,
         eventType: event.type,
-        message: 'Customer not found in database',
+        message: "Customer not found in database",
       };
     }
 
     // Record payment
     // In Stripe v20, payment_intent was moved. Access it with type assertion.
-    const invoiceWithPaymentIntent = invoice as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent };
-    const paymentIntentId = typeof invoiceWithPaymentIntent.payment_intent === 'string'
-      ? invoiceWithPaymentIntent.payment_intent
-      : invoiceWithPaymentIntent.payment_intent?.id;
+    const invoiceWithPaymentIntent = invoice as Stripe.Invoice & {
+      payment_intent?: string | Stripe.PaymentIntent;
+    };
+    const paymentIntentId =
+      typeof invoiceWithPaymentIntent.payment_intent === "string"
+        ? invoiceWithPaymentIntent.payment_intent
+        : invoiceWithPaymentIntent.payment_intent?.id;
 
     if (paymentIntentId) {
       await this.prisma.payment.upsert({
@@ -375,13 +417,13 @@ export class StripeWebhookHandler {
           stripeInvoiceId: invoice.id,
           amount: invoice.amount_paid,
           currency: invoice.currency,
-          status: 'succeeded',
-          description: invoice.description || 'Subscription payment',
+          status: "succeeded",
+          description: invoice.description || "Subscription payment",
           receiptUrl: invoice.hosted_invoice_url,
           invoicePdf: invoice.invoice_pdf,
         },
         update: {
-          status: 'succeeded',
+          status: "succeeded",
           receiptUrl: invoice.hosted_invoice_url,
           invoicePdf: invoice.invoice_pdf,
         },
@@ -398,7 +440,7 @@ export class StripeWebhookHandler {
       },
     });
 
-    logger.info('[StripeWebhook] Invoice payment succeeded', {
+    logger.info("[StripeWebhook] Invoice payment succeeded", {
       customerId,
       invoiceId: invoice.id,
       amount: invoice.amount_paid,
@@ -407,7 +449,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Invoice payment recorded',
+      message: "Invoice payment recorded",
       data: { invoiceId: invoice.id, amount: invoice.amount_paid },
     };
   }
@@ -415,17 +457,20 @@ export class StripeWebhookHandler {
   /**
    * Handle invoice payment failed event
    */
-  private async handleInvoicePaymentFailed(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleInvoicePaymentFailed(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const invoice = event.data.object as Stripe.Invoice;
-    const customerId = typeof invoice.customer === 'string'
-      ? invoice.customer
-      : invoice.customer?.id;
+    const customerId =
+      typeof invoice.customer === "string"
+        ? invoice.customer
+        : invoice.customer?.id;
 
     if (!customerId) {
       return {
         success: true,
         eventType: event.type,
-        message: 'Invoice has no customer',
+        message: "Invoice has no customer",
       };
     }
 
@@ -437,16 +482,19 @@ export class StripeWebhookHandler {
       return {
         success: true,
         eventType: event.type,
-        message: 'Customer not found in database',
+        message: "Customer not found in database",
       };
     }
 
     // Record failed payment
     // In Stripe v20, payment_intent was moved. Access it with type assertion.
-    const invoiceWithPaymentIntent = invoice as Stripe.Invoice & { payment_intent?: string | Stripe.PaymentIntent };
-    const paymentIntentId = typeof invoiceWithPaymentIntent.payment_intent === 'string'
-      ? invoiceWithPaymentIntent.payment_intent
-      : invoiceWithPaymentIntent.payment_intent?.id;
+    const invoiceWithPaymentIntent = invoice as Stripe.Invoice & {
+      payment_intent?: string | Stripe.PaymentIntent;
+    };
+    const paymentIntentId =
+      typeof invoiceWithPaymentIntent.payment_intent === "string"
+        ? invoiceWithPaymentIntent.payment_intent
+        : invoiceWithPaymentIntent.payment_intent?.id;
 
     if (paymentIntentId) {
       const failureMessage = invoice.last_finalization_error?.message;
@@ -459,12 +507,12 @@ export class StripeWebhookHandler {
           stripeInvoiceId: invoice.id,
           amount: invoice.amount_due,
           currency: invoice.currency,
-          status: 'failed',
-          description: invoice.description || 'Subscription payment',
+          status: "failed",
+          description: invoice.description || "Subscription payment",
           failureMessage,
         },
         update: {
-          status: 'failed',
+          status: "failed",
           failureMessage,
         },
       });
@@ -478,7 +526,7 @@ export class StripeWebhookHandler {
       },
     });
 
-    logger.warn('[StripeWebhook] Invoice payment failed', {
+    logger.warn("[StripeWebhook] Invoice payment failed", {
       customerId,
       invoiceId: invoice.id,
       amount: invoice.amount_due,
@@ -489,7 +537,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Payment failure recorded',
+      message: "Payment failure recorded",
       data: { invoiceId: invoice.id, amount: invoice.amount_due },
     };
   }
@@ -497,10 +545,12 @@ export class StripeWebhookHandler {
   /**
    * Handle invoice finalized event
    */
-  private async handleInvoiceFinalized(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleInvoiceFinalized(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const invoice = event.data.object as Stripe.Invoice;
 
-    logger.info('[StripeWebhook] Invoice finalized', {
+    logger.info("[StripeWebhook] Invoice finalized", {
       invoiceId: invoice.id,
       number: invoice.number,
       amount: invoice.amount_due,
@@ -509,7 +559,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Invoice finalized',
+      message: "Invoice finalized",
       data: { invoiceId: invoice.id, number: invoice.number },
     };
   }
@@ -521,7 +571,9 @@ export class StripeWebhookHandler {
   /**
    * Handle payment intent succeeded event
    */
-  private async handlePaymentIntentSucceeded(event: Stripe.Event): Promise<WebhookResult> {
+  private async handlePaymentIntentSucceeded(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
     // Update payment record if exists
@@ -533,7 +585,7 @@ export class StripeWebhookHandler {
       await this.prisma.payment.update({
         where: { id: payment.id },
         data: {
-          status: 'succeeded',
+          status: "succeeded",
           receiptUrl: paymentIntent.latest_charge
             ? `https://dashboard.stripe.com/payments/${paymentIntent.latest_charge}`
             : undefined,
@@ -541,7 +593,7 @@ export class StripeWebhookHandler {
       });
     }
 
-    logger.info('[StripeWebhook] Payment intent succeeded', {
+    logger.info("[StripeWebhook] Payment intent succeeded", {
       paymentIntentId: paymentIntent.id,
       amount: paymentIntent.amount,
     });
@@ -549,7 +601,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Payment intent succeeded',
+      message: "Payment intent succeeded",
       data: { paymentIntentId: paymentIntent.id, amount: paymentIntent.amount },
     };
   }
@@ -557,7 +609,9 @@ export class StripeWebhookHandler {
   /**
    * Handle payment intent failed event
    */
-  private async handlePaymentIntentFailed(event: Stripe.Event): Promise<WebhookResult> {
+  private async handlePaymentIntentFailed(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
     // Update payment record if exists
@@ -569,14 +623,14 @@ export class StripeWebhookHandler {
       await this.prisma.payment.update({
         where: { id: payment.id },
         data: {
-          status: 'failed',
+          status: "failed",
           failureCode: paymentIntent.last_payment_error?.code,
           failureMessage: paymentIntent.last_payment_error?.message,
         },
       });
     }
 
-    logger.warn('[StripeWebhook] Payment intent failed', {
+    logger.warn("[StripeWebhook] Payment intent failed", {
       paymentIntentId: paymentIntent.id,
       errorCode: paymentIntent.last_payment_error?.code,
     });
@@ -584,7 +638,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Payment intent failed',
+      message: "Payment intent failed",
       data: {
         paymentIntentId: paymentIntent.id,
         errorCode: paymentIntent.last_payment_error?.code,
@@ -599,10 +653,12 @@ export class StripeWebhookHandler {
   /**
    * Handle customer updated event
    */
-  private async handleCustomerUpdated(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleCustomerUpdated(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const customer = event.data.object as Stripe.Customer;
 
-    logger.info('[StripeWebhook] Customer updated', {
+    logger.info("[StripeWebhook] Customer updated", {
       customerId: customer.id,
       email: customer.email,
     });
@@ -610,7 +666,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Customer updated',
+      message: "Customer updated",
       data: { customerId: customer.id },
     };
   }
@@ -618,7 +674,9 @@ export class StripeWebhookHandler {
   /**
    * Handle customer deleted event
    */
-  private async handleCustomerDeleted(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleCustomerDeleted(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const customer = event.data.object as unknown as Stripe.DeletedCustomer;
 
     const dbSubscription = await this.prisma.subscription.findUnique({
@@ -637,14 +695,14 @@ export class StripeWebhookHandler {
       });
     }
 
-    logger.info('[StripeWebhook] Customer deleted', {
+    logger.info("[StripeWebhook] Customer deleted", {
       customerId: customer.id,
     });
 
     return {
       success: true,
       eventType: event.type,
-      message: 'Customer deleted',
+      message: "Customer deleted",
       data: { customerId: customer.id },
     };
   }
@@ -656,10 +714,12 @@ export class StripeWebhookHandler {
   /**
    * Handle checkout session completed event
    */
-  private async handleCheckoutSessionCompleted(event: Stripe.Event): Promise<WebhookResult> {
+  private async handleCheckoutSessionCompleted(
+    event: Stripe.Event,
+  ): Promise<WebhookResult> {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    logger.info('[StripeWebhook] Checkout session completed', {
+    logger.info("[StripeWebhook] Checkout session completed", {
       sessionId: session.id,
       mode: session.mode,
       customerId: session.customer,
@@ -668,7 +728,7 @@ export class StripeWebhookHandler {
     return {
       success: true,
       eventType: event.type,
-      message: 'Checkout session completed',
+      message: "Checkout session completed",
       data: { sessionId: session.id, mode: session.mode },
     };
   }
@@ -680,23 +740,25 @@ export class StripeWebhookHandler {
   /**
    * Map Stripe subscription status to our status
    */
-  private mapStripeStatus(status: Stripe.Subscription.Status): SubscriptionStatus {
+  private mapStripeStatus(
+    status: Stripe.Subscription.Status,
+  ): SubscriptionStatus {
     switch (status) {
-      case 'active':
+      case "active":
         return SubscriptionStatus.ACTIVE;
-      case 'past_due':
+      case "past_due":
         return SubscriptionStatus.PAST_DUE;
-      case 'canceled':
+      case "canceled":
         return SubscriptionStatus.CANCELED;
-      case 'incomplete':
+      case "incomplete":
         return SubscriptionStatus.INCOMPLETE;
-      case 'incomplete_expired':
+      case "incomplete_expired":
         return SubscriptionStatus.INCOMPLETE_EXPIRED;
-      case 'trialing':
+      case "trialing":
         return SubscriptionStatus.TRIALING;
-      case 'unpaid':
+      case "unpaid":
         return SubscriptionStatus.UNPAID;
-      case 'paused':
+      case "paused":
         return SubscriptionStatus.PAUSED;
       default:
         return SubscriptionStatus.ACTIVE;
@@ -706,7 +768,9 @@ export class StripeWebhookHandler {
   /**
    * Get tier from Stripe subscription metadata or price ID
    */
-  private getTierFromSubscription(subscription: Stripe.Subscription): SubscriptionTier {
+  private getTierFromSubscription(
+    subscription: Stripe.Subscription,
+  ): SubscriptionTier {
     // Check metadata first
     if (subscription.metadata?.tier) {
       const tier = subscription.metadata.tier.toUpperCase() as SubscriptionTier;
@@ -734,6 +798,8 @@ export class StripeWebhookHandler {
 }
 
 // Export factory function
-export function createStripeWebhookHandler(prisma: PrismaClient): StripeWebhookHandler {
+export function createStripeWebhookHandler(
+  prisma: PrismaClient,
+): StripeWebhookHandler {
   return new StripeWebhookHandler(prisma);
 }

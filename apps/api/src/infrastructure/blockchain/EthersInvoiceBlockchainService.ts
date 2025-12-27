@@ -3,14 +3,14 @@
  * Handles invoice registration and verification on blockchain
  */
 
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 import {
   IInvoiceBlockchainService,
   InvoiceBlockchainData,
   InvoiceRegistrationResult,
   InvoiceVerificationResult,
-} from '../../domain/services/IInvoiceBlockchainService.js';
-import { logger } from '../logging/logger.js';
+} from "../../domain/services/IInvoiceBlockchainService.js";
+import { logger } from "../logging/logger.js";
 
 interface InvoiceBlockchainConfig {
   rpcUrl: string;
@@ -22,21 +22,23 @@ interface InvoiceBlockchainConfig {
 
 // InvoiceRegistry Contract ABI (simplified)
 const INVOICE_REGISTRY_ABI = [
-  'function registerInvoice(bytes32 invoiceHash, string uuid, string folio, address producer, uint256 total, string currency, uint256 issuedAt) returns (bool)',
-  'function getInvoice(bytes32 invoiceHash) view returns (tuple(bytes32 invoiceHash, string uuid, string folio, address producer, uint256 total, string currency, uint256 issuedAt, uint256 registeredAt, bool exists))',
-  'function isInvoiceRegistered(bytes32 invoiceHash) view returns (bool)',
-  'event InvoiceRegistered(bytes32 indexed invoiceHash, string uuid, string folio, address indexed producer, uint256 total, uint256 timestamp)',
+  "function registerInvoice(bytes32 invoiceHash, string uuid, string folio, address producer, uint256 total, string currency, uint256 issuedAt) returns (bool)",
+  "function getInvoice(bytes32 invoiceHash) view returns (tuple(bytes32 invoiceHash, string uuid, string folio, address producer, uint256 total, string currency, uint256 issuedAt, uint256 registeredAt, bool exists))",
+  "function isInvoiceRegistered(bytes32 invoiceHash) view returns (bool)",
+  "event InvoiceRegistered(bytes32 indexed invoiceHash, string uuid, string folio, address indexed producer, uint256 total, uint256 timestamp)",
 ];
 
 // P1-7 FIX: Fallback status when blockchain is unavailable
 export const BLOCKCHAIN_STATUS = {
-  CONFIRMED: 'CONFIRMED',
-  PENDING: 'PENDING',
-  UNAVAILABLE: 'BLOCKCHAIN_UNAVAILABLE',
-  FAILED: 'FAILED',
+  CONFIRMED: "CONFIRMED",
+  PENDING: "PENDING",
+  UNAVAILABLE: "BLOCKCHAIN_UNAVAILABLE",
+  FAILED: "FAILED",
 } as const;
 
-export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService {
+export class EthersInvoiceBlockchainService
+  implements IInvoiceBlockchainService
+{
   private provider: ethers.providers.JsonRpcProvider;
   private wallet: ethers.Wallet;
   private contract: ethers.Contract;
@@ -53,7 +55,7 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
 
     this.provider = new ethers.providers.JsonRpcProvider(
       config.rpcUrl,
-      config.chainId
+      config.chainId,
     );
 
     this.wallet = new ethers.Wallet(config.privateKey, this.provider);
@@ -61,10 +63,10 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
     this.contract = new ethers.Contract(
       config.contractAddress,
       INVOICE_REGISTRY_ABI,
-      this.wallet
+      this.wallet,
     );
 
-    logger.info('EthersInvoiceBlockchainService initialized', {
+    logger.info("EthersInvoiceBlockchainService initialized", {
       network: this.networkName,
       contractAddress: config.contractAddress,
     });
@@ -77,7 +79,7 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
    */
   hashInvoice(data: InvoiceBlockchainData): string {
     const encoded = ethers.utils.defaultAbiCoder.encode(
-      ['string', 'string', 'string', 'string', 'uint256', 'string', 'uint256'],
+      ["string", "string", "string", "string", "uint256", "string", "uint256"],
       [
         data.uuid,
         data.folio,
@@ -86,7 +88,7 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
         Math.round(data.total * 100), // Convert to cents
         data.currency,
         Math.floor(data.issuedAt.getTime() / 1000),
-      ]
+      ],
     );
     return ethers.utils.keccak256(encoded);
   }
@@ -94,7 +96,10 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
   /**
    * P1-7 FIX: Timeout wrapper for RPC calls
    */
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = this.RPC_TIMEOUT_MS): Promise<T> {
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number = this.RPC_TIMEOUT_MS,
+  ): Promise<T> {
     let timeoutId: NodeJS.Timeout;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
@@ -115,16 +120,20 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
   /**
    * P1-7 FIX: Notify admin of blockchain failure
    */
-  private async notifyBlockchainFailure(type: string, id: string, error: any): Promise<void> {
+  private async notifyBlockchainFailure(
+    type: string,
+    id: string,
+    error: any,
+  ): Promise<void> {
     // Log critical error for monitoring systems (Sentry, CloudWatch, etc.)
-    logger.error('🚨 BLOCKCHAIN FAILURE ALERT', {
+    logger.error("🚨 BLOCKCHAIN FAILURE ALERT", {
       type,
       id,
       error: error.message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
       network: this.networkName,
-      action: 'REQUIRES_RETRY',
+      action: "REQUIRES_RETRY",
     });
 
     // TODO: In production, send to Slack/PagerDuty/Email
@@ -138,82 +147,86 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
    * @returns Registration result with transaction hash and blockchain hash
    */
   async registerInvoice(
-    data: InvoiceBlockchainData
+    data: InvoiceBlockchainData,
   ): Promise<InvoiceRegistrationResult> {
     const invoiceHash = this.hashInvoice(data);
 
     try {
       // P1-7 FIX: Wrap in timeout to prevent hanging
-      return await this.withTimeout(this.executeWithRetry(async () => {
-        logger.info('Registering invoice on blockchain', {
-          uuid: data.uuid,
-          folio: data.folio,
-          invoiceHash,
-        });
+      return await this.withTimeout(
+        this.executeWithRetry(async () => {
+          logger.info("Registering invoice on blockchain", {
+            uuid: data.uuid,
+            folio: data.folio,
+            invoiceHash,
+          });
 
-        // Estimate gas
-        const estimatedGas = await this.contract.registerInvoice.estimateGas(
-          invoiceHash,
-          data.uuid,
-          data.folio,
-          this.wallet.address, // Use wallet as producer address
-          Math.round(data.total * 100),
-          data.currency,
-          Math.floor(data.issuedAt.getTime() / 1000)
-        );
-        const gasLimit = Math.ceil(Number(estimatedGas) * this.GAS_LIMIT_BUFFER);
+          // Estimate gas
+          const estimatedGas = await this.contract.registerInvoice.estimateGas(
+            invoiceHash,
+            data.uuid,
+            data.folio,
+            this.wallet.address, // Use wallet as producer address
+            Math.round(data.total * 100),
+            data.currency,
+            Math.floor(data.issuedAt.getTime() / 1000),
+          );
+          const gasLimit = Math.ceil(
+            Number(estimatedGas) * this.GAS_LIMIT_BUFFER,
+          );
 
-        // Get fee data
-        const feeData = await this.provider.getFeeData();
+          // Get fee data
+          const feeData = await this.provider.getFeeData();
 
-        // Send transaction
-        const tx = await this.contract.registerInvoice(
-          invoiceHash,
-          data.uuid,
-          data.folio,
-          this.wallet.address,
-          Math.round(data.total * 100),
-          data.currency,
-          Math.floor(data.issuedAt.getTime() / 1000),
-          {
-            gasLimit,
-            maxFeePerGas: feeData.maxFeePerGas,
-            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+          // Send transaction
+          const tx = await this.contract.registerInvoice(
+            invoiceHash,
+            data.uuid,
+            data.folio,
+            this.wallet.address,
+            Math.round(data.total * 100),
+            data.currency,
+            Math.floor(data.issuedAt.getTime() / 1000),
+            {
+              gasLimit,
+              maxFeePerGas: feeData.maxFeePerGas,
+              maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+            },
+          );
+
+          logger.info("Invoice registration transaction sent", {
+            txHash: tx.hash,
+            uuid: data.uuid,
+          });
+
+          // Wait for confirmation
+          const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
+
+          if (!receipt || receipt.status !== 1) {
+            throw new Error("Transaction failed");
           }
-        );
 
-        logger.info('Invoice registration transaction sent', {
-          txHash: tx.hash,
-          uuid: data.uuid,
-        });
+          logger.info("Invoice registered successfully", {
+            txHash: receipt.hash,
+            gasUsed: receipt.gasUsed.toString(),
+            uuid: data.uuid,
+          });
 
-        // Wait for confirmation
-        const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
-
-        if (!receipt || receipt.status !== 1) {
-          throw new Error('Transaction failed');
-        }
-
-        logger.info('Invoice registered successfully', {
-          txHash: receipt.hash,
-          gasUsed: receipt.gasUsed.toString(),
-          uuid: data.uuid,
-        });
-
-        return {
-          success: true,
-          txHash: receipt.hash,
-          blockchainHash: invoiceHash,
-          network: this.networkName,
-          timestamp: new Date(),
-          gasUsed: receipt.gasUsed.toString(),
-        };
-      }));
+          return {
+            success: true,
+            txHash: receipt.hash,
+            blockchainHash: invoiceHash,
+            network: this.networkName,
+            timestamp: new Date(),
+            gasUsed: receipt.gasUsed.toString(),
+          };
+        }),
+      );
     } catch (error: any) {
       // P1-7 FIX: Return fallback result instead of throwing
-      await this.notifyBlockchainFailure('invoice', data.uuid, error);
+      await this.notifyBlockchainFailure("invoice", data.uuid, error);
 
-      logger.warn('Blockchain registration failed, returning fallback', {
+      logger.warn("Blockchain registration failed, returning fallback", {
         uuid: data.uuid,
         error: error.message,
       });
@@ -227,7 +240,8 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
         timestamp: new Date(),
         gasUsed: null,
         status: BLOCKCHAIN_STATUS.UNAVAILABLE,
-        error: 'Blockchain temporarily unavailable. Invoice created, verification pending.',
+        error:
+          "Blockchain temporarily unavailable. Invoice created, verification pending.",
       };
     }
   }
@@ -240,10 +254,11 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
    */
   async verifyInvoice(
     uuid: string,
-    expectedHash: string
+    expectedHash: string,
   ): Promise<InvoiceVerificationResult> {
     try {
-      const isRegistered = await this.contract.isInvoiceRegistered(expectedHash);
+      const isRegistered =
+        await this.contract.isInvoiceRegistered(expectedHash);
 
       if (!isRegistered) {
         return {
@@ -265,7 +280,7 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
         network: this.networkName,
       };
     } catch (error: any) {
-      logger.error('Failed to verify invoice on blockchain', {
+      logger.error("Failed to verify invoice on blockchain", {
         error: error.message,
         uuid,
       });
@@ -302,13 +317,13 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
    */
   private async executeWithRetry<T>(
     fn: () => Promise<T>,
-    attempt = 1
+    attempt = 1,
   ): Promise<T> {
     try {
       return await fn();
     } catch (error: any) {
       if (attempt >= this.MAX_RETRIES) {
-        logger.error('Max retries reached for blockchain operation', {
+        logger.error("Max retries reached for blockchain operation", {
           attempt,
           error: error.message,
         });
@@ -316,7 +331,7 @@ export class EthersInvoiceBlockchainService implements IInvoiceBlockchainService
       }
 
       const delay = this.RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-      logger.warn('Retrying blockchain operation', {
+      logger.warn("Retrying blockchain operation", {
         attempt,
         delay,
         error: error.message,

@@ -3,9 +3,12 @@
  * Use Case: Record Batch Temperatures (IoT bulk insert)
  */
 
-import { TemperatureMonitoringService, RecordTemperatureInput } from '../../../domain/services/TemperatureMonitoringService.js';
-import { TemperatureSource } from '../../../domain/entities/TemperatureReading.js';
-import { AppError } from '../../../shared/errors/AppError.js';
+import {
+  TemperatureMonitoringService,
+  RecordTemperatureInput,
+} from "../../../domain/services/TemperatureMonitoringService.js";
+import { TemperatureSource } from "../../../domain/entities/TemperatureReading.js";
+import { AppError } from "../../../shared/errors/AppError.js";
 
 export interface BatchTemperatureReadingDTO {
   batchId: string;
@@ -30,13 +33,15 @@ export interface RecordBatchTemperaturesResult {
 export class RecordBatchTemperaturesUseCase {
   constructor(private temperatureService: TemperatureMonitoringService) {}
 
-  async execute(input: RecordBatchTemperaturesDTO): Promise<RecordBatchTemperaturesResult> {
+  async execute(
+    input: RecordBatchTemperaturesDTO,
+  ): Promise<RecordBatchTemperaturesResult> {
     if (!input.readings || input.readings.length === 0) {
-      throw new AppError('At least one reading is required', 400);
+      throw new AppError("At least one reading is required", 400);
     }
 
     if (input.readings.length > 1000) {
-      throw new AppError('Maximum 1000 readings per batch insert', 400);
+      throw new AppError("Maximum 1000 readings per batch insert", 400);
     }
 
     // Validate all readings
@@ -44,15 +49,24 @@ export class RecordBatchTemperaturesUseCase {
       const reading = input.readings[i];
 
       if (reading.value < -50 || reading.value > 60) {
-        throw new AppError(`Reading ${i}: Temperature value out of reasonable range (-50 to 60°C)`, 400);
+        throw new AppError(
+          `Reading ${i}: Temperature value out of reasonable range (-50 to 60°C)`,
+          400,
+        );
       }
 
-      if (reading.humidity !== undefined && (reading.humidity < 0 || reading.humidity > 100)) {
-        throw new AppError(`Reading ${i}: Humidity must be between 0 and 100%`, 400);
+      if (
+        reading.humidity !== undefined &&
+        (reading.humidity < 0 || reading.humidity > 100)
+      ) {
+        throw new AppError(
+          `Reading ${i}: Humidity must be between 0 and 100%`,
+          400,
+        );
       }
     }
 
-    const readings: RecordTemperatureInput[] = input.readings.map(r => ({
+    const readings: RecordTemperatureInput[] = input.readings.map((r) => ({
       batchId: r.batchId,
       value: r.value,
       humidity: r.humidity,

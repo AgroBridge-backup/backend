@@ -3,10 +3,14 @@
  * Use Case: Create a new transit session
  */
 
-import { TransitTrackingService } from '../../../domain/services/TransitTrackingService.js';
-import { TransitSession, CreateTransitSessionInput } from '../../../domain/entities/TransitSession.js';
+import { TransitTrackingService } from "../../../domain/services/TransitTrackingService.js";
+import {
+  TransitSession,
+  CreateTransitSessionInput,
+} from "../../../domain/entities/TransitSession.js";
 
-export interface CreateTransitSessionRequest extends CreateTransitSessionInput {}
+export interface CreateTransitSessionRequest
+  extends CreateTransitSessionInput {}
 
 export class CreateTransitSessionUseCase {
   constructor(private transitService: TransitTrackingService) {}

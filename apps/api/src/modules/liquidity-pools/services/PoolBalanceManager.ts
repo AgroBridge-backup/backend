@@ -16,8 +16,8 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import type { Redis } from 'ioredis';
+import { PrismaClient, Prisma } from "@prisma/client";
+import type { Redis } from "ioredis";
 import {
   PoolStatus,
   RiskTier,
@@ -32,7 +32,7 @@ import {
   calculateUtilizationRate,
   calculateReserveRatio,
   assessPoolHealth,
-} from '../types/PoolTypes.js';
+} from "../types/PoolTypes.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -42,7 +42,7 @@ const CACHE_KEYS = {
   POOL_BALANCE: (poolId: string) => `cfb:pool:balance:${poolId}`,
   POOL_RESERVED: (poolId: string) => `cfb:pool:reserved:${poolId}`,
   RESERVATION: (reservationId: string) => `cfb:reservation:${reservationId}`,
-  ALL_POOLS_SUMMARY: 'cfb:pools:summary',
+  ALL_POOLS_SUMMARY: "cfb:pools:summary",
   BALANCE_LOCK: (poolId: string) => `cfb:lock:balance:${poolId}`,
 } as const;
 
@@ -54,9 +54,9 @@ const CACHE_TTL = {
 } as const;
 
 const PUBSUB_CHANNELS = {
-  BALANCE_CHANGED: 'cfb:balance:changed',
-  RESERVATION_CREATED: 'cfb:reservation:created',
-  RESERVATION_RELEASED: 'cfb:reservation:released',
+  BALANCE_CHANGED: "cfb:balance:changed",
+  RESERVATION_CREATED: "cfb:reservation:created",
+  RESERVATION_RELEASED: "cfb:reservation:released",
 } as const;
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -74,7 +74,7 @@ export interface BalanceReservation {
   farmerId: string;
   expiresAt: Date;
   createdAt: Date;
-  status: 'ACTIVE' | 'COMMITTED' | 'RELEASED' | 'EXPIRED';
+  status: "ACTIVE" | "COMMITTED" | "RELEASED" | "EXPIRED";
 }
 
 /**
@@ -93,8 +93,12 @@ export interface ReservationRequest {
  */
 export interface BalanceUpdateOperation {
   poolId: string;
-  operation: 'INCREMENT' | 'DECREMENT' | 'SET';
-  field: 'availableCapital' | 'deployedCapital' | 'reservedCapital' | 'totalCapital';
+  operation: "INCREMENT" | "DECREMENT" | "SET";
+  field:
+    | "availableCapital"
+    | "deployedCapital"
+    | "reservedCapital"
+    | "totalCapital";
   amount: number;
   transactionType: PoolTransactionType;
   description: string;
@@ -127,7 +131,10 @@ export interface BatchBalanceUpdate {
 export class PoolBalanceManager {
   private readonly prisma: PrismaClient;
   private readonly redis: Redis | null;
-  private readonly eventSubscribers: Map<string, Set<(event: PoolBalanceChange) => void>>;
+  private readonly eventSubscribers: Map<
+    string,
+    Set<(event: PoolBalanceChange) => void>
+  >;
 
   constructor(prisma: PrismaClient, redis?: Redis) {
     this.prisma = prisma;
@@ -262,7 +269,7 @@ export class PoolBalanceManager {
 
     const summary: PoolBalanceSummary = {
       totalPools: pools.length,
-      activePools: pools.filter((p) => p.status === 'ACTIVE').length,
+      activePools: pools.filter((p) => p.status === "ACTIVE").length,
       aggregateCapital: {
         total: 0,
         available: 0,
@@ -344,7 +351,7 @@ export class PoolBalanceManager {
     if (!lockAcquired) {
       return {
         success: false,
-        error: 'Could not acquire lock for pool. Please retry.',
+        error: "Could not acquire lock for pool. Please retry.",
       };
     }
 
@@ -352,7 +359,7 @@ export class PoolBalanceManager {
       // Get current balance
       const balance = await this.getBalance(request.poolId);
       if (!balance) {
-        return { success: false, error: 'Pool not found' };
+        return { success: false, error: "Pool not found" };
       }
 
       // Check if reservation is possible
@@ -371,7 +378,7 @@ export class PoolBalanceManager {
         farmerId: request.farmerId,
         expiresAt: new Date(Date.now() + ttl * 1000),
         createdAt: new Date(),
-        status: 'ACTIVE',
+        status: "ACTIVE",
       };
 
       if (this.redis) {
@@ -426,16 +433,21 @@ export class PoolBalanceManager {
       return { success: true }; // No-op without Redis
     }
 
-    const reservationData = await this.redis.get(CACHE_KEYS.RESERVATION(reservationId));
+    const reservationData = await this.redis.get(
+      CACHE_KEYS.RESERVATION(reservationId),
+    );
     if (!reservationData) {
-      return { success: false, error: 'Reservation not found or expired' };
+      return { success: false, error: "Reservation not found or expired" };
     }
 
     const reservation = JSON.parse(reservationData) as BalanceReservation;
 
     // Remove reservation
     await this.redis.del(CACHE_KEYS.RESERVATION(reservationId));
-    await this.redis.hdel(CACHE_KEYS.POOL_RESERVED(reservation.poolId), reservationId);
+    await this.redis.hdel(
+      CACHE_KEYS.POOL_RESERVED(reservation.poolId),
+      reservationId,
+    );
     await this.invalidateBalanceCache(reservation.poolId);
 
     return { success: true };
@@ -453,9 +465,11 @@ export class PoolBalanceManager {
       return { success: true, releasedAmount: 0 };
     }
 
-    const reservationData = await this.redis.get(CACHE_KEYS.RESERVATION(reservationId));
+    const reservationData = await this.redis.get(
+      CACHE_KEYS.RESERVATION(reservationId),
+    );
     if (!reservationData) {
-      return { success: false, error: 'Reservation not found or expired' };
+      return { success: false, error: "Reservation not found or expired" };
     }
 
     const reservation = JSON.parse(reservationData) as BalanceReservation;
@@ -463,13 +477,16 @@ export class PoolBalanceManager {
     // Acquire lock
     const lockAcquired = await this.acquireLock(reservation.poolId);
     if (!lockAcquired) {
-      return { success: false, error: 'Could not acquire lock' };
+      return { success: false, error: "Could not acquire lock" };
     }
 
     try {
       // Remove reservation
       await this.redis.del(CACHE_KEYS.RESERVATION(reservationId));
-      await this.redis.hdel(CACHE_KEYS.POOL_RESERVED(reservation.poolId), reservationId);
+      await this.redis.hdel(
+        CACHE_KEYS.POOL_RESERVED(reservation.poolId),
+        reservationId,
+      );
       await this.invalidateBalanceCache(reservation.poolId);
 
       // Publish event
@@ -490,7 +507,9 @@ export class PoolBalanceManager {
   async getPoolReservations(poolId: string): Promise<BalanceReservation[]> {
     if (!this.redis) return [];
 
-    const reservationAmounts = await this.redis.hgetall(CACHE_KEYS.POOL_RESERVED(poolId));
+    const reservationAmounts = await this.redis.hgetall(
+      CACHE_KEYS.POOL_RESERVED(poolId),
+    );
     const reservations: BalanceReservation[] = [];
 
     for (const reservationId of Object.keys(reservationAmounts)) {
@@ -522,31 +541,38 @@ export class PoolBalanceManager {
   }> {
     const lockAcquired = await this.acquireLock(operation.poolId);
     if (!lockAcquired) {
-      return { success: false, error: 'Could not acquire lock' };
+      return { success: false, error: "Could not acquire lock" };
     }
 
     try {
       // Get current balance
       const balanceBefore = await this.getBalance(operation.poolId);
       if (!balanceBefore) {
-        return { success: false, error: 'Pool not found' };
+        return { success: false, error: "Pool not found" };
       }
 
       // Build update data
       const updateData: Prisma.LiquidityPoolUpdateInput = {};
-      const fieldValue = this.getBalanceFieldValue(balanceBefore, operation.field);
+      const fieldValue = this.getBalanceFieldValue(
+        balanceBefore,
+        operation.field,
+      );
 
       let newValue: number;
       switch (operation.operation) {
-        case 'INCREMENT':
+        case "INCREMENT":
           newValue = fieldValue + operation.amount;
-          updateData[operation.field] = { increment: new Prisma.Decimal(operation.amount) };
+          updateData[operation.field] = {
+            increment: new Prisma.Decimal(operation.amount),
+          };
           break;
-        case 'DECREMENT':
+        case "DECREMENT":
           newValue = fieldValue - operation.amount;
-          updateData[operation.field] = { decrement: new Prisma.Decimal(operation.amount) };
+          updateData[operation.field] = {
+            decrement: new Prisma.Decimal(operation.amount),
+          };
           break;
-        case 'SET':
+        case "SET":
           newValue = operation.amount;
           updateData[operation.field] = new Prisma.Decimal(operation.amount);
           break;
@@ -590,8 +616,13 @@ export class PoolBalanceManager {
           amount: operation.amount,
           balanceBefore,
           balanceAfter,
-          relatedEntityId: operation.relatedAdvanceId || operation.relatedInvestorId,
-          relatedEntityType: operation.relatedAdvanceId ? 'ADVANCE' : operation.relatedInvestorId ? 'INVESTOR' : undefined,
+          relatedEntityId:
+            operation.relatedAdvanceId || operation.relatedInvestorId,
+          relatedEntityType: operation.relatedAdvanceId
+            ? "ADVANCE"
+            : operation.relatedInvestorId
+              ? "INVESTOR"
+              : undefined,
           timestamp: new Date(),
         });
       }
@@ -639,22 +670,31 @@ export class PoolBalanceManager {
               throw new Error(`Pool ${operation.poolId} not found`);
             }
 
-            const fieldValue = this.getBalanceFieldValueFromPool(pool, operation.field);
+            const fieldValue = this.getBalanceFieldValueFromPool(
+              pool,
+              operation.field,
+            );
             let newValue: number;
 
             const updateData: Prisma.LiquidityPoolUpdateInput = {};
             switch (operation.operation) {
-              case 'INCREMENT':
+              case "INCREMENT":
                 newValue = fieldValue + operation.amount;
-                updateData[operation.field] = { increment: new Prisma.Decimal(operation.amount) };
+                updateData[operation.field] = {
+                  increment: new Prisma.Decimal(operation.amount),
+                };
                 break;
-              case 'DECREMENT':
+              case "DECREMENT":
                 newValue = fieldValue - operation.amount;
-                updateData[operation.field] = { decrement: new Prisma.Decimal(operation.amount) };
+                updateData[operation.field] = {
+                  decrement: new Prisma.Decimal(operation.amount),
+                };
                 break;
-              case 'SET':
+              case "SET":
                 newValue = operation.amount;
-                updateData[operation.field] = new Prisma.Decimal(operation.amount);
+                updateData[operation.field] = new Prisma.Decimal(
+                  operation.amount,
+                );
                 break;
             }
 
@@ -695,7 +735,7 @@ export class PoolBalanceManager {
       } catch (error) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Batch update failed',
+          error: error instanceof Error ? error.message : "Batch update failed",
         };
       }
     } else {
@@ -748,12 +788,14 @@ export class PoolBalanceManager {
       }
       where.amount = amountFilter;
     }
-    if (options.relatedAdvanceId) where.relatedAdvanceId = options.relatedAdvanceId;
-    if (options.relatedInvestorId) where.relatedInvestorId = options.relatedInvestorId;
+    if (options.relatedAdvanceId)
+      where.relatedAdvanceId = options.relatedAdvanceId;
+    if (options.relatedInvestorId)
+      where.relatedInvestorId = options.relatedInvestorId;
 
     const transactions = await this.prisma.poolTransaction.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       skip: options.offset || 0,
       take: options.limit || 50,
     });
@@ -791,7 +833,8 @@ export class PoolBalanceManager {
       },
     });
 
-    const byType: TransactionSummary['byType'] = {} as TransactionSummary['byType'];
+    const byType: TransactionSummary["byType"] =
+      {} as TransactionSummary["byType"];
 
     // Initialize all types
     Object.values(PoolTransactionType).forEach((type) => {
@@ -846,7 +889,10 @@ export class PoolBalanceManager {
   /**
    * Subscribe to balance change events for a pool
    */
-  subscribe(poolId: string, callback: (event: PoolBalanceChange) => void): () => void {
+  subscribe(
+    poolId: string,
+    callback: (event: PoolBalanceChange) => void,
+  ): () => void {
     if (!this.eventSubscribers.has(poolId)) {
       this.eventSubscribers.set(poolId, new Set());
     }
@@ -869,7 +915,7 @@ export class PoolBalanceManager {
    * Subscribe to all balance change events
    */
   subscribeAll(callback: (event: PoolBalanceChange) => void): () => void {
-    return this.subscribe('*', callback);
+    return this.subscribe("*", callback);
   }
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -899,8 +945,14 @@ export class PoolBalanceManager {
       totalCapital,
       minReserveRatio,
     );
-    const utilizationRate = calculateUtilizationRate(deployedCapital, totalCapital);
-    const reserveRatio = calculateReserveRatio(effectiveAvailable, totalCapital);
+    const utilizationRate = calculateUtilizationRate(
+      deployedCapital,
+      totalCapital,
+    );
+    const reserveRatio = calculateReserveRatio(
+      effectiveAvailable,
+      totalCapital,
+    );
 
     return {
       poolId: pool.id,
@@ -916,11 +968,12 @@ export class PoolBalanceManager {
       effectiveAvailable: actualEffectiveAvailable,
       utilizationRate,
       reserveRatio,
-      isHealthy: assessPoolHealth(
-        Number(pool.defaultRate),
-        utilizationRate,
-        reserveRatio,
-      ) === 'HEALTHY',
+      isHealthy:
+        assessPoolHealth(
+          Number(pool.defaultRate),
+          utilizationRate,
+          reserveRatio,
+        ) === "HEALTHY",
       timestamp: new Date(),
       fromCache: false,
     };
@@ -932,7 +985,9 @@ export class PoolBalanceManager {
   private async getReservedAmount(poolId: string): Promise<number> {
     if (!this.redis) return 0;
 
-    const reservations = await this.redis.hgetall(CACHE_KEYS.POOL_RESERVED(poolId));
+    const reservations = await this.redis.hgetall(
+      CACHE_KEYS.POOL_RESERVED(poolId),
+    );
     return Object.values(reservations).reduce(
       (sum, val) => sum + parseInt(val, 10),
       0,
@@ -944,7 +999,11 @@ export class PoolBalanceManager {
    */
   private getBalanceFieldValue(
     balance: PoolBalance,
-    field: 'availableCapital' | 'deployedCapital' | 'reservedCapital' | 'totalCapital',
+    field:
+      | "availableCapital"
+      | "deployedCapital"
+      | "reservedCapital"
+      | "totalCapital",
   ): number {
     return balance[field];
   }
@@ -954,7 +1013,11 @@ export class PoolBalanceManager {
    */
   private getBalanceFieldValueFromPool(
     pool: Prisma.LiquidityPoolGetPayload<{}>,
-    field: 'availableCapital' | 'deployedCapital' | 'reservedCapital' | 'totalCapital',
+    field:
+      | "availableCapital"
+      | "deployedCapital"
+      | "reservedCapital"
+      | "totalCapital",
   ): number {
     return Number(pool[field]);
   }
@@ -969,8 +1032,14 @@ export class PoolBalanceManager {
     const lockValue = `lock_${Date.now()}_${Math.random()}`;
 
     // Try to set lock with NX (only if not exists) and EX (expiration)
-    const result = await this.redis.set(lockKey, lockValue, 'EX', CACHE_TTL.LOCK, 'NX');
-    return result === 'OK';
+    const result = await this.redis.set(
+      lockKey,
+      lockValue,
+      "EX",
+      CACHE_TTL.LOCK,
+      "NX",
+    );
+    return result === "OK";
   }
 
   /**
@@ -999,7 +1068,7 @@ export class PoolBalanceManager {
   private async publishBalanceChange(event: PoolBalanceChange): Promise<void> {
     // Notify local subscribers
     const poolSubscribers = this.eventSubscribers.get(event.poolId);
-    const allSubscribers = this.eventSubscribers.get('*');
+    const allSubscribers = this.eventSubscribers.get("*");
 
     if (poolSubscribers) {
       poolSubscribers.forEach((callback) => callback(event));

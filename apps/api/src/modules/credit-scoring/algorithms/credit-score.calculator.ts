@@ -38,7 +38,7 @@ import {
   clampScore,
   getRiskTierFromScore,
   getScoreTrend,
-} from '../types/credit-score.types.js';
+} from "../types/credit-score.types.js";
 
 /**
  * Credit Score Calculator
@@ -47,7 +47,7 @@ import {
  * specifically designed for agricultural financing.
  */
 export class CreditScoreCalculator {
-  private readonly modelVersion = '1.0.0';
+  private readonly modelVersion = "1.0.0";
   private readonly startTime: number;
 
   constructor() {
@@ -64,7 +64,11 @@ export class CreditScoreCalculator {
     paymentMetrics: PaymentMetrics,
     activityMetrics: ActivityMetrics,
     blockchainMetrics: BlockchainMetrics,
-    previousScores?: { score7DaysAgo?: number; score30DaysAgo?: number; score90DaysAgo?: number },
+    previousScores?: {
+      score7DaysAgo?: number;
+      score30DaysAgo?: number;
+      score90DaysAgo?: number;
+    },
   ): CreditScoreResult {
     // Calculate component scores
     const componentScores = this.calculateComponentScores(
@@ -150,7 +154,7 @@ export class CreditScoreCalculator {
         modelVersion: this.modelVersion,
         calculatedAt: new Date(),
         calculationDurationMs,
-        dataSources: ['blockchain', 'orders', 'deliveries', 'payments'],
+        dataSources: ["blockchain", "orders", "deliveries", "payments"],
         confidenceLevel,
       },
       scoringFactors,
@@ -262,7 +266,9 @@ export class CreditScoreCalculator {
 
     // Completion rate component (0-50 points)
     const completionRate =
-      totalAdvances > 0 ? (metrics.advancesCompleted / totalAdvances) * 100 : 100;
+      totalAdvances > 0
+        ? (metrics.advancesCompleted / totalAdvances) * 100
+        : 100;
     const completionScore = (completionRate / 100) * 50;
 
     // Repayment timeliness (0-30 points)
@@ -275,7 +281,10 @@ export class CreditScoreCalculator {
 
     // No default bonus (0-20 points)
     // Full bonus if 0 defaults, scaled down based on default rate
-    const noDefaultScore = metrics.defaultRate === 0 ? 20 : Math.max(0, 20 - metrics.defaultRate * 200);
+    const noDefaultScore =
+      metrics.defaultRate === 0
+        ? 20
+        : Math.max(0, 20 - metrics.defaultRate * 200);
 
     const rawScore = completionScore + timelinessScore + noDefaultScore;
     return clampScore(rawScore);
@@ -327,7 +336,10 @@ export class CreditScoreCalculator {
 
     // Minimum verifications threshold (0-30 points)
     // Full score at 10+ verifications
-    const thresholdScore = Math.min(30, (metrics.verifiedTransactions / 10) * 30);
+    const thresholdScore = Math.min(
+      30,
+      (metrics.verifiedTransactions / 10) * 30,
+    );
 
     const rawScore = rateScore + thresholdScore;
     return clampScore(rawScore);
@@ -354,7 +366,7 @@ export class CreditScoreCalculator {
     tier: RiskTier,
     score: number,
     paymentMetrics: PaymentMetrics,
-  ): CreditScoreResult['creditLimits'] {
+  ): CreditScoreResult["creditLimits"] {
     const tierLimits = CREDIT_LIMITS[tier];
 
     // Base max from tier, adjusted by score within tier
@@ -374,7 +386,8 @@ export class CreditScoreCalculator {
     maxAdvanceAmount = maxAdvanceAmount * (0.7 + 0.3 * tierScoreRatio);
 
     // Current utilization from active advances
-    const currentUtilization = paymentMetrics.totalBorrowed - paymentMetrics.totalRepaid;
+    const currentUtilization =
+      paymentMetrics.totalBorrowed - paymentMetrics.totalRepaid;
     const availableCredit = Math.max(0, maxAdvanceAmount - currentUtilization);
     const utilizationRate =
       maxAdvanceAmount > 0 ? (currentUtilization / maxAdvanceAmount) * 100 : 0;
@@ -396,11 +409,13 @@ export class CreditScoreCalculator {
     score7DaysAgo?: number,
     score30DaysAgo?: number,
     score90DaysAgo?: number,
-  ): CreditScoreResult['scoreChanges'] {
+  ): CreditScoreResult["scoreChanges"] {
     return {
       last7Days: score7DaysAgo !== undefined ? currentScore - score7DaysAgo : 0,
-      last30Days: score30DaysAgo !== undefined ? currentScore - score30DaysAgo : 0,
-      last90Days: score90DaysAgo !== undefined ? currentScore - score90DaysAgo : 0,
+      last30Days:
+        score30DaysAgo !== undefined ? currentScore - score30DaysAgo : 0,
+      last90Days:
+        score90DaysAgo !== undefined ? currentScore - score90DaysAgo : 0,
     };
   }
 
@@ -420,17 +435,17 @@ export class CreditScoreCalculator {
     // Delivery factors
     if (delivery.successRate >= 95) {
       factors.push({
-        name: 'Excellent Delivery Rate',
+        name: "Excellent Delivery Rate",
         impact: 10,
-        category: 'positive',
+        category: "positive",
         description: `${delivery.successRate.toFixed(1)}% delivery success rate`,
         weight: SCORE_WEIGHTS.DELIVERY,
       });
     } else if (delivery.successRate < 80) {
       factors.push({
-        name: 'Low Delivery Rate',
+        name: "Low Delivery Rate",
         impact: -15,
-        category: 'negative',
+        category: "negative",
         description: `${delivery.successRate.toFixed(1)}% delivery success rate needs improvement`,
         weight: SCORE_WEIGHTS.DELIVERY,
       });
@@ -439,9 +454,9 @@ export class CreditScoreCalculator {
     // On-time delivery
     if (delivery.onTimeRate >= 90) {
       factors.push({
-        name: 'Reliable Timing',
+        name: "Reliable Timing",
         impact: 5,
-        category: 'positive',
+        category: "positive",
         description: `${delivery.onTimeRate.toFixed(1)}% on-time delivery rate`,
         weight: SCORE_WEIGHTS.DELIVERY,
       });
@@ -450,17 +465,17 @@ export class CreditScoreCalculator {
     // Quality factors
     if (quality.averageScore >= 90) {
       factors.push({
-        name: 'Premium Quality',
+        name: "Premium Quality",
         impact: 8,
-        category: 'positive',
+        category: "positive",
         description: `Average quality score of ${quality.averageScore.toFixed(1)}`,
         weight: SCORE_WEIGHTS.QUALITY,
       });
     } else if (quality.averageScore < 70) {
       factors.push({
-        name: 'Quality Concerns',
+        name: "Quality Concerns",
         impact: -10,
-        category: 'negative',
+        category: "negative",
         description: `Average quality score of ${quality.averageScore.toFixed(1)} below standards`,
         weight: SCORE_WEIGHTS.QUALITY,
       });
@@ -469,10 +484,10 @@ export class CreditScoreCalculator {
     // Consistency factor
     if (quality.standardDeviation < 5) {
       factors.push({
-        name: 'Consistent Quality',
+        name: "Consistent Quality",
         impact: 5,
-        category: 'positive',
-        description: 'Low variance in quality scores shows reliability',
+        category: "positive",
+        description: "Low variance in quality scores shows reliability",
         weight: SCORE_WEIGHTS.QUALITY,
       });
     }
@@ -480,17 +495,17 @@ export class CreditScoreCalculator {
     // Payment history factors
     if (payment.advancesCompleted > 0 && payment.defaultRate === 0) {
       factors.push({
-        name: 'Perfect Payment Record',
+        name: "Perfect Payment Record",
         impact: 15,
-        category: 'positive',
+        category: "positive",
         description: `${payment.advancesCompleted} advances completed with zero defaults`,
         weight: SCORE_WEIGHTS.PAYMENT,
       });
     } else if (payment.defaultRate > 0.05) {
       factors.push({
-        name: 'Default History',
+        name: "Default History",
         impact: -20,
-        category: 'negative',
+        category: "negative",
         description: `${(payment.defaultRate * 100).toFixed(1)}% default rate on advances`,
         weight: SCORE_WEIGHTS.PAYMENT,
       });
@@ -499,18 +514,18 @@ export class CreditScoreCalculator {
     // Experience factors
     if (activity.accountAgeDays >= 365) {
       factors.push({
-        name: 'Established Producer',
+        name: "Established Producer",
         impact: 5,
-        category: 'positive',
+        category: "positive",
         description: `Active for ${Math.floor(activity.accountAgeDays / 365)} year(s)`,
         weight: SCORE_WEIGHTS.VOLUME,
       });
     } else if (activity.accountAgeDays < 90) {
       factors.push({
-        name: 'New Producer',
+        name: "New Producer",
         impact: -5,
-        category: 'neutral',
-        description: 'Limited history available for assessment',
+        category: "neutral",
+        description: "Limited history available for assessment",
         weight: SCORE_WEIGHTS.VOLUME,
       });
     }
@@ -518,18 +533,18 @@ export class CreditScoreCalculator {
     // Blockchain verification
     if (blockchain.verificationRate >= 95) {
       factors.push({
-        name: 'Fully Verified',
+        name: "Fully Verified",
         impact: 3,
-        category: 'positive',
+        category: "positive",
         description: `${blockchain.verificationRate.toFixed(1)}% blockchain verification rate`,
         weight: SCORE_WEIGHTS.BLOCKCHAIN,
       });
     } else if (blockchain.verificationRate < 50) {
       factors.push({
-        name: 'Low Verification',
+        name: "Low Verification",
         impact: -5,
-        category: 'negative',
-        description: 'Many transactions lack blockchain verification',
+        category: "negative",
+        description: "Many transactions lack blockchain verification",
         weight: SCORE_WEIGHTS.BLOCKCHAIN,
       });
     }
@@ -553,80 +568,87 @@ export class CreditScoreCalculator {
     // Delivery recommendations
     if (components.delivery < 70) {
       recommendations.push({
-        id: 'improve-delivery-rate',
-        priority: 'high',
-        action: 'Focus on completing deliveries successfully to improve your delivery score',
+        id: "improve-delivery-rate",
+        priority: "high",
+        action:
+          "Focus on completing deliveries successfully to improve your delivery score",
         expectedImpact: 15,
-        category: 'delivery',
+        category: "delivery",
       });
     }
 
     if (delivery.onTimeRate < 80) {
       recommendations.push({
-        id: 'improve-timing',
-        priority: 'medium',
-        action: 'Improve delivery timing by better planning and earlier shipments',
+        id: "improve-timing",
+        priority: "medium",
+        action:
+          "Improve delivery timing by better planning and earlier shipments",
         expectedImpact: 8,
-        category: 'delivery',
+        category: "delivery",
       });
     }
 
     // Quality recommendations
     if (components.quality < 70) {
       recommendations.push({
-        id: 'improve-quality',
-        priority: 'high',
-        action: 'Invest in quality control processes to improve product quality scores',
+        id: "improve-quality",
+        priority: "high",
+        action:
+          "Invest in quality control processes to improve product quality scores",
         expectedImpact: 12,
-        category: 'quality',
+        category: "quality",
       });
     }
 
     if (quality.standardDeviation > 15) {
       recommendations.push({
-        id: 'improve-consistency',
-        priority: 'medium',
-        action: 'Standardize processes to achieve more consistent quality',
+        id: "improve-consistency",
+        priority: "medium",
+        action: "Standardize processes to achieve more consistent quality",
         expectedImpact: 5,
-        category: 'quality',
+        category: "quality",
       });
     }
 
     // Payment recommendations
     if (payment.averageRepaymentDelay > 3) {
       recommendations.push({
-        id: 'faster-repayment',
-        priority: 'high',
-        action: 'Pay advance repayments on time or early to boost payment score',
+        id: "faster-repayment",
+        priority: "high",
+        action:
+          "Pay advance repayments on time or early to boost payment score",
         expectedImpact: 10,
-        category: 'payment',
+        category: "payment",
       });
     }
 
     // Blockchain recommendations
     if (blockchain.verificationRate < 80) {
       recommendations.push({
-        id: 'increase-verification',
-        priority: 'low',
-        action: 'Ensure all transactions are recorded on blockchain for verification',
+        id: "increase-verification",
+        priority: "low",
+        action:
+          "Ensure all transactions are recorded on blockchain for verification",
         expectedImpact: 3,
-        category: 'blockchain',
+        category: "blockchain",
       });
     }
 
     // Volume recommendations
     if (components.volume < 50) {
       recommendations.push({
-        id: 'increase-activity',
-        priority: 'low',
-        action: 'Increase order frequency and volume to build track record',
+        id: "increase-activity",
+        priority: "low",
+        action: "Increase order frequency and volume to build track record",
         expectedImpact: 5,
-        category: 'volume',
+        category: "volume",
       });
     }
 
     // Sort by expected impact
-    return recommendations.sort((a, b) => b.expectedImpact - a.expectedImpact).slice(0, 5);
+    return recommendations
+      .sort((a, b) => b.expectedImpact - a.expectedImpact)
+      .slice(0, 5);
   }
 
   /**
@@ -726,16 +748,20 @@ export class CreditScoreCalculator {
 
     if (changes.completedAdvanceRepayments) {
       newPayment.advancesCompleted += changes.completedAdvanceRepayments;
-      const totalAdvances = newPayment.advancesCompleted + newPayment.advancesDefaulted;
+      const totalAdvances =
+        newPayment.advancesCompleted + newPayment.advancesDefaulted;
       newPayment.defaultRate =
         totalAdvances > 0 ? newPayment.advancesDefaulted / totalAdvances : 0;
     }
 
     if (changes.additionalBlockchainVerifications) {
-      newBlockchain.verifiedTransactions += changes.additionalBlockchainVerifications;
-      newBlockchain.totalTransactions += changes.additionalBlockchainVerifications;
+      newBlockchain.verifiedTransactions +=
+        changes.additionalBlockchainVerifications;
+      newBlockchain.totalTransactions +=
+        changes.additionalBlockchainVerifications;
       newBlockchain.verificationRate =
-        (newBlockchain.verifiedTransactions / newBlockchain.totalTransactions) * 100;
+        (newBlockchain.verifiedTransactions / newBlockchain.totalTransactions) *
+        100;
     }
 
     // Recalculate

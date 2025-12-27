@@ -16,7 +16,7 @@ export class InvalidTokenError extends Error {
     /**
      * El nombre del error, útil para identificar el tipo de error en bloques catch.
      */
-    this.name = 'InvalidTokenError';
+    this.name = "InvalidTokenError";
   }
 }
 

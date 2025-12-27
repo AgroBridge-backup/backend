@@ -12,14 +12,14 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
-import logger from '../../../shared/utils/logger.js';
+import { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
+import logger from "../../../shared/utils/logger.js";
 
 // CSRF token configuration
 const CSRF_TOKEN_LENGTH = 32;
-const CSRF_COOKIE_NAME = 'csrf_token';
-const CSRF_HEADER_NAME = 'x-csrf-token';
+const CSRF_COOKIE_NAME = "csrf_token";
+const CSRF_HEADER_NAME = "x-csrf-token";
 const CSRF_TOKEN_TTL = 3600000; // 1 hour in milliseconds
 
 /**
@@ -44,7 +44,7 @@ setInterval(() => {
     }
   }
   if (cleaned > 0) {
-    logger.debug('[CSRF] Cleaned expired tokens', { count: cleaned });
+    logger.debug("[CSRF] Cleaned expired tokens", { count: cleaned });
   }
 }, 300000);
 
@@ -52,7 +52,7 @@ setInterval(() => {
  * Generate a cryptographically secure CSRF token
  */
 export function generateCSRFToken(): string {
-  return crypto.randomBytes(CSRF_TOKEN_LENGTH).toString('hex');
+  return crypto.randomBytes(CSRF_TOKEN_LENGTH).toString("hex");
 }
 
 /**
@@ -65,15 +65,17 @@ export function generateCSRFToken(): string {
  *
  * Safe methods (GET, HEAD, OPTIONS) are exempt
  */
-export function csrfProtection(options: {
-  excludePaths?: string[];
-  excludePatterns?: RegExp[];
-  cookieOptions?: {
-    secure?: boolean;
-    sameSite?: 'strict' | 'lax' | 'none';
-    httpOnly?: boolean;
-  };
-} = {}) {
+export function csrfProtection(
+  options: {
+    excludePaths?: string[];
+    excludePatterns?: RegExp[];
+    cookieOptions?: {
+      secure?: boolean;
+      sameSite?: "strict" | "lax" | "none";
+      httpOnly?: boolean;
+    };
+  } = {},
+) {
   const {
     excludePaths = [],
     excludePatterns = [],
@@ -82,17 +84,17 @@ export function csrfProtection(options: {
 
   // Default safe paths (webhooks, health checks, public APIs)
   const defaultExcludePaths = [
-    '/health',
-    '/api/v1/public',
-    '/api/v2/public',
-    '/webhooks',
+    "/health",
+    "/api/v1/public",
+    "/api/v2/public",
+    "/webhooks",
   ];
 
   const allExcludePaths = [...defaultExcludePaths, ...excludePaths];
 
   return (req: Request, res: Response, next: NextFunction): void => {
     // Skip safe HTTP methods
-    const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+    const safeMethods = ["GET", "HEAD", "OPTIONS"];
     if (safeMethods.includes(req.method)) {
       // Generate and set token for subsequent requests
       ensureCSRFToken(req, res, cookieOptions);
@@ -100,8 +102,9 @@ export function csrfProtection(options: {
     }
 
     // Check if path is excluded
-    const isExcluded = allExcludePaths.some(path => req.path.startsWith(path)) ||
-      excludePatterns.some(pattern => pattern.test(req.path));
+    const isExcluded =
+      allExcludePaths.some((path) => req.path.startsWith(path)) ||
+      excludePatterns.some((pattern) => pattern.test(req.path));
 
     if (isExcluded) {
       return next();
@@ -110,7 +113,7 @@ export function csrfProtection(options: {
     // For APIs using Bearer tokens (Authorization header), CSRF is not needed
     // The token cannot be automatically sent by the browser
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       return next();
     }
 
@@ -119,7 +122,7 @@ export function csrfProtection(options: {
     const headerToken = req.headers[CSRF_HEADER_NAME] as string;
 
     if (!cookieToken || !headerToken) {
-      logger.warn('[CSRF] Missing token', {
+      logger.warn("[CSRF] Missing token", {
         path: req.path,
         method: req.method,
         hasCookie: !!cookieToken,
@@ -128,8 +131,8 @@ export function csrfProtection(options: {
       });
       res.status(403).json({
         error: {
-          code: 'CSRF_TOKEN_MISSING',
-          message: 'CSRF token is required for this request',
+          code: "CSRF_TOKEN_MISSING",
+          message: "CSRF token is required for this request",
         },
       });
       return;
@@ -137,15 +140,15 @@ export function csrfProtection(options: {
 
     // Validate tokens match (timing-safe comparison)
     if (!timingSafeEqual(cookieToken, headerToken)) {
-      logger.warn('[CSRF] Token mismatch', {
+      logger.warn("[CSRF] Token mismatch", {
         path: req.path,
         method: req.method,
         ip: req.ip,
       });
       res.status(403).json({
         error: {
-          code: 'CSRF_TOKEN_INVALID',
-          message: 'Invalid CSRF token',
+          code: "CSRF_TOKEN_INVALID",
+          message: "Invalid CSRF token",
         },
       });
       return;
@@ -154,15 +157,15 @@ export function csrfProtection(options: {
     // Validate token exists in store and hasn't expired
     const storedEntry = tokenStore.get(cookieToken);
     if (!storedEntry || Date.now() - storedEntry.createdAt > CSRF_TOKEN_TTL) {
-      logger.warn('[CSRF] Token expired or not found', {
+      logger.warn("[CSRF] Token expired or not found", {
         path: req.path,
         method: req.method,
         ip: req.ip,
       });
       res.status(403).json({
         error: {
-          code: 'CSRF_TOKEN_EXPIRED',
-          message: 'CSRF token has expired. Please refresh and try again.',
+          code: "CSRF_TOKEN_EXPIRED",
+          message: "CSRF token has expired. Please refresh and try again.",
         },
       });
       return;
@@ -180,7 +183,11 @@ export function csrfProtection(options: {
 function ensureCSRFToken(
   req: Request,
   res: Response,
-  cookieOptions: { secure?: boolean; sameSite?: 'strict' | 'lax' | 'none'; httpOnly?: boolean }
+  cookieOptions: {
+    secure?: boolean;
+    sameSite?: "strict" | "lax" | "none";
+    httpOnly?: boolean;
+  },
 ): void {
   const existingToken = req.cookies?.[CSRF_COOKIE_NAME];
 
@@ -204,17 +211,17 @@ function ensureCSRFToken(
   });
 
   // Set cookie with secure defaults
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie(CSRF_COOKIE_NAME, newToken, {
     httpOnly: cookieOptions.httpOnly ?? false, // Must be readable by JS for header submission
     secure: cookieOptions.secure ?? isProduction,
-    sameSite: cookieOptions.sameSite ?? 'strict',
+    sameSite: cookieOptions.sameSite ?? "strict",
     maxAge: CSRF_TOKEN_TTL,
-    path: '/',
+    path: "/",
   });
 
   // Also expose token in response header for SPA convenience
-  res.setHeader('X-CSRF-Token', newToken);
+  res.setHeader("X-CSRF-Token", newToken);
 }
 
 /**
@@ -245,13 +252,13 @@ export function csrfTokenEndpoint(req: Request, res: Response): void {
     userId,
   });
 
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie(CSRF_COOKIE_NAME, token, {
     httpOnly: false,
     secure: isProduction,
-    sameSite: 'strict',
+    sameSite: "strict",
     maxAge: CSRF_TOKEN_TTL,
-    path: '/',
+    path: "/",
   });
 
   res.json({

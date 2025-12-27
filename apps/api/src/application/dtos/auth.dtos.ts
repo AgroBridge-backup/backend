@@ -1,4 +1,4 @@
-import * as Prisma from '@prisma/client';
+import * as Prisma from "@prisma/client";
 
 export interface LoginRequestDto {
   email: string;

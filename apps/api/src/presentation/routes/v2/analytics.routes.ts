@@ -12,12 +12,12 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { ResponseFormatter } from '../../../infrastructure/http/ResponseFormatter.js';
-import { authenticate } from '../../middlewares/auth.middleware.js';
-import { prisma } from '../../../infrastructure/database/prisma/client.js';
-import { redisClient } from '../../../infrastructure/cache/RedisClient.js';
-import logger from '../../../shared/utils/logger.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { ResponseFormatter } from "../../../infrastructure/http/ResponseFormatter.js";
+import { authenticate } from "../../middlewares/auth.middleware.js";
+import { prisma } from "../../../infrastructure/database/prisma/client.js";
+import { redisClient } from "../../../infrastructure/cache/RedisClient.js";
+import logger from "../../../shared/utils/logger.js";
 
 // Auth payload type matching the middleware
 interface AuthPayload {
@@ -44,7 +44,7 @@ const ANALYTICS_CACHE_TTL = 600;
  * @access Private
  */
 router.get(
-  '/dashboard',
+  "/dashboard",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -76,7 +76,7 @@ router.get(
 
         // Batches by status
         prisma.batch.groupBy({
-          by: ['status'],
+          by: ["status"],
           where: batchWhere,
           _count: true,
         }),
@@ -85,7 +85,9 @@ router.get(
         prisma.traceabilityEvent.count({ where: eventWhere }),
 
         // Verified events
-        prisma.traceabilityEvent.count({ where: { ...eventWhere, isVerified: true } }),
+        prisma.traceabilityEvent.count({
+          where: { ...eventWhere, isVerified: true },
+        }),
 
         // Recent batches
         prisma.batch.findMany({
@@ -97,7 +99,7 @@ router.get(
             status: true,
             createdAt: true,
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: 5,
         }),
 
@@ -112,12 +114,12 @@ router.get(
               select: { id: true, origin: true },
             },
           },
-          orderBy: { timestamp: 'desc' },
+          orderBy: { timestamp: "desc" },
           take: 5,
         }),
 
         // Producer stats (admin/certifier only)
-        user.role === 'ADMIN' || user.role === 'CERTIFIER'
+        user.role === "ADMIN" || user.role === "CERTIFIER"
           ? prisma.producer.count()
           : null,
       ]);
@@ -130,23 +132,25 @@ router.get(
               ...acc,
               [item.status]: item._count,
             }),
-            {} as Record<string, number>
+            {} as Record<string, number>,
           ),
           active: batchesByStatus
-            .filter((s) => ['REGISTERED', 'IN_TRANSIT', 'ARRIVED'].includes(s.status))
+            .filter((s) =>
+              ["REGISTERED", "IN_TRANSIT", "ARRIVED"].includes(s.status),
+            )
             .reduce((sum, s) => sum + s._count, 0),
         },
         events: {
           total: totalEvents,
           verified: verifiedEvents,
           unverified: totalEvents - verifiedEvents,
-          verificationRate: totalEvents > 0
-            ? Math.round((verifiedEvents / totalEvents) * 100)
-            : 0,
+          verificationRate:
+            totalEvents > 0
+              ? Math.round((verifiedEvents / totalEvents) * 100)
+              : 0,
         },
-        producers: producerStats !== null
-          ? { total: producerStats }
-          : undefined,
+        producers:
+          producerStats !== null ? { total: producerStats } : undefined,
         recent: {
           batches: recentBatches,
           events: recentEvents,
@@ -159,10 +163,10 @@ router.get(
 
       res.json(ResponseFormatter.success(stats));
     } catch (error) {
-      logger.error('[AnalyticsV2] Dashboard error:', error);
+      logger.error("[AnalyticsV2] Dashboard error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -175,7 +179,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/batches/stats',
+  "/batches/stats",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -195,17 +199,17 @@ router.get(
 
         // Status distribution
         prisma.batch.groupBy({
-          by: ['status'],
+          by: ["status"],
           where: batchWhere,
           _count: true,
         }),
 
         // Variety distribution
         prisma.batch.groupBy({
-          by: ['variety'],
+          by: ["variety"],
           where: batchWhere,
           _count: true,
-          orderBy: { _count: { variety: 'desc' } },
+          orderBy: { _count: { variety: "desc" } },
           take: 10,
         }),
 
@@ -228,9 +232,10 @@ router.get(
           distribution: statusDistribution.map((s) => ({
             status: s.status,
             count: s._count,
-            percentage: totalBatches > 0
-              ? Math.round((s._count / totalBatches) * 100)
-              : 0,
+            percentage:
+              totalBatches > 0
+                ? Math.round((s._count / totalBatches) * 100)
+                : 0,
           })),
         },
         variety: {
@@ -241,7 +246,9 @@ router.get(
         },
         weight: {
           total: weightStats._sum.weightKg?.toNumber() || 0,
-          average: Math.round((weightStats._avg.weightKg?.toNumber() || 0) * 100) / 100,
+          average:
+            Math.round((weightStats._avg.weightKg?.toNumber() || 0) * 100) /
+            100,
           min: weightStats._min.weightKg?.toNumber() || 0,
           max: weightStats._max.weightKg?.toNumber() || 0,
         },
@@ -252,10 +259,10 @@ router.get(
 
       res.json(ResponseFormatter.success(stats));
     } catch (error) {
-      logger.error('[AnalyticsV2] Batch stats error:', error);
+      logger.error("[AnalyticsV2] Batch stats error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -271,12 +278,12 @@ router.get(
  * @query {string} granularity - Data granularity (day, week, month)
  */
 router.get(
-  '/batches/timeline',
+  "/batches/timeline",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as AuthPayload;
-      const { period = '30d', granularity = 'day' } = req.query;
+      const { period = "30d", granularity = "day" } = req.query;
 
       // Calculate date range
       const { startDate, endDate } = calculateDateRange(period as string);
@@ -297,7 +304,7 @@ router.get(
           createdAt: true,
           status: true,
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: "asc" },
       });
 
       // Aggregate by granularity
@@ -305,7 +312,7 @@ router.get(
         batches,
         startDate,
         endDate,
-        granularity as string
+        granularity as string,
       );
 
       res.json(
@@ -316,13 +323,13 @@ router.get(
           endDate: endDate.toISOString(),
           timeline,
           total: batches.length,
-        })
+        }),
       );
     } catch (error) {
-      logger.error('[AnalyticsV2] Batch timeline error:', error);
+      logger.error("[AnalyticsV2] Batch timeline error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -335,17 +342,17 @@ router.get(
  * @access Private (Admin, Auditor)
  */
 router.get(
-  '/producers/stats',
+  "/producers/stats",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as AuthPayload;
 
       // Only admins and certifiers
-      if (user.role !== 'ADMIN' && user.role !== 'CERTIFIER') {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied', req.path)
-        );
+      if (user.role !== "ADMIN" && user.role !== "CERTIFIER") {
+        return res
+          .status(403)
+          .json(ResponseFormatter.forbidden("Access denied", req.path));
       }
 
       const [
@@ -367,7 +374,7 @@ router.get(
             businessName: true,
             _count: { select: { batches: true } },
           },
-          orderBy: { batches: { _count: 'desc' } },
+          orderBy: { batches: { _count: "desc" } },
           take: 10,
         }),
 
@@ -385,9 +392,10 @@ router.get(
         total: totalProducers,
         whitelisted: whitelistedCount,
         notWhitelisted: totalProducers - whitelistedCount,
-        whitelistRate: totalProducers > 0
-          ? Math.round((whitelistedCount / totalProducers) * 100)
-          : 0,
+        whitelistRate:
+          totalProducers > 0
+            ? Math.round((whitelistedCount / totalProducers) * 100)
+            : 0,
         newThisMonth: newProducersThisMonth,
         topByBatches: producersByBatches.map((p) => ({
           id: p.id,
@@ -398,10 +406,10 @@ router.get(
 
       res.json(ResponseFormatter.success(stats));
     } catch (error) {
-      logger.error('[AnalyticsV2] Producer stats error:', error);
+      logger.error("[AnalyticsV2] Producer stats error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -414,18 +422,18 @@ router.get(
  * @access Private (Admin, Auditor)
  */
 router.get(
-  '/producers/top',
+  "/producers/top",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = req.user as AuthPayload;
-      const { metric = 'batches', limit = '10' } = req.query;
+      const { metric = "batches", limit = "10" } = req.query;
 
       // Only admins and certifiers
-      if (user.role !== 'ADMIN' && user.role !== 'CERTIFIER') {
-        return res.status(403).json(
-          ResponseFormatter.forbidden('Access denied', req.path)
-        );
+      if (user.role !== "ADMIN" && user.role !== "CERTIFIER") {
+        return res
+          .status(403)
+          .json(ResponseFormatter.forbidden("Access denied", req.path));
       }
 
       const take = Math.min(parseInt(String(limit)), 50);
@@ -433,7 +441,7 @@ router.get(
       let topProducers;
 
       switch (metric) {
-        case 'batches':
+        case "batches":
           topProducers = await prisma.producer.findMany({
             select: {
               id: true,
@@ -441,12 +449,12 @@ router.get(
               isWhitelisted: true,
               _count: { select: { batches: true } },
             },
-            orderBy: { batches: { _count: 'desc' } },
+            orderBy: { batches: { _count: "desc" } },
             take,
           });
           break;
 
-        case 'events':
+        case "events":
           // Get producers with most events across their batches
           const producersWithEvents = await prisma.producer.findMany({
             select: {
@@ -466,33 +474,38 @@ router.get(
               id: p.id,
               businessName: p.businessName,
               isWhitelisted: p.isWhitelisted,
-              eventCount: p.batches.reduce((sum, b) => sum + b._count.events, 0),
+              eventCount: p.batches.reduce(
+                (sum, b) => sum + b._count.events,
+                0,
+              ),
             }))
             .sort((a, b) => b.eventCount - a.eventCount)
             .slice(0, take);
           break;
 
         default:
-          return res.status(400).json(
-            ResponseFormatter.badRequest(
-              `Invalid metric: ${metric}. Valid options: batches, events`,
-              undefined,
-              req.path
-            )
-          );
+          return res
+            .status(400)
+            .json(
+              ResponseFormatter.badRequest(
+                `Invalid metric: ${metric}. Valid options: batches, events`,
+                undefined,
+                req.path,
+              ),
+            );
       }
 
       res.json(
         ResponseFormatter.success({
           metric,
           producers: topProducers,
-        })
+        }),
       );
     } catch (error) {
-      logger.error('[AnalyticsV2] Top producers error:', error);
+      logger.error("[AnalyticsV2] Top producers error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -505,7 +518,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/events/distribution',
+  "/events/distribution",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -513,67 +526,63 @@ router.get(
       const batchWhere = await buildBatchWhereClause(user);
       const eventWhere = batchWhere ? { batch: batchWhere } : {};
 
-      const [
-        totalEvents,
-        typeDistribution,
-        verificationStats,
-        locationStats,
-      ] = await Promise.all([
-        // Total
-        prisma.traceabilityEvent.count({ where: eventWhere }),
+      const [totalEvents, typeDistribution, verificationStats, locationStats] =
+        await Promise.all([
+          // Total
+          prisma.traceabilityEvent.count({ where: eventWhere }),
 
-        // By type
-        prisma.traceabilityEvent.groupBy({
-          by: ['eventType'],
-          where: eventWhere,
-          _count: true,
-        }),
+          // By type
+          prisma.traceabilityEvent.groupBy({
+            by: ["eventType"],
+            where: eventWhere,
+            _count: true,
+          }),
 
-        // Verification stats
-        prisma.traceabilityEvent.groupBy({
-          by: ['isVerified'],
-          where: eventWhere,
-          _count: true,
-        }),
+          // Verification stats
+          prisma.traceabilityEvent.groupBy({
+            by: ["isVerified"],
+            where: eventWhere,
+            _count: true,
+          }),
 
-        // Events with location - latitude/longitude are required, so just count all
-        prisma.traceabilityEvent.count({ where: eventWhere }),
-      ]);
+          // Events with location - latitude/longitude are required, so just count all
+          prisma.traceabilityEvent.count({ where: eventWhere }),
+        ]);
 
       const verified = verificationStats.find((v) => v.isVerified)?._count || 0;
-      const unverified = verificationStats.find((v) => !v.isVerified)?._count || 0;
+      const unverified =
+        verificationStats.find((v) => !v.isVerified)?._count || 0;
 
       const stats = {
         total: totalEvents,
         byType: typeDistribution.map((t) => ({
           eventType: t.eventType,
           count: t._count,
-          percentage: totalEvents > 0
-            ? Math.round((t._count / totalEvents) * 100)
-            : 0,
+          percentage:
+            totalEvents > 0 ? Math.round((t._count / totalEvents) * 100) : 0,
         })),
         verification: {
           verified,
           unverified,
-          rate: totalEvents > 0
-            ? Math.round((verified / totalEvents) * 100)
-            : 0,
+          rate:
+            totalEvents > 0 ? Math.round((verified / totalEvents) * 100) : 0,
         },
         location: {
           withLocation: locationStats,
           withoutLocation: totalEvents - locationStats,
-          locationRate: totalEvents > 0
-            ? Math.round((locationStats / totalEvents) * 100)
-            : 0,
+          locationRate:
+            totalEvents > 0
+              ? Math.round((locationStats / totalEvents) * 100)
+              : 0,
         },
       };
 
       res.json(ResponseFormatter.success(stats));
     } catch (error) {
-      logger.error('[AnalyticsV2] Events distribution error:', error);
+      logger.error("[AnalyticsV2] Events distribution error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -586,7 +595,7 @@ router.get(
  * @access Private
  */
 router.get(
-  '/overview',
+  "/overview",
   authenticate(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -595,8 +604,10 @@ router.get(
 
       const [batchCount, eventCount, producerCount] = await Promise.all([
         prisma.batch.count({ where: batchWhere }),
-        prisma.traceabilityEvent.count({ where: batchWhere ? { batch: batchWhere } : {} }),
-        user.role === 'ADMIN' || user.role === 'CERTIFIER'
+        prisma.traceabilityEvent.count({
+          where: batchWhere ? { batch: batchWhere } : {},
+        }),
+        user.role === "ADMIN" || user.role === "CERTIFIER"
           ? prisma.producer.count()
           : null,
       ]);
@@ -606,13 +617,13 @@ router.get(
           batches: batchCount,
           events: eventCount,
           producers: producerCount,
-        })
+        }),
       );
     } catch (error) {
-      logger.error('[AnalyticsV2] Overview error:', error);
+      logger.error("[AnalyticsV2] Overview error:", error);
       next(error);
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -623,13 +634,13 @@ router.get(
  * Build where clause based on user role
  */
 async function buildBatchWhereClause(
-  user: AuthPayload
+  user: AuthPayload,
 ): Promise<Record<string, unknown> | undefined> {
-  if (user.role === 'ADMIN' || user.role === 'CERTIFIER') {
+  if (user.role === "ADMIN" || user.role === "CERTIFIER") {
     return undefined;
   }
 
-  if (user.role === 'PRODUCER') {
+  if (user.role === "PRODUCER") {
     const producer = await prisma.producer.findUnique({
       where: { userId: user.userId },
       select: { id: true },
@@ -645,21 +656,24 @@ async function buildBatchWhereClause(
 /**
  * Calculate date range from period string
  */
-function calculateDateRange(period: string): { startDate: Date; endDate: Date } {
+function calculateDateRange(period: string): {
+  startDate: Date;
+  endDate: Date;
+} {
   const endDate = new Date();
   const startDate = new Date();
 
   switch (period) {
-    case '7d':
+    case "7d":
       startDate.setDate(startDate.getDate() - 7);
       break;
-    case '30d':
+    case "30d":
       startDate.setDate(startDate.getDate() - 30);
       break;
-    case '90d':
+    case "90d":
       startDate.setDate(startDate.getDate() - 90);
       break;
-    case '1y':
+    case "1y":
       startDate.setFullYear(startDate.getFullYear() - 1);
       break;
     default:
@@ -676,7 +690,7 @@ function aggregateByGranularity(
   items: Array<{ createdAt: Date }>,
   startDate: Date,
   endDate: Date,
-  granularity: string
+  granularity: string,
 ): Array<{ date: string; count: number }> {
   const dateMap = new Map<string, number>();
 
@@ -687,13 +701,13 @@ function aggregateByGranularity(
     dateMap.set(key, 0);
 
     switch (granularity) {
-      case 'day':
+      case "day":
         current.setDate(current.getDate() + 1);
         break;
-      case 'week':
+      case "week":
         current.setDate(current.getDate() + 7);
         break;
-      case 'month':
+      case "month":
         current.setMonth(current.getMonth() + 1);
         break;
       default:
@@ -720,18 +734,18 @@ function formatDateKey(date: Date, granularity: string): string {
   const d = new Date(date);
 
   switch (granularity) {
-    case 'day':
-      return d.toISOString().split('T')[0];
-    case 'week':
+    case "day":
+      return d.toISOString().split("T")[0];
+    case "week":
       // Get Monday of the week
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1);
       d.setDate(diff);
-      return d.toISOString().split('T')[0];
-    case 'month':
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return d.toISOString().split("T")[0];
+    case "month":
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     default:
-      return d.toISOString().split('T')[0];
+      return d.toISOString().split("T")[0];
   }
 }
 
@@ -739,7 +753,7 @@ function formatDateKey(date: Date, granularity: string): string {
  * Get monthly batch creation for last 12 months
  */
 async function getMonthlyBatchCreation(
-  where?: Record<string, unknown>
+  where?: Record<string, unknown>,
 ): Promise<Array<{ month: string; count: number }>> {
   const endDate = new Date();
   const startDate = new Date();
@@ -753,11 +767,11 @@ async function getMonthlyBatchCreation(
     select: { createdAt: true },
   });
 
-  return aggregateByGranularity(batches, startDate, endDate, 'month').map(
+  return aggregateByGranularity(batches, startDate, endDate, "month").map(
     (item) => ({
       month: item.date,
       count: item.count,
-    })
+    }),
   );
 }
 
@@ -771,7 +785,7 @@ async function tryGetFromCache(key: string): Promise<unknown | null> {
       return JSON.parse(cached);
     }
   } catch (error) {
-    logger.warn('[AnalyticsV2] Cache read error:', error);
+    logger.warn("[AnalyticsV2] Cache read error:", error);
   }
   return null;
 }
@@ -779,11 +793,15 @@ async function tryGetFromCache(key: string): Promise<unknown | null> {
 /**
  * Cache result
  */
-async function cacheResult(key: string, data: unknown, ttl: number): Promise<void> {
+async function cacheResult(
+  key: string,
+  data: unknown,
+  ttl: number,
+): Promise<void> {
   try {
-    await redisClient.client.set(key, JSON.stringify(data), 'EX', ttl);
+    await redisClient.client.set(key, JSON.stringify(data), "EX", ttl);
   } catch (error) {
-    logger.warn('[AnalyticsV2] Cache write error:', error);
+    logger.warn("[AnalyticsV2] Cache write error:", error);
   }
 }
 

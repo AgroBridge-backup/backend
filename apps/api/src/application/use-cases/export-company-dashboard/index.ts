@@ -3,7 +3,7 @@
  * Application layer for B2B admin portal operations
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   ExportCompanyDashboardService,
   DateRange,
@@ -18,7 +18,7 @@ import {
   BillingUsage,
   InvoiceSummary,
   BulkReviewResult,
-} from '../../../domain/services/ExportCompanyDashboardService.js';
+} from "../../../domain/services/ExportCompanyDashboardService.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // DASHBOARD ANALYTICS USE CASES
@@ -31,7 +31,10 @@ export class GetDashboardStatsUseCase {
     this.service = new ExportCompanyDashboardService(prisma);
   }
 
-  async execute(companyId: string, dateRange?: DateRange): Promise<DashboardStats> {
+  async execute(
+    companyId: string,
+    dateRange?: DateRange,
+  ): Promise<DashboardStats> {
     return this.service.getDashboardStats(companyId, dateRange);
   }
 }
@@ -43,7 +46,10 @@ export class GetCertificateAnalyticsUseCase {
     this.service = new ExportCompanyDashboardService(prisma);
   }
 
-  async execute(companyId: string, dateRange: DateRange): Promise<CertificateAnalytics> {
+  async execute(
+    companyId: string,
+    dateRange: DateRange,
+  ): Promise<CertificateAnalytics> {
     return this.service.getCertificateAnalytics(companyId, dateRange);
   }
 }
@@ -59,7 +65,10 @@ export class GetPendingCertificatesUseCase {
     this.service = new ExportCompanyDashboardService(prisma);
   }
 
-  async execute(companyId: string, pagination: Pagination): Promise<PaginatedResponse<any>> {
+  async execute(
+    companyId: string,
+    pagination: Pagination,
+  ): Promise<PaginatedResponse<any>> {
     return this.service.getPendingCertificates(companyId, pagination);
   }
 }
@@ -86,9 +95,13 @@ export class BulkApproveCertificatesUseCase {
   async execute(
     certificateIds: string[],
     reviewerId: string,
-    companyId: string
+    companyId: string,
   ): Promise<BulkReviewResult> {
-    return this.service.bulkApproveCertificates(certificateIds, reviewerId, companyId);
+    return this.service.bulkApproveCertificates(
+      certificateIds,
+      reviewerId,
+      companyId,
+    );
   }
 }
 
@@ -103,7 +116,10 @@ export class ListCompanyFarmersUseCase {
     this.service = new ExportCompanyDashboardService(prisma);
   }
 
-  async execute(companyId: string, filter: FarmerFilter): Promise<PaginatedResponse<FarmerWithStats>> {
+  async execute(
+    companyId: string,
+    filter: FarmerFilter,
+  ): Promise<PaginatedResponse<FarmerWithStats>> {
     return this.service.listCompanyFarmers(companyId, filter);
   }
 }
@@ -129,7 +145,7 @@ export class InviteFarmersBulkUseCase {
 
   async execute(
     companyId: string,
-    farmersData: Array<{ email: string; name?: string }>
+    farmersData: Array<{ email: string; name?: string }>,
   ): Promise<BulkInviteResult> {
     return this.service.inviteFarmersBulk(companyId, farmersData);
   }
@@ -170,7 +186,11 @@ export class GenerateInvoiceUseCase {
     this.service = new ExportCompanyDashboardService(prisma);
   }
 
-  async execute(companyId: string, periodStart: Date, periodEnd: Date): Promise<InvoiceSummary> {
+  async execute(
+    companyId: string,
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<InvoiceSummary> {
     return this.service.generateInvoice(companyId, periodStart, periodEnd);
   }
 }
@@ -219,7 +239,7 @@ export class UpdateCompanyProfileUseCase {
       contactName?: string;
       contactEmail?: string;
       contactPhone?: string;
-    }
+    },
   ) {
     return this.service.updateCompanyProfile(companyId, updates);
   }
@@ -232,7 +252,10 @@ export class UpdateBrandingSettingsUseCase {
     this.service = new ExportCompanyDashboardService(prisma);
   }
 
-  async execute(companyId: string, branding: { logoUrl?: string; primaryColor?: string }) {
+  async execute(
+    companyId: string,
+    branding: { logoUrl?: string; primaryColor?: string },
+  ) {
     return this.service.updateBrandingSettings(companyId, branding);
   }
 }
@@ -253,4 +276,4 @@ export {
   BillingUsage,
   InvoiceSummary,
   BulkReviewResult,
-} from '../../../domain/services/ExportCompanyDashboardService.js';
+} from "../../../domain/services/ExportCompanyDashboardService.js";

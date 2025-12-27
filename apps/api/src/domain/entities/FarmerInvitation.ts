@@ -5,10 +5,10 @@
  */
 
 export enum FarmerInvitationStatus {
-  PENDING = 'PENDING',     // Invitation sent, awaiting farmer action
-  ACCEPTED = 'ACCEPTED',   // Farmer completed registration
-  EXPIRED = 'EXPIRED',     // Invitation expired (7 days default)
-  CANCELLED = 'CANCELLED', // Export company cancelled the invitation
+  PENDING = "PENDING", // Invitation sent, awaiting farmer action
+  ACCEPTED = "ACCEPTED", // Farmer completed registration
+  EXPIRED = "EXPIRED", // Invitation expired (7 days default)
+  CANCELLED = "CANCELLED", // Export company cancelled the invitation
 }
 
 export interface FarmerInvitation {

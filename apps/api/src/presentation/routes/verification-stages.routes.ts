@@ -3,17 +3,19 @@
  * API Routes for Verification Stages
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { validateRequest } from '../middlewares/validator.middleware.js';
-import { UserRole, StageType, StageStatus } from '@prisma/client';
-import { VerificationStagesUseCases } from '../../application/use-cases/verification-stages/index.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { FinalizeBatchStagesUseCase } from '../../application/use-cases/verification-stages/FinalizeBatchStagesUseCase.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { validateRequest } from "../middlewares/validator.middleware.js";
+import { UserRole, StageType, StageStatus } from "@prisma/client";
+import { VerificationStagesUseCases } from "../../application/use-cases/verification-stages/index.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { FinalizeBatchStagesUseCase } from "../../application/use-cases/verification-stages/FinalizeBatchStagesUseCase.js";
 
 export function createVerificationStagesRouter(
-  useCases?: VerificationStagesUseCases & { finalizeBatchStagesUseCase?: FinalizeBatchStagesUseCase }
+  useCases?: VerificationStagesUseCases & {
+    finalizeBatchStagesUseCase?: FinalizeBatchStagesUseCase;
+  },
 ): Router {
   const router = Router();
 
@@ -58,7 +60,7 @@ export function createVerificationStagesRouter(
    * Returns ordered list with current/next stage info and completion progress
    */
   router.get(
-    '/:id/stages',
+    "/:id/stages",
     authenticate(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -73,7 +75,7 @@ export function createVerificationStagesRouter(
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -83,7 +85,7 @@ export function createVerificationStagesRouter(
    * If stageType is not provided, creates the next stage in sequence
    */
   router.post(
-    '/:id/stages',
+    "/:id/stages",
     authenticate([
       UserRole.PRODUCER,
       UserRole.QA,
@@ -112,13 +114,13 @@ export function createVerificationStagesRouter(
           success: true,
           data: result,
           message: result.isComplete
-            ? 'All stages complete. Batch ready for blockchain finalization.'
-            : 'Stage created successfully.',
+            ? "All stages complete. Batch ready for blockchain finalization."
+            : "Stage created successfully.",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -127,7 +129,7 @@ export function createVerificationStagesRouter(
    * Status transitions are validated by the service
    */
   router.patch(
-    '/:id/stages/:stageId',
+    "/:id/stages/:stageId",
     authenticate([
       UserRole.PRODUCER,
       UserRole.QA,
@@ -158,7 +160,7 @@ export function createVerificationStagesRouter(
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -169,7 +171,7 @@ export function createVerificationStagesRouter(
    */
   if (useCases.finalizeBatchStagesUseCase) {
     router.post(
-      '/:id/stages/finalize',
+      "/:id/stages/finalize",
       authenticate([UserRole.CERTIFIER, UserRole.ADMIN]),
       async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -180,12 +182,12 @@ export function createVerificationStagesRouter(
           res.status(200).json({
             success: true,
             data: result,
-            message: 'Batch stages finalized and stored on blockchain.',
+            message: "Batch stages finalized and stored on blockchain.",
           });
         } catch (error) {
           next(error);
         }
-      }
+      },
     );
   }
 

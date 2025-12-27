@@ -12,30 +12,38 @@
  * @author AgroBridge Engineering Team
  */
 
-import * as crypto from 'crypto';
-import jwt from 'jsonwebtoken';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { OAuthProviderType, UserRole } from '@prisma/client';
-import { googleOAuthProvider, type GoogleUserProfile } from './GoogleOAuthProvider.js';
-import { gitHubOAuthProvider, type GitHubUserProfile } from './GitHubOAuthProvider.js';
-import { redisClient } from '../../cache/RedisClient.js';
-import { prisma } from '../../database/prisma/client.js';
-import logger from '../../../shared/utils/logger.js';
+import * as crypto from "crypto";
+import jwt from "jsonwebtoken";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { OAuthProviderType, UserRole } from "@prisma/client";
+import {
+  googleOAuthProvider,
+  type GoogleUserProfile,
+} from "./GoogleOAuthProvider.js";
+import {
+  gitHubOAuthProvider,
+  type GitHubUserProfile,
+} from "./GitHubOAuthProvider.js";
+import { redisClient } from "../../cache/RedisClient.js";
+import { prisma } from "../../database/prisma/client.js";
+import logger from "../../../shared/utils/logger.js";
 
 // Load JWT private key
-const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || './jwtRS256.key';
+const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || "./jwtRS256.key";
 const resolvedPath = path.resolve(process.cwd(), privateKeyPath);
 let JWT_PRIVATE_KEY: string;
 try {
-  JWT_PRIVATE_KEY = fs.readFileSync(resolvedPath, 'utf-8');
+  JWT_PRIVATE_KEY = fs.readFileSync(resolvedPath, "utf-8");
 } catch {
-  logger.warn('[OAuthService] JWT private key not found, OAuth login will fail');
-  JWT_PRIVATE_KEY = '';
+  logger.warn(
+    "[OAuthService] JWT private key not found, OAuth login will fail",
+  );
+  JWT_PRIVATE_KEY = "";
 }
 
-const ACCESS_TOKEN_TTL = process.env.JWT_ACCESS_TOKEN_TTL || '15m';
-const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_TOKEN_TTL || '7d';
+const ACCESS_TOKEN_TTL = process.env.JWT_ACCESS_TOKEN_TTL || "15m";
+const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_TOKEN_TTL || "7d";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -44,14 +52,14 @@ const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_TOKEN_TTL || '7d';
 /**
  * Supported OAuth providers
  */
-export type OAuthProvider = 'google' | 'github';
+export type OAuthProvider = "google" | "github";
 
 /**
  * OAuth state stored in Redis
  */
 interface OAuthState {
   provider: OAuthProvider;
-  action: 'login' | 'link';
+  action: "login" | "link";
   userId?: string; // Present when linking
   redirectUrl?: string;
   createdAt: number;
@@ -136,8 +144,16 @@ export class OAuthService {
    * @param redirectUrl - URL to redirect after auth
    * @returns Authorization URL
    */
-  async getLoginUrl(provider: OAuthProvider, redirectUrl?: string): Promise<string> {
-    const state = await this.createState(provider, 'login', undefined, redirectUrl);
+  async getLoginUrl(
+    provider: OAuthProvider,
+    redirectUrl?: string,
+  ): Promise<string> {
+    const state = await this.createState(
+      provider,
+      "login",
+      undefined,
+      redirectUrl,
+    );
     return this.getAuthorizationUrl(provider, state);
   }
 
@@ -149,7 +165,7 @@ export class OAuthService {
    * @returns Authorization URL
    */
   async getLinkUrl(provider: OAuthProvider, userId: string): Promise<string> {
-    const state = await this.createState(provider, 'link', userId);
+    const state = await this.createState(provider, "link", userId);
     return this.getAuthorizationUrl(provider, state);
   }
 
@@ -158,9 +174,9 @@ export class OAuthService {
    */
   private getAuthorizationUrl(provider: OAuthProvider, state: string): string {
     switch (provider) {
-      case 'google':
+      case "google":
         return googleOAuthProvider.getAuthorizationUrl(state);
-      case 'github':
+      case "github":
         return gitHubOAuthProvider.getAuthorizationUrl(state);
       default:
         throw new Error(`Unknown provider: ${provider}`);
@@ -178,14 +194,17 @@ export class OAuthService {
    * @param state - State parameter
    * @returns Authentication result
    */
-  async handleCallback(code: string, state: string): Promise<OAuthAuthResult | OAuthLinkResult> {
+  async handleCallback(
+    code: string,
+    state: string,
+  ): Promise<OAuthAuthResult | OAuthLinkResult> {
     // Validate state
     const stateData = await this.validateState(state);
     if (!stateData) {
       return {
         success: false,
-        error: 'Invalid or expired state parameter',
-        errorCode: 'INVALID_STATE',
+        error: "Invalid or expired state parameter",
+        errorCode: "INVALID_STATE",
       };
     }
 
@@ -194,14 +213,18 @@ export class OAuthService {
     if (!result.success || !result.profile) {
       return {
         success: false,
-        error: result.error || 'Failed to authenticate with provider',
-        errorCode: result.errorCode || 'AUTH_FAILED',
+        error: result.error || "Failed to authenticate with provider",
+        errorCode: result.errorCode || "AUTH_FAILED",
       };
     }
 
     // Handle based on action
-    if (stateData.action === 'link') {
-      return this.linkAccount(stateData.userId!, stateData.provider, result.profile);
+    if (stateData.action === "link") {
+      return this.linkAccount(
+        stateData.userId!,
+        stateData.provider,
+        result.profile,
+      );
     } else {
       return this.authenticateWithOAuth(stateData.provider, result.profile);
     }
@@ -212,15 +235,24 @@ export class OAuthService {
    */
   private async exchangeCode(
     provider: OAuthProvider,
-    code: string
-  ): Promise<{ success: boolean; profile?: GoogleUserProfile | GitHubUserProfile; error?: string; errorCode?: string }> {
+    code: string,
+  ): Promise<{
+    success: boolean;
+    profile?: GoogleUserProfile | GitHubUserProfile;
+    error?: string;
+    errorCode?: string;
+  }> {
     switch (provider) {
-      case 'google':
+      case "google":
         return googleOAuthProvider.exchangeCode(code);
-      case 'github':
+      case "github":
         return gitHubOAuthProvider.exchangeCode(code);
       default:
-        return { success: false, error: 'Unknown provider', errorCode: 'UNKNOWN_PROVIDER' };
+        return {
+          success: false,
+          error: "Unknown provider",
+          errorCode: "UNKNOWN_PROVIDER",
+        };
     }
   }
 
@@ -233,11 +265,14 @@ export class OAuthService {
    */
   private async authenticateWithOAuth(
     provider: OAuthProvider,
-    profile: GoogleUserProfile | GitHubUserProfile
+    profile: GoogleUserProfile | GitHubUserProfile,
   ): Promise<OAuthAuthResult> {
     const providerId = profile.id;
     const email = profile.email;
-    const providerEnum = provider === 'google' ? OAuthProviderType.GOOGLE : OAuthProviderType.GITHUB;
+    const providerEnum =
+      provider === "google"
+        ? OAuthProviderType.GOOGLE
+        : OAuthProviderType.GITHUB;
 
     // Check if OAuth provider is already linked
     const existingLink = await prisma.oAuthProvider.findUnique({
@@ -263,8 +298,8 @@ export class OAuthService {
       if (!user.isActive) {
         return {
           success: false,
-          error: 'Account is deactivated',
-          errorCode: 'ACCOUNT_INACTIVE',
+          error: "Account is deactivated",
+          errorCode: "ACCOUNT_INACTIVE",
         };
       }
 
@@ -281,7 +316,7 @@ export class OAuthService {
       // Generate tokens
       const tokens = await this.generateAuthTokens(user);
 
-      logger.info('[OAuthService] OAuth login successful', {
+      logger.info("[OAuthService] OAuth login successful", {
         userId: user.id,
         provider,
       });
@@ -314,8 +349,8 @@ export class OAuthService {
       if (!existingUser.isActive) {
         return {
           success: false,
-          error: 'Account is deactivated',
-          errorCode: 'ACCOUNT_INACTIVE',
+          error: "Account is deactivated",
+          errorCode: "ACCOUNT_INACTIVE",
         };
       }
 
@@ -331,7 +366,7 @@ export class OAuthService {
 
       const tokens = await this.generateAuthTokens(existingUser);
 
-      logger.info('[OAuthService] OAuth linked to existing account', {
+      logger.info("[OAuthService] OAuth linked to existing account", {
         userId: existingUser.id,
         provider,
       });
@@ -355,7 +390,7 @@ export class OAuthService {
     const newUser = await this.createOAuthUser(provider, profile);
     const tokens = await this.generateAuthTokens(newUser);
 
-    logger.info('[OAuthService] New user created via OAuth', {
+    logger.info("[OAuthService] New user created via OAuth", {
       userId: newUser.id,
       provider,
     });
@@ -380,26 +415,41 @@ export class OAuthService {
    */
   private async createOAuthUser(
     provider: OAuthProvider,
-    profile: GoogleUserProfile | GitHubUserProfile
-  ): Promise<{ id: string; email: string; firstName: string; lastName: string; role: UserRole; producer?: { id: string } | null }> {
+    profile: GoogleUserProfile | GitHubUserProfile,
+  ): Promise<{
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    producer?: { id: string } | null;
+  }> {
     let firstName: string;
     let lastName: string;
 
-    if ('givenName' in profile) {
+    if ("givenName" in profile) {
       // Google profile
       firstName = profile.givenName;
       lastName = profile.familyName;
     } else {
       // GitHub profile
-      const nameParts = (profile.name || profile.login).split(' ');
+      const nameParts = (profile.name || profile.login).split(" ");
       firstName = nameParts[0] || profile.login;
-      lastName = nameParts.slice(1).join(' ') || '';
+      lastName = nameParts.slice(1).join(" ") || "";
     }
 
     // Get avatar URL based on provider type (Google has 'picture', GitHub has 'avatarUrl')
-    const avatarUrl = 'picture' in profile ? profile.picture : (profile as GitHubUserProfile).avatarUrl;
+    const avatarUrl =
+      "picture" in profile
+        ? profile.picture
+        : (profile as GitHubUserProfile).avatarUrl;
     // Get display name based on provider type
-    const displayName = 'name' in profile && profile.name ? profile.name : ('login' in profile ? (profile as GitHubUserProfile).login : firstName);
+    const displayName =
+      "name" in profile && profile.name
+        ? profile.name
+        : "login" in profile
+          ? (profile as GitHubUserProfile).login
+          : firstName;
 
     const user = await prisma.user.create({
       data: {
@@ -411,7 +461,10 @@ export class OAuthService {
         isActive: true,
         oauthProviders: {
           create: {
-            provider: provider === 'google' ? OAuthProviderType.GOOGLE : OAuthProviderType.GITHUB,
+            provider:
+              provider === "google"
+                ? OAuthProviderType.GOOGLE
+                : OAuthProviderType.GITHUB,
             providerId: profile.id,
             email: profile.email,
             displayName,
@@ -441,9 +494,12 @@ export class OAuthService {
   private async linkAccount(
     userId: string,
     provider: OAuthProvider,
-    profile: GoogleUserProfile | GitHubUserProfile
+    profile: GoogleUserProfile | GitHubUserProfile,
   ): Promise<OAuthLinkResult> {
-    const providerEnum = provider === 'google' ? OAuthProviderType.GOOGLE : OAuthProviderType.GITHUB;
+    const providerEnum =
+      provider === "google"
+        ? OAuthProviderType.GOOGLE
+        : OAuthProviderType.GITHUB;
 
     // Check if already linked
     const existing = await prisma.oAuthProvider.findFirst({
@@ -457,7 +513,7 @@ export class OAuthService {
       return {
         success: false,
         error: `${provider} is already linked to your account`,
-        errorCode: 'ALREADY_LINKED',
+        errorCode: "ALREADY_LINKED",
       };
     }
 
@@ -475,13 +531,13 @@ export class OAuthService {
       return {
         success: false,
         error: `This ${provider} account is already linked to another user`,
-        errorCode: 'PROVIDER_IN_USE',
+        errorCode: "PROVIDER_IN_USE",
       };
     }
 
     await this.createOAuthLink(userId, provider, profile);
 
-    logger.info('[OAuthService] OAuth account linked', {
+    logger.info("[OAuthService] OAuth account linked", {
       userId,
       provider,
       providerId: profile.id,
@@ -500,14 +556,25 @@ export class OAuthService {
   private async createOAuthLink(
     userId: string,
     provider: OAuthProvider,
-    profile: GoogleUserProfile | GitHubUserProfile
+    profile: GoogleUserProfile | GitHubUserProfile,
   ): Promise<void> {
-    const providerEnum = provider === 'google' ? OAuthProviderType.GOOGLE : OAuthProviderType.GITHUB;
+    const providerEnum =
+      provider === "google"
+        ? OAuthProviderType.GOOGLE
+        : OAuthProviderType.GITHUB;
 
     // Get avatar URL based on provider type (Google has 'picture', GitHub has 'avatarUrl')
-    const avatarUrl = 'picture' in profile ? profile.picture : (profile as GitHubUserProfile).avatarUrl;
+    const avatarUrl =
+      "picture" in profile
+        ? profile.picture
+        : (profile as GitHubUserProfile).avatarUrl;
     // Get display name based on provider type
-    const displayName = 'name' in profile && profile.name ? profile.name : ('login' in profile ? (profile as GitHubUserProfile).login : '');
+    const displayName =
+      "name" in profile && profile.name
+        ? profile.name
+        : "login" in profile
+          ? (profile as GitHubUserProfile).login
+          : "";
 
     await prisma.oAuthProvider.create({
       data: {
@@ -524,8 +591,14 @@ export class OAuthService {
   /**
    * Unlink OAuth provider from account
    */
-  async unlinkAccount(userId: string, provider: OAuthProvider): Promise<OAuthLinkResult> {
-    const providerEnum = provider === 'google' ? OAuthProviderType.GOOGLE : OAuthProviderType.GITHUB;
+  async unlinkAccount(
+    userId: string,
+    provider: OAuthProvider,
+  ): Promise<OAuthLinkResult> {
+    const providerEnum =
+      provider === "google"
+        ? OAuthProviderType.GOOGLE
+        : OAuthProviderType.GITHUB;
 
     // Check user has password or another OAuth method
     const user = await prisma.user.findUnique({
@@ -538,20 +611,23 @@ export class OAuthService {
     if (!user) {
       return {
         success: false,
-        error: 'User not found',
-        errorCode: 'USER_NOT_FOUND',
+        error: "User not found",
+        errorCode: "USER_NOT_FOUND",
       };
     }
 
     // Ensure user can still login after unlinking
     const hasPassword = !!user.passwordHash;
-    const otherProviders = user.oauthProviders.filter(p => p.provider !== providerEnum);
+    const otherProviders = user.oauthProviders.filter(
+      (p) => p.provider !== providerEnum,
+    );
 
     if (!hasPassword && otherProviders.length === 0) {
       return {
         success: false,
-        error: 'Cannot unlink - no other login method available. Set a password first.',
-        errorCode: 'NO_LOGIN_METHOD',
+        error:
+          "Cannot unlink - no other login method available. Set a password first.",
+        errorCode: "NO_LOGIN_METHOD",
       };
     }
 
@@ -567,11 +643,11 @@ export class OAuthService {
       return {
         success: false,
         error: `${provider} is not linked to your account`,
-        errorCode: 'NOT_LINKED',
+        errorCode: "NOT_LINKED",
       };
     }
 
-    logger.info('[OAuthService] OAuth account unlinked', {
+    logger.info("[OAuthService] OAuth account unlinked", {
       userId,
       provider,
     });
@@ -588,10 +664,10 @@ export class OAuthService {
   async getLinkedProviders(userId: string): Promise<LinkedProvider[]> {
     const providers = await prisma.oAuthProvider.findMany({
       where: { userId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
 
-    return providers.map(p => ({
+    return providers.map((p) => ({
       provider: p.provider.toLowerCase() as OAuthProvider,
       providerId: p.providerId,
       email: p.email,
@@ -609,11 +685,11 @@ export class OAuthService {
    */
   private async createState(
     provider: OAuthProvider,
-    action: 'login' | 'link',
+    action: "login" | "link",
     userId?: string,
-    redirectUrl?: string
+    redirectUrl?: string,
   ): Promise<string> {
-    const state = crypto.randomBytes(32).toString('hex');
+    const state = crypto.randomBytes(32).toString("hex");
 
     const stateData: OAuthState = {
       provider,
@@ -626,7 +702,7 @@ export class OAuthService {
     await redisClient.client.setex(
       `oauth:state:${state}`,
       this.stateExpiry,
-      JSON.stringify(stateData)
+      JSON.stringify(stateData),
     );
 
     return state;
@@ -656,9 +732,12 @@ export class OAuthService {
   /**
    * Generate auth tokens for user
    */
-  private async generateAuthTokens(
-    user: { id: string; email: string; role: UserRole; producer?: { id: string } | null }
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  private async generateAuthTokens(user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    producer?: { id: string } | null;
+  }): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
 
@@ -686,9 +765,12 @@ export class OAuthService {
   /**
    * Generate access token
    */
-  private generateAccessToken(
-    user: { id: string; email: string; role: UserRole; producer?: { id: string } | null }
-  ): string {
+  private generateAccessToken(user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    producer?: { id: string } | null;
+  }): string {
     const payload = {
       sub: user.id,
       role: user.role,
@@ -699,8 +781,8 @@ export class OAuthService {
     // Type assertion needed due to strict typing in @types/jsonwebtoken
     // ACCESS_TOKEN_TTL is guaranteed to be a valid string format (e.g., '15m')
     return jwt.sign(payload, JWT_PRIVATE_KEY, {
-      algorithm: 'RS256',
-      expiresIn: ACCESS_TOKEN_TTL as jwt.SignOptions['expiresIn'],
+      algorithm: "RS256",
+      expiresIn: ACCESS_TOKEN_TTL as jwt.SignOptions["expiresIn"],
       jwtid: crypto.randomUUID(),
     } as jwt.SignOptions);
   }
@@ -712,8 +794,8 @@ export class OAuthService {
     // Type assertion needed due to strict typing in @types/jsonwebtoken
     // REFRESH_TOKEN_TTL is guaranteed to be a valid string format (e.g., '7d')
     return jwt.sign({ sub: user.id }, JWT_PRIVATE_KEY, {
-      algorithm: 'RS256',
-      expiresIn: REFRESH_TOKEN_TTL as jwt.SignOptions['expiresIn'],
+      algorithm: "RS256",
+      expiresIn: REFRESH_TOKEN_TTL as jwt.SignOptions["expiresIn"],
       jwtid: crypto.randomUUID(),
     } as jwt.SignOptions);
   }
@@ -722,11 +804,11 @@ export class OAuthService {
    * Generate temporary token for 2FA verification
    */
   private async generateTempToken(userId: string): Promise<string> {
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString("hex");
     await redisClient.client.setex(
       `oauth:2fa:${token}`,
       300, // 5 minutes
-      userId
+      userId,
     );
     return token;
   }
@@ -763,9 +845,13 @@ export class OAuthService {
   async storeTokensForExchange(
     accessToken: string,
     refreshToken: string,
-    metadata: { isNewUser?: boolean; requires2FA?: boolean; tempToken?: string } = {}
+    metadata: {
+      isNewUser?: boolean;
+      requires2FA?: boolean;
+      tempToken?: string;
+    } = {},
   ): Promise<string> {
-    const code = crypto.randomBytes(32).toString('hex');
+    const code = crypto.randomBytes(32).toString("hex");
     const key = `oauth:exchange:${code}`;
 
     const data = JSON.stringify({
@@ -778,7 +864,7 @@ export class OAuthService {
     // Store for 60 seconds only - code must be exchanged quickly
     await redisClient.client.setex(key, 60, data);
 
-    logger.debug('[OAuthService] Token exchange code created', {
+    logger.debug("[OAuthService] Token exchange code created", {
       codePrefix: code.substring(0, 8),
     });
 
@@ -801,7 +887,7 @@ export class OAuthService {
   } | null> {
     // Validate code format (must be 64 hex chars)
     if (!/^[a-f0-9]{64}$/i.test(code)) {
-      logger.warn('[OAuthService] Invalid code format in token exchange');
+      logger.warn("[OAuthService] Invalid code format in token exchange");
       return null;
     }
 
@@ -809,7 +895,7 @@ export class OAuthService {
     const data = await redisClient.client.get(key);
 
     if (!data) {
-      logger.warn('[OAuthService] Token exchange code not found or expired', {
+      logger.warn("[OAuthService] Token exchange code not found or expired", {
         codePrefix: code.substring(0, 8),
       });
       return null;
@@ -820,7 +906,7 @@ export class OAuthService {
 
     try {
       const parsed = JSON.parse(data);
-      logger.debug('[OAuthService] Token exchange successful', {
+      logger.debug("[OAuthService] Token exchange successful", {
         codePrefix: code.substring(0, 8),
       });
       return {
@@ -831,7 +917,9 @@ export class OAuthService {
         tempToken: parsed.tempToken,
       };
     } catch (error) {
-      logger.error('[OAuthService] Failed to parse token exchange data', { error });
+      logger.error("[OAuthService] Failed to parse token exchange data", {
+        error,
+      });
       return null;
     }
   }

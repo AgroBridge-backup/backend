@@ -4,10 +4,10 @@
  */
 
 export enum CertificateGrade {
-  STANDARD = 'STANDARD',
-  PREMIUM = 'PREMIUM',
-  EXPORT = 'EXPORT',
-  ORGANIC = 'ORGANIC',
+  STANDARD = "STANDARD",
+  PREMIUM = "PREMIUM",
+  EXPORT = "EXPORT",
+  ORGANIC = "ORGANIC",
 }
 
 export interface QualityCertificate {
@@ -84,30 +84,33 @@ export interface CertificatePayload {
 /**
  * Certificate grade display information
  */
-export const CERTIFICATE_GRADE_INFO: Record<CertificateGrade, {
-  displayName: string;
-  description: string;
-  color: string;
-}> = {
+export const CERTIFICATE_GRADE_INFO: Record<
+  CertificateGrade,
+  {
+    displayName: string;
+    description: string;
+    color: string;
+  }
+> = {
   [CertificateGrade.STANDARD]: {
-    displayName: 'Estándar',
-    description: 'Certificado básico de calidad',
-    color: '#9E9E9E',
+    displayName: "Estándar",
+    description: "Certificado básico de calidad",
+    color: "#9E9E9E",
   },
   [CertificateGrade.PREMIUM]: {
-    displayName: 'Premium',
-    description: 'Calidad superior verificada',
-    color: '#FFD700',
+    displayName: "Premium",
+    description: "Calidad superior verificada",
+    color: "#FFD700",
   },
   [CertificateGrade.EXPORT]: {
-    displayName: 'Exportación',
-    description: 'Apto para mercados internacionales',
-    color: '#2196F3',
+    displayName: "Exportación",
+    description: "Apto para mercados internacionales",
+    color: "#2196F3",
   },
   [CertificateGrade.ORGANIC]: {
-    displayName: 'Orgánico',
-    description: 'Certificación orgánica verificada',
-    color: '#4CAF50',
+    displayName: "Orgánico",
+    description: "Certificación orgánica verificada",
+    color: "#4CAF50",
   },
 };
 
@@ -115,10 +118,22 @@ export const CERTIFICATE_GRADE_INFO: Record<CertificateGrade, {
  * Minimum required stages for certificate issuance by grade
  */
 export const REQUIRED_STAGES_BY_GRADE: Record<CertificateGrade, string[]> = {
-  [CertificateGrade.STANDARD]: ['HARVEST', 'PACKING'],
-  [CertificateGrade.PREMIUM]: ['HARVEST', 'PACKING', 'COLD_CHAIN'],
-  [CertificateGrade.EXPORT]: ['HARVEST', 'PACKING', 'COLD_CHAIN', 'EXPORT', 'DELIVERY'],
-  [CertificateGrade.ORGANIC]: ['HARVEST', 'PACKING', 'COLD_CHAIN', 'EXPORT', 'DELIVERY'],
+  [CertificateGrade.STANDARD]: ["HARVEST", "PACKING"],
+  [CertificateGrade.PREMIUM]: ["HARVEST", "PACKING", "COLD_CHAIN"],
+  [CertificateGrade.EXPORT]: [
+    "HARVEST",
+    "PACKING",
+    "COLD_CHAIN",
+    "EXPORT",
+    "DELIVERY",
+  ],
+  [CertificateGrade.ORGANIC]: [
+    "HARVEST",
+    "PACKING",
+    "COLD_CHAIN",
+    "EXPORT",
+    "DELIVERY",
+  ],
 };
 
 /**
@@ -144,7 +159,7 @@ export function isCertificateValid(certificate: QualityCertificate): boolean {
  */
 export function canUpgradeToGrade(
   currentGrade: CertificateGrade,
-  targetGrade: CertificateGrade
+  targetGrade: CertificateGrade,
 ): boolean {
   return GRADE_HIERARCHY[targetGrade] > GRADE_HIERARCHY[currentGrade];
 }

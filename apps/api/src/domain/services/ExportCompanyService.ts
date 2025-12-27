@@ -4,9 +4,9 @@
  * Handles subscription tiers, capacity checks, and billing events
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { AppError } from '../../shared/errors/AppError.js';
-import { IExportCompanyRepository } from '../repositories/IExportCompanyRepository.js';
+import { v4 as uuidv4 } from "uuid";
+import { AppError } from "../../shared/errors/AppError.js";
+import { IExportCompanyRepository } from "../repositories/IExportCompanyRepository.js";
 import {
   ExportCompany,
   ExportCompanyFilter,
@@ -16,8 +16,8 @@ import {
   CreateExportCompanyInput,
   UpdateExportCompanyInput,
   TIER_CONFIG,
-} from '../entities/ExportCompany.js';
-import logger from '../../shared/utils/logger.js';
+} from "../entities/ExportCompany.js";
+import logger from "../../shared/utils/logger.js";
 
 const TRIAL_DURATION_DAYS = 14;
 
@@ -32,21 +32,23 @@ export class ExportCompanyService {
   /**
    * Register a new export company with trial period
    */
-  async registerCompany(input: CreateExportCompanyInput): Promise<CreateCompanyResult> {
+  async registerCompany(
+    input: CreateExportCompanyInput,
+  ): Promise<CreateCompanyResult> {
     // Validate RFC format (Mexican tax ID)
     if (!this.isValidRfc(input.rfc)) {
-      throw new AppError('Invalid RFC format', 400);
+      throw new AppError("Invalid RFC format", 400);
     }
 
     // Check for existing company with same RFC or email
     const existingByRfc = await this.repository.findByRfc(input.rfc);
     if (existingByRfc) {
-      throw new AppError('A company with this RFC already exists', 409);
+      throw new AppError("A company with this RFC already exists", 409);
     }
 
     const existingByEmail = await this.repository.findByEmail(input.email);
     if (existingByEmail) {
-      throw new AppError('A company with this email already exists', 409);
+      throw new AppError("A company with this email already exists", 409);
     }
 
     // Get tier configuration
@@ -64,7 +66,7 @@ export class ExportCompanyService {
       rfc: input.rfc.toUpperCase(),
       email: input.email.toLowerCase(),
       phone: input.phone,
-      country: input.country || 'MX',
+      country: input.country || "MX",
       state: input.state,
       city: input.city,
       address: input.address,
@@ -79,9 +81,13 @@ export class ExportCompanyService {
       certificateFee: tierConfig.certificateFee,
       farmersIncluded: tierConfig.farmersIncluded,
       certsIncluded: tierConfig.certsIncluded,
-      enabledStandards: input.enabledStandards || ['ORGANIC_USDA', 'ORGANIC_EU', 'SENASICA'],
+      enabledStandards: input.enabledStandards || [
+        "ORGANIC_USDA",
+        "ORGANIC_EU",
+        "SENASICA",
+      ],
       logoUrl: input.logoUrl,
-      primaryColor: input.primaryColor || '#22C55E',
+      primaryColor: input.primaryColor || "#22C55E",
     });
 
     logger.info(`Export company registered: ${company.id} (${company.name})`);
@@ -95,7 +101,7 @@ export class ExportCompanyService {
   async getCompanyWithStats(id: string): Promise<ExportCompanyWithStats> {
     const company = await this.repository.findByIdWithStats(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
     return company;
   }
@@ -106,7 +112,7 @@ export class ExportCompanyService {
   async getCompany(id: string): Promise<ExportCompany> {
     const company = await this.repository.findById(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
     return company;
   }
@@ -124,10 +130,13 @@ export class ExportCompanyService {
   /**
    * Update company details
    */
-  async updateCompany(id: string, input: UpdateExportCompanyInput): Promise<ExportCompany> {
+  async updateCompany(
+    id: string,
+    input: UpdateExportCompanyInput,
+  ): Promise<ExportCompany> {
     const company = await this.repository.findById(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     // If tier is being changed, update limits accordingly
@@ -148,17 +157,22 @@ export class ExportCompanyService {
   /**
    * Upgrade company tier
    */
-  async upgradeTier(id: string, newTier: ExportCompanyTier): Promise<ExportCompany> {
+  async upgradeTier(
+    id: string,
+    newTier: ExportCompanyTier,
+  ): Promise<ExportCompany> {
     const company = await this.repository.findById(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
-    const currentTierIndex = Object.values(ExportCompanyTier).indexOf(company.tier);
+    const currentTierIndex = Object.values(ExportCompanyTier).indexOf(
+      company.tier,
+    );
     const newTierIndex = Object.values(ExportCompanyTier).indexOf(newTier);
 
     if (newTierIndex <= currentTierIndex) {
-      throw new AppError('New tier must be higher than current tier', 400);
+      throw new AppError("New tier must be higher than current tier", 400);
     }
 
     const tierConfig = TIER_CONFIG[newTier];
@@ -180,18 +194,20 @@ export class ExportCompanyService {
   async activateCompany(
     id: string,
     stripeCustomerId: string,
-    stripeSubscriptionId: string
+    stripeSubscriptionId: string,
   ): Promise<ExportCompany> {
     const company = await this.repository.findById(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     if (company.status !== ExportCompanyStatus.TRIAL) {
-      throw new AppError('Company is not in trial status', 400);
+      throw new AppError("Company is not in trial status", 400);
     }
 
-    logger.info(`Activating company ${id} with Stripe customer ${stripeCustomerId}`);
+    logger.info(
+      `Activating company ${id} with Stripe customer ${stripeCustomerId}`,
+    );
 
     return this.repository.activate(id, stripeCustomerId, stripeSubscriptionId);
   }
@@ -202,7 +218,7 @@ export class ExportCompanyService {
   async suspendCompany(id: string): Promise<ExportCompany> {
     const company = await this.repository.findById(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     logger.warn(`Suspending company ${id} due to payment failure`);
@@ -216,7 +232,7 @@ export class ExportCompanyService {
   async cancelCompany(id: string): Promise<ExportCompany> {
     const company = await this.repository.findById(id);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     logger.info(`Cancelling company ${id}`);
@@ -235,14 +251,14 @@ export class ExportCompanyService {
   }> {
     const company = await this.repository.findById(companyId);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     // Check company status
     if (company.status === ExportCompanyStatus.SUSPENDED) {
       return {
         canEnroll: false,
-        reason: 'Company subscription is suspended',
+        reason: "Company subscription is suspended",
         currentCount: 0,
         limit: company.farmersIncluded,
       };
@@ -251,7 +267,7 @@ export class ExportCompanyService {
     if (company.status === ExportCompanyStatus.CANCELLED) {
       return {
         canEnroll: false,
-        reason: 'Company subscription is cancelled',
+        reason: "Company subscription is cancelled",
         currentCount: 0,
         limit: company.farmersIncluded,
       };
@@ -262,7 +278,7 @@ export class ExportCompanyService {
       if (new Date() > company.trialEndsAt) {
         return {
           canEnroll: false,
-          reason: 'Trial period has expired',
+          reason: "Trial period has expired",
           currentCount: 0,
           limit: company.farmersIncluded,
         };
@@ -280,7 +296,7 @@ export class ExportCompanyService {
 
     return {
       canEnroll,
-      reason: canEnroll ? undefined : 'Farmer limit reached for current tier',
+      reason: canEnroll ? undefined : "Farmer limit reached for current tier",
       currentCount,
       limit: company.farmersIncluded,
     };
@@ -297,14 +313,14 @@ export class ExportCompanyService {
   }> {
     const company = await this.repository.findById(companyId);
     if (!company) {
-      throw new AppError('Export company not found', 404);
+      throw new AppError("Export company not found", 404);
     }
 
     // Check company status
     if (company.status === ExportCompanyStatus.SUSPENDED) {
       return {
         canIssue: false,
-        reason: 'Company subscription is suspended',
+        reason: "Company subscription is suspended",
         currentCount: 0,
         limit: company.certsIncluded,
       };
@@ -313,7 +329,7 @@ export class ExportCompanyService {
     if (company.status === ExportCompanyStatus.CANCELLED) {
       return {
         canIssue: false,
-        reason: 'Company subscription is cancelled',
+        reason: "Company subscription is cancelled",
         currentCount: 0,
         limit: company.certsIncluded,
       };
@@ -323,7 +339,7 @@ export class ExportCompanyService {
     const currentCount = await this.repository.countCertificatesInMonth(
       companyId,
       now.getFullYear(),
-      now.getMonth() + 1
+      now.getMonth() + 1,
     );
 
     // Unlimited certificates for enterprise
@@ -335,7 +351,7 @@ export class ExportCompanyService {
 
     return {
       canIssue,
-      reason: canIssue ? undefined : 'Monthly certificate limit reached',
+      reason: canIssue ? undefined : "Monthly certificate limit reached",
       currentCount,
       limit: company.certsIncluded,
     };
@@ -344,7 +360,9 @@ export class ExportCompanyService {
   /**
    * Get companies with expiring trials for notification
    */
-  async getExpiringTrials(daysUntilExpiry: number = 3): Promise<ExportCompany[]> {
+  async getExpiringTrials(
+    daysUntilExpiry: number = 3,
+  ): Promise<ExportCompany[]> {
     return this.repository.findExpiringTrials(daysUntilExpiry);
   }
 

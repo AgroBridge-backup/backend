@@ -21,94 +21,94 @@
  * IoT Sensor status
  */
 export enum SensorStatus {
-  ACTIVE = 'ACTIVE',
-  OFFLINE = 'OFFLINE',
-  LOW_BATTERY = 'LOW_BATTERY',
-  MAINTENANCE = 'MAINTENANCE',
-  DECOMMISSIONED = 'DECOMMISSIONED',
+  ACTIVE = "ACTIVE",
+  OFFLINE = "OFFLINE",
+  LOW_BATTERY = "LOW_BATTERY",
+  MAINTENANCE = "MAINTENANCE",
+  DECOMMISSIONED = "DECOMMISSIONED",
 }
 
 /**
  * Cold chain session type
  */
 export enum SessionType {
-  FIELD_MONITORING = 'FIELD_MONITORING',
-  HARVEST_COOLING = 'HARVEST_COOLING',
-  COLD_STORAGE = 'COLD_STORAGE',
-  TRANSPORT = 'TRANSPORT',
+  FIELD_MONITORING = "FIELD_MONITORING",
+  HARVEST_COOLING = "HARVEST_COOLING",
+  COLD_STORAGE = "COLD_STORAGE",
+  TRANSPORT = "TRANSPORT",
 }
 
 /**
  * Cold chain session status
  */
 export enum ColdChainSessionStatus {
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  BREACHED = 'BREACHED',
-  NEEDS_REVIEW = 'NEEDS_REVIEW',
-  EXPIRED = 'EXPIRED',
+  ACTIVE = "ACTIVE",
+  COMPLETED = "COMPLETED",
+  BREACHED = "BREACHED",
+  NEEDS_REVIEW = "NEEDS_REVIEW",
+  EXPIRED = "EXPIRED",
 }
 
 /**
  * Quality grade for export eligibility
  */
 export enum QualityGradeType {
-  PREMIUM = 'PREMIUM',     // A++ Export quality (top 10%)
-  EXPORT = 'EXPORT',       // A/B Export standard
-  DOMESTIC = 'DOMESTIC',   // B/C Domestic market only
-  REJECT = 'REJECT',       // Below standard - not sellable
+  PREMIUM = "PREMIUM", // A++ Export quality (top 10%)
+  EXPORT = "EXPORT", // A/B Export standard
+  DOMESTIC = "DOMESTIC", // B/C Domestic market only
+  REJECT = "REJECT", // Below standard - not sellable
 }
 
 /**
  * Breach type classification
  */
 export enum BreachType {
-  OVER_TEMP = 'OVER_TEMP',
-  UNDER_TEMP = 'UNDER_TEMP',
-  HUMIDITY_HIGH = 'HUMIDITY_HIGH',
-  HUMIDITY_LOW = 'HUMIDITY_LOW',
+  OVER_TEMP = "OVER_TEMP",
+  UNDER_TEMP = "UNDER_TEMP",
+  HUMIDITY_HIGH = "HUMIDITY_HIGH",
+  HUMIDITY_LOW = "HUMIDITY_LOW",
 }
 
 /**
  * Breach severity levels
  */
 export enum BreachSeverity {
-  LOW = 'LOW',           // <1°C deviation, <10 min
-  MEDIUM = 'MEDIUM',     // 1-3°C deviation, 10-30 min
-  HIGH = 'HIGH',         // 3-5°C deviation, 30-60 min
-  CRITICAL = 'CRITICAL', // >5°C deviation or >60 min
+  LOW = "LOW", // <1°C deviation, <10 min
+  MEDIUM = "MEDIUM", // 1-3°C deviation, 10-30 min
+  HIGH = "HIGH", // 3-5°C deviation, 30-60 min
+  CRITICAL = "CRITICAL", // >5°C deviation or >60 min
 }
 
 /**
  * Alert types for notification system
  */
 export enum AlertType {
-  TEMPERATURE_BREACH = 'TEMPERATURE_BREACH',
-  HUMIDITY_BREACH = 'HUMIDITY_BREACH',
-  SENSOR_OFFLINE = 'SENSOR_OFFLINE',
-  QUALITY_DECLINE = 'QUALITY_DECLINE',
-  BATTERY_LOW = 'BATTERY_LOW',
+  TEMPERATURE_BREACH = "TEMPERATURE_BREACH",
+  HUMIDITY_BREACH = "HUMIDITY_BREACH",
+  SENSOR_OFFLINE = "SENSOR_OFFLINE",
+  QUALITY_DECLINE = "QUALITY_DECLINE",
+  BATTERY_LOW = "BATTERY_LOW",
 }
 
 /**
  * Alert severity levels
  */
 export enum AlertSeverity {
-  INFO = 'INFO',
-  WARNING = 'WARNING',
-  CRITICAL = 'CRITICAL',
+  INFO = "INFO",
+  WARNING = "WARNING",
+  CRITICAL = "CRITICAL",
 }
 
 /**
  * Crop types with cold chain requirements
  */
 export enum CropType {
-  AVOCADO = 'AVOCADO',
-  BLUEBERRY = 'BLUEBERRY',
-  STRAWBERRY = 'STRAWBERRY',
-  RASPBERRY = 'RASPBERRY',
-  COFFEE = 'COFFEE',
-  CACAO = 'CACAO',
+  AVOCADO = "AVOCADO",
+  BLUEBERRY = "BLUEBERRY",
+  STRAWBERRY = "STRAWBERRY",
+  RASPBERRY = "RASPBERRY",
+  COFFEE = "COFFEE",
+  CACAO = "CACAO",
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -120,20 +120,20 @@ export enum CropType {
  */
 export interface IoTSensor {
   id: string;
-  deviceId: string;              // MAC address or serial number
-  deviceType: string;            // TEMP_HUMIDITY, BRIX_METER, MULTIFUNCTION
-  manufacturer?: string;         // SensorPush, Hanna Instruments, etc.
+  deviceId: string; // MAC address or serial number
+  deviceType: string; // TEMP_HUMIDITY, BRIX_METER, MULTIFUNCTION
+  manufacturer?: string; // SensorPush, Hanna Instruments, etc.
   firmwareVersion?: string;
 
   exportCompanyId: string;
 
   // Current assignment
-  assignedTo?: string;           // fieldId or shipmentId
-  assignedType?: 'FIELD' | 'SHIPMENT' | 'STORAGE';
+  assignedTo?: string; // fieldId or shipmentId
+  assignedType?: "FIELD" | "SHIPMENT" | "STORAGE";
 
   status: SensorStatus;
   lastReading?: Date;
-  batteryLevel?: number;         // 0-100
+  batteryLevel?: number; // 0-100
 
   createdAt: Date;
   updatedAt: Date;
@@ -150,14 +150,14 @@ export interface SensorReading {
   shipmentId?: string;
 
   // Environmental data
-  temperature: number;           // Celsius (-40 to 100)
-  humidity?: number;             // Percentage 0-100
-  batteryLevel?: number;         // 0-100
+  temperature: number; // Celsius (-40 to 100)
+  humidity?: number; // Percentage 0-100
+  batteryLevel?: number; // 0-100
 
   // Quality metrics (if sensor supports)
-  brixLevel?: number;            // Sugar content °Brix (0-30)
-  phLevel?: number;              // Acidity 0-14
-  firmness?: number;             // Newton force
+  brixLevel?: number; // Sugar content °Brix (0-30)
+  phLevel?: number; // Acidity 0-14
+  firmness?: number; // Newton force
 
   // Location
   gpsLat?: number;
@@ -203,7 +203,7 @@ export interface ColdChainSession {
   // Computed metrics
   totalReadings: number;
   compliantReadings: number;
-  complianceScore: number;       // 0-100
+  complianceScore: number; // 0-100
   breachCount: number;
   maxTemperatureBreach?: number;
   breachDurationMinutes?: number;
@@ -264,14 +264,14 @@ export interface SmartColdAlert {
   sensorId: string;
 
   message: string;
-  messageLang: 'es' | 'en';
+  messageLang: "es" | "en";
 
   currentValue: number;
   threshold: number;
   timestamp: Date;
 
   sent: boolean;
-  sentVia: ('EMAIL' | 'SMS' | 'PUSH' | 'WEBHOOK')[];
+  sentVia: ("EMAIL" | "SMS" | "PUSH" | "WEBHOOK")[];
   acknowledgedBy?: string;
   acknowledgedAt?: Date;
 }
@@ -288,12 +288,12 @@ export interface QualityMetrics {
 
   // Brix (sugar content)
   brixLevel: number;
-  brixGrade: 'EXCELLENT' | 'GOOD' | 'ACCEPTABLE' | 'POOR';
+  brixGrade: "EXCELLENT" | "GOOD" | "ACCEPTABLE" | "POOR";
   brixCompliant: boolean;
 
   // pH (acidity)
   phLevel: number;
-  phGrade: 'EXCELLENT' | 'GOOD' | 'ACCEPTABLE' | 'POOR';
+  phGrade: "EXCELLENT" | "GOOD" | "ACCEPTABLE" | "POOR";
   phCompliant: boolean;
 
   // Physical attributes
@@ -309,7 +309,7 @@ export interface QualityMetrics {
   // Final grade
   overallQuality: QualityGradeType;
   exportEligible: boolean;
-  marketPrice?: number;          // USD/kg estimated
+  marketPrice?: number; // USD/kg estimated
 
   // Lab verification
   labVerified: boolean;
@@ -329,19 +329,22 @@ export interface QualityMetrics {
  *
  * Based on USDA/FDA and EU export requirements
  */
-export const COLD_CHAIN_THRESHOLDS: Record<CropType, {
-  minTemp: number;
-  maxTemp: number;
-  targetHumidity: number;
-  humidityTolerance: number;
-  maxTransitHours: number;
-  brixMin: number;
-  brixMax: number;
-  brixPremium: number;
-  phMin: number;
-  phMax: number;
-  shelfLifeDays: number;
-}> = {
+export const COLD_CHAIN_THRESHOLDS: Record<
+  CropType,
+  {
+    minTemp: number;
+    maxTemp: number;
+    targetHumidity: number;
+    humidityTolerance: number;
+    maxTransitHours: number;
+    brixMin: number;
+    brixMax: number;
+    brixPremium: number;
+    phMin: number;
+    phMax: number;
+    shelfLifeDays: number;
+  }
+> = {
   [CropType.AVOCADO]: {
     minTemp: 5,
     maxTemp: 7,
@@ -433,7 +436,7 @@ export function calculateComplianceScore(
   totalReadings: number,
   compliantReadings: number,
   breachCount: number,
-  maxBreachDuration: number
+  maxBreachDuration: number,
 ): number {
   if (totalReadings === 0) return 0;
 
@@ -446,7 +449,10 @@ export function calculateComplianceScore(
   // Penalty for breach duration (up to -5 points)
   const durationPenalty = Math.min(maxBreachDuration / 60, 5);
 
-  const finalScore = Math.max(0, baseScore + 20 - breachPenalty - durationPenalty);
+  const finalScore = Math.max(
+    0,
+    baseScore + 20 - breachPenalty - durationPenalty,
+  );
 
   return Math.round(finalScore * 100) / 100;
 }
@@ -457,12 +463,13 @@ export function calculateComplianceScore(
 export function calculateQualityGrade(
   cropType: CropType,
   brixLevel: number,
-  phLevel?: number | null
+  phLevel?: number | null,
 ): QualityGradeType {
   const thresholds = COLD_CHAIN_THRESHOLDS[cropType];
 
   // Check Brix compliance
-  const brixInRange = brixLevel >= thresholds.brixMin && brixLevel <= thresholds.brixMax;
+  const brixInRange =
+    brixLevel >= thresholds.brixMin && brixLevel <= thresholds.brixMax;
   const brixPremium = brixLevel >= thresholds.brixPremium;
 
   // Check pH if provided
@@ -483,7 +490,7 @@ export function calculateQualityGrade(
  */
 export function calculateBreachSeverity(
   deviation: number,
-  durationMinutes: number
+  durationMinutes: number,
 ): BreachSeverity {
   // Critical: >5°C deviation OR >60 min
   if (deviation > 5 || durationMinutes > 60) return BreachSeverity.CRITICAL;
@@ -503,7 +510,7 @@ export function calculateBreachSeverity(
  */
 export function isTemperatureCompliant(
   cropType: CropType,
-  temperature: number
+  temperature: number,
 ): boolean {
   const thresholds = COLD_CHAIN_THRESHOLDS[cropType];
   return temperature >= thresholds.minTemp && temperature <= thresholds.maxTemp;
@@ -514,7 +521,7 @@ export function isTemperatureCompliant(
  */
 export function isHumidityCompliant(
   cropType: CropType,
-  humidity: number
+  humidity: number,
 ): boolean {
   const thresholds = COLD_CHAIN_THRESHOLDS[cropType];
   return (
@@ -529,7 +536,7 @@ export function isHumidityCompliant(
 export function calculateShelfLife(
   cropType: CropType,
   complianceScore: number,
-  hoursInTransit: number
+  hoursInTransit: number,
 ): number {
   const thresholds = COLD_CHAIN_THRESHOLDS[cropType];
   const baseShelfLife = thresholds.shelfLifeDays;
@@ -540,7 +547,10 @@ export function calculateShelfLife(
   // Reduce for time already in transit
   const transitDays = hoursInTransit / 24;
 
-  const remainingDays = Math.max(0, (baseShelfLife * complianceFactor) - transitDays);
+  const remainingDays = Math.max(
+    0,
+    baseShelfLife * complianceFactor - transitDays,
+  );
 
   return Math.round(remainingDays * 10) / 10;
 }
@@ -552,44 +562,44 @@ export function calculateShelfLife(
  */
 export function estimateMarketPrice(
   cropType: CropType,
-  qualityGrade: QualityGradeType
+  qualityGrade: QualityGradeType,
 ): number {
   const basePrices: Record<CropType, Record<QualityGradeType, number>> = {
     [CropType.AVOCADO]: {
-      [QualityGradeType.PREMIUM]: 4.50,
-      [QualityGradeType.EXPORT]: 3.20,
-      [QualityGradeType.DOMESTIC]: 1.80,
-      [QualityGradeType.REJECT]: 0.50,
+      [QualityGradeType.PREMIUM]: 4.5,
+      [QualityGradeType.EXPORT]: 3.2,
+      [QualityGradeType.DOMESTIC]: 1.8,
+      [QualityGradeType.REJECT]: 0.5,
     },
     [CropType.BLUEBERRY]: {
-      [QualityGradeType.PREMIUM]: 12.00,
-      [QualityGradeType.EXPORT]: 8.50,
-      [QualityGradeType.DOMESTIC]: 5.00,
-      [QualityGradeType.REJECT]: 1.50,
+      [QualityGradeType.PREMIUM]: 12.0,
+      [QualityGradeType.EXPORT]: 8.5,
+      [QualityGradeType.DOMESTIC]: 5.0,
+      [QualityGradeType.REJECT]: 1.5,
     },
     [CropType.STRAWBERRY]: {
-      [QualityGradeType.PREMIUM]: 6.00,
-      [QualityGradeType.EXPORT]: 4.00,
-      [QualityGradeType.DOMESTIC]: 2.50,
-      [QualityGradeType.REJECT]: 0.80,
+      [QualityGradeType.PREMIUM]: 6.0,
+      [QualityGradeType.EXPORT]: 4.0,
+      [QualityGradeType.DOMESTIC]: 2.5,
+      [QualityGradeType.REJECT]: 0.8,
     },
     [CropType.RASPBERRY]: {
-      [QualityGradeType.PREMIUM]: 14.00,
-      [QualityGradeType.EXPORT]: 10.00,
-      [QualityGradeType.DOMESTIC]: 6.00,
-      [QualityGradeType.REJECT]: 2.00,
+      [QualityGradeType.PREMIUM]: 14.0,
+      [QualityGradeType.EXPORT]: 10.0,
+      [QualityGradeType.DOMESTIC]: 6.0,
+      [QualityGradeType.REJECT]: 2.0,
     },
     [CropType.COFFEE]: {
-      [QualityGradeType.PREMIUM]: 8.00,
-      [QualityGradeType.EXPORT]: 5.50,
-      [QualityGradeType.DOMESTIC]: 3.00,
-      [QualityGradeType.REJECT]: 1.00,
+      [QualityGradeType.PREMIUM]: 8.0,
+      [QualityGradeType.EXPORT]: 5.5,
+      [QualityGradeType.DOMESTIC]: 3.0,
+      [QualityGradeType.REJECT]: 1.0,
     },
     [CropType.CACAO]: {
-      [QualityGradeType.PREMIUM]: 6.50,
-      [QualityGradeType.EXPORT]: 4.50,
-      [QualityGradeType.DOMESTIC]: 2.50,
-      [QualityGradeType.REJECT]: 0.80,
+      [QualityGradeType.PREMIUM]: 6.5,
+      [QualityGradeType.EXPORT]: 4.5,
+      [QualityGradeType.DOMESTIC]: 2.5,
+      [QualityGradeType.REJECT]: 0.8,
     },
   };
 
@@ -601,14 +611,15 @@ export function estimateMarketPrice(
  */
 export function gradeBrixLevel(
   cropType: CropType,
-  brixLevel: number
-): 'EXCELLENT' | 'GOOD' | 'ACCEPTABLE' | 'POOR' {
+  brixLevel: number,
+): "EXCELLENT" | "GOOD" | "ACCEPTABLE" | "POOR" {
   const thresholds = COLD_CHAIN_THRESHOLDS[cropType];
 
-  if (brixLevel >= thresholds.brixPremium) return 'EXCELLENT';
-  if (brixLevel >= thresholds.brixMin && brixLevel <= thresholds.brixMax) return 'GOOD';
-  if (brixLevel >= thresholds.brixMin - 1) return 'ACCEPTABLE';
-  return 'POOR';
+  if (brixLevel >= thresholds.brixPremium) return "EXCELLENT";
+  if (brixLevel >= thresholds.brixMin && brixLevel <= thresholds.brixMax)
+    return "GOOD";
+  if (brixLevel >= thresholds.brixMin - 1) return "ACCEPTABLE";
+  return "POOR";
 }
 
 /**
@@ -616,20 +627,21 @@ export function gradeBrixLevel(
  */
 export function gradePhLevel(
   cropType: CropType,
-  phLevel: number
-): 'EXCELLENT' | 'GOOD' | 'ACCEPTABLE' | 'POOR' {
+  phLevel: number,
+): "EXCELLENT" | "GOOD" | "ACCEPTABLE" | "POOR" {
   const thresholds = COLD_CHAIN_THRESHOLDS[cropType];
   const midpoint = (thresholds.phMin + thresholds.phMax) / 2;
   const range = thresholds.phMax - thresholds.phMin;
 
   // Excellent: within 25% of midpoint
-  if (Math.abs(phLevel - midpoint) <= range * 0.25) return 'EXCELLENT';
+  if (Math.abs(phLevel - midpoint) <= range * 0.25) return "EXCELLENT";
 
   // Good: within range
-  if (phLevel >= thresholds.phMin && phLevel <= thresholds.phMax) return 'GOOD';
+  if (phLevel >= thresholds.phMin && phLevel <= thresholds.phMax) return "GOOD";
 
   // Acceptable: within 10% of range
-  if (phLevel >= thresholds.phMin - 0.2 && phLevel <= thresholds.phMax + 0.2) return 'ACCEPTABLE';
+  if (phLevel >= thresholds.phMin - 0.2 && phLevel <= thresholds.phMax + 0.2)
+    return "ACCEPTABLE";
 
-  return 'POOR';
+  return "POOR";
 }

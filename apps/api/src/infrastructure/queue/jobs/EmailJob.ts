@@ -12,11 +12,11 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Job } from 'bull';
-import { BaseJobProcessor } from '../processors/JobProcessor.js';
-import { resilientEmailService } from '../../notifications/services/ResilientEmailService.js';
-import logger from '../../../shared/utils/logger.js';
-import type { EmailJobData, EmailJobResult } from '../QueueService.js';
+import { Job } from "bull";
+import { BaseJobProcessor } from "../processors/JobProcessor.js";
+import { resilientEmailService } from "../../notifications/services/ResilientEmailService.js";
+import logger from "../../../shared/utils/logger.js";
+import type { EmailJobData, EmailJobResult } from "../QueueService.js";
 
 /**
  * Email Job Processor
@@ -25,7 +25,7 @@ import type { EmailJobData, EmailJobResult } from '../QueueService.js';
  */
 export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
   constructor() {
-    super('email');
+    super("email");
   }
 
   /**
@@ -40,52 +40,52 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
     try {
       // Check email service availability
       if (!resilientEmailService.isAvailable()) {
-        logger.warn('[EmailJob] Email service not available');
+        logger.warn("[EmailJob] Email service not available");
         return {
           success: false,
-          error: 'Email service not available',
-          errorCode: 'SERVICE_UNAVAILABLE',
+          error: "Email service not available",
+          errorCode: "SERVICE_UNAVAILABLE",
         };
       }
 
       // Step 1: Prepare email
-      await this.reportProgress(job, 20, 'Preparing email');
+      await this.reportProgress(job, 20, "Preparing email");
 
       let result;
 
       // Step 2: Send based on template type
-      await this.reportProgress(job, 50, 'Sending email');
+      await this.reportProgress(job, 50, "Sending email");
 
       switch (template) {
-        case 'welcome':
+        case "welcome":
           result = await resilientEmailService.sendWelcomeEmail(
             to,
-            data.name as string
+            data.name as string,
           );
           break;
 
-        case 'password-reset':
+        case "password-reset":
           result = await resilientEmailService.sendPasswordResetEmail(
             to,
-            data.resetToken as string
+            data.resetToken as string,
           );
           break;
 
-        case 'verification':
+        case "verification":
           result = await resilientEmailService.sendVerificationEmail(
             to,
-            data.verificationToken as string
+            data.verificationToken as string,
           );
           break;
 
-        case '2fa-code':
+        case "2fa-code":
           result = await resilientEmailService.send2FACodeEmail(
             to,
-            data.code as string
+            data.code as string,
           );
           break;
 
-        case 'batch-created':
+        case "batch-created":
           result = await resilientEmailService.sendBatchCreatedEmail(to, {
             batchId: data.batchId as string,
             variety: data.variety as string,
@@ -97,23 +97,23 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
           });
           break;
 
-        case 'custom':
+        case "custom":
           if (!html) {
             return {
               success: false,
-              error: 'HTML content required for custom template',
-              errorCode: 'MISSING_HTML',
+              error: "HTML content required for custom template",
+              errorCode: "MISSING_HTML",
             };
           }
           result = await resilientEmailService.sendEmail({
             to,
             subject,
             html,
-            attachments: attachments?.map(att => ({
+            attachments: attachments?.map((att) => ({
               filename: att.filename,
               content: att.content,
-              type: 'application/octet-stream', // Default MIME type
-              disposition: 'attachment' as const,
+              type: "application/octet-stream", // Default MIME type
+              disposition: "attachment" as const,
             })),
           });
           break;
@@ -122,15 +122,15 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
           return {
             success: false,
             error: `Unknown template: ${template}`,
-            errorCode: 'UNKNOWN_TEMPLATE',
+            errorCode: "UNKNOWN_TEMPLATE",
           };
       }
 
       // Step 3: Process result
-      await this.reportProgress(job, 100, 'Complete');
+      await this.reportProgress(job, 100, "Complete");
 
       if (result.success) {
-        logger.info('[EmailJob] Email sent successfully', {
+        logger.info("[EmailJob] Email sent successfully", {
           to,
           template,
           messageId: result.messageId,
@@ -143,7 +143,7 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
           provider: result.provider,
         };
       } else {
-        logger.warn('[EmailJob] Email send failed', {
+        logger.warn("[EmailJob] Email send failed", {
           to,
           template,
           error: result.error,
@@ -158,7 +158,7 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
       }
     } catch (error) {
       const err = error as Error;
-      logger.error('[EmailJob] Email job failed', {
+      logger.error("[EmailJob] Email job failed", {
         to,
         template,
         error: err.message,
@@ -168,7 +168,7 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
       return {
         success: false,
         error: err.message,
-        errorCode: 'PROCESSING_ERROR',
+        errorCode: "PROCESSING_ERROR",
       };
     }
   }
@@ -177,7 +177,7 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
    * Sanitize email data for logging (hide sensitive info)
    */
   protected sanitizeLogData<T>(data: T): T {
-    if (!data || typeof data !== 'object') {
+    if (!data || typeof data !== "object") {
       return data;
     }
 
@@ -185,25 +185,25 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
 
     // Redact sensitive fields
     const sensitiveFields = [
-      'resetToken',
-      'verificationToken',
-      'code',
-      'password',
-      'token',
+      "resetToken",
+      "verificationToken",
+      "code",
+      "password",
+      "token",
     ];
 
     for (const field of sensitiveFields) {
       if (field in sanitized) {
-        sanitized[field] = '[REDACTED]';
+        sanitized[field] = "[REDACTED]";
       }
     }
 
     // Also check nested data object
-    if (sanitized.data && typeof sanitized.data === 'object') {
+    if (sanitized.data && typeof sanitized.data === "object") {
       const nestedData = { ...(sanitized.data as Record<string, unknown>) };
       for (const field of sensitiveFields) {
         if (field in nestedData) {
-          nestedData[field] = '[REDACTED]';
+          nestedData[field] = "[REDACTED]";
         }
       }
       sanitized.data = nestedData;
@@ -225,17 +225,20 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
       /spam/i,
     ];
 
-    return !nonRetryablePatterns.some(pattern => pattern.test(error.message));
+    return !nonRetryablePatterns.some((pattern) => pattern.test(error.message));
   }
 
   /**
    * Override onCompleted for email-specific completion logic
    */
-  async onCompleted(job: Job<EmailJobData>, result: EmailJobResult): Promise<void> {
+  async onCompleted(
+    job: Job<EmailJobData>,
+    result: EmailJobResult,
+  ): Promise<void> {
     await super.onCompleted(job, result);
 
     // Could implement email tracking/analytics here
-    logger.debug('[EmailJob] Email delivery tracked', {
+    logger.debug("[EmailJob] Email delivery tracked", {
       to: job.data.to,
       template: job.data.template,
       success: result.success,
@@ -250,7 +253,7 @@ export class EmailJob extends BaseJobProcessor<EmailJobData, EmailJobResult> {
     await super.onFailed(job, error);
 
     // Log failed email for monitoring
-    logger.error('[EmailJob] Email delivery failed permanently', {
+    logger.error("[EmailJob] Email delivery failed permanently", {
       to: job.data.to,
       template: job.data.template,
       subject: job.data.subject,

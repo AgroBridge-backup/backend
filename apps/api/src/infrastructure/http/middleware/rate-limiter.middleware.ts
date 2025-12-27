@@ -7,17 +7,20 @@
  * @module rate-limiter.middleware
  */
 
-import rateLimit, { RateLimitRequestHandler, Options } from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
-import { Request, Response } from 'express';
-import logger from '../../../shared/utils/logger.js';
-import { redisClient } from '../../cache/RedisClient.js';
+import rateLimit, {
+  RateLimitRequestHandler,
+  Options,
+} from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import { Request, Response } from "express";
+import logger from "../../../shared/utils/logger.js";
+import { redisClient } from "../../cache/RedisClient.js";
 
 // Track active health monitors to prevent duplicates
 const activeHealthMonitors = new Set<string>();
 
 // Track store types for metrics/logging
-const storeTypes = new Map<string, 'redis' | 'in-memory'>();
+const storeTypes = new Map<string, "redis" | "in-memory">();
 
 /**
  * Create Redis store for rate limiting
@@ -25,25 +28,27 @@ const storeTypes = new Map<string, 'redis' | 'in-memory'>();
  */
 function createRedisStore(prefix: string): RedisStore | undefined {
   if (!redisClient.isAvailable()) {
-    logger.warn(`[RateLimiter] Redis unavailable, using in-memory store for ${prefix}`);
-    storeTypes.set(prefix, 'in-memory');
+    logger.warn(
+      `[RateLimiter] Redis unavailable, using in-memory store for ${prefix}`,
+    );
+    storeTypes.set(prefix, "in-memory");
     return undefined;
   }
 
   try {
     const store = new RedisStore({
       // Type assertion needed: ioredis call() returns unknown, but rate-limit-redis expects specific types
-      sendCommand: (async (...args: string[]) => {
+      sendCommand: async (...args: string[]) => {
         const result = await redisClient.client.call(args[0], ...args.slice(1));
         return result as string | number | (string | number)[];
-      }),
+      },
       prefix: `rl:${prefix}:`,
     });
-    storeTypes.set(prefix, 'redis');
+    storeTypes.set(prefix, "redis");
     return store;
   } catch (error) {
     logger.error(`[RateLimiter] Failed to create Redis store: ${error}`);
-    storeTypes.set(prefix, 'in-memory');
+    storeTypes.set(prefix, "in-memory");
     return undefined;
   }
 }
@@ -64,18 +69,22 @@ function startHealthMonitor(storeName: string): void {
   const checkHealth = async (): Promise<void> => {
     try {
       if (!redisClient.isAvailable()) {
-        logger.warn(`[RateLimiter] ${storeName} running in degraded mode (in-memory only)`);
-        storeTypes.set(storeName, 'in-memory');
+        logger.warn(
+          `[RateLimiter] ${storeName} running in degraded mode (in-memory only)`,
+        );
+        storeTypes.set(storeName, "in-memory");
         return;
       }
 
       // Test Redis with PING
       await redisClient.client.ping();
       logger.debug(`[RateLimiter] ${storeName} Redis health check passed`);
-      storeTypes.set(storeName, 'redis');
+      storeTypes.set(storeName, "redis");
     } catch (error) {
-      logger.error(`[RateLimiter] ${storeName} Redis health check failed`, { error });
-      storeTypes.set(storeName, 'in-memory');
+      logger.error(`[RateLimiter] ${storeName} Redis health check failed`, {
+        error,
+      });
+      storeTypes.set(storeName, "in-memory");
     }
   };
 
@@ -92,13 +101,15 @@ function startHealthMonitor(storeName: string): void {
  */
 function authenticatedKeyGenerator(req: Request): string {
   const userId = req.user?.userId || req.user?.id;
-  return userId || req.ip || 'unknown';
+  return userId || req.ip || "unknown";
 }
 
 /**
  * Get current store type for a prefix (for metrics/testing)
  */
-export function getStoreType(prefix: string): 'redis' | 'in-memory' | undefined {
+export function getStoreType(
+  prefix: string,
+): "redis" | "in-memory" | undefined {
   return storeTypes.get(prefix);
 }
 
@@ -112,7 +123,7 @@ export class RateLimiterConfig {
    * Very strict to prevent brute force attacks
    */
   static auth(): RateLimitRequestHandler {
-    const prefix = 'auth';
+    const prefix = "auth";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -123,8 +134,9 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_AUTH_EXCEEDED',
-          message: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.',
+          code: "RATE_LIMIT_AUTH_EXCEEDED",
+          message:
+            "Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.",
         },
       },
       standardHeaders: true,
@@ -133,7 +145,7 @@ export class RateLimiterConfig {
       skipFailedRequests: true, // Don't count failed requests (graceful degradation)
       keyGenerator: (req: Request): string => {
         // Rate limit by IP + email combination for login attempts
-        const email = req.body?.email || '';
+        const email = req.body?.email || "";
         return `${req.ip}-${email}`;
       },
       handler: (req: Request, res: Response) => {
@@ -141,14 +153,15 @@ export class RateLimiterConfig {
           ip: req.ip,
           email: req.body?.email,
           path: req.path,
-          store: storeTypes.get(prefix) || 'unknown',
+          store: storeTypes.get(prefix) || "unknown",
         });
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_AUTH_EXCEEDED',
-            message: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.',
+            code: "RATE_LIMIT_AUTH_EXCEEDED",
+            message:
+              "Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.",
           },
         });
       },
@@ -160,7 +173,7 @@ export class RateLimiterConfig {
    * Balanced for normal API usage
    */
   static api(): RateLimitRequestHandler {
-    const prefix = 'api';
+    const prefix = "api";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -171,8 +184,9 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_API_EXCEEDED',
-          message: 'Límite de solicitudes excedido. Intenta de nuevo más tarde.',
+          code: "RATE_LIMIT_API_EXCEEDED",
+          message:
+            "Límite de solicitudes excedido. Intenta de nuevo más tarde.",
         },
       },
       standardHeaders: true,
@@ -180,9 +194,11 @@ export class RateLimiterConfig {
       skipFailedRequests: true,
       skip: (req: Request): boolean => {
         // Skip health checks and status endpoints
-        return req.path === '/health' ||
-               req.path === '/health/ready' ||
-               req.path === '/api/v1/status';
+        return (
+          req.path === "/health" ||
+          req.path === "/health/ready" ||
+          req.path === "/api/v1/status"
+        );
       },
       keyGenerator: (req: Request): string => {
         // Use user ID if authenticated, otherwise IP
@@ -197,7 +213,7 @@ export class RateLimiterConfig {
    * Prevents spam creation of batches, producers, events
    */
   static creation(): RateLimitRequestHandler {
-    const prefix = 'creation';
+    const prefix = "creation";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -208,8 +224,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_CREATION_EXCEEDED',
-          message: 'Has excedido el límite de creación de recursos por hora.',
+          code: "RATE_LIMIT_CREATION_EXCEEDED",
+          message: "Has excedido el límite de creación de recursos por hora.",
         },
       },
       standardHeaders: true,
@@ -224,14 +240,14 @@ export class RateLimiterConfig {
           ip: req.ip,
           userId: req.user?.userId,
           path: req.path,
-          store: storeTypes.get(prefix) || 'unknown',
+          store: storeTypes.get(prefix) || "unknown",
         });
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_CREATION_EXCEEDED',
-            message: 'Has excedido el límite de creación de recursos por hora.',
+            code: "RATE_LIMIT_CREATION_EXCEEDED",
+            message: "Has excedido el límite de creación de recursos por hora.",
           },
         });
       },
@@ -243,7 +259,7 @@ export class RateLimiterConfig {
    * Very strict to prevent abuse
    */
   static passwordReset(): RateLimitRequestHandler {
-    const prefix = 'password-reset';
+    const prefix = "password-reset";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -254,8 +270,9 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_PASSWORD_RESET_EXCEEDED',
-          message: 'Demasiadas solicitudes de restablecimiento. Intenta en 1 hora.',
+          code: "RATE_LIMIT_PASSWORD_RESET_EXCEEDED",
+          message:
+            "Demasiadas solicitudes de restablecimiento. Intenta en 1 hora.",
         },
       },
       standardHeaders: true,
@@ -269,14 +286,15 @@ export class RateLimiterConfig {
         logger.warn(`[RateLimiter] Password reset rate limit exceeded`, {
           ip: req.ip,
           email: req.body?.email,
-          store: storeTypes.get(prefix) || 'unknown',
+          store: storeTypes.get(prefix) || "unknown",
         });
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_PASSWORD_RESET_EXCEEDED',
-            message: 'Demasiadas solicitudes de restablecimiento. Intenta en 1 hora.',
+            code: "RATE_LIMIT_PASSWORD_RESET_EXCEEDED",
+            message:
+              "Demasiadas solicitudes de restablecimiento. Intenta en 1 hora.",
           },
         });
       },
@@ -288,7 +306,7 @@ export class RateLimiterConfig {
    * Prevents mass account creation
    */
   static registration(): RateLimitRequestHandler {
-    const prefix = 'registration';
+    const prefix = "registration";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -299,8 +317,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_REGISTRATION_EXCEEDED',
-          message: 'Demasiados registros desde esta IP. Intenta más tarde.',
+          code: "RATE_LIMIT_REGISTRATION_EXCEEDED",
+          message: "Demasiados registros desde esta IP. Intenta más tarde.",
         },
       },
       standardHeaders: true,
@@ -313,14 +331,14 @@ export class RateLimiterConfig {
         logger.warn(`[RateLimiter] Registration rate limit exceeded`, {
           ip: req.ip,
           path: req.path,
-          store: storeTypes.get(prefix) || 'unknown',
+          store: storeTypes.get(prefix) || "unknown",
         });
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_REGISTRATION_EXCEEDED',
-            message: 'Demasiados registros desde esta IP. Intenta más tarde.',
+            code: "RATE_LIMIT_REGISTRATION_EXCEEDED",
+            message: "Demasiados registros desde esta IP. Intenta más tarde.",
           },
         });
       },
@@ -332,7 +350,7 @@ export class RateLimiterConfig {
    * Moderate limit to prevent token farming
    */
   static tokenRefresh(): RateLimitRequestHandler {
-    const prefix = 'token-refresh';
+    const prefix = "token-refresh";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -343,8 +361,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_REFRESH_EXCEEDED',
-          message: 'Demasiadas solicitudes de renovación de token.',
+          code: "RATE_LIMIT_REFRESH_EXCEEDED",
+          message: "Demasiadas solicitudes de renovación de token.",
         },
       },
       standardHeaders: true,
@@ -360,7 +378,7 @@ export class RateLimiterConfig {
    * Rate limiter for sensitive operations (admin actions, verifications)
    */
   static sensitive(): RateLimitRequestHandler {
-    const prefix = 'sensitive';
+    const prefix = "sensitive";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -371,8 +389,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_SENSITIVE_EXCEEDED',
-          message: 'Has excedido el límite de operaciones sensibles.',
+          code: "RATE_LIMIT_SENSITIVE_EXCEEDED",
+          message: "Has excedido el límite de operaciones sensibles.",
         },
       },
       standardHeaders: true,
@@ -390,7 +408,7 @@ export class RateLimiterConfig {
    * Very strict to prevent brute force attacks on TOTP codes
    */
   static twoFactor(): RateLimitRequestHandler {
-    const prefix = '2fa';
+    const prefix = "2fa";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -401,8 +419,9 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_2FA_EXCEEDED',
-          message: 'Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.',
+          code: "RATE_LIMIT_2FA_EXCEEDED",
+          message:
+            "Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.",
         },
       },
       standardHeaders: true,
@@ -422,14 +441,15 @@ export class RateLimiterConfig {
         logger.warn(`[RateLimiter] 2FA rate limit exceeded`, {
           ip: req.ip,
           path: req.path,
-          store: storeTypes.get(prefix) || 'unknown',
+          store: storeTypes.get(prefix) || "unknown",
         });
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_2FA_EXCEEDED',
-            message: 'Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.',
+            code: "RATE_LIMIT_2FA_EXCEEDED",
+            message:
+              "Demasiados intentos de verificación 2FA. Intenta de nuevo en 5 minutos.",
           },
         });
       },
@@ -441,7 +461,7 @@ export class RateLimiterConfig {
    * Prevents rapid OAuth request spam
    */
   static oauth(): RateLimitRequestHandler {
-    const prefix = 'oauth';
+    const prefix = "oauth";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -452,8 +472,9 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_OAUTH_EXCEEDED',
-          message: 'Demasiadas solicitudes de autenticación OAuth. Intenta más tarde.',
+          code: "RATE_LIMIT_OAUTH_EXCEEDED",
+          message:
+            "Demasiadas solicitudes de autenticación OAuth. Intenta más tarde.",
         },
       },
       standardHeaders: true,
@@ -471,7 +492,7 @@ export class RateLimiterConfig {
    * Prevents DDoS, scraping, and API abuse on /verify/* routes
    */
   static publicApi(): RateLimitRequestHandler {
-    const prefix = 'public';
+    const prefix = "public";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -482,8 +503,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_PUBLIC_API_EXCEEDED',
-          message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
+          code: "RATE_LIMIT_PUBLIC_API_EXCEEDED",
+          message: "Demasiadas solicitudes. Intenta de nuevo en 15 minutos.",
         },
       },
       standardHeaders: true,
@@ -496,14 +517,14 @@ export class RateLimiterConfig {
         logger.warn(`[RateLimiter] Public API rate limit exceeded`, {
           ip: req.ip,
           path: req.path,
-          store: storeTypes.get(prefix) || 'unknown',
+          store: storeTypes.get(prefix) || "unknown",
         });
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_PUBLIC_API_EXCEEDED',
-            message: 'Demasiadas solicitudes. Intenta de nuevo en 15 minutos.',
+            code: "RATE_LIMIT_PUBLIC_API_EXCEEDED",
+            message: "Demasiadas solicitudes. Intenta de nuevo en 15 minutos.",
           },
         });
       },
@@ -515,7 +536,7 @@ export class RateLimiterConfig {
    * For protected endpoints after authentication
    */
   static authenticated(): RateLimitRequestHandler {
-    const prefix = 'authenticated';
+    const prefix = "authenticated";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -526,8 +547,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_EXCEEDED',
-          message: 'Rate limit exceeded',
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "Rate limit exceeded",
         },
       },
       standardHeaders: true,
@@ -543,7 +564,7 @@ export class RateLimiterConfig {
    * 5 certificate generations per farmer per hour
    */
   static certGen(): RateLimitRequestHandler {
-    const prefix = 'certgen';
+    const prefix = "certgen";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -554,8 +575,9 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_CERTGEN_EXCEEDED',
-          message: 'Límite de generación de certificados alcanzado. Máximo 5 por hora.',
+          code: "RATE_LIMIT_CERTGEN_EXCEEDED",
+          message:
+            "Límite de generación de certificados alcanzado. Máximo 5 por hora.",
         },
       },
       standardHeaders: true,
@@ -564,18 +586,22 @@ export class RateLimiterConfig {
       skipFailedRequests: false,
       keyGenerator: authenticatedKeyGenerator,
       handler: (req: Request, res: Response) => {
-        logger.warn(`[RateLimiter] Certificate generation rate limit exceeded`, {
-          ip: req.ip,
-          userId: req.user?.userId,
-          path: req.path,
-          store: storeTypes.get(prefix) || 'unknown',
-        });
+        logger.warn(
+          `[RateLimiter] Certificate generation rate limit exceeded`,
+          {
+            ip: req.ip,
+            userId: req.user?.userId,
+            path: req.path,
+            store: storeTypes.get(prefix) || "unknown",
+          },
+        );
 
         res.status(429).json({
           success: false,
           error: {
-            code: 'RATE_LIMIT_CERTGEN_EXCEEDED',
-            message: 'Límite de generación de certificados alcanzado. Máximo 5 por hora.',
+            code: "RATE_LIMIT_CERTGEN_EXCEEDED",
+            message:
+              "Límite de generación de certificados alcanzado. Máximo 5 por hora.",
           },
         });
       },
@@ -587,7 +613,7 @@ export class RateLimiterConfig {
    * For admin-only endpoints
    */
   static admin(): RateLimitRequestHandler {
-    const prefix = 'admin';
+    const prefix = "admin";
     const store = createRedisStore(prefix);
     startHealthMonitor(prefix);
 
@@ -598,8 +624,8 @@ export class RateLimiterConfig {
       message: {
         success: false,
         error: {
-          code: 'RATE_LIMIT_ADMIN_EXCEEDED',
-          message: 'Admin rate limit exceeded.',
+          code: "RATE_LIMIT_ADMIN_EXCEEDED",
+          message: "Admin rate limit exceeded.",
         },
       },
       standardHeaders: true,

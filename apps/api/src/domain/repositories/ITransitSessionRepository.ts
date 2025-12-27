@@ -9,7 +9,7 @@ import {
   TransitStatus,
   CreateTransitSessionInput,
   AddLocationInput,
-} from '../entities/TransitSession.js';
+} from "../entities/TransitSession.js";
 
 export interface ITransitSessionRepository {
   /**
@@ -52,18 +52,24 @@ export interface ITransitSessionRepository {
       actualDeparture?: Date;
       actualArrival?: Date;
       estimatedArrival?: Date;
-    }
+    },
   ): Promise<TransitSession>;
 
   /**
    * Update estimated arrival time
    */
-  updateEstimatedArrival(id: string, estimatedArrival: Date): Promise<TransitSession>;
+  updateEstimatedArrival(
+    id: string,
+    estimatedArrival: Date,
+  ): Promise<TransitSession>;
 
   /**
    * Update distance traveled
    */
-  updateDistanceTraveled(id: string, distanceTraveledKm: number): Promise<TransitSession>;
+  updateDistanceTraveled(
+    id: string,
+    distanceTraveledKm: number,
+  ): Promise<TransitSession>;
 
   /**
    * Add a location update to a session

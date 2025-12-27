@@ -19,9 +19,13 @@ import {
   GetSendQuotaCommand,
   type SendEmailCommandInput,
   type SendRawEmailCommandInput,
-} from '@aws-sdk/client-ses';
-import logger from '../../../shared/utils/logger.js';
-import type { EmailOptions, EmailSendResult, EmailAttachment } from '../types/index.js';
+} from "@aws-sdk/client-ses";
+import logger from "../../../shared/utils/logger.js";
+import type {
+  EmailOptions,
+  EmailSendResult,
+  EmailAttachment,
+} from "../types/index.js";
 
 /**
  * SES Provider configuration
@@ -59,11 +63,12 @@ export class SESProvider {
 
   constructor() {
     this.config = {
-      region: process.env.AWS_SES_REGION || process.env.AWS_REGION || 'us-east-1',
+      region:
+        process.env.AWS_SES_REGION || process.env.AWS_REGION || "us-east-1",
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      fromEmail: process.env.AWS_SES_FROM_EMAIL || 'noreply@agrobridge.io',
-      fromName: process.env.SENDGRID_FROM_NAME || 'AgroBridge',
+      fromEmail: process.env.AWS_SES_FROM_EMAIL || "noreply@agrobridge.io",
+      fromName: process.env.SENDGRID_FROM_NAME || "AgroBridge",
       configurationSet: process.env.AWS_SES_CONFIGURATION_SET,
     };
   }
@@ -93,13 +98,13 @@ export class SESProvider {
       this.client = new SESClient(clientConfig);
       this.initialized = true;
 
-      logger.info('[SESProvider] AWS SES initialized', {
+      logger.info("[SESProvider] AWS SES initialized", {
         region: this.config.region,
         fromEmail: this.config.fromEmail,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[SESProvider] Failed to initialize SES', {
+      logger.error("[SESProvider] Failed to initialize SES", {
         error: err.message,
       });
     }
@@ -145,7 +150,7 @@ export class SESProvider {
         percentUsed,
       };
     } catch (error) {
-      logger.error('[SESProvider] Health check failed', {
+      logger.error("[SESProvider] Health check failed", {
         error: (error as Error).message,
       });
       return {
@@ -170,8 +175,8 @@ export class SESProvider {
     if (!this.client) {
       return {
         success: false,
-        error: 'SES client not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "SES client not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -191,16 +196,16 @@ export class SESProvider {
         Message: {
           Subject: {
             Data: options.subject,
-            Charset: 'UTF-8',
+            Charset: "UTF-8",
           },
           Body: {
             Html: {
               Data: options.html,
-              Charset: 'UTF-8',
+              Charset: "UTF-8",
             },
             Text: {
               Data: options.text || this.stripHtml(options.html),
-              Charset: 'UTF-8',
+              Charset: "UTF-8",
             },
           },
         },
@@ -219,7 +224,7 @@ export class SESProvider {
       // Add message tags for analytics
       if (options.categories) {
         input.Tags = options.categories.map((cat) => ({
-          Name: 'category',
+          Name: "category",
           Value: cat,
         }));
       }
@@ -228,7 +233,7 @@ export class SESProvider {
       const response = await this.client.send(command);
       const latency = Date.now() - startTime;
 
-      logger.info('[SESProvider] Email sent successfully', {
+      logger.info("[SESProvider] Email sent successfully", {
         to: this.maskEmail(options.to),
         subject: options.subject,
         messageId: response.MessageId,
@@ -239,10 +244,10 @@ export class SESProvider {
         success: true,
         messageId: response.MessageId,
         latency,
-        provider: 'ses',
+        provider: "ses",
       };
     } catch (error: any) {
-      logger.error('[SESProvider] Send failed', {
+      logger.error("[SESProvider] Send failed", {
         error: error.message,
         to: this.maskEmail(options.to),
         subject: options.subject,
@@ -253,7 +258,7 @@ export class SESProvider {
         success: false,
         error: error.message,
         errorCode: error.name,
-        provider: 'ses',
+        provider: "ses",
       };
     }
   }
@@ -265,8 +270,8 @@ export class SESProvider {
     if (!this.client) {
       return {
         success: false,
-        error: 'SES client not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "SES client not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -275,10 +280,10 @@ export class SESProvider {
       const boundary = `----=_Part_${Date.now().toString(36)}`;
 
       // Build raw email message
-      let rawMessage = '';
+      let rawMessage = "";
       rawMessage += `From: ${this.config.fromName} <${this.config.fromEmail}>\n`;
       rawMessage += `To: ${options.to}\n`;
-      rawMessage += `Subject: =?UTF-8?B?${Buffer.from(options.subject).toString('base64')}?=\n`;
+      rawMessage += `Subject: =?UTF-8?B?${Buffer.from(options.subject).toString("base64")}?=\n`;
       rawMessage += `MIME-Version: 1.0\n`;
       rawMessage += `Content-Type: multipart/mixed; boundary="${boundary}"\n\n`;
 
@@ -286,14 +291,14 @@ export class SESProvider {
       rawMessage += `--${boundary}\n`;
       rawMessage += `Content-Type: text/html; charset=UTF-8\n`;
       rawMessage += `Content-Transfer-Encoding: base64\n\n`;
-      rawMessage += `${Buffer.from(options.html).toString('base64')}\n\n`;
+      rawMessage += `${Buffer.from(options.html).toString("base64")}\n\n`;
 
       // Attachments
       if (options.attachments) {
         for (const attachment of options.attachments) {
           rawMessage += `--${boundary}\n`;
-          rawMessage += `Content-Type: ${attachment.type || 'application/octet-stream'}; name="${attachment.filename}"\n`;
-          rawMessage += `Content-Disposition: ${attachment.disposition || 'attachment'}; filename="${attachment.filename}"\n`;
+          rawMessage += `Content-Type: ${attachment.type || "application/octet-stream"}; name="${attachment.filename}"\n`;
+          rawMessage += `Content-Disposition: ${attachment.disposition || "attachment"}; filename="${attachment.filename}"\n`;
           rawMessage += `Content-Transfer-Encoding: base64\n`;
           if (attachment.contentId) {
             rawMessage += `Content-ID: <${attachment.contentId}>\n`;
@@ -318,7 +323,7 @@ export class SESProvider {
       const response = await this.client.send(command);
       const latency = Date.now() - startTime;
 
-      logger.info('[SESProvider] Raw email sent successfully', {
+      logger.info("[SESProvider] Raw email sent successfully", {
         to: this.maskEmail(options.to),
         subject: options.subject,
         messageId: response.MessageId,
@@ -330,10 +335,10 @@ export class SESProvider {
         success: true,
         messageId: response.MessageId,
         latency,
-        provider: 'ses',
+        provider: "ses",
       };
     } catch (error: any) {
-      logger.error('[SESProvider] Raw email send failed', {
+      logger.error("[SESProvider] Raw email send failed", {
         error: error.message,
         to: this.maskEmail(options.to),
         code: error.name,
@@ -343,7 +348,7 @@ export class SESProvider {
         success: false,
         error: error.message,
         errorCode: error.name,
-        provider: 'ses',
+        provider: "ses",
       };
     }
   }
@@ -353,10 +358,10 @@ export class SESProvider {
    */
   private stripHtml(html: string): string {
     return html
-      .replace(/<style[^>]*>.*<\/style>/gms, '')
-      .replace(/<script[^>]*>.*<\/script>/gms, '')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\s+/g, ' ')
+      .replace(/<style[^>]*>.*<\/style>/gms, "")
+      .replace(/<script[^>]*>.*<\/script>/gms, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
       .trim();
   }
 
@@ -364,8 +369,8 @@ export class SESProvider {
    * Mask email for logging (security)
    */
   private maskEmail(email: string): string {
-    const [local, domain] = email.split('@');
-    if (!domain || local.length < 3) return '***@***';
+    const [local, domain] = email.split("@");
+    if (!domain || local.length < 3) return "***@***";
     return `${local.substring(0, 3)}...@${domain}`;
   }
 }

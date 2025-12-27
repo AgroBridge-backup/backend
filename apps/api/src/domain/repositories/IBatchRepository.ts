@@ -1,4 +1,4 @@
-import { Batch } from '../entities/Batch.js';
+import { Batch } from "../entities/Batch.js";
 
 export interface IBatchRepository {
   countByProducer(producerId: string): Promise<number>;

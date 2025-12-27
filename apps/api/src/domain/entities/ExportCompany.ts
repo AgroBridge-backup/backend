@@ -5,16 +5,16 @@
  */
 
 export enum ExportCompanyTier {
-  STARTER = 'STARTER',           // 10 farmers, 50 certs/month, $500/mo
-  PROFESSIONAL = 'PROFESSIONAL', // 50 farmers, 200 certs/month, $1,000/mo
-  ENTERPRISE = 'ENTERPRISE',     // Unlimited farmers, unlimited certs, $2,000/mo
+  STARTER = "STARTER", // 10 farmers, 50 certs/month, $500/mo
+  PROFESSIONAL = "PROFESSIONAL", // 50 farmers, 200 certs/month, $1,000/mo
+  ENTERPRISE = "ENTERPRISE", // Unlimited farmers, unlimited certs, $2,000/mo
 }
 
 export enum ExportCompanyStatus {
-  TRIAL = 'TRIAL',         // 14-day trial period
-  ACTIVE = 'ACTIVE',       // Paying customer
-  SUSPENDED = 'SUSPENDED', // Payment failed or policy violation
-  CANCELLED = 'CANCELLED', // Churned customer
+  TRIAL = "TRIAL", // 14-day trial period
+  ACTIVE = "ACTIVE", // Paying customer
+  SUSPENDED = "SUSPENDED", // Payment failed or policy violation
+  CANCELLED = "CANCELLED", // Churned customer
 }
 
 export interface ExportCompany {
@@ -121,12 +121,15 @@ export interface ExportCompanyWithStats extends ExportCompany {
 }
 
 // Tier configuration for business logic
-export const TIER_CONFIG: Record<ExportCompanyTier, {
-  monthlyFee: number;
-  certificateFee: number;
-  farmersIncluded: number;
-  certsIncluded: number;
-}> = {
+export const TIER_CONFIG: Record<
+  ExportCompanyTier,
+  {
+    monthlyFee: number;
+    certificateFee: number;
+    farmersIncluded: number;
+    certsIncluded: number;
+  }
+> = {
   [ExportCompanyTier.STARTER]: {
     monthlyFee: 500,
     certificateFee: 10,
@@ -143,6 +146,6 @@ export const TIER_CONFIG: Record<ExportCompanyTier, {
     monthlyFee: 2000,
     certificateFee: 5,
     farmersIncluded: -1, // Unlimited
-    certsIncluded: -1,   // Unlimited
+    certsIncluded: -1, // Unlimited
   },
 };

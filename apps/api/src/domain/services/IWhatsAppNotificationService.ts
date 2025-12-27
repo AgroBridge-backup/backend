@@ -55,7 +55,7 @@ export interface IWhatsAppNotificationService {
   sendInvoiceCreatedNotification(
     phoneNumber: string,
     data: InvoiceNotificationData,
-    language?: 'es' | 'en'
+    language?: "es" | "en",
   ): Promise<NotificationResult>;
 
   /**
@@ -64,7 +64,7 @@ export interface IWhatsAppNotificationService {
   sendInvoiceDueReminder(
     phoneNumber: string,
     data: InvoiceDueReminderData,
-    language?: 'es' | 'en'
+    language?: "es" | "en",
   ): Promise<NotificationResult>;
 
   /**
@@ -73,7 +73,7 @@ export interface IWhatsAppNotificationService {
   sendInvoiceOverdueNotification(
     phoneNumber: string,
     data: InvoiceOverdueData,
-    language?: 'es' | 'en'
+    language?: "es" | "en",
   ): Promise<NotificationResult>;
 
   /**
@@ -82,7 +82,7 @@ export interface IWhatsAppNotificationService {
   sendReferralSuccessNotification(
     phoneNumber: string,
     data: ReferralNotificationData,
-    language?: 'es' | 'en'
+    language?: "es" | "en",
   ): Promise<NotificationResult>;
 
   /**
@@ -91,7 +91,7 @@ export interface IWhatsAppNotificationService {
   sendReferralActivatedNotification(
     phoneNumber: string,
     data: ReferralActivatedData,
-    language?: 'es' | 'en'
+    language?: "es" | "en",
   ): Promise<NotificationResult>;
 
   /**

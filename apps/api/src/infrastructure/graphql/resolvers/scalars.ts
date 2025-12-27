@@ -5,34 +5,34 @@
  * @author AgroBridge Engineering Team
  */
 
-import { GraphQLScalarType, Kind } from 'graphql';
+import { GraphQLScalarType, Kind } from "graphql";
 
 /**
  * DateTime scalar for date/time values
  */
 export const DateTimeScalar = new GraphQLScalarType({
-  name: 'DateTime',
-  description: 'A date-time string in ISO 8601 format',
+  name: "DateTime",
+  description: "A date-time string in ISO 8601 format",
 
   serialize(value: unknown): string {
     if (value instanceof Date) {
       return value.toISOString();
     }
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return new Date(value).toISOString();
     }
     throw new Error(`DateTime cannot serialize value: ${value}`);
   },
 
   parseValue(value: unknown): Date {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const date = new Date(value);
       if (isNaN(date.getTime())) {
         throw new Error(`DateTime cannot parse value: ${value}`);
       }
       return date;
     }
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return new Date(value);
     }
     throw new Error(`DateTime cannot parse value: ${value}`);
@@ -57,8 +57,8 @@ export const DateTimeScalar = new GraphQLScalarType({
  * JSON scalar for arbitrary JSON data
  */
 export const JSONScalar = new GraphQLScalarType({
-  name: 'JSON',
-  description: 'Arbitrary JSON value',
+  name: "JSON",
+  description: "Arbitrary JSON value",
 
   serialize(value: unknown): unknown {
     return value;
@@ -89,7 +89,10 @@ export const JSONScalar = new GraphQLScalarType({
       case Kind.OBJECT:
         const obj: Record<string, unknown> = {};
         ast.fields.forEach((field) => {
-          obj[field.name.value] = JSONScalar.parseLiteral!(field.value, variables);
+          obj[field.name.value] = JSONScalar.parseLiteral!(
+            field.value,
+            variables,
+          );
         });
         return obj;
       case Kind.VARIABLE:
@@ -104,38 +107,42 @@ export const JSONScalar = new GraphQLScalarType({
  * Decimal scalar for precise decimal numbers
  */
 export const DecimalScalar = new GraphQLScalarType({
-  name: 'Decimal',
-  description: 'A decimal number with arbitrary precision',
+  name: "Decimal",
+  description: "A decimal number with arbitrary precision",
 
   serialize(value: unknown): string {
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return value.toString();
     }
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return value;
     }
-    if (typeof value === 'object' && value !== null && 'toString' in value) {
+    if (typeof value === "object" && value !== null && "toString" in value) {
       return value.toString();
     }
     throw new Error(`Decimal cannot serialize value: ${value}`);
   },
 
   parseValue(value: unknown): number {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const num = parseFloat(value);
       if (isNaN(num)) {
         throw new Error(`Decimal cannot parse value: ${value}`);
       }
       return num;
     }
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return value;
     }
     throw new Error(`Decimal cannot parse value: ${value}`);
   },
 
   parseLiteral(ast): number {
-    if (ast.kind === Kind.STRING || ast.kind === Kind.FLOAT || ast.kind === Kind.INT) {
+    if (
+      ast.kind === Kind.STRING ||
+      ast.kind === Kind.FLOAT ||
+      ast.kind === Kind.INT
+    ) {
       const num = parseFloat(ast.value);
       if (isNaN(num)) {
         throw new Error(`Decimal cannot parse literal: ${ast.value}`);

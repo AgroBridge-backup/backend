@@ -6,8 +6,8 @@
  * @module credit-scoring/simple-scoring
  */
 
-import { PrismaClient } from '@prisma/client';
-import { logger } from '../../infrastructure/logging/logger.js';
+import { PrismaClient } from "@prisma/client";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 const prisma = new PrismaClient();
 
@@ -16,11 +16,11 @@ const prisma = new PrismaClient();
 // ============================================================================
 
 const SCORING_WEIGHTS = {
-  repaymentHistory: 0.40,      // 40% - Most important
-  transactionFrequency: 0.20,  // 20%
-  profileCompleteness: 0.15,   // 15%
-  requestPattern: 0.15,        // 15%
-  externalSignals: 0.10,       // 10%
+  repaymentHistory: 0.4, // 40% - Most important
+  transactionFrequency: 0.2, // 20%
+  profileCompleteness: 0.15, // 15%
+  requestPattern: 0.15, // 15%
+  externalSignals: 0.1, // 10%
 };
 
 const APPROVAL_THRESHOLDS = {
@@ -37,14 +37,14 @@ const APPROVAL_THRESHOLDS = {
 export interface CreditScoreResult {
   userId: string;
   producerId?: string;
-  score: number;                    // 0-1000
-  tier: 'A' | 'B' | 'C' | 'D';
-  decision: 'AUTO_APPROVE' | 'MANUAL_REVIEW' | 'AUTO_REJECT';
+  score: number; // 0-1000
+  tier: "A" | "B" | "C" | "D";
+  decision: "AUTO_APPROVE" | "MANUAL_REVIEW" | "AUTO_REJECT";
   maxApprovedAmount: number;
   factors: ScoreFactors;
   breakdown: ScoreBreakdown;
   calculatedAt: Date;
-  validUntil: Date;                 // Score expires after 30 days
+  validUntil: Date; // Score expires after 30 days
 }
 
 export interface ScoreFactors {
@@ -58,10 +58,10 @@ export interface ScoreFactors {
 export interface RepaymentHistoryFactors {
   totalAdvances: number;
   successfulRepayments: number;
-  onTimeRate: number;              // Percentage
+  onTimeRate: number; // Percentage
   avgDaysOverdue: number;
   hasDefaulted: boolean;
-  rawScore: number;                // 0-250
+  rawScore: number; // 0-250
 }
 
 export interface TransactionFactors {
@@ -69,7 +69,7 @@ export interface TransactionFactors {
   listingsCreated: number;
   totalSalesVolume: number;
   accountAgeDays: number;
-  rawScore: number;                // 0-250
+  rawScore: number; // 0-250
 }
 
 export interface ProfileFactors {
@@ -78,21 +78,21 @@ export interface ProfileFactors {
   idUploaded: boolean;
   bankLinked: boolean;
   certificationsCount: number;
-  rawScore: number;                // 0-250
+  rawScore: number; // 0-250
 }
 
 export interface RequestPatternFactors {
-  requestAmountRatio: number;      // Request / avg sale
+  requestAmountRatio: number; // Request / avg sale
   daysSinceLastRequest: number;
-  requestFrequency: number;        // Requests per month
-  rawScore: number;                // 0-250
+  requestFrequency: number; // Requests per month
+  rawScore: number; // 0-250
 }
 
 export interface ExternalSignalFactors {
   isHarvestSeason: boolean;
-  cropRiskFactor: number;          // 0-1
-  regionDefaultRate: number;       // Historical %
-  rawScore: number;                // 0-250
+  cropRiskFactor: number; // 0-1
+  regionDefaultRate: number; // Historical %
+  rawScore: number; // 0-250
 }
 
 export interface ScoreBreakdown {
@@ -113,7 +113,7 @@ export class SimpleCreditScoringService {
    * Calculate credit score for a user/producer
    */
   async calculateScore(userId: string): Promise<CreditScoreResult> {
-    logger.info('[CreditScoring] Calculating score', { userId });
+    logger.info("[CreditScoring] Calculating score", { userId });
 
     const startTime = Date.now();
 
@@ -137,7 +137,7 @@ export class SimpleCreditScoringService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     const producer = user.producer;
@@ -145,7 +145,10 @@ export class SimpleCreditScoringService {
     // Calculate each factor
     const factors: ScoreFactors = {
       repaymentHistory: await this.calculateRepaymentHistory(producer?.id),
-      transactionFrequency: await this.calculateTransactionFrequency(producer?.id, user.createdAt),
+      transactionFrequency: await this.calculateTransactionFrequency(
+        producer?.id,
+        user.createdAt,
+      ),
       profileCompleteness: this.calculateProfileCompleteness(user, producer),
       requestPattern: await this.calculateRequestPattern(producer?.id),
       externalSignals: this.calculateExternalSignals(producer),
@@ -153,20 +156,27 @@ export class SimpleCreditScoringService {
 
     // Calculate weighted scores
     const breakdown: ScoreBreakdown = {
-      repaymentScore: factors.repaymentHistory.rawScore * SCORING_WEIGHTS.repaymentHistory,
-      transactionScore: factors.transactionFrequency.rawScore * SCORING_WEIGHTS.transactionFrequency,
-      profileScore: factors.profileCompleteness.rawScore * SCORING_WEIGHTS.profileCompleteness,
-      patternScore: factors.requestPattern.rawScore * SCORING_WEIGHTS.requestPattern,
-      externalScore: factors.externalSignals.rawScore * SCORING_WEIGHTS.externalSignals,
+      repaymentScore:
+        factors.repaymentHistory.rawScore * SCORING_WEIGHTS.repaymentHistory,
+      transactionScore:
+        factors.transactionFrequency.rawScore *
+        SCORING_WEIGHTS.transactionFrequency,
+      profileScore:
+        factors.profileCompleteness.rawScore *
+        SCORING_WEIGHTS.profileCompleteness,
+      patternScore:
+        factors.requestPattern.rawScore * SCORING_WEIGHTS.requestPattern,
+      externalScore:
+        factors.externalSignals.rawScore * SCORING_WEIGHTS.externalSignals,
       totalScore: 0,
     };
 
     breakdown.totalScore = Math.round(
       breakdown.repaymentScore +
-      breakdown.transactionScore +
-      breakdown.profileScore +
-      breakdown.patternScore +
-      breakdown.externalScore
+        breakdown.transactionScore +
+        breakdown.profileScore +
+        breakdown.patternScore +
+        breakdown.externalScore,
     );
 
     // Determine tier and decision
@@ -191,7 +201,7 @@ export class SimpleCreditScoringService {
     await this.storeScore(result);
 
     const duration = Date.now() - startTime;
-    logger.info('[CreditScoring] Score calculated', {
+    logger.info("[CreditScoring] Score calculated", {
       userId,
       score,
       tier,
@@ -207,7 +217,7 @@ export class SimpleCreditScoringService {
    */
   async checkEligibility(
     userId: string,
-    requestedAmount: number
+    requestedAmount: number,
   ): Promise<{
     eligible: boolean;
     reason?: string;
@@ -216,19 +226,19 @@ export class SimpleCreditScoringService {
   }> {
     const score = await this.calculateScore(userId);
 
-    if (score.decision === 'AUTO_REJECT') {
+    if (score.decision === "AUTO_REJECT") {
       return {
         eligible: false,
-        reason: 'Credit score too low',
+        reason: "Credit score too low",
         requiresReview: false,
       };
     }
 
     if (requestedAmount > score.maxApprovedAmount) {
-      if (score.decision === 'MANUAL_REVIEW') {
+      if (score.decision === "MANUAL_REVIEW") {
         return {
           eligible: true,
-          reason: 'Amount exceeds auto-approval limit, requires review',
+          reason: "Amount exceeds auto-approval limit, requires review",
           maxAmount: score.maxApprovedAmount,
           requiresReview: true,
         };
@@ -244,7 +254,7 @@ export class SimpleCreditScoringService {
     return {
       eligible: true,
       maxAmount: score.maxApprovedAmount,
-      requiresReview: score.decision === 'MANUAL_REVIEW',
+      requiresReview: score.decision === "MANUAL_REVIEW",
     };
   }
 
@@ -252,7 +262,9 @@ export class SimpleCreditScoringService {
   // FACTOR CALCULATIONS
   // ==========================================================================
 
-  private async calculateRepaymentHistory(producerId?: string): Promise<RepaymentHistoryFactors> {
+  private async calculateRepaymentHistory(
+    producerId?: string,
+  ): Promise<RepaymentHistoryFactors> {
     if (!producerId) {
       return {
         totalAdvances: 0,
@@ -269,35 +281,37 @@ export class SimpleCreditScoringService {
     });
 
     const total = advances.length;
-    const completed = advances.filter((a) => a.status === 'COMPLETED').length;
+    const completed = advances.filter((a) => a.status === "COMPLETED").length;
     const defaulted = advances.filter((a) =>
-      ['DEFAULTED', 'IN_COLLECTIONS'].includes(a.status)
+      ["DEFAULTED", "IN_COLLECTIONS"].includes(a.status),
     ).length;
 
     // Calculate on-time rate
-    const completedAdvances = advances.filter((a) => a.status === 'COMPLETED');
+    const completedAdvances = advances.filter((a) => a.status === "COMPLETED");
     const onTimeCount = completedAdvances.filter((a) => {
       const repaidAt = a.repaidAt;
       return repaidAt && repaidAt <= a.dueDate;
     }).length;
 
-    const onTimeRate = completedAdvances.length > 0
-      ? (onTimeCount / completedAdvances.length) * 100
-      : 100;
+    const onTimeRate =
+      completedAdvances.length > 0
+        ? (onTimeCount / completedAdvances.length) * 100
+        : 100;
 
     // Calculate average days overdue
     let totalDaysOverdue = 0;
     completedAdvances.forEach((a) => {
       if (a.repaidAt && a.repaidAt > a.dueDate) {
         const daysOver = Math.floor(
-          (a.repaidAt.getTime() - a.dueDate.getTime()) / (24 * 60 * 60 * 1000)
+          (a.repaidAt.getTime() - a.dueDate.getTime()) / (24 * 60 * 60 * 1000),
         );
         totalDaysOverdue += daysOver;
       }
     });
-    const avgDaysOverdue = completedAdvances.length > 0
-      ? totalDaysOverdue / completedAdvances.length
-      : 0;
+    const avgDaysOverdue =
+      completedAdvances.length > 0
+        ? totalDaysOverdue / completedAdvances.length
+        : 0;
 
     // Calculate raw score (0-250)
     let rawScore = 250;
@@ -330,7 +344,7 @@ export class SimpleCreditScoringService {
 
   private async calculateTransactionFrequency(
     producerId?: string,
-    accountCreatedAt?: Date
+    accountCreatedAt?: Date,
   ): Promise<TransactionFactors> {
     if (!producerId) {
       return {
@@ -355,18 +369,20 @@ export class SimpleCreditScoringService {
     const listingsCreated = recentOrders.length;
     const totalSalesVolume = recentOrders.reduce(
       (sum, o) => sum + o.totalAmount.toNumber(),
-      0
+      0,
     );
 
     // Calculate unique active days
     const uniqueDays = new Set(
-      recentOrders.map((o) => o.createdAt.toISOString().split('T')[0])
+      recentOrders.map((o) => o.createdAt.toISOString().split("T")[0]),
     );
     const activeDays90 = uniqueDays.size;
 
     // Account age
     const accountAgeDays = accountCreatedAt
-      ? Math.floor((Date.now() - accountCreatedAt.getTime()) / (24 * 60 * 60 * 1000))
+      ? Math.floor(
+          (Date.now() - accountCreatedAt.getTime()) / (24 * 60 * 60 * 1000),
+        )
       : 0;
 
     // Calculate raw score
@@ -395,7 +411,10 @@ export class SimpleCreditScoringService {
     };
   }
 
-  private calculateProfileCompleteness(user: any, producer: any): ProfileFactors {
+  private calculateProfileCompleteness(
+    user: any,
+    producer: any,
+  ): ProfileFactors {
     const prefs = user.notificationPreferences;
 
     const phoneVerified = prefs?.phoneVerified || false;
@@ -425,7 +444,9 @@ export class SimpleCreditScoringService {
     };
   }
 
-  private async calculateRequestPattern(producerId?: string): Promise<RequestPatternFactors> {
+  private async calculateRequestPattern(
+    producerId?: string,
+  ): Promise<RequestPatternFactors> {
     if (!producerId) {
       return {
         requestAmountRatio: 1,
@@ -438,7 +459,7 @@ export class SimpleCreditScoringService {
     // Get recent advances
     const advances = await prisma.advanceContract.findMany({
       where: { farmerId: producerId },
-      orderBy: { requestedAt: 'desc' },
+      orderBy: { requestedAt: "desc" },
       take: 10,
     });
 
@@ -446,24 +467,32 @@ export class SimpleCreditScoringService {
     const orders = await prisma.order.findMany({
       where: { producerId },
     });
-    const avgOrderValue = orders.length > 0
-      ? orders.reduce((sum, o) => sum + o.totalAmount.toNumber(), 0) / orders.length
-      : 10000;
+    const avgOrderValue =
+      orders.length > 0
+        ? orders.reduce((sum, o) => sum + o.totalAmount.toNumber(), 0) /
+          orders.length
+        : 10000;
 
     // Latest request
     const lastAdvance = advances[0];
     const daysSinceLastRequest = lastAdvance
-      ? Math.floor((Date.now() - lastAdvance.requestedAt.getTime()) / (24 * 60 * 60 * 1000))
+      ? Math.floor(
+          (Date.now() - lastAdvance.requestedAt.getTime()) /
+            (24 * 60 * 60 * 1000),
+        )
       : 999;
 
     // Request frequency (per month)
     const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
-    const recentAdvances = advances.filter((a) => a.requestedAt >= sixMonthsAgo);
+    const recentAdvances = advances.filter(
+      (a) => a.requestedAt >= sixMonthsAgo,
+    );
     const requestFrequency = recentAdvances.length / 6;
 
     // Request amount ratio
     const lastRequestAmount = lastAdvance?.advanceAmount.toNumber() || 0;
-    const requestAmountRatio = avgOrderValue > 0 ? lastRequestAmount / avgOrderValue : 1;
+    const requestAmountRatio =
+      avgOrderValue > 0 ? lastRequestAmount / avgOrderValue : 1;
 
     // Calculate raw score
     let rawScore = 150;
@@ -498,14 +527,14 @@ export class SimpleCreditScoringService {
     // Crop risk (simplified - would use historical data)
     const cropTypes = producer?.cropTypes || [];
     let cropRiskFactor = 0.5; // Default medium risk
-    if (cropTypes.includes('HASS')) cropRiskFactor = 0.3; // Avocados are lower risk
-    if (cropTypes.includes('BERRIES')) cropRiskFactor = 0.4;
+    if (cropTypes.includes("HASS")) cropRiskFactor = 0.3; // Avocados are lower risk
+    if (cropTypes.includes("BERRIES")) cropRiskFactor = 0.4;
 
     // Region default rate (would use actual data)
-    const state = producer?.state || '';
+    const state = producer?.state || "";
     let regionDefaultRate = 5; // 5% default
-    if (state === 'Michoacán') regionDefaultRate = 3;
-    if (state === 'Jalisco') regionDefaultRate = 4;
+    if (state === "Michoacán") regionDefaultRate = 3;
+    if (state === "Jalisco") regionDefaultRate = 4;
 
     // Calculate raw score
     let rawScore = 150;
@@ -533,40 +562,40 @@ export class SimpleCreditScoringService {
   // DECISION HELPERS
   // ==========================================================================
 
-  private determineTier(score: number): 'A' | 'B' | 'C' | 'D' {
-    if (score >= 800) return 'A';
-    if (score >= 600) return 'B';
-    if (score >= 400) return 'C';
-    return 'D';
+  private determineTier(score: number): "A" | "B" | "C" | "D" {
+    if (score >= 800) return "A";
+    if (score >= 600) return "B";
+    if (score >= 400) return "C";
+    return "D";
   }
 
   private determineDecision(score: number): {
-    decision: 'AUTO_APPROVE' | 'MANUAL_REVIEW' | 'AUTO_REJECT';
+    decision: "AUTO_APPROVE" | "MANUAL_REVIEW" | "AUTO_REJECT";
     maxAmount: number;
   } {
     if (score >= APPROVAL_THRESHOLDS.autoApproveHigh.minScore) {
       return {
-        decision: 'AUTO_APPROVE',
+        decision: "AUTO_APPROVE",
         maxAmount: APPROVAL_THRESHOLDS.autoApproveHigh.maxAmount,
       };
     }
 
     if (score >= APPROVAL_THRESHOLDS.autoApproveLow.minScore) {
       return {
-        decision: 'AUTO_APPROVE',
+        decision: "AUTO_APPROVE",
         maxAmount: APPROVAL_THRESHOLDS.autoApproveLow.maxAmount,
       };
     }
 
     if (score >= APPROVAL_THRESHOLDS.manualReview.minScore) {
       return {
-        decision: 'MANUAL_REVIEW',
+        decision: "MANUAL_REVIEW",
         maxAmount: 2500,
       };
     }
 
     return {
-      decision: 'AUTO_REJECT',
+      decision: "AUTO_REJECT",
       maxAmount: 0,
     };
   }
@@ -584,8 +613,8 @@ export class SimpleCreditScoringService {
         create: {
           producerId: result.producerId,
           overallScore: result.score,
-          riskTier: result.tier === 'A' ? 'A' : result.tier === 'B' ? 'B' : 'C',
-          trend: 'STABLE',
+          riskTier: result.tier === "A" ? "A" : result.tier === "B" ? "B" : "C",
+          trend: "STABLE",
           lastCalculatedAt: result.calculatedAt,
           // Store individual scores
           deliveryScore: result.breakdown.transactionScore,
@@ -596,7 +625,7 @@ export class SimpleCreditScoringService {
         },
         update: {
           overallScore: result.score,
-          riskTier: result.tier === 'A' ? 'A' : result.tier === 'B' ? 'B' : 'C',
+          riskTier: result.tier === "A" ? "A" : result.tier === "B" ? "B" : "C",
           lastCalculatedAt: result.calculatedAt,
           deliveryScore: result.breakdown.transactionScore,
           qualityScore: result.breakdown.profileScore,
@@ -611,18 +640,17 @@ export class SimpleCreditScoringService {
         data: {
           creditScoreId: creditScore.id,
           overallScore: result.score,
-          riskTier: result.tier === 'A' ? 'A' : result.tier === 'B' ? 'B' : 'C',
+          riskTier: result.tier === "A" ? "A" : result.tier === "B" ? "B" : "C",
           deliveryScore: result.breakdown.transactionScore,
           qualityScore: result.breakdown.profileScore,
           paymentScore: result.breakdown.repaymentScore,
           changeAmount: 0,
-          changeReason: 'Recalculated',
-          triggerEvent: 'MANUAL_CALCULATION',
+          changeReason: "Recalculated",
+          triggerEvent: "MANUAL_CALCULATION",
         },
       });
-
     } catch (error) {
-      logger.error('[CreditScoring] Failed to store score:', error);
+      logger.error("[CreditScoring] Failed to store score:", error);
     }
   }
 
@@ -650,15 +678,18 @@ export class SimpleCreditScoringService {
     const blockchainScore = score.blockchainScore.toNumber();
 
     return {
-      userId: '',
+      userId: "",
       producerId,
       score: overallScore,
-      tier: score.riskTier as 'A' | 'B' | 'C',
+      tier: score.riskTier as "A" | "B" | "C",
       decision: this.determineDecision(overallScore).decision,
       maxApprovedAmount: this.determineDecision(overallScore).maxAmount,
       factors: {
         repaymentHistory: {
-          totalAdvances: score.advancesCompleted + score.advancesActive + score.advancesDefaulted,
+          totalAdvances:
+            score.advancesCompleted +
+            score.advancesActive +
+            score.advancesDefaulted,
           successfulRepayments: score.advancesCompleted,
           onTimeRate: 100 - score.advanceDefaultRate.toNumber() * 100,
           avgDaysOverdue: score.averageRepaymentDelay,
@@ -702,7 +733,9 @@ export class SimpleCreditScoringService {
         totalScore: overallScore,
       },
       calculatedAt: score.lastCalculatedAt,
-      validUntil: new Date(score.lastCalculatedAt.getTime() + 30 * 24 * 60 * 60 * 1000),
+      validUntil: new Date(
+        score.lastCalculatedAt.getTime() + 30 * 24 * 60 * 60 * 1000,
+      ),
     };
   }
 }

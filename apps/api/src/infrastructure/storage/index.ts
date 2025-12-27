@@ -40,7 +40,7 @@ export {
   type UploadOptions,
   type UploadResult,
   type PresignedUploadRequest,
-} from './StorageService.js';
+} from "./StorageService.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // S3 STORAGE PROVIDER
@@ -53,7 +53,7 @@ export {
   type PresignedUrlOptions,
   type PresignedUrlResult,
   type S3FileMetadata,
-} from './providers/S3StorageProvider.js';
+} from "./providers/S3StorageProvider.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // FILE VALIDATOR
@@ -64,7 +64,7 @@ export {
   FileTypeConfig,
   type FileValidationOptions,
   type FileValidationResult,
-} from './FileValidator.js';
+} from "./FileValidator.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // IMAGE OPTIMIZER
@@ -78,4 +78,4 @@ export {
   type ResponsiveImageSizes,
   type OptimizationResult,
   type ImageMetadata,
-} from './ImageOptimizer.js';
+} from "./ImageOptimizer.js";

@@ -3,8 +3,12 @@
  * Lists export companies with filtering and pagination
  */
 
-import { ExportCompanyService } from '../../../domain/services/ExportCompanyService.js';
-import { ExportCompany, ExportCompanyStatus, ExportCompanyTier } from '../../../domain/entities/ExportCompany.js';
+import { ExportCompanyService } from "../../../domain/services/ExportCompanyService.js";
+import {
+  ExportCompany,
+  ExportCompanyStatus,
+  ExportCompanyTier,
+} from "../../../domain/entities/ExportCompany.js";
 
 export interface ListExportCompaniesRequest {
   status?: ExportCompanyStatus;
@@ -24,7 +28,9 @@ export interface ListExportCompaniesResponse {
 export class ListExportCompaniesUseCase {
   constructor(private readonly companyService: ExportCompanyService) {}
 
-  async execute(request: ListExportCompaniesRequest): Promise<ListExportCompaniesResponse> {
+  async execute(
+    request: ListExportCompaniesRequest,
+  ): Promise<ListExportCompaniesResponse> {
     const limit = Math.min(request.limit || 20, 100);
     const offset = request.offset || 0;
 

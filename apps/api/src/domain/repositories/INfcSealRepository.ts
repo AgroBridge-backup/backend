@@ -8,7 +8,7 @@ import {
   NfcSealVerification,
   NfcSealStatus,
   CreateNfcSealInput,
-} from '../entities/NfcSeal.js';
+} from "../entities/NfcSeal.js";
 
 export interface INfcSealRepository {
   /**
@@ -39,11 +39,13 @@ export interface INfcSealRepository {
   /**
    * Create a new seal
    */
-  create(input: CreateNfcSealInput & {
-    publicKey: string;
-    encryptedPrivateKey: string;
-    challenge: string;
-  }): Promise<NfcSeal>;
+  create(
+    input: CreateNfcSealInput & {
+      publicKey: string;
+      encryptedPrivateKey: string;
+      challenge: string;
+    },
+  ): Promise<NfcSeal>;
 
   /**
    * Update a seal
@@ -53,7 +55,9 @@ export interface INfcSealRepository {
   /**
    * Create a verification record
    */
-  createVerification(data: Omit<NfcSealVerification, 'id'>): Promise<NfcSealVerification>;
+  createVerification(
+    data: Omit<NfcSealVerification, "id">,
+  ): Promise<NfcSealVerification>;
 
   /**
    * Get verifications for a seal

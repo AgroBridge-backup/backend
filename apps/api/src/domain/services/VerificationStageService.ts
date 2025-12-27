@@ -3,9 +3,9 @@
  * Domain Service with State Machine Logic
  */
 
-import { UserRole } from '@prisma/client';
-import { AppError } from '../../shared/errors/AppError.js';
-import { IVerificationStageRepository } from '../repositories/IVerificationStageRepository.js';
+import { UserRole } from "@prisma/client";
+import { AppError } from "../../shared/errors/AppError.js";
+import { IVerificationStageRepository } from "../repositories/IVerificationStageRepository.js";
 import {
   VerificationStage,
   CreateVerificationStageInput,
@@ -16,16 +16,19 @@ import {
   getStageIndex,
   isValidStageTransition,
   isValidStatusTransition,
-} from '../entities/VerificationStage.js';
-import logger from '../../shared/utils/logger.js';
+} from "../entities/VerificationStage.js";
+import logger from "../../shared/utils/logger.js";
 
 /**
  * Role-based permissions for stage operations
  */
-export const STAGE_PERMISSIONS: Record<StageType, {
-  canCreate: UserRole[];
-  canApprove: UserRole[];
-}> = {
+export const STAGE_PERMISSIONS: Record<
+  StageType,
+  {
+    canCreate: UserRole[];
+    canApprove: UserRole[];
+  }
+> = {
   [StageType.HARVEST]: {
     canCreate: [UserRole.PRODUCER, UserRole.ADMIN],
     canApprove: [UserRole.QA, UserRole.CERTIFIER, UserRole.ADMIN],
@@ -35,7 +38,12 @@ export const STAGE_PERMISSIONS: Record<StageType, {
     canApprove: [UserRole.QA, UserRole.CERTIFIER, UserRole.ADMIN],
   },
   [StageType.COLD_CHAIN]: {
-    canCreate: [UserRole.PRODUCER, UserRole.QA, UserRole.DRIVER, UserRole.ADMIN],
+    canCreate: [
+      UserRole.PRODUCER,
+      UserRole.QA,
+      UserRole.DRIVER,
+      UserRole.ADMIN,
+    ],
     canApprove: [UserRole.QA, UserRole.CERTIFIER, UserRole.ADMIN],
   },
   [StageType.EXPORT]: {
@@ -81,13 +89,16 @@ export class VerificationStageService {
       if (stage.status === StageStatus.APPROVED) {
         currentStage = stage.stageType;
         const currentIndex = getStageIndex(stage.stageType);
-        nextStage = currentIndex < STAGE_ORDER.length - 1
-          ? STAGE_ORDER[currentIndex + 1]
-          : null;
+        nextStage =
+          currentIndex < STAGE_ORDER.length - 1
+            ? STAGE_ORDER[currentIndex + 1]
+            : null;
       }
     }
 
-    const approvedCount = stages.filter(s => s.status === StageStatus.APPROVED).length;
+    const approvedCount = stages.filter(
+      (s) => s.status === StageStatus.APPROVED,
+    ).length;
     const isComplete = approvedCount === STAGE_ORDER.length;
     const progress = Math.round((approvedCount / STAGE_ORDER.length) * 100);
 
@@ -105,23 +116,32 @@ export class VerificationStageService {
    */
   async createNextStage(
     batchId: string,
-    input: Omit<CreateVerificationStageInput, 'batchId' | 'stageType'>,
-    context: StageOperationContext
+    input: Omit<CreateVerificationStageInput, "batchId" | "stageType">,
+    context: StageOperationContext,
   ): Promise<CreateStageResult> {
     // Get current stages
     const { nextStage } = await this.getBatchStages(batchId);
 
     if (!nextStage) {
-      throw new AppError('All stages have already been completed for this batch', 400);
+      throw new AppError(
+        "All stages have already been completed for this batch",
+        400,
+      );
     }
 
     // Check permissions
     this.validateCreatePermission(nextStage, context.userRole);
 
     // Check if stage already exists
-    const existingStage = await this.repository.findByBatchAndType(batchId, nextStage);
+    const existingStage = await this.repository.findByBatchAndType(
+      batchId,
+      nextStage,
+    );
     if (existingStage) {
-      throw new AppError(`Stage ${nextStage} already exists for this batch`, 400);
+      throw new AppError(
+        `Stage ${nextStage} already exists for this batch`,
+        400,
+      );
     }
 
     // Create the stage
@@ -136,7 +156,7 @@ export class VerificationStageService {
       evidenceUrl: input.evidenceUrl,
     });
 
-    logger.info('Verification stage created', {
+    logger.info("Verification stage created", {
       batchId,
       stageType: nextStage,
       stageId: stage.id,
@@ -153,13 +173,14 @@ export class VerificationStageService {
    */
   async createSpecificStage(
     input: CreateVerificationStageInput,
-    context: StageOperationContext
+    context: StageOperationContext,
   ): Promise<CreateStageResult> {
     const { batchId, stageType } = input;
 
     // Get current stages
     const stages = await this.repository.findByBatchId(batchId);
-    const latestApproved = await this.repository.findLatestApprovedStage(batchId);
+    const latestApproved =
+      await this.repository.findLatestApprovedStage(batchId);
 
     // Validate stage order (unless admin)
     if (context.userRole !== UserRole.ADMIN) {
@@ -170,7 +191,7 @@ export class VerificationStageService {
           : STAGE_ORDER[0];
         throw new AppError(
           `Invalid stage order. Expected ${expectedNext}, got ${stageType}`,
-          400
+          400,
         );
       }
     }
@@ -179,9 +200,15 @@ export class VerificationStageService {
     this.validateCreatePermission(stageType, context.userRole);
 
     // Check if stage already exists
-    const existingStage = await this.repository.findByBatchAndType(batchId, stageType);
+    const existingStage = await this.repository.findByBatchAndType(
+      batchId,
+      stageType,
+    );
     if (existingStage) {
-      throw new AppError(`Stage ${stageType} already exists for this batch`, 400);
+      throw new AppError(
+        `Stage ${stageType} already exists for this batch`,
+        400,
+      );
     }
 
     // Create the stage
@@ -190,7 +217,7 @@ export class VerificationStageService {
       actorId: context.userId,
     });
 
-    logger.info('Specific verification stage created', {
+    logger.info("Specific verification stage created", {
       batchId,
       stageType,
       stageId: stage.id,
@@ -208,12 +235,12 @@ export class VerificationStageService {
   async updateStage(
     stageId: string,
     input: UpdateVerificationStageInput,
-    context: StageOperationContext
+    context: StageOperationContext,
   ): Promise<VerificationStage> {
     const stage = await this.repository.findById(stageId);
 
     if (!stage) {
-      throw new AppError('Verification stage not found', 404);
+      throw new AppError("Verification stage not found", 404);
     }
 
     // Validate status transition if status is being changed
@@ -222,7 +249,7 @@ export class VerificationStageService {
       if (!isValidStatusTransition(stage.status, input.status)) {
         throw new AppError(
           `Invalid status transition from ${stage.status} to ${input.status}`,
-          400
+          400,
         );
       }
 
@@ -234,7 +261,7 @@ export class VerificationStageService {
 
     const updatedStage = await this.repository.update(stageId, input);
 
-    logger.info('Verification stage updated', {
+    logger.info("Verification stage updated", {
       stageId,
       batchId: stage.batchId,
       stageType: stage.stageType,
@@ -269,23 +296,25 @@ export class VerificationStageService {
     completedAt: Date | null;
   }> {
     const stages = await this.repository.findByBatchId(batchId);
-    const allApproved = stages.length === STAGE_ORDER.length &&
-      stages.every(s => s.status === StageStatus.APPROVED);
+    const allApproved =
+      stages.length === STAGE_ORDER.length &&
+      stages.every((s) => s.status === StageStatus.APPROVED);
 
     return {
       batchId,
-      stages: stages.map(s => ({
+      stages: stages.map((s) => ({
         stageType: s.stageType,
         status: s.status,
         actorId: s.actorId,
         timestamp: s.timestamp,
         location: s.location,
-        coordinates: s.latitude && s.longitude
-          ? { lat: s.latitude, lng: s.longitude }
-          : null,
+        coordinates:
+          s.latitude && s.longitude
+            ? { lat: s.latitude, lng: s.longitude }
+            : null,
       })),
       completedAt: allApproved
-        ? stages[stages.length - 1]?.timestamp ?? null
+        ? (stages[stages.length - 1]?.timestamp ?? null)
         : null,
     };
   }
@@ -293,12 +322,15 @@ export class VerificationStageService {
   /**
    * Validate create permission for a stage type
    */
-  private validateCreatePermission(stageType: StageType, userRole: UserRole): void {
+  private validateCreatePermission(
+    stageType: StageType,
+    userRole: UserRole,
+  ): void {
     const permissions = STAGE_PERMISSIONS[stageType];
     if (!permissions.canCreate.includes(userRole)) {
       throw new AppError(
         `Role ${userRole} is not authorized to create ${stageType} stage`,
-        403
+        403,
       );
     }
   }
@@ -306,12 +338,15 @@ export class VerificationStageService {
   /**
    * Validate approve permission for a stage type
    */
-  private validateApprovePermission(stageType: StageType, userRole: UserRole): void {
+  private validateApprovePermission(
+    stageType: StageType,
+    userRole: UserRole,
+  ): void {
     const permissions = STAGE_PERMISSIONS[stageType];
     if (!permissions.canApprove.includes(userRole)) {
       throw new AppError(
         `Role ${userRole} is not authorized to approve ${stageType} stage`,
-        403
+        403,
       );
     }
   }

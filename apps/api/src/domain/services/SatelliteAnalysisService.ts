@@ -7,13 +7,13 @@
  * @module SatelliteAnalysisService
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { subYears, addDays, differenceInDays, format } from 'date-fns';
-import { PrismaClient } from '@prisma/client';
-import type { SatelliteComplianceStatus as PrismaSatelliteStatus } from '@prisma/client';
-import { AppError } from '../../shared/errors/AppError.js';
-import logger from '../../shared/utils/logger.js';
-import { SentinelHubService } from '../../infrastructure/services/SentinelHubService.js';
+import { v4 as uuidv4 } from "uuid";
+import { subYears, addDays, differenceInDays, format } from "date-fns";
+import { PrismaClient } from "@prisma/client";
+import type { SatelliteComplianceStatus as PrismaSatelliteStatus } from "@prisma/client";
+import { AppError } from "../../shared/errors/AppError.js";
+import logger from "../../shared/utils/logger.js";
+import { SentinelHubService } from "../../infrastructure/services/SentinelHubService.js";
 import {
   SatelliteAnalysisRequest,
   SatelliteComplianceReport,
@@ -30,8 +30,8 @@ import {
   calculateAnalysisConfidence,
   determineComplianceStatus,
   estimateCostSavings,
-} from '../entities/SatelliteAnalysis.js';
-import { GeoJsonPolygon } from '../entities/FieldImagery.js';
+} from "../entities/SatelliteAnalysis.js";
+import { GeoJsonPolygon } from "../entities/FieldImagery.js";
 
 /**
  * Satellite Analysis Domain Service
@@ -39,7 +39,7 @@ import { GeoJsonPolygon } from '../entities/FieldImagery.js';
 export class SatelliteAnalysisService {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly sentinelHub: SentinelHubService
+    private readonly sentinelHub: SentinelHubService,
   ) {}
 
   /**
@@ -50,12 +50,12 @@ export class SatelliteAnalysisService {
    * @returns Compliance report with NDVI history and violations
    */
   async analyzeFieldCompliance(
-    request: SatelliteAnalysisRequest
+    request: SatelliteAnalysisRequest,
   ): Promise<SatelliteComplianceReport> {
     const startTime = Date.now();
     const analysisId = uuidv4();
 
-    logger.info('[SatelliteAnalysis] Starting compliance analysis', {
+    logger.info("[SatelliteAnalysis] Starting compliance analysis", {
       analysisId,
       fieldId: request.organicFieldId,
       years: request.analysisYears,
@@ -72,7 +72,10 @@ export class SatelliteAnalysisService {
     });
 
     if (!field) {
-      throw new AppError(`Organic field ${request.organicFieldId} not found`, 404);
+      throw new AppError(
+        `Organic field ${request.organicFieldId} not found`,
+        404,
+      );
     }
 
     // Parse GeoJSON boundary
@@ -80,13 +83,15 @@ export class SatelliteAnalysisService {
     try {
       gpsCoordinates = JSON.parse(field.boundaryGeoJson) as GeoJsonPolygon;
     } catch {
-      throw new AppError('Invalid field boundary GeoJSON', 400);
+      throw new AppError("Invalid field boundary GeoJSON", 400);
     }
 
     // 2. Calculate date range
     const endDate = new Date();
     const startDate = subYears(endDate, request.analysisYears || 3);
-    const expectedDataPoints = Math.ceil(differenceInDays(endDate, startDate) / 30);
+    const expectedDataPoints = Math.ceil(
+      differenceInDays(endDate, startDate) / 30,
+    );
 
     // 3. Create analysis record (status: PROCESSING)
     const expiresAt = addDays(new Date(), 90); // 90 days retention
@@ -99,7 +104,7 @@ export class SatelliteAnalysisService {
         analysisEndDate: endDate,
         analysisYears: request.analysisYears || 3,
         cropType: request.cropType,
-        complianceStatus: 'PROCESSING' as PrismaSatelliteStatus,
+        complianceStatus: "PROCESSING" as PrismaSatelliteStatus,
         requestedBy: request.requestedBy,
         expiresAt,
         totalDataPoints: 0,
@@ -123,11 +128,11 @@ export class SatelliteAnalysisService {
         endDate,
         request.cropType,
         request.intervalDays || 30,
-        request.maxCloudCoverage || 50
+        request.maxCloudCoverage || 50,
       );
 
       // 5. Filter out cloudy days (>50% cloud coverage)
-      const validData = ndviData.filter(d => d.cloudCoverage < 50);
+      const validData = ndviData.filter((d) => d.cloudCoverage < 50);
 
       // 6. Detect violations (synthetic fertilizer patterns)
       const violations = this.detectViolations(validData, request.cropType);
@@ -136,19 +141,21 @@ export class SatelliteAnalysisService {
       const complianceStatus = determineComplianceStatus(
         violations,
         validData.length,
-        expectedDataPoints
+        expectedDataPoints,
       );
 
       // 8. Calculate confidence
-      const avgCloudCoverage = validData.length > 0
-        ? validData.reduce((sum, d) => sum + d.cloudCoverage, 0) / validData.length
-        : 100;
+      const avgCloudCoverage =
+        validData.length > 0
+          ? validData.reduce((sum, d) => sum + d.cloudCoverage, 0) /
+            validData.length
+          : 100;
 
       const overallConfidence = calculateAnalysisConfidence(
         validData.length,
         expectedDataPoints,
         violations,
-        avgCloudCoverage
+        avgCloudCoverage,
       );
 
       // 9. Calculate coverage percentage
@@ -172,13 +179,15 @@ export class SatelliteAnalysisService {
           ndviHistory: validData as object[],
           detectedViolations: violations as object[],
           violationCount: violations.length,
-          highSeverityCount: violations.filter(v => v.severity === ViolationSeverity.HIGH).length,
+          highSeverityCount: violations.filter(
+            (v) => v.severity === ViolationSeverity.HIGH,
+          ).length,
           processingTimeMs,
           sentinelApiCalls,
         },
       });
 
-      logger.info('[SatelliteAnalysis] Analysis completed', {
+      logger.info("[SatelliteAnalysis] Analysis completed", {
         analysisId,
         fieldId: request.organicFieldId,
         status: complianceStatus,
@@ -195,20 +204,20 @@ export class SatelliteAnalysisService {
       await this.prisma.satelliteAnalysis.update({
         where: { id: analysisId },
         data: {
-          complianceStatus: 'FAILED' as PrismaSatelliteStatus,
+          complianceStatus: "FAILED" as PrismaSatelliteStatus,
           processingTimeMs,
         },
       });
 
-      logger.error('[SatelliteAnalysis] Analysis failed', {
+      logger.error("[SatelliteAnalysis] Analysis failed", {
         analysisId,
         fieldId: request.organicFieldId,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       throw new AppError(
-        `Satellite analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        500
+        `Satellite analysis failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        500,
       );
     }
   }
@@ -223,7 +232,7 @@ export class SatelliteAnalysisService {
    */
   private detectViolations(
     ndviData: NDVIDataPoint[],
-    cropType: SatelliteCropType
+    cropType: SatelliteCropType,
   ): ViolationFlag[] {
     const violations: ViolationFlag[] = [];
     const baseline = CROP_NDVI_BASELINES[cropType];
@@ -236,7 +245,8 @@ export class SatelliteAnalysisService {
 
       // Rule 1: Synthetic fertilizer detection (NDVI spike)
       if (delta > baseline.syntheticThreshold) {
-        const severity = delta > 0.35 ? ViolationSeverity.HIGH : ViolationSeverity.MEDIUM;
+        const severity =
+          delta > 0.35 ? ViolationSeverity.HIGH : ViolationSeverity.MEDIUM;
 
         violations.push({
           id: uuidv4(),
@@ -252,7 +262,10 @@ export class SatelliteAnalysisService {
       }
 
       // Rule 2: Pesticide application (drop followed by quick recovery)
-      if (delta < rules.pesticide.ndviDropThreshold && i < ndviData.length - 1) {
+      if (
+        delta < rules.pesticide.ndviDropThreshold &&
+        i < ndviData.length - 1
+      ) {
         const nextDelta = ndviData[i + 1].ndviAverage - current.ndviAverage;
 
         if (nextDelta > rules.pesticide.recoveryThreshold) {
@@ -307,10 +320,12 @@ export class SatelliteAnalysisService {
   /**
    * Get latest analysis for a field
    */
-  async getLatestAnalysis(organicFieldId: string): Promise<SatelliteComplianceReport | null> {
+  async getLatestAnalysis(
+    organicFieldId: string,
+  ): Promise<SatelliteComplianceReport | null> {
     const analysis = await this.prisma.satelliteAnalysis.findFirst({
       where: { organicFieldId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!analysis) {
@@ -325,11 +340,11 @@ export class SatelliteAnalysisService {
    */
   async listFieldAnalyses(
     organicFieldId: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<SatelliteComplianceReport[]> {
     const analyses = await this.prisma.satelliteAnalysis.findMany({
       where: { organicFieldId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: limit,
     });
 
@@ -357,19 +372,19 @@ export class SatelliteAnalysisService {
       this.prisma.satelliteAnalysis.count({
         where: {
           createdAt: { gte: startOfMonth },
-          complianceStatus: 'ELIGIBLE',
+          complianceStatus: "ELIGIBLE",
         },
       }),
       this.prisma.satelliteAnalysis.count({
         where: {
           createdAt: { gte: startOfMonth },
-          complianceStatus: 'INELIGIBLE',
+          complianceStatus: "INELIGIBLE",
         },
       }),
       this.prisma.satelliteAnalysis.count({
         where: {
           createdAt: { gte: startOfMonth },
-          complianceStatus: 'NEEDS_REVIEW',
+          complianceStatus: "NEEDS_REVIEW",
         },
       }),
       this.prisma.satelliteAnalysis.aggregate({
@@ -385,7 +400,8 @@ export class SatelliteAnalysisService {
     });
 
     const totalApiCalls = apiCallsThisMonth._sum.sentinelApiCalls || 0;
-    const quotaUsedPercent = (totalApiCalls / SENTINEL_HUB_LIMITS.monthlyProcessingUnits) * 100;
+    const quotaUsedPercent =
+      (totalApiCalls / SENTINEL_HUB_LIMITS.monthlyProcessingUnits) * 100;
 
     const costSavings = estimateCostSavings(analysesThisMonth);
 
@@ -394,7 +410,9 @@ export class SatelliteAnalysisService {
         analysesRun: analysesThisMonth,
         sentinelApiCalls: totalApiCalls,
         quotaUsedPercent: Number(quotaUsedPercent.toFixed(1)),
-        avgProcessingTimeMs: Math.round(avgProcessing._avg.processingTimeMs || 0),
+        avgProcessingTimeMs: Math.round(
+          avgProcessing._avg.processingTimeMs || 0,
+        ),
         eligibleFields: eligibleCount,
         ineligibleFields: ineligibleCount,
         needsReviewFields: needsReviewCount,
@@ -406,14 +424,19 @@ export class SatelliteAnalysisService {
   /**
    * Check if Sentinel Hub is properly configured
    */
-  async checkConfiguration(): Promise<{ configured: boolean; connected: boolean; message: string }> {
+  async checkConfiguration(): Promise<{
+    configured: boolean;
+    connected: boolean;
+    message: string;
+  }> {
     const configured = this.sentinelHub.isConfigured();
 
     if (!configured) {
       return {
         configured: false,
         connected: false,
-        message: 'Sentinel Hub credentials not configured. Set SENTINEL_HUB_CLIENT_ID and SENTINEL_HUB_CLIENT_SECRET environment variables.',
+        message:
+          "Sentinel Hub credentials not configured. Set SENTINEL_HUB_CLIENT_ID and SENTINEL_HUB_CLIENT_SECRET environment variables.",
       };
     }
 
@@ -429,13 +452,15 @@ export class SatelliteAnalysisService {
   /**
    * Map domain status to Prisma enum
    */
-  private mapStatusToPrisma(status: SatelliteComplianceStatus): PrismaSatelliteStatus {
+  private mapStatusToPrisma(
+    status: SatelliteComplianceStatus,
+  ): PrismaSatelliteStatus {
     const mapping: Record<SatelliteComplianceStatus, PrismaSatelliteStatus> = {
-      [SatelliteComplianceStatus.PROCESSING]: 'PROCESSING',
-      [SatelliteComplianceStatus.ELIGIBLE]: 'ELIGIBLE',
-      [SatelliteComplianceStatus.INELIGIBLE]: 'INELIGIBLE',
-      [SatelliteComplianceStatus.NEEDS_REVIEW]: 'NEEDS_REVIEW',
-      [SatelliteComplianceStatus.FAILED]: 'FAILED',
+      [SatelliteComplianceStatus.PROCESSING]: "PROCESSING",
+      [SatelliteComplianceStatus.ELIGIBLE]: "ELIGIBLE",
+      [SatelliteComplianceStatus.INELIGIBLE]: "INELIGIBLE",
+      [SatelliteComplianceStatus.NEEDS_REVIEW]: "NEEDS_REVIEW",
+      [SatelliteComplianceStatus.FAILED]: "FAILED",
     };
     return mapping[status];
   }

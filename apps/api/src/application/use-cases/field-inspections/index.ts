@@ -3,7 +3,7 @@
  * Application layer for field inspection operations
  */
 
-import { FieldInspectionService } from '../../../domain/services/FieldInspectionService.js';
+import { FieldInspectionService } from "../../../domain/services/FieldInspectionService.js";
 import {
   FieldInspection,
   FieldInspectionWithDetails,
@@ -12,7 +12,7 @@ import {
   OrganicInput,
   FieldActivity,
   InspectionType,
-} from '../../../domain/entities/FieldInspection.js';
+} from "../../../domain/entities/FieldInspection.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CREATE FIELD INSPECTION USE CASE
@@ -45,7 +45,9 @@ export interface CreateFieldInspectionOutput {
 export class CreateFieldInspectionUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: CreateFieldInspectionInput): Promise<CreateFieldInspectionOutput> {
+  async execute(
+    input: CreateFieldInspectionInput,
+  ): Promise<CreateFieldInspectionOutput> {
     return this.service.createInspection(input);
   }
 }
@@ -66,7 +68,9 @@ export interface GetFieldInspectionOutput {
 export class GetFieldInspectionUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: GetFieldInspectionInput): Promise<GetFieldInspectionOutput> {
+  async execute(
+    input: GetFieldInspectionInput,
+  ): Promise<GetFieldInspectionOutput> {
     const inspection = input.includeDetails
       ? await this.service.getInspectionWithDetails(input.inspectionId)
       : await this.service.getInspection(input.inspectionId);
@@ -104,7 +108,9 @@ export interface ListFieldInspectionsOutput {
 export class ListFieldInspectionsUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: ListFieldInspectionsInput): Promise<ListFieldInspectionsOutput> {
+  async execute(
+    input: ListFieldInspectionsInput,
+  ): Promise<ListFieldInspectionsOutput> {
     const filter: FieldInspectionFilter = {
       fieldId: input.fieldId,
       inspectorId: input.inspectorId,
@@ -148,17 +154,19 @@ export interface UpdateInspectionNotesOutput {
 export class UpdateInspectionNotesUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: UpdateInspectionNotesInput): Promise<UpdateInspectionNotesOutput> {
+  async execute(
+    input: UpdateInspectionNotesInput,
+  ): Promise<UpdateInspectionNotesOutput> {
     const inspection = await this.service.updateInspectionNotes(
       input.inspectionId,
       input.notes,
       input.issues,
-      input.recommendations
+      input.recommendations,
     );
 
     return {
       inspection,
-      message: 'Inspection notes updated successfully',
+      message: "Inspection notes updated successfully",
     };
   }
 }
@@ -180,7 +188,9 @@ export interface VerifyFieldInspectionOutput {
 export class VerifyFieldInspectionUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: VerifyFieldInspectionInput): Promise<VerifyFieldInspectionOutput> {
+  async execute(
+    input: VerifyFieldInspectionInput,
+  ): Promise<VerifyFieldInspectionOutput> {
     return this.service.verifyInspection(input.inspectionId, input.verifiedBy);
   }
 }
@@ -211,7 +221,9 @@ export interface AddInspectionPhotoOutput {
 export class AddInspectionPhotoUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: AddInspectionPhotoInput): Promise<AddInspectionPhotoOutput> {
+  async execute(
+    input: AddInspectionPhotoInput,
+  ): Promise<AddInspectionPhotoOutput> {
     const result = await this.service.addPhoto(input);
 
     return {
@@ -219,10 +231,10 @@ export class AddInspectionPhotoUseCase {
       withinBoundary: result.withinBoundary,
       distanceFromField: result.distanceFromField,
       message: result.withinBoundary
-        ? 'Photo added with verified location'
+        ? "Photo added with verified location"
         : result.distanceFromField
           ? `Photo added but location is ${Math.round(result.distanceFromField)}m from field center`
-          : 'Photo added without GPS verification',
+          : "Photo added without GPS verification",
     };
   }
 }
@@ -280,12 +292,14 @@ export interface VerifyOrganicInputOutput {
 export class VerifyOrganicInputUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: VerifyOrganicInputInput): Promise<VerifyOrganicInputOutput> {
+  async execute(
+    input: VerifyOrganicInputInput,
+  ): Promise<VerifyOrganicInputOutput> {
     return this.service.verifyOrganicInput(
       input.inputId,
       input.verifiedBy,
       input.approved,
-      input.rejectionReason
+      input.rejectionReason,
     );
   }
 }
@@ -339,7 +353,9 @@ export interface GetFieldInspectionStatsOutput {
 export class GetFieldInspectionStatsUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: GetFieldInspectionStatsInput): Promise<GetFieldInspectionStatsOutput> {
+  async execute(
+    input: GetFieldInspectionStatsInput,
+  ): Promise<GetFieldInspectionStatsOutput> {
     const [stats, needsInspection] = await Promise.all([
       this.service.getFieldInspectionStats(input.fieldId),
       this.service.fieldNeedsInspection(input.fieldId, 30),
@@ -370,7 +386,9 @@ export interface GetInspectionDetailsOutput {
 export class GetInspectionDetailsUseCase {
   constructor(private readonly service: FieldInspectionService) {}
 
-  async execute(input: GetInspectionDetailsInput): Promise<GetInspectionDetailsOutput> {
+  async execute(
+    input: GetInspectionDetailsInput,
+  ): Promise<GetInspectionDetailsOutput> {
     const [photos, organicInputs, activities] = await Promise.all([
       this.service.getInspectionPhotos(input.inspectionId),
       this.service.getOrganicInputs(input.inspectionId),

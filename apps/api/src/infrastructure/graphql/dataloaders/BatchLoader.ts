@@ -8,8 +8,8 @@
  * @author AgroBridge Engineering Team
  */
 
-import DataLoader from 'dataloader';
-import { PrismaClient, Batch } from '@prisma/client';
+import DataLoader from "dataloader";
+import { PrismaClient, Batch } from "@prisma/client";
 
 /**
  * Create batch loader
@@ -18,7 +18,7 @@ import { PrismaClient, Batch } from '@prisma/client';
  * @returns DataLoader for batches
  */
 export function createBatchLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, Batch | null> {
   return new DataLoader<string, Batch | null>(
     async (ids: readonly string[]) => {
@@ -46,7 +46,7 @@ export function createBatchLoader(
       cache: true,
       // Maximum batch size
       maxBatchSize: 100,
-    }
+    },
   );
 }
 
@@ -55,7 +55,7 @@ export function createBatchLoader(
  */
 export function createBatchLoaderWithFields<T>(
   prisma: PrismaClient,
-  select: Record<string, boolean>
+  select: Record<string, boolean>,
 ): DataLoader<string, T | null> {
   return new DataLoader<string, T | null>(
     async (ids: readonly string[]) => {
@@ -78,7 +78,7 @@ export function createBatchLoaderWithFields<T>(
 
       return ids.map((id) => batchMap.get(id) || null);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -86,7 +86,7 @@ export function createBatchLoaderWithFields<T>(
  * Load batches by producer ID
  */
 export function createBatchesByProducerLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, Batch[]> {
   return new DataLoader<string, Batch[]>(
     async (producerIds: readonly string[]) => {
@@ -96,7 +96,7 @@ export function createBatchesByProducerLoader(
             in: producerIds as string[],
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
 
       // Group batches by producer ID
@@ -111,9 +111,11 @@ export function createBatchesByProducerLoader(
 
       return producerIds.map((id) => batchesByProducer.get(id) || []);
     },
-    { cache: true, maxBatchSize: 50 }
+    { cache: true, maxBatchSize: 50 },
   );
 }
 
 export type BatchLoaderType = ReturnType<typeof createBatchLoader>;
-export type BatchesByProducerLoaderType = ReturnType<typeof createBatchesByProducerLoader>;
+export type BatchesByProducerLoaderType = ReturnType<
+  typeof createBatchesByProducerLoader
+>;

@@ -9,7 +9,7 @@ import {
   QrScanEvent,
   RecordScanInput,
   ScanAnalytics,
-} from '../entities/PublicTraceability.js';
+} from "../entities/PublicTraceability.js";
 
 export interface IPublicTraceabilityRepository {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -29,12 +29,17 @@ export interface IPublicTraceabilityRepository {
   /**
    * Create a new public link
    */
-  create(input: CreatePublicLinkInput & { shortCode: string; publicUrl: string }): Promise<PublicTraceabilityLink>;
+  create(
+    input: CreatePublicLinkInput & { shortCode: string; publicUrl: string },
+  ): Promise<PublicTraceabilityLink>;
 
   /**
    * Update link (e.g., set QR image URL)
    */
-  update(id: string, data: Partial<PublicTraceabilityLink>): Promise<PublicTraceabilityLink>;
+  update(
+    id: string,
+    data: Partial<PublicTraceabilityLink>,
+  ): Promise<PublicTraceabilityLink>;
 
   /**
    * Increment view count

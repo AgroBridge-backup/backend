@@ -11,9 +11,12 @@
  * @author AgroBridge Engineering Team
  */
 
-import winston from 'winston';
-import baseLogger from '../../shared/utils/logger.js';
-import { getLogContext, getRequestContext } from '../context/request-context.js';
+import winston from "winston";
+import baseLogger from "../../shared/utils/logger.js";
+import {
+  getLogContext,
+  getRequestContext,
+} from "../context/request-context.js";
 
 /**
  * Log entry with context
@@ -47,14 +50,18 @@ interface ContextualLogger {
  * Create a child logger with context
  */
 function createContextualLogger(): ContextualLogger {
-  const log = (level: string, message: string | object, meta?: object): void => {
+  const log = (
+    level: string,
+    message: string | object,
+    meta?: object,
+  ): void => {
     const context = getLogContext();
 
     // Handle object messages
     let logMessage: string;
     let logMeta: object;
 
-    if (typeof message === 'object') {
+    if (typeof message === "object") {
       logMessage = (message as any).message || JSON.stringify(message);
       logMeta = { ...context, ...message, ...meta };
     } else {
@@ -70,28 +77,28 @@ function createContextualLogger(): ContextualLogger {
      * Log error level message
      */
     error(message: string | object, meta?: object): void {
-      log('error', message, meta);
+      log("error", message, meta);
     },
 
     /**
      * Log warn level message
      */
     warn(message: string | object, meta?: object): void {
-      log('warn', message, meta);
+      log("warn", message, meta);
     },
 
     /**
      * Log info level message
      */
     info(message: string | object, meta?: object): void {
-      log('info', message, meta);
+      log("info", message, meta);
     },
 
     /**
      * Log debug level message
      */
     debug(message: string | object, meta?: object): void {
-      log('debug', message, meta);
+      log("debug", message, meta);
     },
 
     /**
@@ -105,21 +112,35 @@ function createContextualLogger(): ContextualLogger {
      * Create a child logger with additional default metadata
      */
     child(defaultMeta: object): ContextualLogger {
-      const childLog = (level: string, message: string | object, meta?: object): void => {
+      const childLog = (
+        level: string,
+        message: string | object,
+        meta?: object,
+      ): void => {
         log(level, message, { ...defaultMeta, ...meta });
       };
 
       // Create child logger with same interface
       const childLogger: ContextualLogger = {
-        error: (message: string | object, meta?: object) => childLog('error', message, meta),
-        warn: (message: string | object, meta?: object) => childLog('warn', message, meta),
-        info: (message: string | object, meta?: object) => childLog('info', message, meta),
-        debug: (message: string | object, meta?: object) => childLog('debug', message, meta),
+        error: (message: string | object, meta?: object) =>
+          childLog("error", message, meta),
+        warn: (message: string | object, meta?: object) =>
+          childLog("warn", message, meta),
+        info: (message: string | object, meta?: object) =>
+          childLog("info", message, meta),
+        debug: (message: string | object, meta?: object) =>
+          childLog("debug", message, meta),
         log: childLog,
-        child: (nestedMeta: object) => createContextualLogger().child({ ...defaultMeta, ...nestedMeta }),
+        child: (nestedMeta: object) =>
+          createContextualLogger().child({ ...defaultMeta, ...nestedMeta }),
         getBaseLogger: () => baseLogger,
         isLevelEnabled: (level: string) => baseLogger.isLevelEnabled(level),
-        timed: (level: string, message: string, startTime: number, meta?: object) => {
+        timed: (
+          level: string,
+          message: string,
+          startTime: number,
+          meta?: object,
+        ) => {
           const duration = Date.now() - startTime;
           childLog(level, message, { ...meta, durationMs: duration });
         },
@@ -128,13 +149,16 @@ function createContextualLogger(): ContextualLogger {
           return {
             end: (meta?: object) => {
               const duration = Date.now() - start;
-              childLog('debug', `${operation} completed`, { ...meta, durationMs: duration });
+              childLog("debug", `${operation} completed`, {
+                ...meta,
+                durationMs: duration,
+              });
             },
           };
         },
         audit: (action: string, resource: string, details?: object) => {
           const context = getRequestContext();
-          childLog('info', `AUDIT: ${action} on ${resource}`, {
+          childLog("info", `AUDIT: ${action} on ${resource}`, {
             audit: true,
             action,
             resource,
@@ -144,7 +168,7 @@ function createContextualLogger(): ContextualLogger {
         },
         security: (event: string, details?: object) => {
           const context = getRequestContext();
-          childLog('warn', `SECURITY: ${event}`, {
+          childLog("warn", `SECURITY: ${event}`, {
             security: true,
             event,
             userId: context?.userId,
@@ -153,7 +177,7 @@ function createContextualLogger(): ContextualLogger {
           });
         },
         metric: (name: string, value: number, unit: string, tags?: object) => {
-          childLog('info', `METRIC: ${name}`, {
+          childLog("info", `METRIC: ${name}`, {
             metric: true,
             name,
             value,
@@ -187,7 +211,7 @@ function createContextualLogger(): ContextualLogger {
       level: string,
       message: string,
       startTime: number,
-      meta?: object
+      meta?: object,
     ): void {
       const duration = Date.now() - startTime;
       log(level, message, { ...meta, durationMs: duration });
@@ -201,7 +225,10 @@ function createContextualLogger(): ContextualLogger {
       return {
         end: (meta?: object) => {
           const duration = Date.now() - start;
-          log('debug', `${operation} completed`, { ...meta, durationMs: duration });
+          log("debug", `${operation} completed`, {
+            ...meta,
+            durationMs: duration,
+          });
         },
       };
     },
@@ -211,7 +238,7 @@ function createContextualLogger(): ContextualLogger {
      */
     audit(action: string, resource: string, details?: object): void {
       const context = getRequestContext();
-      log('info', `AUDIT: ${action} on ${resource}`, {
+      log("info", `AUDIT: ${action} on ${resource}`, {
         audit: true,
         action,
         resource,
@@ -225,7 +252,7 @@ function createContextualLogger(): ContextualLogger {
      */
     security(event: string, details?: object): void {
       const context = getRequestContext();
-      log('warn', `SECURITY: ${event}`, {
+      log("warn", `SECURITY: ${event}`, {
         security: true,
         event,
         userId: context?.userId,
@@ -238,7 +265,7 @@ function createContextualLogger(): ContextualLogger {
      * Log a performance metric
      */
     metric(name: string, value: number, unit: string, tags?: object): void {
-      log('info', `METRIC: ${name}`, {
+      log("info", `METRIC: ${name}`, {
         metric: true,
         name,
         value,

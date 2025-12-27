@@ -11,10 +11,10 @@
  * @module SentinelHubService
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import bbox from '@turf/bbox';
-import { format, subYears, addDays, differenceInDays } from 'date-fns';
-import logger from '../../shared/utils/logger.js';
+import axios, { AxiosInstance, AxiosError } from "axios";
+import bbox from "@turf/bbox";
+import { format, subYears, addDays, differenceInDays } from "date-fns";
+import logger from "../../shared/utils/logger.js";
 import {
   NDVIDataPoint,
   SatelliteCropType,
@@ -22,14 +22,14 @@ import {
   VIOLATION_DETECTION_RULES,
   ViolationType,
   ViolationSeverity,
-} from '../../domain/entities/SatelliteAnalysis.js';
-import { ImagerySource } from '../../domain/entities/FieldImagery.js';
+} from "../../domain/entities/SatelliteAnalysis.js";
+import { ImagerySource } from "../../domain/entities/FieldImagery.js";
 
 /**
  * GeoJSON Polygon type
  */
 interface GeoJsonPolygon {
-  type: 'Polygon';
+  type: "Polygon";
   coordinates: number[][][];
 }
 
@@ -67,7 +67,7 @@ export class SentinelHubService {
 
   constructor(private config: SentinelHubConfig) {
     this.api = axios.create({
-      baseURL: 'https://services.sentinel-hub.com',
+      baseURL: "https://services.sentinel-hub.com",
       timeout: 60000, // 60 seconds for large requests
     });
   }
@@ -88,33 +88,37 @@ export class SentinelHubService {
 
     try {
       const response = await axios.post(
-        'https://services.sentinel-hub.com/oauth/token',
+        "https://services.sentinel-hub.com/oauth/token",
         new URLSearchParams({
-          grant_type: 'client_credentials',
+          grant_type: "client_credentials",
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
         }),
         {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           timeout: 10000,
-        }
+        },
       );
 
       this.accessToken = response.data.access_token as string;
-      this.tokenExpiresAt = new Date(Date.now() + response.data.expires_in * 1000);
+      this.tokenExpiresAt = new Date(
+        Date.now() + response.data.expires_in * 1000,
+      );
 
-      logger.debug('[SentinelHub] Authentication successful', {
+      logger.debug("[SentinelHub] Authentication successful", {
         expiresIn: response.data.expires_in,
       });
 
       return this.accessToken;
     } catch (error) {
       const axiosError = error as AxiosError;
-      logger.error('[SentinelHub] Authentication failed', {
+      logger.error("[SentinelHub] Authentication failed", {
         status: axiosError.response?.status,
         message: axiosError.message,
       });
-      throw new Error(`Sentinel Hub authentication failed: ${axiosError.message}`);
+      throw new Error(
+        `Sentinel Hub authentication failed: ${axiosError.message}`,
+      );
     }
   }
 
@@ -148,18 +152,23 @@ export class SentinelHubService {
     endDate: Date,
     cropType: SatelliteCropType,
     intervalDays: number = 30,
-    maxCloudCoverage: number = 50
+    maxCloudCoverage: number = 50,
   ): Promise<NDVIDataPoint[]> {
     if (!this.isConfigured()) {
-      logger.warn('[SentinelHub] Not configured, returning mock data');
-      return this.generateMockNDVIData(startDate, endDate, cropType, intervalDays);
+      logger.warn("[SentinelHub] Not configured, returning mock data");
+      return this.generateMockNDVIData(
+        startDate,
+        endDate,
+        cropType,
+        intervalDays,
+      );
     }
 
     const token = await this.authenticate();
 
     // Calculate bounding box from polygon
     const [minLng, minLat, maxLng, maxLat] = bbox({
-      type: 'Feature',
+      type: "Feature",
       geometry: gpsCoordinates,
       properties: {},
     });
@@ -181,33 +190,33 @@ export class SentinelHubService {
           currentDate,
           windowEnd > endDate ? endDate : windowEnd,
           evalscript,
-          maxCloudCoverage
+          maxCloudCoverage,
         );
 
         if (rawData && rawData.validPixelPercent > 50) {
           const dataPoint = this.convertToNDVIDataPoint(
             rawData,
             dataPoints,
-            cropType
+            cropType,
           );
           dataPoints.push(dataPoint);
         }
 
         this.requestCount++;
       } catch (error) {
-        logger.warn('[SentinelHub] Failed to fetch data for window', {
-          date: format(currentDate, 'yyyy-MM-dd'),
-          error: error instanceof Error ? error.message : 'Unknown error',
+        logger.warn("[SentinelHub] Failed to fetch data for window", {
+          date: format(currentDate, "yyyy-MM-dd"),
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
 
       currentDate = addDays(currentDate, intervalDays);
     }
 
-    logger.info('[SentinelHub] NDVI time series fetched', {
+    logger.info("[SentinelHub] NDVI time series fetched", {
       dataPoints: dataPoints.length,
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
       requestCount: this.requestCount,
     });
 
@@ -223,24 +232,24 @@ export class SentinelHubService {
     startDate: Date,
     endDate: Date,
     evalscript: string,
-    maxCloudCoverage: number
+    maxCloudCoverage: number,
   ): Promise<RawNDVIData | null> {
     const requestBody = {
       input: {
         bounds: {
           bbox,
-          properties: { crs: 'http://www.opengis.net/def/crs/EPSG/0/4326' },
+          properties: { crs: "http://www.opengis.net/def/crs/EPSG/0/4326" },
         },
         data: [
           {
-            type: 'sentinel-2-l2a',
+            type: "sentinel-2-l2a",
             dataFilter: {
               timeRange: {
                 from: format(startDate, "yyyy-MM-dd'T'00:00:00'Z'"),
                 to: format(endDate, "yyyy-MM-dd'T'23:59:59'Z'"),
               },
               maxCloudCoverage,
-              mosaickingOrder: 'leastCC', // Least cloud coverage first
+              mosaickingOrder: "leastCC", // Least cloud coverage first
             },
           },
         ],
@@ -250,8 +259,8 @@ export class SentinelHubService {
         height: 256,
         responses: [
           {
-            identifier: 'default',
-            format: { type: 'application/json' },
+            identifier: "default",
+            format: { type: "application/json" },
           },
         ],
       },
@@ -259,28 +268,31 @@ export class SentinelHubService {
     };
 
     try {
-      const response = await this.api.post('/api/v1/statistics', requestBody, {
+      const response = await this.api.post("/api/v1/statistics", requestBody, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       // Parse statistical response
-      const stats = response.data?.data?.[0]?.outputs?.default?.bands?.B0?.stats;
+      const stats =
+        response.data?.data?.[0]?.outputs?.default?.bands?.B0?.stats;
 
       if (!stats) {
         return null;
       }
 
       return {
-        date: format(startDate, 'yyyy-MM-dd'),
+        date: format(startDate, "yyyy-MM-dd"),
         ndviMean: stats.mean || 0,
         ndviStd: stats.stDev || 0,
         ndviMin: stats.min || 0,
         ndviMax: stats.max || 0,
-        cloudCoverage: response.data?.data?.[0]?.outputs?.dataMask?.bands?.B0?.stats?.mean
-          ? (1 - response.data.data[0].outputs.dataMask.bands.B0.stats.mean) * 100
+        cloudCoverage: response.data?.data?.[0]?.outputs?.dataMask?.bands?.B0
+          ?.stats?.mean
+          ? (1 - response.data.data[0].outputs.dataMask.bands.B0.stats.mean) *
+            100
           : 0,
         validPixelPercent: stats.sampleCount > 0 ? 100 : 0,
       };
@@ -288,7 +300,9 @@ export class SentinelHubService {
       const axiosError = error as AxiosError;
 
       if (axiosError.response?.status === 429) {
-        throw new Error('Sentinel Hub quota exceeded. Wait until next month or upgrade plan.');
+        throw new Error(
+          "Sentinel Hub quota exceeded. Wait until next month or upgrade plan.",
+        );
       }
 
       throw error;
@@ -341,18 +355,19 @@ function evaluatePixel(sample) {
   private convertToNDVIDataPoint(
     raw: RawNDVIData,
     previousPoints: NDVIDataPoint[],
-    cropType: SatelliteCropType
+    cropType: SatelliteCropType,
   ): NDVIDataPoint {
     const baseline = CROP_NDVI_BASELINES[cropType];
-    const previousNDVI = previousPoints.length > 0
-      ? previousPoints[previousPoints.length - 1].ndviAverage
-      : null;
+    const previousNDVI =
+      previousPoints.length > 0
+        ? previousPoints[previousPoints.length - 1].ndviAverage
+        : null;
 
     // Detect synthetic fertilizer
     const syntheticDetected = this.detectSyntheticFertilizer(
       raw.ndviMean,
       previousNDVI,
-      baseline.syntheticThreshold
+      baseline.syntheticThreshold,
     );
 
     // Calculate anomaly score
@@ -360,13 +375,13 @@ function evaluatePixel(sample) {
       raw.ndviMean,
       baseline.healthyNdviMin,
       baseline.healthyNdviMax,
-      previousNDVI
+      previousNDVI,
     );
 
     // Calculate confidence based on data quality
     const confidence = Math.max(
       0.5,
-      1 - (raw.cloudCoverage / 100) * 0.3 - (raw.ndviStd > 0.2 ? 0.2 : 0)
+      1 - (raw.cloudCoverage / 100) * 0.3 - (raw.ndviStd > 0.2 ? 0.2 : 0),
     );
 
     return {
@@ -390,7 +405,7 @@ function evaluatePixel(sample) {
   private detectSyntheticFertilizer(
     currentNDVI: number,
     previousNDVI: number | null,
-    threshold: number
+    threshold: number,
   ): boolean {
     if (previousNDVI === null) return false;
 
@@ -405,7 +420,7 @@ function evaluatePixel(sample) {
     ndvi: number,
     healthyMin: number,
     healthyMax: number,
-    previousNDVI: number | null
+    previousNDVI: number | null,
   ): number {
     let score = 0;
 
@@ -435,7 +450,7 @@ function evaluatePixel(sample) {
     startDate: Date,
     endDate: Date,
     cropType: SatelliteCropType,
-    intervalDays: number
+    intervalDays: number,
   ): NDVIDataPoint[] {
     const baseline = CROP_NDVI_BASELINES[cropType];
     const dataPoints: NDVIDataPoint[] = [];
@@ -460,12 +475,13 @@ function evaluatePixel(sample) {
       const noise = (Math.random() - 0.5) * 0.08;
       const ndvi = Math.max(0.1, Math.min(0.95, baseNDVI + noise));
 
-      const previousNDVI = dataPoints.length > 0
-        ? dataPoints[dataPoints.length - 1].ndviAverage
-        : null;
+      const previousNDVI =
+        dataPoints.length > 0
+          ? dataPoints[dataPoints.length - 1].ndviAverage
+          : null;
 
       dataPoints.push({
-        date: format(currentDate, 'yyyy-MM-dd'),
+        date: format(currentDate, "yyyy-MM-dd"),
         ndviAverage: Number(ndvi.toFixed(4)),
         ndviStdDev: Number((0.03 + Math.random() * 0.05).toFixed(4)),
         ndviMin: Number((ndvi - 0.1).toFixed(4)),
@@ -480,7 +496,7 @@ function evaluatePixel(sample) {
       currentDate = addDays(currentDate, intervalDays);
     }
 
-    logger.info('[SentinelHub] Generated mock NDVI data', {
+    logger.info("[SentinelHub] Generated mock NDVI data", {
       dataPoints: dataPoints.length,
       cropType,
     });
@@ -495,7 +511,7 @@ function evaluatePixel(sample) {
     if (!this.isConfigured()) {
       return {
         success: false,
-        message: 'Sentinel Hub credentials not configured',
+        message: "Sentinel Hub credentials not configured",
       };
     }
 
@@ -503,12 +519,12 @@ function evaluatePixel(sample) {
       await this.authenticate();
       return {
         success: true,
-        message: 'Sentinel Hub connection successful',
+        message: "Sentinel Hub connection successful",
       };
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -519,8 +535,8 @@ function evaluatePixel(sample) {
  */
 export function createSentinelHubService(): SentinelHubService {
   return new SentinelHubService({
-    clientId: process.env.SENTINEL_HUB_CLIENT_ID || '',
-    clientSecret: process.env.SENTINEL_HUB_CLIENT_SECRET || '',
+    clientId: process.env.SENTINEL_HUB_CLIENT_ID || "",
+    clientSecret: process.env.SENTINEL_HUB_CLIENT_SECRET || "",
     instanceId: process.env.SENTINEL_HUB_INSTANCE_ID,
   });
 }

@@ -15,9 +15,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import logger from '../../shared/utils/logger.js';
+import logger from "../../shared/utils/logger.js";
 
-export type APMProvider = 'datadog' | 'newrelic' | 'xray' | 'none';
+export type APMProvider = "datadog" | "newrelic" | "xray" | "none";
 
 export interface APMConfig {
   provider: APMProvider;
@@ -40,7 +40,7 @@ export interface APMSpan {
  * All methods gracefully no-op if APM is not configured.
  */
 class APMTracer {
-  private provider: APMProvider = 'none';
+  private provider: APMProvider = "none";
   private initialized: boolean = false;
   private tracer: any = null;
 
@@ -55,29 +55,29 @@ class APMTracer {
 
     const config: APMConfig = {
       provider: this.detectProvider(),
-      serviceName: process.env.SERVICE_NAME || 'agrobridge-api',
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.API_VERSION || '2.0.0',
-      sampleRate: parseFloat(process.env.APM_SAMPLE_RATE || '0.1'),
+      serviceName: process.env.SERVICE_NAME || "agrobridge-api",
+      environment: process.env.NODE_ENV || "development",
+      version: process.env.API_VERSION || "2.0.0",
+      sampleRate: parseFloat(process.env.APM_SAMPLE_RATE || "0.1"),
     };
 
     this.provider = config.provider;
 
-    if (config.provider === 'none') {
-      logger.info('[APM] No APM provider configured - running without tracing');
+    if (config.provider === "none") {
+      logger.info("[APM] No APM provider configured - running without tracing");
       this.initialized = true;
       return;
     }
 
     try {
       switch (config.provider) {
-        case 'datadog':
+        case "datadog":
           await this.initDatadog(config);
           break;
-        case 'newrelic':
+        case "newrelic":
           await this.initNewRelic(config);
           break;
-        case 'xray':
+        case "xray":
           await this.initXRay(config);
           break;
       }
@@ -88,11 +88,11 @@ class APMTracer {
         sampleRate: config.sampleRate,
       });
     } catch (error) {
-      logger.error('[APM] Failed to initialize APM tracer', {
+      logger.error("[APM] Failed to initialize APM tracer", {
         provider: config.provider,
         error: (error as Error).message,
       });
-      this.provider = 'none';
+      this.provider = "none";
     }
 
     this.initialized = true;
@@ -102,16 +102,16 @@ class APMTracer {
    * Detect which APM provider to use based on environment variables
    */
   private detectProvider(): APMProvider {
-    if (process.env.DD_AGENT_HOST || process.env.DD_TRACE_ENABLED === 'true') {
-      return 'datadog';
+    if (process.env.DD_AGENT_HOST || process.env.DD_TRACE_ENABLED === "true") {
+      return "datadog";
     }
     if (process.env.NEW_RELIC_LICENSE_KEY) {
-      return 'newrelic';
+      return "newrelic";
     }
     if (process.env.AWS_XRAY_DAEMON_ADDRESS) {
-      return 'xray';
+      return "xray";
     }
-    return 'none';
+    return "none";
   }
 
   /**
@@ -120,7 +120,7 @@ class APMTracer {
   private async initDatadog(config: APMConfig): Promise<void> {
     try {
       // Dynamic import to avoid loading if not needed
-      const ddTrace = await import('dd-trace');
+      const ddTrace = await import("dd-trace");
       this.tracer = ddTrace.default.init({
         service: config.serviceName,
         env: config.environment,
@@ -131,7 +131,9 @@ class APMTracer {
         startupLogs: false,
       });
     } catch (error) {
-      throw new Error(`Datadog tracer not available: ${(error as Error).message}. Install with: npm install dd-trace`);
+      throw new Error(
+        `Datadog tracer not available: ${(error as Error).message}. Install with: npm install dd-trace`,
+      );
     }
   }
 
@@ -142,13 +144,17 @@ class APMTracer {
   private async initNewRelic(config: APMConfig): Promise<void> {
     // New Relic must be required before other modules
     // This is typically done at the very start of the application
-    logger.warn('[APM] New Relic should be initialized at application start. Add require("newrelic") to the first line of your entry file.');
+    logger.warn(
+      '[APM] New Relic should be initialized at application start. Add require("newrelic") to the first line of your entry file.',
+    );
 
     try {
-      const newrelic = await import('newrelic');
+      const newrelic = await import("newrelic");
       this.tracer = newrelic.default;
     } catch (error) {
-      throw new Error(`New Relic not available: ${(error as Error).message}. Install with: npm install newrelic`);
+      throw new Error(
+        `New Relic not available: ${(error as Error).message}. Install with: npm install newrelic`,
+      );
     }
   }
 
@@ -157,12 +163,16 @@ class APMTracer {
    */
   private async initXRay(config: APMConfig): Promise<void> {
     try {
-      const AWSXRay = await import('aws-xray-sdk');
-      AWSXRay.default.setDaemonAddress(process.env.AWS_XRAY_DAEMON_ADDRESS || '127.0.0.1:2000');
-      AWSXRay.default.setContextMissingStrategy('LOG_ERROR');
+      const AWSXRay = await import("aws-xray-sdk");
+      AWSXRay.default.setDaemonAddress(
+        process.env.AWS_XRAY_DAEMON_ADDRESS || "127.0.0.1:2000",
+      );
+      AWSXRay.default.setContextMissingStrategy("LOG_ERROR");
       this.tracer = AWSXRay.default;
     } catch (error) {
-      throw new Error(`AWS X-Ray not available: ${(error as Error).message}. Install with: npm install aws-xray-sdk`);
+      throw new Error(
+        `AWS X-Ray not available: ${(error as Error).message}. Install with: npm install aws-xray-sdk`,
+      );
     }
   }
 
@@ -173,14 +183,17 @@ class APMTracer {
    * @param options - Optional span configuration
    * @returns APM Span wrapper
    */
-  startSpan(operationName: string, options?: { tags?: Record<string, string | number | boolean> }): APMSpan {
-    if (this.provider === 'none' || !this.tracer) {
+  startSpan(
+    operationName: string,
+    options?: { tags?: Record<string, string | number | boolean> },
+  ): APMSpan {
+    if (this.provider === "none" || !this.tracer) {
       return this.createNoopSpan();
     }
 
     try {
       switch (this.provider) {
-        case 'datadog':
+        case "datadog":
           const ddSpan = this.tracer.scope().active();
           if (ddSpan && options?.tags) {
             Object.entries(options.tags).forEach(([key, value]) => {
@@ -189,11 +202,11 @@ class APMTracer {
           }
           return this.wrapDatadogSpan(ddSpan);
 
-        case 'newrelic':
+        case "newrelic":
           // New Relic uses segments
           return this.createNoopSpan(); // Simplified for now
 
-        case 'xray':
+        case "xray":
           const segment = this.tracer.getSegment();
           const subsegment = segment?.addNewSubsegment(operationName);
           return this.wrapXRaySubsegment(subsegment);
@@ -202,7 +215,9 @@ class APMTracer {
           return this.createNoopSpan();
       }
     } catch (error) {
-      logger.debug('[APM] Failed to create span', { error: (error as Error).message });
+      logger.debug("[APM] Failed to create span", {
+        error: (error as Error).message,
+      });
       return this.createNoopSpan();
     }
   }
@@ -214,26 +229,30 @@ class APMTracer {
    * @param value - Metric value
    * @param tags - Optional metric tags
    */
-  recordMetric(name: string, value: number, tags?: Record<string, string>): void {
-    if (this.provider === 'none') {
+  recordMetric(
+    name: string,
+    value: number,
+    tags?: Record<string, string>,
+  ): void {
+    if (this.provider === "none") {
       return;
     }
 
     try {
       switch (this.provider) {
-        case 'datadog':
+        case "datadog":
           // Datadog metrics via dogstatsd
           // Requires dd-trace to be configured with runtime metrics
-          logger.debug('[APM] Datadog metric', { name, value, tags });
+          logger.debug("[APM] Datadog metric", { name, value, tags });
           break;
 
-        case 'newrelic':
+        case "newrelic":
           if (this.tracer?.recordMetric) {
             this.tracer.recordMetric(name, value);
           }
           break;
 
-        case 'xray':
+        case "xray":
           // X-Ray uses annotations for custom data
           const segment = this.tracer?.getSegment();
           if (segment) {
@@ -242,7 +261,9 @@ class APMTracer {
           break;
       }
     } catch (error) {
-      logger.debug('[APM] Failed to record metric', { error: (error as Error).message });
+      logger.debug("[APM] Failed to record metric", {
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -252,13 +273,13 @@ class APMTracer {
    * @param tags - Key-value pairs to add
    */
   addTags(tags: Record<string, string | number | boolean>): void {
-    if (this.provider === 'none' || !this.tracer) {
+    if (this.provider === "none" || !this.tracer) {
       return;
     }
 
     try {
       switch (this.provider) {
-        case 'datadog':
+        case "datadog":
           const span = this.tracer.scope().active();
           if (span) {
             Object.entries(tags).forEach(([key, value]) => {
@@ -267,19 +288,19 @@ class APMTracer {
           }
           break;
 
-        case 'newrelic':
+        case "newrelic":
           if (this.tracer?.addCustomAttributes) {
             this.tracer.addCustomAttributes(tags);
           }
           break;
 
-        case 'xray':
+        case "xray":
           const segment = this.tracer?.getSegment();
           if (segment) {
             Object.entries(tags).forEach(([key, value]) => {
-              if (typeof value === 'boolean') {
+              if (typeof value === "boolean") {
                 segment.addAnnotation(key, value);
-              } else if (typeof value === 'number') {
+              } else if (typeof value === "number") {
                 segment.addAnnotation(key, value);
               } else {
                 segment.addMetadata(key, value);
@@ -289,7 +310,9 @@ class APMTracer {
           break;
       }
     } catch (error) {
-      logger.debug('[APM] Failed to add tags', { error: (error as Error).message });
+      logger.debug("[APM] Failed to add tags", {
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -304,7 +327,7 @@ class APMTracer {
    * Check if APM is active
    */
   isActive(): boolean {
-    return this.provider !== 'none' && this.tracer !== null;
+    return this.provider !== "none" && this.tracer !== null;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -322,11 +345,12 @@ class APMTracer {
   private wrapDatadogSpan(span: any): APMSpan {
     return {
       finish: () => span?.finish(),
-      setTag: (key: string, value: string | number | boolean) => span?.setTag(key, value),
+      setTag: (key: string, value: string | number | boolean) =>
+        span?.setTag(key, value),
       setError: (error: Error) => {
-        span?.setTag('error', true);
-        span?.setTag('error.message', error.message);
-        span?.setTag('error.stack', error.stack || '');
+        span?.setTag("error", true);
+        span?.setTag("error.message", error.message);
+        span?.setTag("error.stack", error.stack || "");
       },
     };
   }
@@ -335,7 +359,7 @@ class APMTracer {
     return {
       finish: () => subsegment?.close(),
       setTag: (key: string, value: string | number | boolean) => {
-        if (typeof value === 'boolean' || typeof value === 'number') {
+        if (typeof value === "boolean" || typeof value === "number") {
           subsegment?.addAnnotation(key, value);
         } else {
           subsegment?.addMetadata(key, value);

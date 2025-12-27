@@ -7,35 +7,35 @@
  * @module SatelliteAnalysis
  */
 
-import { ImagerySource, ImageryType } from './FieldImagery.js';
+import { ImagerySource, ImageryType } from "./FieldImagery.js";
 
 /**
  * Compliance status for satellite analysis
  */
 export enum SatelliteComplianceStatus {
-  PROCESSING = 'PROCESSING',     // Analysis in progress
-  ELIGIBLE = 'ELIGIBLE',         // No violations detected - eligible for organic certification
-  INELIGIBLE = 'INELIGIBLE',     // Clear violations detected (synthetic fertilizer)
-  NEEDS_REVIEW = 'NEEDS_REVIEW', // Borderline cases requiring human review
-  FAILED = 'FAILED',             // Technical error during analysis
+  PROCESSING = "PROCESSING", // Analysis in progress
+  ELIGIBLE = "ELIGIBLE", // No violations detected - eligible for organic certification
+  INELIGIBLE = "INELIGIBLE", // Clear violations detected (synthetic fertilizer)
+  NEEDS_REVIEW = "NEEDS_REVIEW", // Borderline cases requiring human review
+  FAILED = "FAILED", // Technical error during analysis
 }
 
 /**
  * Violation types detected by satellite analysis
  */
 export enum ViolationType {
-  SYNTHETIC_FERTILIZER = 'SYNTHETIC_FERTILIZER', // NDVI spike >0.25 in 30 days
-  PESTICIDE_APPLICATION = 'PESTICIDE_APPLICATION', // NDVI drop followed by quick recovery
-  LAND_CLEARING = 'LAND_CLEARING', // NDVI drop >0.40 sustained
+  SYNTHETIC_FERTILIZER = "SYNTHETIC_FERTILIZER", // NDVI spike >0.25 in 30 days
+  PESTICIDE_APPLICATION = "PESTICIDE_APPLICATION", // NDVI drop followed by quick recovery
+  LAND_CLEARING = "LAND_CLEARING", // NDVI drop >0.40 sustained
 }
 
 /**
  * Severity levels for detected violations
  */
 export enum ViolationSeverity {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
 }
 
 /**
@@ -43,29 +43,29 @@ export enum ViolationSeverity {
  * Each has specific NDVI seasonal patterns
  */
 export enum SatelliteCropType {
-  AVOCADO = 'AVOCADO',
-  BLUEBERRY = 'BLUEBERRY',
-  STRAWBERRY = 'STRAWBERRY',
-  RASPBERRY = 'RASPBERRY',
-  BLACKBERRY = 'BLACKBERRY',
-  COFFEE = 'COFFEE',
-  CACAO = 'CACAO',
+  AVOCADO = "AVOCADO",
+  BLUEBERRY = "BLUEBERRY",
+  STRAWBERRY = "STRAWBERRY",
+  RASPBERRY = "RASPBERRY",
+  BLACKBERRY = "BLACKBERRY",
+  COFFEE = "COFFEE",
+  CACAO = "CACAO",
 }
 
 /**
  * Single NDVI data point from satellite imagery
  */
 export interface NDVIDataPoint {
-  date: string;                      // ISO 8601: "2023-03-15"
-  ndviAverage: number;               // 0.0 to 1.0 (vegetation health)
-  ndviStdDev: number;                // Standard deviation within field
-  ndviMin: number;                   // Minimum NDVI in field
-  ndviMax: number;                   // Maximum NDVI in field
-  cloudCoverage: number;             // 0-100%
+  date: string; // ISO 8601: "2023-03-15"
+  ndviAverage: number; // 0.0 to 1.0 (vegetation health)
+  ndviStdDev: number; // Standard deviation within field
+  ndviMin: number; // Minimum NDVI in field
+  ndviMax: number; // Maximum NDVI in field
+  cloudCoverage: number; // 0-100%
   syntheticFertilizerDetected: boolean;
-  confidence: number;                // 0-1 analysis confidence
-  anomalyScore: number;              // 0-100 (higher = more suspicious)
-  source: ImagerySource;             // Sentinel-2, Landsat-8, etc.
+  confidence: number; // 0-1 analysis confidence
+  anomalyScore: number; // 0-100 (higher = more suspicious)
+  source: ImagerySource; // Sentinel-2, Landsat-8, etc.
 }
 
 /**
@@ -73,15 +73,16 @@ export interface NDVIDataPoint {
  */
 export interface ViolationFlag {
   id: string;
-  date: string;                      // When violation was detected
+  date: string; // When violation was detected
   type: ViolationType;
-  ndviDelta: number;                 // Delta from baseline/previous
+  ndviDelta: number; // Delta from baseline/previous
   severity: ViolationSeverity;
-  confidence: number;                // 0-1
-  description: string;               // Human-readable (Spanish for farmers)
-  descriptionEn: string;             // English for export companies
-  affectedAreaPercent: number;       // Percentage of field affected
-  gpsLocation?: {                    // Center of affected area
+  confidence: number; // 0-1
+  description: string; // Human-readable (Spanish for farmers)
+  descriptionEn: string; // English for export companies
+  affectedAreaPercent: number; // Percentage of field affected
+  gpsLocation?: {
+    // Center of affected area
     latitude: number;
     longitude: number;
   };
@@ -92,11 +93,11 @@ export interface ViolationFlag {
  */
 export interface SatelliteAnalysisRequest {
   organicFieldId: string;
-  analysisYears: number;             // Default: 3 (USDA requirement)
+  analysisYears: number; // Default: 3 (USDA requirement)
   cropType: SatelliteCropType;
-  requestedBy: string;               // User ID
-  intervalDays?: number;             // Data point frequency (default: 30)
-  maxCloudCoverage?: number;         // Filter threshold (default: 50%)
+  requestedBy: string; // User ID
+  intervalDays?: number; // Data point frequency (default: 30)
+  maxCloudCoverage?: number; // Filter threshold (default: 50%)
 }
 
 /**
@@ -113,16 +114,16 @@ export interface SatelliteComplianceReport {
   cropType: SatelliteCropType;
 
   // Data coverage
-  totalDataPoints: number;           // All collected data points
-  validDataPoints: number;           // Excluding cloudy days
-  dataCoveragePercent: number;       // Percentage of expected data points collected
+  totalDataPoints: number; // All collected data points
+  validDataPoints: number; // Excluding cloudy days
+  dataCoveragePercent: number; // Percentage of expected data points collected
 
   // NDVI time series
   ndviHistory: NDVIDataPoint[];
 
   // Compliance assessment
   complianceStatus: SatelliteComplianceStatus;
-  overallConfidence: number;         // 0-1
+  overallConfidence: number; // 0-1
 
   // Violations
   detectedViolations: ViolationFlag[];
@@ -132,7 +133,7 @@ export interface SatelliteComplianceReport {
   // Report artifacts (S3 URLs)
   reportPdfUrl?: string;
   chartImageUrl?: string;
-  rawDataUrl?: string;               // JSON export for auditors
+  rawDataUrl?: string; // JSON export for auditors
 
   // Performance metrics
   processingTimeMs: number;
@@ -140,7 +141,7 @@ export interface SatelliteComplianceReport {
 
   // Timestamps
   createdAt: Date;
-  expiresAt: Date;                   // 90 days retention
+  expiresAt: Date; // 90 days retention
   requestedBy: string;
 }
 
@@ -151,15 +152,15 @@ export interface SatelliteAnalysisStats {
   thisMonth: {
     analysesRun: number;
     sentinelApiCalls: number;
-    quotaUsedPercent: number;        // 0-100 (free tier: 1000 PU/month)
+    quotaUsedPercent: number; // 0-100 (free tier: 1000 PU/month)
     avgProcessingTimeMs: number;
     eligibleFields: number;
     ineligibleFields: number;
     needsReviewFields: number;
   };
   costSavings: {
-    soilTestsAvoided: number;        // Number of $200-500 soil tests avoided
-    estimatedSavingsUSD: number;     // Total estimated savings
+    soilTestsAvoided: number; // Number of $200-500 soil tests avoided
+    estimatedSavingsUSD: number; // Total estimated savings
   };
 }
 
@@ -167,16 +168,19 @@ export interface SatelliteAnalysisStats {
  * Crop-specific NDVI baseline values for detection
  * Used to calibrate synthetic fertilizer detection thresholds
  */
-export const CROP_NDVI_BASELINES: Record<SatelliteCropType, {
-  peakMonths: number[];              // Months with peak NDVI (0-11)
-  lowMonths: number[];               // Months with low NDVI
-  healthyNdviMin: number;            // Minimum healthy NDVI
-  healthyNdviMax: number;            // Maximum healthy NDVI
-  syntheticThreshold: number;        // Delta indicating synthetic fertilizer
-}> = {
+export const CROP_NDVI_BASELINES: Record<
+  SatelliteCropType,
+  {
+    peakMonths: number[]; // Months with peak NDVI (0-11)
+    lowMonths: number[]; // Months with low NDVI
+    healthyNdviMin: number; // Minimum healthy NDVI
+    healthyNdviMax: number; // Maximum healthy NDVI
+    syntheticThreshold: number; // Delta indicating synthetic fertilizer
+  }
+> = {
   [SatelliteCropType.AVOCADO]: {
-    peakMonths: [4, 5, 6, 7],        // May-August (growing season)
-    lowMonths: [10, 11, 0],          // November-January (harvest)
+    peakMonths: [4, 5, 6, 7], // May-August (growing season)
+    lowMonths: [10, 11, 0], // November-January (harvest)
     healthyNdviMin: 0.45,
     healthyNdviMax: 0.85,
     syntheticThreshold: 0.25,
@@ -184,7 +188,7 @@ export const CROP_NDVI_BASELINES: Record<SatelliteCropType, {
   [SatelliteCropType.BLUEBERRY]: {
     peakMonths: [5, 6, 7],
     lowMonths: [11, 0, 1],
-    healthyNdviMin: 0.40,
+    healthyNdviMin: 0.4,
     healthyNdviMax: 0.75,
     syntheticThreshold: 0.22,
   },
@@ -192,36 +196,36 @@ export const CROP_NDVI_BASELINES: Record<SatelliteCropType, {
     peakMonths: [3, 4, 5],
     lowMonths: [8, 9],
     healthyNdviMin: 0.35,
-    healthyNdviMax: 0.70,
-    syntheticThreshold: 0.20,
+    healthyNdviMax: 0.7,
+    syntheticThreshold: 0.2,
   },
   [SatelliteCropType.RASPBERRY]: {
     peakMonths: [5, 6, 7],
     lowMonths: [11, 0, 1],
-    healthyNdviMin: 0.40,
+    healthyNdviMin: 0.4,
     healthyNdviMax: 0.75,
     syntheticThreshold: 0.22,
   },
   [SatelliteCropType.BLACKBERRY]: {
     peakMonths: [5, 6, 7],
     lowMonths: [11, 0, 1],
-    healthyNdviMin: 0.40,
+    healthyNdviMin: 0.4,
     healthyNdviMax: 0.75,
     syntheticThreshold: 0.22,
   },
   [SatelliteCropType.COFFEE]: {
     peakMonths: [6, 7, 8, 9],
     lowMonths: [1, 2],
-    healthyNdviMin: 0.50,
-    healthyNdviMax: 0.80,
-    syntheticThreshold: 0.20,
+    healthyNdviMin: 0.5,
+    healthyNdviMax: 0.8,
+    syntheticThreshold: 0.2,
   },
   [SatelliteCropType.CACAO]: {
     peakMonths: [6, 7, 8, 9],
     lowMonths: [1, 2, 3],
     healthyNdviMin: 0.55,
     healthyNdviMax: 0.85,
-    syntheticThreshold: 0.20,
+    syntheticThreshold: 0.2,
   },
 };
 
@@ -231,27 +235,27 @@ export const CROP_NDVI_BASELINES: Record<SatelliteCropType, {
 export const VIOLATION_DETECTION_RULES = {
   // Rule 1: Synthetic fertilizer detection
   syntheticFertilizer: {
-    ndviSpikeThreshold: 0.25,        // Delta >0.25 in 30 days
-    recoveryWindow: 30,              // Days
-    description: 'Posible aplicación de fertilizante sintético detectada.',
-    descriptionEn: 'Possible synthetic fertilizer application detected.',
+    ndviSpikeThreshold: 0.25, // Delta >0.25 in 30 days
+    recoveryWindow: 30, // Days
+    description: "Posible aplicación de fertilizante sintético detectada.",
+    descriptionEn: "Possible synthetic fertilizer application detected.",
   },
 
   // Rule 2: Pesticide application detection
   pesticide: {
-    ndviDropThreshold: -0.15,        // Drop >15%
-    recoveryThreshold: 0.10,         // Quick recovery >10%
+    ndviDropThreshold: -0.15, // Drop >15%
+    recoveryThreshold: 0.1, // Quick recovery >10%
     recoveryWindowDays: 30,
-    description: 'Posible aplicación de pesticida detectada.',
-    descriptionEn: 'Possible pesticide application detected.',
+    description: "Posible aplicación de pesticida detectada.",
+    descriptionEn: "Possible pesticide application detected.",
   },
 
   // Rule 3: Land clearing detection
   landClearing: {
-    ndviDropThreshold: -0.40,        // Drop >40%
-    sustainedDays: 60,               // Must persist for 60+ days
-    description: 'Posible desmonte o cambio drástico de vegetación.',
-    descriptionEn: 'Possible land clearing or drastic vegetation change.',
+    ndviDropThreshold: -0.4, // Drop >40%
+    sustainedDays: 60, // Must persist for 60+ days
+    description: "Posible desmonte o cambio drástico de vegetación.",
+    descriptionEn: "Possible land clearing or drastic vegetation change.",
   },
 };
 
@@ -259,10 +263,10 @@ export const VIOLATION_DETECTION_RULES = {
  * Free tier limits for Sentinel Hub API
  */
 export const SENTINEL_HUB_LIMITS = {
-  monthlyProcessingUnits: 1000,      // Free tier limit
-  processingUnitsPerRequest: 0.5,    // Approximate PU per NDVI request
-  maxRequestsPerMonth: 2000,         // 1000 / 0.5
-  maxFieldsPerMonth: 200,            // ~5 requests per field (3 years / 30 days)
+  monthlyProcessingUnits: 1000, // Free tier limit
+  processingUnitsPerRequest: 0.5, // Approximate PU per NDVI request
+  maxRequestsPerMonth: 2000, // 1000 / 0.5
+  maxFieldsPerMonth: 200, // ~5 requests per field (3 years / 30 days)
 };
 
 /**
@@ -272,7 +276,7 @@ export function calculateAnalysisConfidence(
   validDataPoints: number,
   expectedDataPoints: number,
   violations: ViolationFlag[],
-  avgCloudCoverage: number
+  avgCloudCoverage: number,
 ): number {
   // Base confidence from data coverage
   const dataCoverage = Math.min(validDataPoints / expectedDataPoints, 1.0);
@@ -285,7 +289,8 @@ export function calculateAnalysisConfidence(
   confidence -= (avgCloudCoverage / 100) * 0.15;
 
   // Add base confidence for having enough data
-  if (validDataPoints >= 24) { // At least 2 years of monthly data
+  if (validDataPoints >= 24) {
+    // At least 2 years of monthly data
     confidence += 0.25;
   }
 
@@ -298,21 +303,26 @@ export function calculateAnalysisConfidence(
 export function determineComplianceStatus(
   violations: ViolationFlag[],
   validDataPoints: number,
-  expectedDataPoints: number
+  expectedDataPoints: number,
 ): SatelliteComplianceStatus {
   // Insufficient data
-  if (validDataPoints < 24) { // Less than 2 years of monthly data
+  if (validDataPoints < 24) {
+    // Less than 2 years of monthly data
     return SatelliteComplianceStatus.NEEDS_REVIEW;
   }
 
   // High severity violations = automatic rejection
-  const highSeverity = violations.filter(v => v.severity === ViolationSeverity.HIGH);
+  const highSeverity = violations.filter(
+    (v) => v.severity === ViolationSeverity.HIGH,
+  );
   if (highSeverity.length > 0) {
     return SatelliteComplianceStatus.INELIGIBLE;
   }
 
   // Multiple medium severity violations = needs review
-  const mediumSeverity = violations.filter(v => v.severity === ViolationSeverity.MEDIUM);
+  const mediumSeverity = violations.filter(
+    (v) => v.severity === ViolationSeverity.MEDIUM,
+  );
   if (mediumSeverity.length >= 3) {
     return SatelliteComplianceStatus.NEEDS_REVIEW;
   }

@@ -12,13 +12,28 @@
  * @author AgroBridge Engineering Team
  */
 
-import { PrismaClient, ReportType, ReportFormat, ReportStatus } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
-import { createPDFGenerator, BatchReportData, ProducerReportData, AuditReportData } from './generators/PDFGenerator.js';
-import { createCSVGenerator, BatchExportRow, EventExportRow, AuditExportRow } from './generators/CSVGenerator.js';
-import { createExcelGenerator } from './generators/ExcelGenerator.js';
-import { s3StorageProvider as s3Service } from '../storage/index.js';
-import logger from '../../shared/utils/logger.js';
+import {
+  PrismaClient,
+  ReportType,
+  ReportFormat,
+  ReportStatus,
+} from "@prisma/client";
+import { v4 as uuidv4 } from "uuid";
+import {
+  createPDFGenerator,
+  BatchReportData,
+  ProducerReportData,
+  AuditReportData,
+} from "./generators/PDFGenerator.js";
+import {
+  createCSVGenerator,
+  BatchExportRow,
+  EventExportRow,
+  AuditExportRow,
+} from "./generators/CSVGenerator.js";
+import { createExcelGenerator } from "./generators/ExcelGenerator.js";
+import { s3StorageProvider as s3Service } from "../storage/index.js";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -71,10 +86,10 @@ export class ReportServiceError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly statusCode: number = 400
+    public readonly statusCode: number = 400,
   ) {
     super(message);
-    this.name = 'ReportServiceError';
+    this.name = "ReportServiceError";
   }
 }
 
@@ -83,7 +98,7 @@ export class ReportServiceError extends Error {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export class ReportService {
-  private readonly REPORTS_BUCKET_PREFIX = 'reports';
+  private readonly REPORTS_BUCKET_PREFIX = "reports";
   private readonly REPORT_EXPIRY_DAYS = 30;
 
   constructor(private prisma: PrismaClient) {}
@@ -110,7 +125,7 @@ export class ReportService {
       },
     });
 
-    logger.info('[ReportService] Report created', {
+    logger.info("[ReportService] Report created", {
       reportId,
       type: input.type,
       format: input.format,
@@ -119,7 +134,7 @@ export class ReportService {
 
     // Start generation (in a real system, this would be queued)
     this.generateReport(reportId).catch((error) => {
-      logger.error('[ReportService] Background generation failed', {
+      logger.error("[ReportService] Background generation failed", {
         reportId,
         error: error.message,
       });
@@ -131,7 +146,10 @@ export class ReportService {
   /**
    * Get report by ID
    */
-  async getReport(reportId: string, userId: string): Promise<ReportData | null> {
+  async getReport(
+    reportId: string,
+    userId: string,
+  ): Promise<ReportData | null> {
     const report = await this.prisma.report.findFirst({
       where: {
         id: reportId,
@@ -153,7 +171,7 @@ export class ReportService {
       status?: ReportStatus;
       limit?: number;
       offset?: number;
-    } = {}
+    } = {},
   ): Promise<{ reports: ReportData[]; total: number }> {
     const { type, status, limit = 20, offset = 0 } = options;
 
@@ -166,7 +184,7 @@ export class ReportService {
     const [reports, total] = await Promise.all([
       this.prisma.report.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: limit,
         skip: offset,
       }),
@@ -188,7 +206,7 @@ export class ReportService {
     });
 
     if (!report) {
-      throw new ReportServiceError('Report not found', 'REPORT_NOT_FOUND', 404);
+      throw new ReportServiceError("Report not found", "REPORT_NOT_FOUND", 404);
     }
 
     // Delete from S3 if file exists
@@ -196,10 +214,10 @@ export class ReportService {
       try {
         await s3Service.delete(report.fileKey);
       } catch (error) {
-        logger.warn('[ReportService] Failed to delete file from S3', {
+        logger.warn("[ReportService] Failed to delete file from S3", {
           reportId,
           fileKey: report.fileKey,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -207,7 +225,7 @@ export class ReportService {
     // Delete record
     await this.prisma.report.delete({ where: { id: reportId } });
 
-    logger.info('[ReportService] Report deleted', { reportId });
+    logger.info("[ReportService] Report deleted", { reportId });
   }
 
   /**
@@ -219,23 +237,31 @@ export class ReportService {
     });
 
     if (!report) {
-      throw new ReportServiceError('Report not found', 'REPORT_NOT_FOUND', 404);
+      throw new ReportServiceError("Report not found", "REPORT_NOT_FOUND", 404);
     }
 
     if (report.status !== ReportStatus.COMPLETED) {
       throw new ReportServiceError(
-        'Report is not ready for download',
-        'REPORT_NOT_READY',
-        400
+        "Report is not ready for download",
+        "REPORT_NOT_READY",
+        400,
       );
     }
 
     if (!report.fileKey) {
-      throw new ReportServiceError('Report file not found', 'FILE_NOT_FOUND', 404);
+      throw new ReportServiceError(
+        "Report file not found",
+        "FILE_NOT_FOUND",
+        404,
+      );
     }
 
     // Generate signed URL (valid for 1 hour)
-    const url = await s3Service.getPresignedDownloadUrl(report.fileKey, undefined, 3600);
+    const url = await s3Service.getPresignedDownloadUrl(
+      report.fileKey,
+      undefined,
+      3600,
+    );
     return url;
   }
 
@@ -256,7 +282,7 @@ export class ReportService {
         try {
           await s3Service.delete(report.fileKey);
         } catch (error) {
-          logger.warn('[ReportService] Failed to delete expired file', {
+          logger.warn("[ReportService] Failed to delete expired file", {
             reportId: report.id,
             fileKey: report.fileKey,
           });
@@ -269,7 +295,7 @@ export class ReportService {
       where: { expiresAt: { lt: new Date() } },
     });
 
-    logger.info('[ReportService] Expired reports cleaned up', {
+    logger.info("[ReportService] Expired reports cleaned up", {
       count: result.count,
     });
 
@@ -297,7 +323,7 @@ export class ReportService {
       const data = await this.fetchReportData(
         report.type,
         report.userId,
-        report.filters as ReportFilters
+        report.filters as ReportFilters,
       );
 
       // Generate file based on format
@@ -326,7 +352,7 @@ export class ReportService {
         },
       });
 
-      logger.info('[ReportService] Report generated', {
+      logger.info("[ReportService] Report generated", {
         reportId,
         type: report.type,
         format: report.format,
@@ -334,7 +360,8 @@ export class ReportService {
         processingTime,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
 
       await this.prisma.report.update({
         where: { id: reportId },
@@ -345,7 +372,7 @@ export class ReportService {
         },
       });
 
-      logger.error('[ReportService] Report generation failed', {
+      logger.error("[ReportService] Report generation failed", {
         reportId,
         error: errorMessage,
       });
@@ -360,9 +387,10 @@ export class ReportService {
   private async fetchReportData(
     type: ReportType,
     userId: string,
-    filters: ReportFilters | null
+    filters: ReportFilters | null,
   ): Promise<unknown> {
-    const dateFrom = filters?.dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const dateFrom =
+      filters?.dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const dateTo = filters?.dateTo || new Date();
 
     switch (type) {
@@ -388,7 +416,10 @@ export class ReportService {
         return this.fetchComplianceData(userId, filters);
 
       default:
-        throw new ReportServiceError(`Unsupported report type: ${type}`, 'UNSUPPORTED_TYPE');
+        throw new ReportServiceError(
+          `Unsupported report type: ${type}`,
+          "UNSUPPORTED_TYPE",
+        );
     }
   }
 
@@ -398,7 +429,7 @@ export class ReportService {
   private async generateFile(
     type: ReportType,
     format: ReportFormat,
-    data: unknown
+    data: unknown,
   ): Promise<Buffer> {
     switch (format) {
       case ReportFormat.PDF:
@@ -411,7 +442,10 @@ export class ReportService {
         return this.generateExcel(type, data);
 
       default:
-        throw new ReportServiceError(`Unsupported format: ${format}`, 'UNSUPPORTED_FORMAT');
+        throw new ReportServiceError(
+          `Unsupported format: ${format}`,
+          "UNSUPPORTED_FORMAT",
+        );
     }
   }
 
@@ -436,7 +470,7 @@ export class ReportService {
         producer: { include: { user: true } },
         events: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: 1000,
     });
 
@@ -455,7 +489,10 @@ export class ReportService {
     }));
   }
 
-  private async fetchProducerData(userId: string, filters: ReportFilters | null) {
+  private async fetchProducerData(
+    userId: string,
+    filters: ReportFilters | null,
+  ) {
     const producer = await this.prisma.producer.findFirst({
       where: {
         ...(filters?.producerId && { id: filters.producerId }),
@@ -481,11 +518,16 @@ export class ReportService {
       },
       stats: {
         totalBatches: producer.batches.length,
-        totalWeight: producer.batches.reduce((sum, b) => sum + Number(b.weightKg), 0),
+        totalWeight: producer.batches.reduce(
+          (sum, b) => sum + Number(b.weightKg),
+          0,
+        ),
         activeCertifications: producer.certifications.length,
-        avgEventsPerBatch: producer.batches.length > 0
-          ? producer.batches.reduce((sum, b) => sum + b.events.length, 0) / producer.batches.length
-          : 0,
+        avgEventsPerBatch:
+          producer.batches.length > 0
+            ? producer.batches.reduce((sum, b) => sum + b.events.length, 0) /
+              producer.batches.length
+            : 0,
       },
       recentBatches: producer.batches.slice(0, 10).map((b) => ({
         id: b.id,
@@ -502,7 +544,7 @@ export class ReportService {
       where: {
         timestamp: { gte: dateFrom, lte: dateTo },
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: 5000,
     });
 
@@ -532,7 +574,7 @@ export class ReportService {
 
   private async fetchInventoryData(filters: ReportFilters | null) {
     const batches = await this.prisma.batch.groupBy({
-      by: ['variety'],
+      by: ["variety"],
       _count: { id: true },
       _sum: { weightKg: true },
       _avg: { weightKg: true },
@@ -573,10 +615,14 @@ export class ReportService {
   private async fetchEventsData(filters: ReportFilters | null) {
     const events = await this.prisma.traceabilityEvent.findMany({
       where: {
-        ...(filters?.dateFrom && { timestamp: { gte: new Date(filters.dateFrom) } }),
-        ...(filters?.dateTo && { timestamp: { lte: new Date(filters.dateTo) } }),
+        ...(filters?.dateFrom && {
+          timestamp: { gte: new Date(filters.dateFrom) },
+        }),
+        ...(filters?.dateTo && {
+          timestamp: { lte: new Date(filters.dateTo) },
+        }),
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: 5000,
     });
 
@@ -596,14 +642,17 @@ export class ReportService {
     }));
   }
 
-  private async fetchComplianceData(userId: string, filters: ReportFilters | null) {
+  private async fetchComplianceData(
+    userId: string,
+    filters: ReportFilters | null,
+  ) {
     // Compliance report combines various data
     return {
       batches: await this.fetchBatchData(userId, filters),
       audits: await this.fetchAuditData(
         userId,
         filters?.dateFrom || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-        filters?.dateTo || new Date()
+        filters?.dateTo || new Date(),
       ),
     };
   }
@@ -623,10 +672,10 @@ export class ReportService {
         const batches = data as BatchExportRow[];
         return pdfGenerator.generateProducerReport({
           producer: {
-            businessName: 'Reporte de Lotes',
-            rfc: 'N/A',
-            state: 'N/A',
-            municipality: 'N/A',
+            businessName: "Reporte de Lotes",
+            rfc: "N/A",
+            state: "N/A",
+            municipality: "N/A",
             isWhitelisted: true,
             createdAt: new Date(),
           },
@@ -634,7 +683,9 @@ export class ReportService {
             totalBatches: batches.length,
             totalWeight: batches.reduce((sum, b) => sum + b.weightKg, 0),
             activeCertifications: 0,
-            avgEventsPerBatch: batches.reduce((sum, b) => sum + b.eventCount, 0) / (batches.length || 1),
+            avgEventsPerBatch:
+              batches.reduce((sum, b) => sum + b.eventCount, 0) /
+              (batches.length || 1),
           },
           recentBatches: batches.slice(0, 20),
         });
@@ -660,21 +711,28 @@ export class ReportService {
 
       case ReportType.AUDIT_LOG:
         const auditData = data as AuditReportData;
-        return csvGenerator.generateAuditExport(auditData.logs as AuditExportRow[]);
+        return csvGenerator.generateAuditExport(
+          auditData.logs as AuditExportRow[],
+        );
 
       default:
         // Generic CSV generation
         return csvGenerator.generate(
           data as Record<string, unknown>[],
-          Object.keys((data as Record<string, unknown>[])[0] || {}).map((key) => ({
-            header: key,
-            key,
-          }))
+          Object.keys((data as Record<string, unknown>[])[0] || {}).map(
+            (key) => ({
+              header: key,
+              key,
+            }),
+          ),
         );
     }
   }
 
-  private async generateExcel(type: ReportType, data: unknown): Promise<Buffer> {
+  private async generateExcel(
+    type: ReportType,
+    data: unknown,
+  ): Promise<Buffer> {
     const excelGenerator = createExcelGenerator();
 
     switch (type) {
@@ -685,8 +743,8 @@ export class ReportService {
           summary: {
             totalBatches: batches.length,
             totalWeight: batches.reduce((sum, b) => sum + b.weightKg, 0),
-            byVariety: this.groupBy(batches, 'variety'),
-            byStatus: this.groupBy(batches, 'status'),
+            byVariety: this.groupBy(batches, "variety"),
+            byStatus: this.groupBy(batches, "status"),
           },
         });
 
@@ -697,9 +755,18 @@ export class ReportService {
           summary: {
             totalActions: auditData.summary.totalActions,
             uniqueUsers: auditData.summary.uniqueUsers,
-            successCount: Math.round(auditData.summary.successRate * auditData.summary.totalActions / 100),
-            failureCount: auditData.summary.totalActions - Math.round(auditData.summary.successRate * auditData.summary.totalActions / 100),
-            byAction: this.groupBy(auditData.logs, 'action'),
+            successCount: Math.round(
+              (auditData.summary.successRate * auditData.summary.totalActions) /
+                100,
+            ),
+            failureCount:
+              auditData.summary.totalActions -
+              Math.round(
+                (auditData.summary.successRate *
+                  auditData.summary.totalActions) /
+                  100,
+              ),
+            byAction: this.groupBy(auditData.logs, "action"),
           },
         });
 
@@ -707,17 +774,21 @@ export class ReportService {
         // Generic Excel
         return excelGenerator.generate({
           title: this.getReportTitle(type),
-          sheets: [{
-            name: 'Data',
-            columns: Object.keys((data as Record<string, unknown>[])[0] || {}).map((key) => ({
-              header: key,
-              key,
-              width: 15,
-            })),
-            data: data as Record<string, unknown>[],
-            freezeHeader: true,
-            autoFilter: true,
-          }],
+          sheets: [
+            {
+              name: "Data",
+              columns: Object.keys(
+                (data as Record<string, unknown>[])[0] || {},
+              ).map((key) => ({
+                header: key,
+                key,
+                width: 15,
+              })),
+              data: data as Record<string, unknown>[],
+              freezeHeader: true,
+              autoFilter: true,
+            },
+          ],
         });
     }
   }
@@ -727,56 +798,59 @@ export class ReportService {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   private generateReportName(type: ReportType, format: ReportFormat): string {
-    const date = new Date().toISOString().split('T')[0];
+    const date = new Date().toISOString().split("T")[0];
     const typeNames: Record<ReportType, string> = {
-      BATCH_TRACEABILITY: 'Trazabilidad_Lotes',
-      PRODUCER_SUMMARY: 'Resumen_Productor',
-      AUDIT_LOG: 'Registro_Auditoria',
-      INVENTORY: 'Inventario',
-      ANALYTICS: 'Analiticas',
-      COMPLIANCE: 'Cumplimiento',
-      EVENTS_TIMELINE: 'Eventos',
+      BATCH_TRACEABILITY: "Trazabilidad_Lotes",
+      PRODUCER_SUMMARY: "Resumen_Productor",
+      AUDIT_LOG: "Registro_Auditoria",
+      INVENTORY: "Inventario",
+      ANALYTICS: "Analiticas",
+      COMPLIANCE: "Cumplimiento",
+      EVENTS_TIMELINE: "Eventos",
     };
     return `${typeNames[type]}_${date}.${this.getFileExtension(format)}`;
   }
 
   private getReportTitle(type: ReportType): string {
     const titles: Record<ReportType, string> = {
-      BATCH_TRACEABILITY: 'Reporte de Trazabilidad de Lotes',
-      PRODUCER_SUMMARY: 'Resumen de Productor',
-      AUDIT_LOG: 'Registro de Auditoria',
-      INVENTORY: 'Reporte de Inventario',
-      ANALYTICS: 'Reporte de Analiticas',
-      COMPLIANCE: 'Reporte de Cumplimiento',
-      EVENTS_TIMELINE: 'Linea de Tiempo de Eventos',
+      BATCH_TRACEABILITY: "Reporte de Trazabilidad de Lotes",
+      PRODUCER_SUMMARY: "Resumen de Productor",
+      AUDIT_LOG: "Registro de Auditoria",
+      INVENTORY: "Reporte de Inventario",
+      ANALYTICS: "Reporte de Analiticas",
+      COMPLIANCE: "Reporte de Cumplimiento",
+      EVENTS_TIMELINE: "Linea de Tiempo de Eventos",
     };
-    return titles[type] || 'Reporte';
+    return titles[type] || "Reporte";
   }
 
   private getFileExtension(format: ReportFormat): string {
     const extensions: Record<ReportFormat, string> = {
-      PDF: 'pdf',
-      CSV: 'csv',
-      XLSX: 'xlsx',
+      PDF: "pdf",
+      CSV: "csv",
+      XLSX: "xlsx",
     };
     return extensions[format];
   }
 
   private getContentType(format: ReportFormat): string {
     const types: Record<ReportFormat, string> = {
-      PDF: 'application/pdf',
-      CSV: 'text/csv',
-      XLSX: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      PDF: "application/pdf",
+      CSV: "text/csv",
+      XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
     return types[format];
   }
 
   private groupBy<T>(array: T[], key: keyof T): Record<string, number> {
-    return array.reduce((acc, item) => {
-      const k = String(item[key] || 'Unknown');
-      acc[k] = (acc[k] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return array.reduce(
+      (acc, item) => {
+        const k = String(item[key] || "Unknown");
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }
 
   private mapToReportData(report: any): ReportData {

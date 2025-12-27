@@ -15,9 +15,12 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { PrismaClient } from '@prisma/client';
-import type { Redis } from 'ioredis';
-import { createCreditScoreCalculator, CreditScoreCalculator } from '../algorithms/credit-score.calculator.js';
+import { PrismaClient } from "@prisma/client";
+import type { Redis } from "ioredis";
+import {
+  createCreditScoreCalculator,
+  CreditScoreCalculator,
+} from "../algorithms/credit-score.calculator.js";
 import {
   CalculateCreditScoreInput,
   CalculateCreditScoreOutput,
@@ -38,7 +41,7 @@ import {
   ScoreTrend,
   decimalToNumber,
   getRiskTierFromScore,
-} from '../types/credit-score.types.js';
+} from "../types/credit-score.types.js";
 
 /**
  * Credit Scoring Service
@@ -52,7 +55,7 @@ export class CreditScoringService {
   private readonly calculator: CreditScoreCalculator;
   private readonly config: CreditScoringConfig;
 
-  private static readonly CACHE_PREFIX = 'agrobridge:credit-score:';
+  private static readonly CACHE_PREFIX = "agrobridge:credit-score:";
   private static readonly CACHE_TTL = 300; // 5 minutes
 
   constructor(
@@ -72,7 +75,11 @@ export class CreditScoringService {
   public async calculateScore(
     input: CalculateCreditScoreInput,
   ): Promise<CalculateCreditScoreOutput> {
-    const { producerId, forceRecalculate = false, includeDetails = true } = input;
+    const {
+      producerId,
+      forceRecalculate = false,
+      includeDetails = true,
+    } = input;
 
     try {
       // Check cache first (unless force recalculate)
@@ -141,7 +148,11 @@ export class CreditScoringService {
       }
 
       // Record history if score changed
-      await this.recordScoreHistory(producerId, result, previousScores?.score7DaysAgo);
+      await this.recordScoreHistory(
+        producerId,
+        result,
+        previousScores?.score7DaysAgo,
+      );
 
       return {
         success: true,
@@ -149,10 +160,13 @@ export class CreditScoringService {
         cached: false,
       };
     } catch (error) {
-      console.error('Error calculating credit score:', error);
+      console.error("Error calculating credit score:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error calculating score',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error calculating score",
         cached: false,
       };
     }
@@ -176,7 +190,7 @@ export class CreditScoringService {
       if (!scoreResult.success || !scoreResult.data) {
         return {
           isEligible: false,
-          reason: scoreResult.error || 'Unable to calculate credit score',
+          reason: scoreResult.error || "Unable to calculate credit score",
           maxEligibleAmount: 0,
           creditScore: 0,
           riskTier: RiskTier.C,
@@ -229,7 +243,7 @@ export class CreditScoringService {
       if (!order.advanceEligible) {
         return {
           isEligible: false,
-          reason: 'Order is not eligible for advance financing',
+          reason: "Order is not eligible for advance financing",
           maxEligibleAmount: score.creditLimits.availableCredit,
           creditScore: score.overallScore,
           riskTier: score.riskTier,
@@ -247,13 +261,13 @@ export class CreditScoringService {
       // Build conditions
       const conditions: string[] = [];
       if (requiresManualReview) {
-        conditions.push('Subject to manual underwriting review');
+        conditions.push("Subject to manual underwriting review");
       }
       if (score.riskTier === RiskTier.C) {
-        conditions.push('Additional collateral may be required');
+        conditions.push("Additional collateral may be required");
       }
       if (score.creditLimits.utilizationRate > 70) {
-        conditions.push('High credit utilization noted');
+        conditions.push("High credit utilization noted");
       }
 
       return {
@@ -265,10 +279,10 @@ export class CreditScoringService {
         conditions: conditions.length > 0 ? conditions : undefined,
       };
     } catch (error) {
-      console.error('Error checking eligibility:', error);
+      console.error("Error checking eligibility:", error);
       return {
         isEligible: false,
-        reason: error instanceof Error ? error.message : 'Unknown error',
+        reason: error instanceof Error ? error.message : "Unknown error",
         maxEligibleAmount: 0,
         creditScore: 0,
         riskTier: RiskTier.C,
@@ -288,7 +302,7 @@ export class CreditScoringService {
       where: { producerId },
       include: {
         scoreHistory: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: limit,
         },
       },
@@ -336,7 +350,9 @@ export class CreditScoringService {
   /**
    * Force recalculate score for a producer
    */
-  public async recalculateScore(producerId: string): Promise<CreditScoreResult | null> {
+  public async recalculateScore(
+    producerId: string,
+  ): Promise<CreditScoreResult | null> {
     const result = await this.calculateScore({
       producerId,
       forceRecalculate: true,
@@ -388,7 +404,9 @@ export class CreditScoringService {
   /**
    * Get delivery metrics from database
    */
-  private async getDeliveryMetrics(producerId: string): Promise<DeliveryMetrics> {
+  private async getDeliveryMetrics(
+    producerId: string,
+  ): Promise<DeliveryMetrics> {
     // Query orders for this producer
     const orders = await this.prisma.order.findMany({
       where: { producerId },
@@ -408,9 +426,9 @@ export class CreditScoringService {
       };
     }
 
-    const completed = orders.filter((o) => o.status === 'DELIVERED').length;
-    const defaulted = orders.filter((o) => o.status === 'DEFAULTED').length;
-    const cancelled = orders.filter((o) => o.status === 'CANCELLED').length;
+    const completed = orders.filter((o) => o.status === "DELIVERED").length;
+    const defaulted = orders.filter((o) => o.status === "DEFAULTED").length;
+    const cancelled = orders.filter((o) => o.status === "CANCELLED").length;
     const total = completed + defaulted;
 
     // Calculate on-time rate
@@ -418,7 +436,9 @@ export class CreditScoringService {
     let totalDelayDays = 0;
     let delayCount = 0;
 
-    for (const order of orders.filter((o) => o.status === 'DELIVERED' && o.actualDeliveryDate)) {
+    for (const order of orders.filter(
+      (o) => o.status === "DELIVERED" && o.actualDeliveryDate,
+    )) {
       const expected = order.expectedDeliveryDate;
       const actual = order.actualDeliveryDate!;
       const delayMs = actual.getTime() - expected.getTime();
@@ -462,7 +482,7 @@ export class CreditScoringService {
       where: { producerId },
       include: {
         events: {
-          where: { eventType: 'QUALITY_INSPECTION' },
+          where: { eventType: "QUALITY_INSPECTION" },
         },
       },
     });
@@ -544,10 +564,10 @@ export class CreditScoringService {
       };
     }
 
-    const completed = advances.filter((a) => a.status === 'COMPLETED').length;
-    const defaulted = advances.filter((a) => a.status === 'DEFAULTED').length;
+    const completed = advances.filter((a) => a.status === "COMPLETED").length;
+    const defaulted = advances.filter((a) => a.status === "DEFAULTED").length;
     const active = advances.filter((a) =>
-      ['DISBURSED', 'ACTIVE', 'PARTIALLY_REPAID'].includes(a.status),
+      ["DISBURSED", "ACTIVE", "PARTIALLY_REPAID"].includes(a.status),
     ).length;
 
     const totalBorrowed = advances.reduce(
@@ -563,7 +583,9 @@ export class CreditScoringService {
     let totalDelay = 0;
     let delayCount = 0;
 
-    for (const advance of advances.filter((a) => a.status === 'COMPLETED' && a.repaidAt)) {
+    for (const advance of advances.filter(
+      (a) => a.status === "COMPLETED" && a.repaidAt,
+    )) {
       const dueDate = advance.dueDate;
       const repaidAt = advance.repaidAt!;
       const delayMs = repaidAt.getTime() - dueDate.getTime();
@@ -589,7 +611,9 @@ export class CreditScoringService {
   /**
    * Get activity metrics from database
    */
-  private async getActivityMetrics(producerId: string): Promise<ActivityMetrics> {
+  private async getActivityMetrics(
+    producerId: string,
+  ): Promise<ActivityMetrics> {
     const producer = await this.prisma.producer.findUnique({
       where: { id: producerId },
     });
@@ -610,7 +634,7 @@ export class CreditScoringService {
 
     const orders = await this.prisma.order.findMany({
       where: { producerId },
-      orderBy: { orderDate: 'asc' },
+      orderBy: { orderDate: "asc" },
     });
 
     if (orders.length === 0) {
@@ -628,7 +652,7 @@ export class CreditScoringService {
 
     // Count unique active days
     const activeDays = new Set(
-      orders.map((o) => o.orderDate.toISOString().split('T')[0]),
+      orders.map((o) => o.orderDate.toISOString().split("T")[0]),
     ).size;
 
     // Calculate orders per month
@@ -651,7 +675,9 @@ export class CreditScoringService {
   /**
    * Get blockchain metrics from database
    */
-  private async getBlockchainMetrics(producerId: string): Promise<BlockchainMetrics> {
+  private async getBlockchainMetrics(
+    producerId: string,
+  ): Promise<BlockchainMetrics> {
     // Query traceability events with blockchain verification
     const events = await this.prisma.traceabilityEvent.findMany({
       where: {
@@ -679,7 +705,8 @@ export class CreditScoringService {
       totalTransactions: events.length,
       verificationRate: (verified.length / events.length) * 100,
       verificationHashes: hashes,
-      lastSyncAt: events.length > 0 ? events[events.length - 1].createdAt : null,
+      lastSyncAt:
+        events.length > 0 ? events[events.length - 1].createdAt : null,
     };
   }
 
@@ -705,7 +732,7 @@ export class CreditScoringService {
               gte: days90Ago,
             },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -743,10 +770,14 @@ export class CreditScoringService {
   /**
    * Get cached score
    */
-  private async getCachedScore(producerId: string): Promise<CreditScoreResult | null> {
+  private async getCachedScore(
+    producerId: string,
+  ): Promise<CreditScoreResult | null> {
     if (!this.redis) return null;
 
-    const cached = await this.redis.get(`${CreditScoringService.CACHE_PREFIX}${producerId}`);
+    const cached = await this.redis.get(
+      `${CreditScoringService.CACHE_PREFIX}${producerId}`,
+    );
     if (!cached) return null;
 
     try {
@@ -759,7 +790,10 @@ export class CreditScoringService {
   /**
    * Cache score
    */
-  private async cacheScore(producerId: string, result: CreditScoreResult): Promise<void> {
+  private async cacheScore(
+    producerId: string,
+    result: CreditScoreResult,
+  ): Promise<void> {
     if (!this.redis) return;
 
     await this.redis.setex(
@@ -772,7 +806,10 @@ export class CreditScoringService {
   /**
    * Persist score to database
    */
-  private async persistScore(producerId: string, result: CreditScoreResult): Promise<void> {
+  private async persistScore(
+    producerId: string,
+    result: CreditScoreResult,
+  ): Promise<void> {
     await this.prisma.creditScore.upsert({
       where: { producerId },
       create: {
@@ -784,7 +821,9 @@ export class CreditScoringService {
         averageQualityScore: result.metrics.quality.averageScore,
         qualityConsistency: result.metrics.quality.standardDeviation,
         recentQualityTrend: result.metrics.quality.trend,
-        averageDeliveryDelay: Math.round(result.metrics.delivery.averageDelayDays),
+        averageDeliveryDelay: Math.round(
+          result.metrics.delivery.averageDelayDays,
+        ),
         onTimeDeliveryRate: result.metrics.delivery.onTimeRate,
         totalVolumeDelivered: result.metrics.delivery.totalVolumeKg,
         totalValueDelivered: result.metrics.delivery.totalValueUSD,
@@ -793,7 +832,9 @@ export class CreditScoringService {
         advancesDefaulted: result.metrics.payment.advancesDefaulted,
         advancesActive: result.metrics.payment.advancesActive,
         advanceDefaultRate: result.metrics.payment.defaultRate,
-        averageRepaymentDelay: Math.round(result.metrics.payment.averageRepaymentDelay),
+        averageRepaymentDelay: Math.round(
+          result.metrics.payment.averageRepaymentDelay,
+        ),
         totalAmountBorrowed: result.metrics.payment.totalBorrowed,
         totalAmountRepaid: result.metrics.payment.totalRepaid,
         accountAgeDays: result.metrics.activity.accountAgeDays,
@@ -818,7 +859,7 @@ export class CreditScoringService {
         lastBlockchainSync: result.metrics.blockchain.lastSyncAt,
         modelVersion: result.metadata.modelVersion,
         lastCalculatedAt: result.metadata.calculatedAt,
-        calculatedBy: 'SYSTEM',
+        calculatedBy: "SYSTEM",
         calculationDuration: result.metadata.calculationDurationMs,
       },
       update: {
@@ -829,7 +870,9 @@ export class CreditScoringService {
         averageQualityScore: result.metrics.quality.averageScore,
         qualityConsistency: result.metrics.quality.standardDeviation,
         recentQualityTrend: result.metrics.quality.trend,
-        averageDeliveryDelay: Math.round(result.metrics.delivery.averageDelayDays),
+        averageDeliveryDelay: Math.round(
+          result.metrics.delivery.averageDelayDays,
+        ),
         onTimeDeliveryRate: result.metrics.delivery.onTimeRate,
         totalVolumeDelivered: result.metrics.delivery.totalVolumeKg,
         totalValueDelivered: result.metrics.delivery.totalValueUSD,
@@ -838,7 +881,9 @@ export class CreditScoringService {
         advancesDefaulted: result.metrics.payment.advancesDefaulted,
         advancesActive: result.metrics.payment.advancesActive,
         advanceDefaultRate: result.metrics.payment.defaultRate,
-        averageRepaymentDelay: Math.round(result.metrics.payment.averageRepaymentDelay),
+        averageRepaymentDelay: Math.round(
+          result.metrics.payment.averageRepaymentDelay,
+        ),
         totalAmountBorrowed: result.metrics.payment.totalBorrowed,
         totalAmountRepaid: result.metrics.payment.totalRepaid,
         accountAgeDays: result.metrics.activity.accountAgeDays,
@@ -863,7 +908,7 @@ export class CreditScoringService {
         lastBlockchainSync: result.metrics.blockchain.lastSyncAt,
         modelVersion: result.metadata.modelVersion,
         lastCalculatedAt: result.metadata.calculatedAt,
-        calculatedBy: 'SYSTEM',
+        calculatedBy: "SYSTEM",
         calculationDuration: result.metadata.calculationDurationMs,
       },
     });
@@ -883,7 +928,8 @@ export class CreditScoringService {
 
     if (!creditScore) return;
 
-    const changeAmount = previousScore !== undefined ? result.overallScore - previousScore : 0;
+    const changeAmount =
+      previousScore !== undefined ? result.overallScore - previousScore : 0;
 
     // Only record if there's a meaningful change (>0.5)
     if (Math.abs(changeAmount) < 0.5) return;
@@ -898,7 +944,7 @@ export class CreditScoringService {
         paymentScore: result.componentScores.payment,
         changeAmount,
         changeReason: this.determineChangeReason(changeAmount, result),
-        triggerEvent: 'SCHEDULED_RECALCULATION',
+        triggerEvent: "SCHEDULED_RECALCULATION",
       },
     });
   }
@@ -906,17 +952,22 @@ export class CreditScoringService {
   /**
    * Determine reason for score change
    */
-  private determineChangeReason(changeAmount: number, result: CreditScoreResult): string {
-    if (changeAmount === 0) return 'Initial calculation';
+  private determineChangeReason(
+    changeAmount: number,
+    result: CreditScoreResult,
+  ): string {
+    if (changeAmount === 0) return "Initial calculation";
 
-    const direction = changeAmount > 0 ? 'increased' : 'decreased';
+    const direction = changeAmount > 0 ? "increased" : "decreased";
     const factors = result.scoringFactors
-      .filter((f) => f.category === (changeAmount > 0 ? 'positive' : 'negative'))
+      .filter(
+        (f) => f.category === (changeAmount > 0 ? "positive" : "negative"),
+      )
       .slice(0, 2)
       .map((f) => f.name)
-      .join(', ');
+      .join(", ");
 
-    return `Score ${direction} by ${Math.abs(changeAmount).toFixed(1)} points. Key factors: ${factors || 'General activity'}`;
+    return `Score ${direction} by ${Math.abs(changeAmount).toFixed(1)} points. Key factors: ${factors || "General activity"}`;
   }
 
   /**

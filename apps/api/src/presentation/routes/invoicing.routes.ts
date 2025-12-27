@@ -3,20 +3,20 @@
  * RESTful API endpoints for invoice management
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaInvoiceRepository } from '../../infrastructure/database/prisma/repositories/PrismaInvoiceRepository.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaInvoiceRepository } from "../../infrastructure/database/prisma/repositories/PrismaInvoiceRepository.js";
 import {
   CreateInvoiceUseCase,
   GetInvoiceUseCase,
   ListProducerInvoicesUseCase,
   MarkInvoicePaidUseCase,
-} from '../../application/use-cases/invoicing/index.js';
-import { InvoiceStatus } from '../../domain/entities/Invoice.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../application/use-cases/invoicing/index.js";
+import { InvoiceStatus } from "../../domain/entities/Invoice.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const createInvoiceSchema = z.object({
@@ -25,17 +25,19 @@ const createInvoiceSchema = z.object({
   recipientRfc: z.string().min(12).max(13),
   recipientName: z.string().min(1).max(255),
   recipientEmail: z.string().email().optional(),
-  lineItems: z.array(
-    z.object({
-      description: z.string().min(1),
-      quantity: z.number().positive(),
-      unitPrice: z.number().positive(),
-      unit: z.string().default('PZA'),
-      productKey: z.string().default('01010101'),
-    })
-  ).min(1),
+  lineItems: z
+    .array(
+      z.object({
+        description: z.string().min(1),
+        quantity: z.number().positive(),
+        unitPrice: z.number().positive(),
+        unit: z.string().default("PZA"),
+        productKey: z.string().default("01010101"),
+      }),
+    )
+    .min(1),
   notes: z.string().optional(),
-  currency: z.enum(['MXN', 'USD']).default('MXN'),
+  currency: z.enum(["MXN", "USD"]).default("MXN"),
   ivaRate: z.number().min(0).max(100).default(16),
 });
 
@@ -62,7 +64,9 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
   const invoiceRepository = new PrismaInvoiceRepository(prisma);
   const createInvoiceUseCase = new CreateInvoiceUseCase(invoiceRepository);
   const getInvoiceUseCase = new GetInvoiceUseCase(invoiceRepository);
-  const listProducerInvoicesUseCase = new ListProducerInvoicesUseCase(invoiceRepository);
+  const listProducerInvoicesUseCase = new ListProducerInvoicesUseCase(
+    invoiceRepository,
+  );
   const markInvoicePaidUseCase = new MarkInvoicePaidUseCase(invoiceRepository);
 
   /**
@@ -70,8 +74,8 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
    * Create a new invoice
    */
   router.post(
-    '/',
-    authenticate(['PRODUCER', 'ADMIN']),
+    "/",
+    authenticate(["PRODUCER", "ADMIN"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -79,7 +83,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -88,7 +92,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
@@ -97,7 +101,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
           ...validation.data,
         });
 
-        logger.info('Invoice created via API', {
+        logger.info("Invoice created via API", {
           invoiceId: result.invoice.id,
           userId,
         });
@@ -110,7 +114,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -118,7 +122,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
    * List invoices for the authenticated producer
    */
   router.get(
-    '/producer/me',
+    "/producer/me",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -127,7 +131,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -136,15 +140,19 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
         const result = await listProducerInvoicesUseCase.execute({
           userId,
           status: validation.data.status,
-          fromDate: validation.data.fromDate ? new Date(validation.data.fromDate) : undefined,
-          toDate: validation.data.toDate ? new Date(validation.data.toDate) : undefined,
+          fromDate: validation.data.fromDate
+            ? new Date(validation.data.fromDate)
+            : undefined,
+          toDate: validation.data.toDate
+            ? new Date(validation.data.toDate)
+            : undefined,
           limit: validation.data.limit,
           offset: validation.data.offset,
         });
@@ -161,7 +169,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -169,7 +177,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
    * Get invoice details by ID
    */
   router.get(
-    '/:id',
+    "/:id",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -180,7 +188,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
@@ -196,7 +204,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -204,8 +212,8 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
    * Mark invoice as paid with optional blockchain tx hash
    */
   router.post(
-    '/:id/mark-paid',
-    authenticate(['PRODUCER', 'ADMIN']),
+    "/:id/mark-paid",
+    authenticate(["PRODUCER", "ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -215,7 +223,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -224,7 +232,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
@@ -232,10 +240,12 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
           invoiceId: id,
           userId,
           blockchainTxHash: validation.data.blockchainTxHash,
-          paidAt: validation.data.paidAt ? new Date(validation.data.paidAt) : undefined,
+          paidAt: validation.data.paidAt
+            ? new Date(validation.data.paidAt)
+            : undefined,
         });
 
-        logger.info('Invoice marked as paid via API', {
+        logger.info("Invoice marked as paid via API", {
           invoiceId: id,
           userId,
         });
@@ -248,7 +258,7 @@ export default function createInvoicingRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

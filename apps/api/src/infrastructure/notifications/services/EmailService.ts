@@ -18,9 +18,9 @@
  * @see https://docs.sendgrid.com/api-reference
  */
 
-import sgMail from '@sendgrid/mail';
-import Handlebars from 'handlebars';
-import logger from '../../../shared/utils/logger.js';
+import sgMail from "@sendgrid/mail";
+import Handlebars from "handlebars";
+import logger from "../../../shared/utils/logger.js";
 import type {
   EmailOptions,
   EmailSendResult,
@@ -29,7 +29,7 @@ import type {
   CertificateNotificationDetails,
   SensorAlertDetails,
   OrderNotificationDetails,
-} from '../types/index.js';
+} from "../types/index.js";
 
 /**
  * Email Service using SendGrid
@@ -45,9 +45,10 @@ export class EmailService {
   private appUrl: string;
 
   private constructor() {
-    this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'notifications@agrobridge.io';
-    this.fromName = process.env.SENDGRID_FROM_NAME || 'AgroBridge';
-    this.appUrl = process.env.APP_URL || 'https://app.agrobridge.io';
+    this.fromEmail =
+      process.env.SENDGRID_FROM_EMAIL || "notifications@agrobridge.io";
+    this.fromName = process.env.SENDGRID_FROM_NAME || "AgroBridge";
+    this.appUrl = process.env.APP_URL || "https://app.agrobridge.io";
   }
 
   /**
@@ -70,7 +71,9 @@ export class EmailService {
       const apiKey = process.env.SENDGRID_API_KEY;
 
       if (!apiKey) {
-        logger.warn('[EmailService] SendGrid API key not configured. Email will be disabled.');
+        logger.warn(
+          "[EmailService] SendGrid API key not configured. Email will be disabled.",
+        );
         return;
       }
 
@@ -78,13 +81,13 @@ export class EmailService {
       this.registerHandlebarsHelpers();
       this.initialized = true;
 
-      logger.info('[EmailService] SendGrid initialized successfully', {
+      logger.info("[EmailService] SendGrid initialized successfully", {
         fromEmail: this.fromEmail,
         fromName: this.fromName,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[EmailService] Failed to initialize SendGrid', {
+      logger.error("[EmailService] Failed to initialize SendGrid", {
         error: err.message,
       });
     }
@@ -95,46 +98,51 @@ export class EmailService {
    */
   private registerHandlebarsHelpers(): void {
     // Date formatting helper
-    Handlebars.registerHelper('formatDate', (date: Date | string) => {
+    Handlebars.registerHelper("formatDate", (date: Date | string) => {
       const d = new Date(date);
-      return d.toLocaleDateString('es-MX', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+      return d.toLocaleDateString("es-MX", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     });
 
     // Date and time formatting
-    Handlebars.registerHelper('formatDateTime', (date: Date | string) => {
+    Handlebars.registerHelper("formatDateTime", (date: Date | string) => {
       const d = new Date(date);
-      return d.toLocaleString('es-MX', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return d.toLocaleString("es-MX", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     });
 
     // Currency formatting helper
-    Handlebars.registerHelper('formatCurrency', (amount: number) => {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN',
+    Handlebars.registerHelper("formatCurrency", (amount: number) => {
+      return new Intl.NumberFormat("es-MX", {
+        style: "currency",
+        currency: "MXN",
       }).format(amount);
     });
 
     // Weight formatting
-    Handlebars.registerHelper('formatWeight', (kg: number) => {
-      return new Intl.NumberFormat('es-MX', {
-        maximumFractionDigits: 2,
-      }).format(kg) + ' kg';
+    Handlebars.registerHelper("formatWeight", (kg: number) => {
+      return (
+        new Intl.NumberFormat("es-MX", {
+          maximumFractionDigits: 2,
+        }).format(kg) + " kg"
+      );
     });
 
     // Conditional helper
-    Handlebars.registerHelper('ifEquals', function(this: any, arg1: any, arg2: any, options: any) {
-      return arg1 === arg2 ? options.fn(this) : options.inverse(this);
-    });
+    Handlebars.registerHelper(
+      "ifEquals",
+      function (this: any, arg1: any, arg2: any, options: any) {
+        return arg1 === arg2 ? options.fn(this) : options.inverse(this);
+      },
+    );
   }
 
   /**
@@ -157,8 +165,8 @@ export class EmailService {
     if (!this.initialized) {
       return {
         success: false,
-        error: 'Email service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "Email service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -209,9 +217,9 @@ export class EmailService {
       const response = await sgMail.send(msg);
       const latency = Date.now() - startTime;
 
-      const messageId = response[0]?.headers?.['x-message-id'];
+      const messageId = response[0]?.headers?.["x-message-id"];
 
-      logger.info('[EmailService] Email sent successfully', {
+      logger.info("[EmailService] Email sent successfully", {
         to: this.maskEmail(options.to),
         subject: options.subject,
         messageId,
@@ -225,7 +233,7 @@ export class EmailService {
         statusCode: response[0].statusCode,
       };
     } catch (error: any) {
-      logger.error('[EmailService] Send failed', {
+      logger.error("[EmailService] Send failed", {
         error: error.message,
         to: this.maskEmail(options.to),
         subject: options.subject,
@@ -246,7 +254,7 @@ export class EmailService {
    */
   async sendBatchCreatedEmail(
     email: string,
-    details: BatchNotificationDetails
+    details: BatchNotificationDetails,
   ): Promise<EmailSendResult> {
     const html = `
 <!DOCTYPE html>
@@ -275,7 +283,7 @@ export class EmailService {
               <div style="display: inline-block; background: #E8F5E9; color: #2E7D32; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 600; margin-bottom: 20px;">CONFIRMADO</div>
 
               <p style="font-size: 16px; margin-bottom: 24px;">
-                Hola${details.producerName ? ` ${details.producerName}` : ''},<br><br>
+                Hola${details.producerName ? ` ${details.producerName}` : ""},<br><br>
                 Tu lote <strong>${details.batchId}</strong> ha sido registrado exitosamente en la blockchain de AgroBridge.
               </p>
 
@@ -289,7 +297,9 @@ export class EmailService {
                     ${details.batchId}
                   </td>
                 </tr>
-                ${details.variety ? `
+                ${
+                  details.variety
+                    ? `
                 <tr>
                   <td style="padding: 12px 20px; border-bottom: 1px solid #E0E0E0;">
                     <span style="font-weight: 600; color: #666;">Variedad:</span>
@@ -298,8 +308,12 @@ export class EmailService {
                     ${details.variety}
                   </td>
                 </tr>
-                ` : ''}
-                ${details.origin ? `
+                `
+                    : ""
+                }
+                ${
+                  details.origin
+                    ? `
                 <tr>
                   <td style="padding: 12px 20px; border-bottom: 1px solid #E0E0E0;">
                     <span style="font-weight: 600; color: #666;">Origen:</span>
@@ -308,23 +322,29 @@ export class EmailService {
                     ${details.origin}
                   </td>
                 </tr>
-                ` : ''}
-                ${details.weightKg ? `
+                `
+                    : ""
+                }
+                ${
+                  details.weightKg
+                    ? `
                 <tr>
                   <td style="padding: 12px 20px; border-bottom: 1px solid #E0E0E0;">
                     <span style="font-weight: 600; color: #666;">Peso:</span>
                   </td>
                   <td style="padding: 12px 20px; border-bottom: 1px solid #E0E0E0; text-align: right;">
-                    ${new Intl.NumberFormat('es-MX').format(details.weightKg)} kg
+                    ${new Intl.NumberFormat("es-MX").format(details.weightKg)} kg
                   </td>
                 </tr>
-                ` : ''}
+                `
+                    : ""
+                }
                 <tr>
                   <td style="padding: 12px 20px;">
                     <span style="font-weight: 600; color: #666;">Fecha:</span>
                   </td>
                   <td style="padding: 12px 20px; text-align: right;">
-                    ${new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}
                   </td>
                 </tr>
               </table>
@@ -367,10 +387,10 @@ export class EmailService {
       to: email,
       subject: `✅ Lote ${details.batchId} registrado exitosamente`,
       html,
-      categories: ['batch-created', 'transactional'],
+      categories: ["batch-created", "transactional"],
       customArgs: {
         batchId: details.batchId,
-        type: 'batch-created',
+        type: "batch-created",
       },
     });
   }
@@ -381,7 +401,7 @@ export class EmailService {
   async sendCertificateEmail(
     email: string,
     details: CertificateNotificationDetails,
-    pdfBase64?: string
+    pdfBase64?: string,
   ): Promise<EmailSendResult> {
     const html = `
 <!DOCTYPE html>
@@ -420,11 +440,15 @@ export class EmailService {
                     <div style="font-size: 64px; margin-bottom: 16px;">🏆</div>
                     <h2 style="color: #1B5E20; margin-bottom: 12px;">Certificado Blockchain</h2>
                     <p style="color: #2E7D32; margin: 0;">Lote ${details.batchId}</p>
-                    ${details.blockchainHash ? `
+                    ${
+                      details.blockchainHash
+                        ? `
                     <p style="color: #666; font-size: 12px; margin-top: 12px; word-break: break-all;">
                       Hash: ${details.blockchainHash}
                     </p>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                   </td>
                 </tr>
               </table>
@@ -444,11 +468,15 @@ export class EmailService {
                 </tr>
               </table>
 
-              ${pdfBase64 ? `
+              ${
+                pdfBase64
+                  ? `
               <p style="margin-top: 24px; color: #666; font-size: 14px; text-align: center;">
                 También puedes encontrar tu certificado adjunto a este email.
               </p>
-              ` : ''}
+              `
+                  : ""
+              }
             </td>
           </tr>
 
@@ -470,8 +498,8 @@ export class EmailService {
       attachments.push({
         content: pdfBase64,
         filename: `certificado_${details.batchId}.pdf`,
-        type: 'application/pdf',
-        disposition: 'attachment',
+        type: "application/pdf",
+        disposition: "attachment",
       });
     }
 
@@ -480,10 +508,10 @@ export class EmailService {
       subject: `🏆 Certificado blockchain listo - Lote ${details.batchId}`,
       html,
       attachments,
-      categories: ['certificate-ready', 'transactional'],
+      categories: ["certificate-ready", "transactional"],
       customArgs: {
         batchId: details.batchId,
-        type: 'certificate-ready',
+        type: "certificate-ready",
       },
     });
   }
@@ -493,7 +521,7 @@ export class EmailService {
    */
   async sendSensorAlertEmail(
     email: string,
-    details: SensorAlertDetails
+    details: SensorAlertDetails,
   ): Promise<EmailSendResult> {
     const html = `
 <!DOCTYPE html>
@@ -548,7 +576,9 @@ export class EmailService {
                     ${details.threshold} ${details.unit}
                   </td>
                 </tr>
-                ${details.location ? `
+                ${
+                  details.location
+                    ? `
                 <tr>
                   <td style="padding: 12px 20px; border-bottom: 1px solid #FFE0B2;">
                     <span style="font-weight: 600; color: #E65100;">Ubicación:</span>
@@ -557,13 +587,15 @@ export class EmailService {
                     ${details.location}
                   </td>
                 </tr>
-                ` : ''}
+                `
+                    : ""
+                }
                 <tr>
                   <td style="padding: 12px 20px;">
                     <span style="font-weight: 600; color: #E65100;">Hora:</span>
                   </td>
                   <td style="padding: 12px 20px; text-align: right;">
-                    ${new Date().toLocaleString('es-MX')}
+                    ${new Date().toLocaleString("es-MX")}
                   </td>
                 </tr>
               </table>
@@ -576,7 +608,7 @@ export class EmailService {
               <table role="presentation" style="width: 100%;">
                 <tr>
                   <td align="center">
-                    <a href="${this.appUrl}/sensors${details.batchId ? `?batchId=${details.batchId}` : ''}" style="display: inline-block; background: #C62828; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
+                    <a href="${this.appUrl}/sensors${details.batchId ? `?batchId=${details.batchId}` : ""}" style="display: inline-block; background: #C62828; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
                       Ver Sensores
                     </a>
                   </td>
@@ -602,10 +634,10 @@ export class EmailService {
       to: email,
       subject: `🚨 ALERTA: ${details.sensorType} excedió el umbral (${details.currentValue}${details.unit})`,
       html,
-      categories: ['sensor-alert', 'critical'],
+      categories: ["sensor-alert", "critical"],
       customArgs: {
         sensorType: details.sensorType,
-        type: 'sensor-alert',
+        type: "sensor-alert",
         ...(details.batchId && { batchId: details.batchId }),
       },
     });
@@ -616,7 +648,7 @@ export class EmailService {
    */
   async sendOrderConfirmationEmail(
     email: string,
-    details: OrderNotificationDetails
+    details: OrderNotificationDetails,
   ): Promise<EmailSendResult> {
     const html = `
 <!DOCTYPE html>
@@ -645,7 +677,7 @@ export class EmailService {
             <td style="padding: 40px 30px;">
               <p style="font-size: 16px; margin-bottom: 24px;">
                 Hola,<br><br>
-                Tu orden <strong>#${details.orderId}</strong> ha sido ${details.status === 'CONFIRMED' ? 'confirmada' : details.status.toLowerCase()}.
+                Tu orden <strong>#${details.orderId}</strong> ha sido ${details.status === "CONFIRMED" ? "confirmada" : details.status.toLowerCase()}.
               </p>
 
               <!-- Order Details -->
@@ -666,16 +698,20 @@ export class EmailService {
                     <span style="background: #E8F5E9; color: #2E7D32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${details.status}</span>
                   </td>
                 </tr>
-                ${details.total ? `
+                ${
+                  details.total
+                    ? `
                 <tr>
                   <td style="padding: 12px 20px;">
                     <span style="font-weight: 600; color: #666;">Total:</span>
                   </td>
                   <td style="padding: 12px 20px; text-align: right; font-weight: bold; font-size: 18px; color: #2E7D32;">
-                    ${new Intl.NumberFormat('es-MX', { style: 'currency', currency: details.currency || 'MXN' }).format(details.total)}
+                    ${new Intl.NumberFormat("es-MX", { style: "currency", currency: details.currency || "MXN" }).format(details.total)}
                   </td>
                 </tr>
-                ` : ''}
+                `
+                    : ""
+                }
               </table>
 
               <!-- CTA Button -->
@@ -706,13 +742,13 @@ export class EmailService {
 
     return await this.sendEmail({
       to: email,
-      subject: `✅ Orden #${details.orderId} ${details.status === 'CONFIRMED' ? 'confirmada' : details.status.toLowerCase()}`,
+      subject: `✅ Orden #${details.orderId} ${details.status === "CONFIRMED" ? "confirmada" : details.status.toLowerCase()}`,
       html,
-      categories: ['order-confirmation', 'transactional'],
+      categories: ["order-confirmation", "transactional"],
       customArgs: {
         orderId: details.orderId,
         status: details.status,
-        type: 'order-confirmation',
+        type: "order-confirmation",
       },
     });
   }
@@ -722,7 +758,7 @@ export class EmailService {
    */
   async sendWelcomeEmail(
     email: string,
-    name: string
+    name: string,
   ): Promise<EmailSendResult> {
     const html = `
 <!DOCTYPE html>
@@ -799,9 +835,9 @@ export class EmailService {
       to: email,
       subject: `🌱 Bienvenido a AgroBridge, ${name}!`,
       html,
-      categories: ['welcome', 'onboarding'],
+      categories: ["welcome", "onboarding"],
       customArgs: {
-        type: 'welcome',
+        type: "welcome",
       },
     });
   }
@@ -811,10 +847,10 @@ export class EmailService {
    */
   private stripHtml(html: string): string {
     return html
-      .replace(/<style[^>]*>.*<\/style>/gms, '')
-      .replace(/<script[^>]*>.*<\/script>/gms, '')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\s+/g, ' ')
+      .replace(/<style[^>]*>.*<\/style>/gms, "")
+      .replace(/<script[^>]*>.*<\/script>/gms, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
       .trim();
   }
 
@@ -829,12 +865,12 @@ export class EmailService {
       inviteToken: string;
       signupUrl: string;
       expiresAt: Date;
-    }
+    },
   ): Promise<EmailSendResult> {
-    const expiryDate = details.expiresAt.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    const expiryDate = details.expiresAt.toLocaleDateString("es-MX", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
 
     const html = `
@@ -863,7 +899,7 @@ export class EmailService {
           <tr>
             <td style="padding: 40px 30px;">
               <p style="font-size: 16px; margin-bottom: 24px;">
-                Hola${details.farmerName ? ` <strong>${details.farmerName}</strong>` : ''},<br><br>
+                Hola${details.farmerName ? ` <strong>${details.farmerName}</strong>` : ""},<br><br>
                 <strong>${details.exportCompanyName}</strong> te ha invitado a unirte a AgroBridge, la plataforma de certificación orgánica que conecta agricultores con mercados internacionales.
               </p>
 
@@ -930,9 +966,9 @@ export class EmailService {
       to: email,
       subject: `🌱 ${details.exportCompanyName} te invita a AgroBridge`,
       html,
-      categories: ['farmer-invitation', 'b2b'],
+      categories: ["farmer-invitation", "b2b"],
       customArgs: {
-        type: 'farmer-invitation',
+        type: "farmer-invitation",
         exportCompanyName: details.exportCompanyName,
       },
     });
@@ -952,13 +988,20 @@ export class EmailService {
       currency: string;
       dueDate: Date;
       invoiceUrl: string;
-    }
+    },
   ): Promise<EmailSendResult> {
     const formatCurrency = (amount: number) =>
-      new Intl.NumberFormat('en-US', { style: 'currency', currency: details.currency }).format(amount);
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: details.currency,
+      }).format(amount);
 
     const formatDate = (date: Date) =>
-      date.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+      date.toLocaleDateString("es-MX", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
     const html = `
 <!DOCTYPE html>
@@ -1020,9 +1063,9 @@ export class EmailService {
       to: email,
       subject: `📄 Factura ${details.invoiceNumber} - AgroBridge`,
       html,
-      categories: ['invoice', 'billing'],
+      categories: ["invoice", "billing"],
       customArgs: {
-        type: 'invoice',
+        type: "invoice",
         invoiceNumber: details.invoiceNumber,
       },
     });
@@ -1032,8 +1075,8 @@ export class EmailService {
    * Mask email for logging (security)
    */
   private maskEmail(email: string): string {
-    const [local, domain] = email.split('@');
-    if (!domain || local.length < 3) return '***@***';
+    const [local, domain] = email.split("@");
+    if (!domain || local.length < 3) return "***@***";
     return `${local.substring(0, 3)}...@${domain}`;
   }
 }

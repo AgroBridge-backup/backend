@@ -18,14 +18,14 @@
  * @see https://firebase.google.com/docs/cloud-messaging
  */
 
-import * as admin from 'firebase-admin';
-import logger from '../../../shared/utils/logger.js';
+import * as admin from "firebase-admin";
+import logger from "../../../shared/utils/logger.js";
 import type {
   FCMNotificationPayload,
   FCMSendResult,
   FCMBatchResult,
   NotificationData,
-} from '../types/index.js';
+} from "../types/index.js";
 
 /**
  * Firebase Cloud Messaging Service
@@ -66,7 +66,7 @@ export class FCMService {
         this.app = admin.app();
         this.messaging = admin.messaging(this.app);
         this.initialized = true;
-        logger.info('[FCMService] Using existing Firebase app instance');
+        logger.info("[FCMService] Using existing Firebase app instance");
         return;
       }
 
@@ -76,11 +76,14 @@ export class FCMService {
       const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
       if (!projectId || !clientEmail || !privateKey) {
-        logger.warn('[FCMService] Firebase credentials not configured. FCM will be disabled.', {
-          hasProjectId: !!projectId,
-          hasClientEmail: !!clientEmail,
-          hasPrivateKey: !!privateKey,
-        });
+        logger.warn(
+          "[FCMService] Firebase credentials not configured. FCM will be disabled.",
+          {
+            hasProjectId: !!projectId,
+            hasClientEmail: !!clientEmail,
+            hasPrivateKey: !!privateKey,
+          },
+        );
         return;
       }
 
@@ -89,7 +92,7 @@ export class FCMService {
         projectId,
         clientEmail,
         // Handle escaped newlines in private key (common in env vars)
-        privateKey: privateKey.replace(/\\n/g, '\n'),
+        privateKey: privateKey.replace(/\\n/g, "\n"),
       };
 
       // Initialize Firebase Admin SDK
@@ -100,13 +103,13 @@ export class FCMService {
       this.messaging = admin.messaging(this.app);
       this.initialized = true;
 
-      logger.info('[FCMService] Firebase Admin SDK initialized successfully', {
+      logger.info("[FCMService] Firebase Admin SDK initialized successfully", {
         projectId,
         clientEmail: this.maskEmail(clientEmail),
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[FCMService] Failed to initialize Firebase Admin SDK', {
+      logger.error("[FCMService] Failed to initialize Firebase Admin SDK", {
         error: err.message,
         stack: err.stack,
       });
@@ -131,15 +134,15 @@ export class FCMService {
    */
   async sendToDevice(
     token: string,
-    notification: FCMNotificationPayload
+    notification: FCMNotificationPayload,
   ): Promise<FCMSendResult> {
     this.initialize();
 
     if (!this.messaging) {
       return {
         success: false,
-        error: 'FCM service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "FCM service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -150,7 +153,7 @@ export class FCMService {
       const messageId = await this.messaging.send(message);
       const latency = Date.now() - startTime;
 
-      logger.info('[FCMService] Notification sent successfully', {
+      logger.info("[FCMService] Notification sent successfully", {
         messageId,
         token: this.maskToken(token),
         latency: `${latency}ms`,
@@ -177,7 +180,7 @@ export class FCMService {
    */
   async sendToDevices(
     tokens: string[],
-    notification: FCMNotificationPayload
+    notification: FCMNotificationPayload,
   ): Promise<FCMBatchResult> {
     this.initialize();
 
@@ -222,7 +225,7 @@ export class FCMService {
         });
       } catch (error) {
         const err = error as Error;
-        logger.error('[FCMService] Batch send failed', {
+        logger.error("[FCMService] Batch send failed", {
           error: err.message,
           batchSize: batch.length,
         });
@@ -233,7 +236,7 @@ export class FCMService {
     const totalSuccess = allResults.reduce((sum, r) => sum + r.successCount, 0);
     const totalFailure = allResults.reduce((sum, r) => sum + r.failureCount, 0);
 
-    logger.info('[FCMService] Batch send completed', {
+    logger.info("[FCMService] Batch send completed", {
       totalTokens: tokens.length,
       successCount: totalSuccess,
       failureCount: totalFailure,
@@ -252,7 +255,7 @@ export class FCMService {
           success: resp.success,
           messageId: resp.messageId,
           error: resp.error?.message,
-        }))
+        })),
       ),
     };
   }
@@ -266,15 +269,15 @@ export class FCMService {
    */
   async sendToTopic(
     topic: string,
-    notification: FCMNotificationPayload
+    notification: FCMNotificationPayload,
   ): Promise<FCMSendResult> {
     this.initialize();
 
     if (!this.messaging) {
       return {
         success: false,
-        error: 'FCM service not initialized',
-        errorCode: 'NOT_INITIALIZED',
+        error: "FCM service not initialized",
+        errorCode: "NOT_INITIALIZED",
       };
     }
 
@@ -285,7 +288,7 @@ export class FCMService {
       const messageId = await this.messaging.send(message);
       const latency = Date.now() - startTime;
 
-      logger.info('[FCMService] Topic notification sent', {
+      logger.info("[FCMService] Topic notification sent", {
         messageId,
         topic,
         latency: `${latency}ms`,
@@ -299,7 +302,7 @@ export class FCMService {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[FCMService] Topic send failed', {
+      logger.error("[FCMService] Topic send failed", {
         error: err.message,
         topic,
       });
@@ -326,14 +329,14 @@ export class FCMService {
     try {
       const response = await this.messaging.subscribeToTopic(tokens, topic);
 
-      logger.info('[FCMService] Devices subscribed to topic', {
+      logger.info("[FCMService] Devices subscribed to topic", {
         topic,
         successCount: response.successCount,
         failureCount: response.failureCount,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[FCMService] Failed to subscribe to topic', {
+      logger.error("[FCMService] Failed to subscribe to topic", {
         error: err.message,
         topic,
         tokenCount: tokens.length,
@@ -356,14 +359,14 @@ export class FCMService {
     try {
       const response = await this.messaging.unsubscribeFromTopic(tokens, topic);
 
-      logger.info('[FCMService] Devices unsubscribed from topic', {
+      logger.info("[FCMService] Devices unsubscribed from topic", {
         topic,
         successCount: response.successCount,
         failureCount: response.failureCount,
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[FCMService] Failed to unsubscribe from topic', {
+      logger.error("[FCMService] Failed to unsubscribe from topic", {
         error: err.message,
         topic,
       });
@@ -376,7 +379,7 @@ export class FCMService {
    */
   private buildMessage(
     token: string,
-    notification: FCMNotificationPayload
+    notification: FCMNotificationPayload,
   ): admin.messaging.Message {
     return {
       token,
@@ -385,14 +388,16 @@ export class FCMService {
         body: notification.body,
         imageUrl: notification.imageUrl,
       },
-      data: notification.data ? this.stringifyData(notification.data) : undefined,
+      data: notification.data
+        ? this.stringifyData(notification.data)
+        : undefined,
       android: {
-        priority: 'high',
+        priority: "high",
         notification: {
           channelId: this.getChannelId(notification.type),
-          sound: 'default',
-          color: '#2E7D32', // AgroBridge green
-          clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+          sound: "default",
+          color: "#2E7D32", // AgroBridge green
+          clickAction: "FLUTTER_NOTIFICATION_CLICK",
           defaultSound: true,
           defaultVibrateTimings: true,
         },
@@ -405,7 +410,7 @@ export class FCMService {
               title: notification.title,
               body: notification.body,
             },
-            sound: 'default',
+            sound: "default",
             badge: notification.badge ?? 1,
             contentAvailable: true,
           },
@@ -418,7 +423,7 @@ export class FCMService {
         notification: {
           title: notification.title,
           body: notification.body,
-          icon: notification.imageUrl || '/icons/notification-icon.png',
+          icon: notification.imageUrl || "/icons/notification-icon.png",
         },
         fcmOptions: {
           link: notification.data?.deepLink as string,
@@ -432,7 +437,7 @@ export class FCMService {
    */
   private buildMulticastMessage(
     tokens: string[],
-    notification: FCMNotificationPayload
+    notification: FCMNotificationPayload,
   ): admin.messaging.MulticastMessage {
     return {
       tokens,
@@ -441,13 +446,15 @@ export class FCMService {
         body: notification.body,
         imageUrl: notification.imageUrl,
       },
-      data: notification.data ? this.stringifyData(notification.data) : undefined,
+      data: notification.data
+        ? this.stringifyData(notification.data)
+        : undefined,
       android: {
-        priority: 'high',
+        priority: "high",
         notification: {
           channelId: this.getChannelId(notification.type),
-          sound: 'default',
-          color: '#2E7D32',
+          sound: "default",
+          color: "#2E7D32",
         },
         ttl: notification.ttl || 86400000,
       },
@@ -458,7 +465,7 @@ export class FCMService {
               title: notification.title,
               body: notification.body,
             },
-            sound: 'default',
+            sound: "default",
             badge: notification.badge ?? 1,
           },
         },
@@ -471,9 +478,9 @@ export class FCMService {
    */
   private buildTopicMessage(
     topic: string,
-    notification: FCMNotificationPayload
+    notification: FCMNotificationPayload,
   ): admin.messaging.Message {
-    const baseMessage = this.buildMessage('', notification);
+    const baseMessage = this.buildMessage("", notification);
     delete (baseMessage as any).token;
     return {
       ...baseMessage,
@@ -486,25 +493,25 @@ export class FCMService {
    */
   private getChannelId(type?: string): string {
     switch (type) {
-      case 'SENSOR_ALERT':
-      case 'SENSOR_WARNING':
-        return 'agrobridge_alerts';
-      case 'BATCH_CREATED':
-      case 'BATCH_UPDATED':
-      case 'BATCH_VERIFIED':
-      case 'CERTIFICATE_READY':
-        return 'agrobridge_batches';
-      case 'ORDER_CREATED':
-      case 'ORDER_CONFIRMED':
-      case 'ORDER_SHIPPED':
-      case 'ORDER_DELIVERED':
-      case 'PAYMENT_RECEIVED':
-      case 'PAYMENT_FAILED':
-        return 'agrobridge_orders';
-      case 'SYSTEM_ANNOUNCEMENT':
-        return 'agrobridge_announcements';
+      case "SENSOR_ALERT":
+      case "SENSOR_WARNING":
+        return "agrobridge_alerts";
+      case "BATCH_CREATED":
+      case "BATCH_UPDATED":
+      case "BATCH_VERIFIED":
+      case "CERTIFICATE_READY":
+        return "agrobridge_batches";
+      case "ORDER_CREATED":
+      case "ORDER_CONFIRMED":
+      case "ORDER_SHIPPED":
+      case "ORDER_DELIVERED":
+      case "PAYMENT_RECEIVED":
+      case "PAYMENT_FAILED":
+        return "agrobridge_orders";
+      case "SYSTEM_ANNOUNCEMENT":
+        return "agrobridge_announcements";
       default:
-        return 'agrobridge_default';
+        return "agrobridge_default";
     }
   }
 
@@ -517,7 +524,8 @@ export class FCMService {
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined && value !== null) {
-        stringData[key] = typeof value === 'string' ? value : JSON.stringify(value);
+        stringData[key] =
+          typeof value === "string" ? value : JSON.stringify(value);
       }
     }
 
@@ -529,10 +537,10 @@ export class FCMService {
    */
   private handleError(error: unknown, token: string): FCMSendResult {
     const err = error as any;
-    const errorCode = err.code || 'UNKNOWN';
-    const errorMessage = err.message || 'Unknown error';
+    const errorCode = err.code || "UNKNOWN";
+    const errorMessage = err.message || "Unknown error";
 
-    logger.error('[FCMService] Send failed', {
+    logger.error("[FCMService] Send failed", {
       errorCode,
       errorMessage,
       token: this.maskToken(token),
@@ -558,10 +566,10 @@ export class FCMService {
     if (!error) return false;
 
     const invalidCodes = [
-      'messaging/invalid-registration-token',
-      'messaging/registration-token-not-registered',
-      'messaging/invalid-argument',
-      'messaging/unregistered',
+      "messaging/invalid-registration-token",
+      "messaging/registration-token-not-registered",
+      "messaging/invalid-argument",
+      "messaging/unregistered",
     ];
 
     return invalidCodes.includes(error.code);
@@ -574,10 +582,10 @@ export class FCMService {
     if (!error) return false;
 
     const retryCodes = [
-      'messaging/internal-error',
-      'messaging/server-unavailable',
-      'messaging/too-many-requests',
-      'messaging/device-message-rate-exceeded',
+      "messaging/internal-error",
+      "messaging/server-unavailable",
+      "messaging/too-many-requests",
+      "messaging/device-message-rate-exceeded",
     ];
 
     return retryCodes.includes(error.code);
@@ -598,7 +606,7 @@ export class FCMService {
    * Mask token for logging (security)
    */
   private maskToken(token: string): string {
-    if (token.length < 20) return '***';
+    if (token.length < 20) return "***";
     return `${token.substring(0, 10)}...${token.substring(token.length - 6)}`;
   }
 
@@ -606,8 +614,8 @@ export class FCMService {
    * Mask email for logging (security)
    */
   private maskEmail(email: string): string {
-    const [local, domain] = email.split('@');
-    if (!domain) return '***';
+    const [local, domain] = email.split("@");
+    if (!domain) return "***";
     return `${local.substring(0, 3)}...@${domain}`;
   }
 }

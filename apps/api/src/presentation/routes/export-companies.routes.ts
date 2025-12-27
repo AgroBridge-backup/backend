@@ -4,11 +4,11 @@
  * Primary revenue source: SaaS subscription + per-certificate transaction fees
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaExportCompanyRepository } from '../../infrastructure/database/prisma/repositories/PrismaExportCompanyRepository.js';
-import { ExportCompanyService } from '../../domain/services/ExportCompanyService.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaExportCompanyRepository } from "../../infrastructure/database/prisma/repositories/PrismaExportCompanyRepository.js";
+import { ExportCompanyService } from "../../domain/services/ExportCompanyService.js";
 import {
   RegisterExportCompanyUseCase,
   GetExportCompanyUseCase,
@@ -16,11 +16,14 @@ import {
   UpdateExportCompanyUseCase,
   UpgradeTierUseCase,
   CheckCapacityUseCase,
-} from '../../application/use-cases/export-companies/index.js';
-import { ExportCompanyTier, ExportCompanyStatus } from '../../domain/entities/ExportCompany.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../application/use-cases/export-companies/index.js";
+import {
+  ExportCompanyTier,
+  ExportCompanyStatus,
+} from "../../domain/entities/ExportCompany.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const registerCompanySchema = z.object({
@@ -29,7 +32,7 @@ const registerCompanySchema = z.object({
   rfc: z.string().min(12).max(13),
   email: z.string().email(),
   phone: z.string().max(20).optional(),
-  country: z.string().default('MX'),
+  country: z.string().default("MX"),
   state: z.string().max(100).optional(),
   city: z.string().max(100).optional(),
   address: z.string().max(500).optional(),
@@ -40,7 +43,10 @@ const registerCompanySchema = z.object({
   tier: z.nativeEnum(ExportCompanyTier).default(ExportCompanyTier.STARTER),
   enabledStandards: z.array(z.string()).optional(),
   logoUrl: z.string().url().optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
 });
 
 const updateCompanySchema = z.object({
@@ -57,7 +63,10 @@ const updateCompanySchema = z.object({
   contactPhone: z.string().max(20).optional(),
   enabledStandards: z.array(z.string()).optional(),
   logoUrl: z.string().url().optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
 });
 
 const listCompaniesSchema = z.object({
@@ -80,12 +89,20 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
 
   // Initialize repository, service, and use cases
   const exportCompanyRepository = new PrismaExportCompanyRepository(prisma);
-  const exportCompanyService = new ExportCompanyService(exportCompanyRepository);
+  const exportCompanyService = new ExportCompanyService(
+    exportCompanyRepository,
+  );
 
-  const registerCompanyUseCase = new RegisterExportCompanyUseCase(exportCompanyService);
+  const registerCompanyUseCase = new RegisterExportCompanyUseCase(
+    exportCompanyService,
+  );
   const getCompanyUseCase = new GetExportCompanyUseCase(exportCompanyService);
-  const listCompaniesUseCase = new ListExportCompaniesUseCase(exportCompanyService);
-  const updateCompanyUseCase = new UpdateExportCompanyUseCase(exportCompanyService);
+  const listCompaniesUseCase = new ListExportCompaniesUseCase(
+    exportCompanyService,
+  );
+  const updateCompanyUseCase = new UpdateExportCompanyUseCase(
+    exportCompanyService,
+  );
   const upgradeTierUseCase = new UpgradeTierUseCase(exportCompanyService);
   const checkCapacityUseCase = new CheckCapacityUseCase(exportCompanyService);
 
@@ -94,8 +111,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * Register a new export company (14-day trial)
    */
   router.post(
-    '/',
-    authenticate(['ADMIN']),
+    "/",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -103,14 +120,14 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
         const result = await registerCompanyUseCase.execute(validation.data);
 
-        logger.info('Export company registered via API', {
+        logger.info("Export company registered via API", {
           companyId: result.company.id,
           name: result.company.name,
           tier: result.company.tier,
@@ -125,7 +142,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -133,8 +150,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * List export companies with filtering and pagination
    */
   router.get(
-    '/',
-    authenticate(['ADMIN']),
+    "/",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -142,7 +159,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -161,7 +178,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -169,8 +186,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * Get export company details with usage statistics
    */
   router.get(
-    '/:id',
-    authenticate(['ADMIN']),
+    "/:id",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -188,7 +205,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -196,8 +213,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * Update export company details
    */
   router.patch(
-    '/:id',
-    authenticate(['ADMIN']),
+    "/:id",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -206,7 +223,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -216,7 +233,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
           ...validation.data,
         });
 
-        logger.info('Export company updated via API', {
+        logger.info("Export company updated via API", {
           companyId: id,
         });
 
@@ -228,7 +245,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -236,8 +253,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * Upgrade export company tier
    */
   router.post(
-    '/:id/upgrade',
-    authenticate(['ADMIN']),
+    "/:id/upgrade",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -246,7 +263,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -256,7 +273,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
           newTier: validation.data.newTier,
         });
 
-        logger.info('Export company tier upgraded via API', {
+        logger.info("Export company tier upgraded via API", {
           companyId: id,
           previousTier: result.previousTier,
           newTier: result.newTier,
@@ -273,7 +290,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -281,8 +298,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * Check export company capacity for farmers and certificates
    */
   router.get(
-    '/:id/capacity',
-    authenticate(['ADMIN']),
+    "/:id/capacity",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -297,7 +314,7 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -305,8 +322,8 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
    * Get tier configuration and pricing
    */
   router.get(
-    '/tiers/config',
-    authenticate(['ADMIN']),
+    "/tiers/config",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -316,40 +333,40 @@ export function createExportCompaniesRouter(prisma: PrismaClient): Router {
             tiers: [
               {
                 tier: ExportCompanyTier.STARTER,
-                name: 'Starter',
+                name: "Starter",
                 monthlyFee: 500,
                 certificateFee: 10,
                 farmersIncluded: 10,
                 certsIncluded: 50,
-                description: 'Perfect for small export operations',
+                description: "Perfect for small export operations",
               },
               {
                 tier: ExportCompanyTier.PROFESSIONAL,
-                name: 'Professional',
+                name: "Professional",
                 monthlyFee: 1000,
                 certificateFee: 8,
                 farmersIncluded: 50,
                 certsIncluded: 200,
-                description: 'For growing export companies',
+                description: "For growing export companies",
               },
               {
                 tier: ExportCompanyTier.ENTERPRISE,
-                name: 'Enterprise',
+                name: "Enterprise",
                 monthlyFee: 2000,
                 certificateFee: 5,
                 farmersIncluded: -1,
                 certsIncluded: -1,
-                description: 'Unlimited access for large operations',
+                description: "Unlimited access for large operations",
               },
             ],
             trialDuration: 14,
-            currency: 'USD',
+            currency: "USD",
           },
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

@@ -4,9 +4,9 @@
  * @module credit-scoring/routes
  */
 
-import { Router, Request, Response } from 'express';
-import { simpleCreditScoringService } from '../simple-scoring.service.js';
-import { logger } from '../../../infrastructure/logging/logger.js';
+import { Router, Request, Response } from "express";
+import { simpleCreditScoringService } from "../simple-scoring.service.js";
+import { logger } from "../../../infrastructure/logging/logger.js";
 
 const router = Router();
 
@@ -17,11 +17,11 @@ const router = Router();
 /**
  * GET /health - Credit scoring module health check
  */
-router.get('/health', (req: Request, res: Response) => {
+router.get("/health", (req: Request, res: Response) => {
   res.json({
-    status: 'ok',
-    module: 'credit-scoring',
-    modelVersion: 'v1.0-rules',
+    status: "ok",
+    module: "credit-scoring",
+    modelVersion: "v1.0-rules",
     timestamp: new Date().toISOString(),
     thresholds: {
       autoApproveHigh: { minScore: 700, maxAmount: 10000 },
@@ -39,24 +39,25 @@ router.get('/health', (req: Request, res: Response) => {
 /**
  * GET /score/:userId - Calculate or retrieve credit score
  */
-router.get('/score/:userId', async (req: Request, res: Response) => {
+router.get("/score/:userId", async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { recalculate = 'false' } = req.query;
+    const { recalculate = "false" } = req.query;
 
-    logger.info('[CreditScoring Route] Score request', {
+    logger.info("[CreditScoring Route] Score request", {
       userId,
       recalculate,
     });
 
     let result;
 
-    if (recalculate === 'true') {
+    if (recalculate === "true") {
       // Force recalculation
       result = await simpleCreditScoringService.calculateScore(userId);
     } else {
       // Try to get stored score first
-      const storedScore = await simpleCreditScoringService.getStoredScore(userId);
+      const storedScore =
+        await simpleCreditScoringService.getStoredScore(userId);
       if (storedScore) {
         result = storedScore;
       } else {
@@ -69,7 +70,7 @@ router.get('/score/:userId', async (req: Request, res: Response) => {
       score: result,
     });
   } catch (error) {
-    logger.error('[CreditScoring Route] Score calculation failed:', error);
+    logger.error("[CreditScoring Route] Score calculation failed:", error);
     res.status(500).json({
       success: false,
       error: (error as Error).message,
@@ -80,27 +81,27 @@ router.get('/score/:userId', async (req: Request, res: Response) => {
 /**
  * GET /eligibility/:userId - Check eligibility for requested amount
  */
-router.get('/eligibility/:userId', async (req: Request, res: Response) => {
+router.get("/eligibility/:userId", async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { amount = '5000' } = req.query;
+    const { amount = "5000" } = req.query;
 
     const requestedAmount = parseFloat(amount as string);
 
     if (isNaN(requestedAmount) || requestedAmount <= 0) {
       return res.status(400).json({
-        error: 'Invalid amount. Must be a positive number.',
+        error: "Invalid amount. Must be a positive number.",
       });
     }
 
-    logger.info('[CreditScoring Route] Eligibility check', {
+    logger.info("[CreditScoring Route] Eligibility check", {
       userId,
       requestedAmount,
     });
 
     const eligibility = await simpleCreditScoringService.checkEligibility(
       userId,
-      requestedAmount
+      requestedAmount,
     );
 
     res.json({
@@ -109,7 +110,7 @@ router.get('/eligibility/:userId', async (req: Request, res: Response) => {
       ...eligibility,
     });
   } catch (error) {
-    logger.error('[CreditScoring Route] Eligibility check failed:', error);
+    logger.error("[CreditScoring Route] Eligibility check failed:", error);
     res.status(500).json({
       success: false,
       error: (error as Error).message,
@@ -120,11 +121,11 @@ router.get('/eligibility/:userId', async (req: Request, res: Response) => {
 /**
  * POST /calculate/:userId - Force recalculate score
  */
-router.post('/calculate/:userId', async (req: Request, res: Response) => {
+router.post("/calculate/:userId", async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
-    logger.info('[CreditScoring Route] Force recalculation', {
+    logger.info("[CreditScoring Route] Force recalculation", {
       userId,
       triggeredBy: req.user?.id || req.user?.userId,
     });
@@ -134,10 +135,10 @@ router.post('/calculate/:userId', async (req: Request, res: Response) => {
     res.json({
       success: true,
       score: result,
-      message: 'Score recalculated successfully',
+      message: "Score recalculated successfully",
     });
   } catch (error) {
-    logger.error('[CreditScoring Route] Recalculation failed:', error);
+    logger.error("[CreditScoring Route] Recalculation failed:", error);
     res.status(500).json({
       success: false,
       error: (error as Error).message,
@@ -148,51 +149,65 @@ router.post('/calculate/:userId', async (req: Request, res: Response) => {
 /**
  * GET /factors - Get scoring factors documentation
  */
-router.get('/factors', (req: Request, res: Response) => {
+router.get("/factors", (req: Request, res: Response) => {
   res.json({
     factors: [
       {
-        name: 'Repayment History',
-        weight: 0.40,
+        name: "Repayment History",
+        weight: 0.4,
         maxScore: 400,
-        description: 'Based on past advance repayment performance',
-        metrics: ['totalAdvances', 'successfulRepayments', 'onTimeRate', 'avgDaysOverdue'],
+        description: "Based on past advance repayment performance",
+        metrics: [
+          "totalAdvances",
+          "successfulRepayments",
+          "onTimeRate",
+          "avgDaysOverdue",
+        ],
       },
       {
-        name: 'Transaction Frequency',
-        weight: 0.20,
+        name: "Transaction Frequency",
+        weight: 0.2,
         maxScore: 200,
-        description: 'Platform activity and sales volume',
-        metrics: ['activeDays90', 'listingsCreated', 'totalSalesVolume', 'accountAgeDays'],
+        description: "Platform activity and sales volume",
+        metrics: [
+          "activeDays90",
+          "listingsCreated",
+          "totalSalesVolume",
+          "accountAgeDays",
+        ],
       },
       {
-        name: 'Profile Completeness',
+        name: "Profile Completeness",
         weight: 0.15,
         maxScore: 150,
-        description: 'Account verification and documentation',
-        metrics: ['phoneVerified', 'locationAdded', 'idUploaded', 'bankLinked'],
+        description: "Account verification and documentation",
+        metrics: ["phoneVerified", "locationAdded", "idUploaded", "bankLinked"],
       },
       {
-        name: 'Request Pattern',
+        name: "Request Pattern",
         weight: 0.15,
         maxScore: 150,
-        description: 'Advance request behavior patterns',
-        metrics: ['requestAmountRatio', 'daysSinceLastRequest', 'requestFrequency'],
+        description: "Advance request behavior patterns",
+        metrics: [
+          "requestAmountRatio",
+          "daysSinceLastRequest",
+          "requestFrequency",
+        ],
       },
       {
-        name: 'External Signals',
-        weight: 0.10,
+        name: "External Signals",
+        weight: 0.1,
         maxScore: 100,
-        description: 'Seasonal and regional factors',
-        metrics: ['isHarvestSeason', 'cropRiskFactor', 'regionDefaultRate'],
+        description: "Seasonal and regional factors",
+        metrics: ["isHarvestSeason", "cropRiskFactor", "regionDefaultRate"],
       },
     ],
     scoreRange: { min: 0, max: 1000 },
     tiers: [
-      { tier: 'A', range: '800-1000', description: 'Excellent' },
-      { tier: 'B', range: '600-799', description: 'Good' },
-      { tier: 'C', range: '400-599', description: 'Fair' },
-      { tier: 'D', range: '0-399', description: 'Poor' },
+      { tier: "A", range: "800-1000", description: "Excellent" },
+      { tier: "B", range: "600-799", description: "Good" },
+      { tier: "C", range: "400-599", description: "Fair" },
+      { tier: "D", range: "0-399", description: "Poor" },
     ],
   });
 });

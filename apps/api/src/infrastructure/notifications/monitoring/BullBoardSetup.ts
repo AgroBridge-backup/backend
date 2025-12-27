@@ -22,13 +22,13 @@
  * @see https://github.com/felixmosh/bull-board
  */
 
-import { createBullBoard } from '@bull-board/api';
-import { BullAdapter } from '@bull-board/api/bullAdapter.js';
-import { ExpressAdapter } from '@bull-board/express';
-import { Queue } from 'bull';
-import { notificationQueue } from '../queue/NotificationQueue.js';
-import { queueService } from '../../queue/index.js';
-import logger from '../../../shared/utils/logger.js';
+import { createBullBoard } from "@bull-board/api";
+import { BullAdapter } from "@bull-board/api/bullAdapter.js";
+import { ExpressAdapter } from "@bull-board/express";
+import { Queue } from "bull";
+import { notificationQueue } from "../queue/NotificationQueue.js";
+import { queueService } from "../../queue/index.js";
+import logger from "../../../shared/utils/logger.js";
 
 /**
  * Bull Board Setup
@@ -43,7 +43,7 @@ export class BullBoardSetup {
 
   private constructor() {
     this.serverAdapter = new ExpressAdapter();
-    this.serverAdapter.setBasePath('/admin/queues');
+    this.serverAdapter.setBasePath("/admin/queues");
   }
 
   /**
@@ -78,24 +78,24 @@ export class BullBoardSetup {
       queues.push(...backgroundQueues);
 
       if (queues.length === 0) {
-        logger.warn('[BullBoard] No queues available, dashboard will be empty');
+        logger.warn("[BullBoard] No queues available, dashboard will be empty");
         return this.serverAdapter;
       }
 
       createBullBoard({
-        queues: queues.map(q => new BullAdapter(q)),
+        queues: queues.map((q) => new BullAdapter(q)),
         serverAdapter: this.serverAdapter,
         options: {
           uiConfig: {
-            boardTitle: 'AgroBridge Job Queues',
+            boardTitle: "AgroBridge Job Queues",
             boardLogo: {
-              path: 'https://app.agrobridge.io/logo.png',
-              width: '100px',
-              height: 'auto',
+              path: "https://app.agrobridge.io/logo.png",
+              width: "100px",
+              height: "auto",
             },
             favIcon: {
-              default: 'https://app.agrobridge.io/favicon.ico',
-              alternative: 'https://app.agrobridge.io/favicon.ico',
+              default: "https://app.agrobridge.io/favicon.ico",
+              alternative: "https://app.agrobridge.io/favicon.ico",
             },
           },
         },
@@ -103,16 +103,16 @@ export class BullBoardSetup {
 
       this.initialized = true;
 
-      logger.info('[BullBoard] Dashboard initialized', {
-        basePath: '/admin/queues',
+      logger.info("[BullBoard] Dashboard initialized", {
+        basePath: "/admin/queues",
         queueCount: queues.length,
-        queues: queues.map(q => q.name),
+        queues: queues.map((q) => q.name),
       });
 
       return this.serverAdapter;
     } catch (error) {
       const err = error as Error;
-      logger.error('[BullBoard] Failed to initialize dashboard', {
+      logger.error("[BullBoard] Failed to initialize dashboard", {
         error: err.message,
       });
 

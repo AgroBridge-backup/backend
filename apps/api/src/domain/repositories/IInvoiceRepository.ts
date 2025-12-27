@@ -3,7 +3,7 @@
  * Defines the contract for invoice data access
  */
 
-import { Invoice, InvoiceFilter, InvoiceStatus } from '../entities/Invoice.js';
+import { Invoice, InvoiceFilter, InvoiceStatus } from "../entities/Invoice.js";
 
 export interface CreateInvoiceData {
   id: string;
@@ -74,7 +74,10 @@ export interface IInvoiceRepository {
   /**
    * List invoices for a producer
    */
-  listByProducer(producerId: string, filter?: InvoiceFilter): Promise<Invoice[]>;
+  listByProducer(
+    producerId: string,
+    filter?: InvoiceFilter,
+  ): Promise<Invoice[]>;
 
   /**
    * Update invoice

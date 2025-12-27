@@ -3,7 +3,7 @@
  * Handles referral registration and verification on blockchain
  */
 
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 import {
   IReferralBlockchainService,
   ReferralBlockchainData,
@@ -11,9 +11,9 @@ import {
   ReferralRewardData,
   ReferralRewardResult,
   ReferralVerificationResult,
-} from '../../domain/services/IReferralBlockchainService.js';
-import { logger } from '../logging/logger.js';
-import { BLOCKCHAIN_STATUS } from './EthersInvoiceBlockchainService.js';
+} from "../../domain/services/IReferralBlockchainService.js";
+import { logger } from "../logging/logger.js";
+import { BLOCKCHAIN_STATUS } from "./EthersInvoiceBlockchainService.js";
 
 interface ReferralBlockchainConfig {
   rpcUrl: string;
@@ -25,15 +25,17 @@ interface ReferralBlockchainConfig {
 
 // ReferralProgram Contract ABI (simplified)
 const REFERRAL_PROGRAM_ABI = [
-  'function registerReferral(bytes32 referralId, address referrer, address referred, string referralCode, uint256 appliedAt) returns (bytes32 eventId)',
-  'function recordReward(bytes32 referralId, string rewardType, uint256 amount, string currency, uint256 rewardedAt) returns (bytes32 eventId)',
-  'function getReferral(bytes32 referralId) view returns (tuple(bytes32 referralId, address referrer, address referred, string referralCode, uint256 appliedAt, bool rewarded, uint256 rewardAmount, uint256 registeredAt, bool exists))',
-  'function isReferralRegistered(bytes32 referralId) view returns (bool)',
-  'event ReferralRegistered(bytes32 indexed referralId, address indexed referrer, address indexed referred, string referralCode, uint256 timestamp)',
-  'event RewardRecorded(bytes32 indexed referralId, string rewardType, uint256 amount, uint256 timestamp)',
+  "function registerReferral(bytes32 referralId, address referrer, address referred, string referralCode, uint256 appliedAt) returns (bytes32 eventId)",
+  "function recordReward(bytes32 referralId, string rewardType, uint256 amount, string currency, uint256 rewardedAt) returns (bytes32 eventId)",
+  "function getReferral(bytes32 referralId) view returns (tuple(bytes32 referralId, address referrer, address referred, string referralCode, uint256 appliedAt, bool rewarded, uint256 rewardAmount, uint256 registeredAt, bool exists))",
+  "function isReferralRegistered(bytes32 referralId) view returns (bool)",
+  "event ReferralRegistered(bytes32 indexed referralId, address indexed referrer, address indexed referred, string referralCode, uint256 timestamp)",
+  "event RewardRecorded(bytes32 indexed referralId, string rewardType, uint256 amount, uint256 timestamp)",
 ];
 
-export class EthersReferralBlockchainService implements IReferralBlockchainService {
+export class EthersReferralBlockchainService
+  implements IReferralBlockchainService
+{
   private provider: ethers.providers.JsonRpcProvider;
   private wallet: ethers.Wallet;
   private contract: ethers.Contract;
@@ -50,7 +52,7 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
 
     this.provider = new ethers.providers.JsonRpcProvider(
       config.rpcUrl,
-      config.chainId
+      config.chainId,
     );
 
     this.wallet = new ethers.Wallet(config.privateKey, this.provider);
@@ -58,10 +60,10 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
     this.contract = new ethers.Contract(
       config.contractAddress,
       REFERRAL_PROGRAM_ABI,
-      this.wallet
+      this.wallet,
     );
 
-    logger.info('EthersReferralBlockchainService initialized', {
+    logger.info("EthersReferralBlockchainService initialized", {
       network: this.networkName,
       contractAddress: config.contractAddress,
     });
@@ -79,7 +81,10 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
   /**
    * P1-7 FIX: Timeout wrapper for RPC calls
    */
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = this.RPC_TIMEOUT_MS): Promise<T> {
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number = this.RPC_TIMEOUT_MS,
+  ): Promise<T> {
     let timeoutId: NodeJS.Timeout;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
@@ -100,16 +105,20 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
   /**
    * P1-7 FIX: Notify admin of blockchain failure
    */
-  private async notifyBlockchainFailure(type: string, id: string, error: any): Promise<void> {
+  private async notifyBlockchainFailure(
+    type: string,
+    id: string,
+    error: any,
+  ): Promise<void> {
     // Log critical error for monitoring systems (Sentry, CloudWatch, etc.)
-    logger.error('🚨 BLOCKCHAIN FAILURE ALERT', {
+    logger.error("🚨 BLOCKCHAIN FAILURE ALERT", {
       type,
       id,
       error: error.message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
       network: this.networkName,
-      action: 'REQUIRES_RETRY',
+      action: "REQUIRES_RETRY",
     });
 
     // TODO: In production, send to Slack/PagerDuty/Email
@@ -124,96 +133,103 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
    * @throws Error if max retries exceeded or transaction fails
    */
   async registerReferral(
-    data: ReferralBlockchainData
+    data: ReferralBlockchainData,
   ): Promise<ReferralRegistrationResult> {
     const referralIdHash = this.hashReferralId(data.referralId);
 
     try {
       // P1-7 FIX: Wrap in timeout to prevent hanging
-      return await this.withTimeout(this.executeWithRetry(async () => {
-        logger.info('Registering referral on blockchain', {
-          referralId: data.referralId,
-          referralCode: data.referralCode,
-        });
+      return await this.withTimeout(
+        this.executeWithRetry(async () => {
+          logger.info("Registering referral on blockchain", {
+            referralId: data.referralId,
+            referralCode: data.referralCode,
+          });
 
-        // Estimate gas
-        const estimatedGas = await this.contract.registerReferral.estimateGas(
-          referralIdHash,
-          this.wallet.address, // Use wallet as referrer address placeholder
-          this.wallet.address, // Use wallet as referred address placeholder
-          data.referralCode,
-          Math.floor(data.appliedAt.getTime() / 1000)
-        );
-        const gasLimit = Math.ceil(Number(estimatedGas) * this.GAS_LIMIT_BUFFER);
+          // Estimate gas
+          const estimatedGas = await this.contract.registerReferral.estimateGas(
+            referralIdHash,
+            this.wallet.address, // Use wallet as referrer address placeholder
+            this.wallet.address, // Use wallet as referred address placeholder
+            data.referralCode,
+            Math.floor(data.appliedAt.getTime() / 1000),
+          );
+          const gasLimit = Math.ceil(
+            Number(estimatedGas) * this.GAS_LIMIT_BUFFER,
+          );
 
-        // Get fee data
-        const feeData = await this.provider.getFeeData();
+          // Get fee data
+          const feeData = await this.provider.getFeeData();
 
-        // Send transaction
-        const tx = await this.contract.registerReferral(
-          referralIdHash,
-          this.wallet.address,
-          this.wallet.address,
-          data.referralCode,
-          Math.floor(data.appliedAt.getTime() / 1000),
-          {
-            gasLimit,
-            maxFeePerGas: feeData.maxFeePerGas,
-            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+          // Send transaction
+          const tx = await this.contract.registerReferral(
+            referralIdHash,
+            this.wallet.address,
+            this.wallet.address,
+            data.referralCode,
+            Math.floor(data.appliedAt.getTime() / 1000),
+            {
+              gasLimit,
+              maxFeePerGas: feeData.maxFeePerGas,
+              maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+            },
+          );
+
+          logger.info("Referral registration transaction sent", {
+            txHash: tx.hash,
+            referralId: data.referralId,
+          });
+
+          // Wait for confirmation
+          const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
+
+          if (!receipt || receipt.status !== 1) {
+            throw new Error("Transaction failed");
           }
-        );
 
-        logger.info('Referral registration transaction sent', {
-          txHash: tx.hash,
-          referralId: data.referralId,
-        });
+          // Parse event to get eventId
+          const eventLog = receipt.logs.find((log: any) => {
+            try {
+              const parsedLog = this.contract.interface.parseLog(log);
+              return parsedLog?.name === "ReferralRegistered";
+            } catch {
+              return false;
+            }
+          });
 
-        // Wait for confirmation
-        const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
-
-        if (!receipt || receipt.status !== 1) {
-          throw new Error('Transaction failed');
-        }
-
-        // Parse event to get eventId
-        const eventLog = receipt.logs.find((log: any) => {
-          try {
-            const parsedLog = this.contract.interface.parseLog(log);
-            return parsedLog?.name === 'ReferralRegistered';
-          } catch {
-            return false;
+          let eventId = "";
+          if (eventLog) {
+            const parsed = this.contract.interface.parseLog(eventLog);
+            eventId = parsed?.args[0]; // First argument is referralId (eventId)
           }
-        });
 
-        let eventId = '';
-        if (eventLog) {
-          const parsed = this.contract.interface.parseLog(eventLog);
-          eventId = parsed?.args[0]; // First argument is referralId (eventId)
-        }
+          logger.info("Referral registered successfully", {
+            txHash: receipt.hash,
+            eventId,
+            gasUsed: receipt.gasUsed.toString(),
+          });
 
-        logger.info('Referral registered successfully', {
-          txHash: receipt.hash,
-          eventId,
-          gasUsed: receipt.gasUsed.toString(),
-        });
-
-        return {
-          success: true,
-          txHash: receipt.hash,
-          eventId: eventId || referralIdHash,
-          network: this.networkName,
-          timestamp: new Date(),
-          gasUsed: receipt.gasUsed.toString(),
-        };
-      }));
+          return {
+            success: true,
+            txHash: receipt.hash,
+            eventId: eventId || referralIdHash,
+            network: this.networkName,
+            timestamp: new Date(),
+            gasUsed: receipt.gasUsed.toString(),
+          };
+        }),
+      );
     } catch (error: any) {
       // P1-7 FIX: Return fallback result instead of throwing
-      await this.notifyBlockchainFailure('referral', data.referralId, error);
+      await this.notifyBlockchainFailure("referral", data.referralId, error);
 
-      logger.warn('Blockchain referral registration failed, returning fallback', {
-        referralId: data.referralId,
-        error: error.message,
-      });
+      logger.warn(
+        "Blockchain referral registration failed, returning fallback",
+        {
+          referralId: data.referralId,
+          error: error.message,
+        },
+      );
 
       // Return fallback - referral is still created, blockchain pending
       return {
@@ -224,7 +240,8 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
         timestamp: new Date(),
         gasUsed: null,
         status: BLOCKCHAIN_STATUS.UNAVAILABLE,
-        error: 'Blockchain temporarily unavailable. Referral created, verification pending.',
+        error:
+          "Blockchain temporarily unavailable. Referral created, verification pending.",
       };
     }
   }
@@ -236,93 +253,97 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
    * @returns Result with transaction hash and event ID
    */
   async recordReferralReward(
-    data: ReferralRewardData
+    data: ReferralRewardData,
   ): Promise<ReferralRewardResult> {
     const referralIdHash = this.hashReferralId(data.referralId);
 
     try {
       // P1-7 FIX: Wrap in timeout to prevent hanging
-      return await this.withTimeout(this.executeWithRetry(async () => {
-        logger.info('Recording referral reward on blockchain', {
-          referralId: data.referralId,
-          rewardType: data.rewardType,
-          amount: data.rewardAmount,
-        });
+      return await this.withTimeout(
+        this.executeWithRetry(async () => {
+          logger.info("Recording referral reward on blockchain", {
+            referralId: data.referralId,
+            rewardType: data.rewardType,
+            amount: data.rewardAmount,
+          });
 
-        // Estimate gas
-        const estimatedGas = await this.contract.recordReward.estimateGas(
-          referralIdHash,
-          data.rewardType,
-          Math.round(data.rewardAmount * 100), // Convert to cents
-          data.currency,
-          Math.floor(data.rewardedAt.getTime() / 1000)
-        );
-        const gasLimit = Math.ceil(Number(estimatedGas) * this.GAS_LIMIT_BUFFER);
+          // Estimate gas
+          const estimatedGas = await this.contract.recordReward.estimateGas(
+            referralIdHash,
+            data.rewardType,
+            Math.round(data.rewardAmount * 100), // Convert to cents
+            data.currency,
+            Math.floor(data.rewardedAt.getTime() / 1000),
+          );
+          const gasLimit = Math.ceil(
+            Number(estimatedGas) * this.GAS_LIMIT_BUFFER,
+          );
 
-        // Get fee data
-        const feeData = await this.provider.getFeeData();
+          // Get fee data
+          const feeData = await this.provider.getFeeData();
 
-        // Send transaction
-        const tx = await this.contract.recordReward(
-          referralIdHash,
-          data.rewardType,
-          Math.round(data.rewardAmount * 100),
-          data.currency,
-          Math.floor(data.rewardedAt.getTime() / 1000),
-          {
-            gasLimit,
-            maxFeePerGas: feeData.maxFeePerGas,
-            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+          // Send transaction
+          const tx = await this.contract.recordReward(
+            referralIdHash,
+            data.rewardType,
+            Math.round(data.rewardAmount * 100),
+            data.currency,
+            Math.floor(data.rewardedAt.getTime() / 1000),
+            {
+              gasLimit,
+              maxFeePerGas: feeData.maxFeePerGas,
+              maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+            },
+          );
+
+          logger.info("Reward recording transaction sent", {
+            txHash: tx.hash,
+            referralId: data.referralId,
+          });
+
+          // Wait for confirmation
+          const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
+
+          if (!receipt || receipt.status !== 1) {
+            throw new Error("Transaction failed");
           }
-        );
 
-        logger.info('Reward recording transaction sent', {
-          txHash: tx.hash,
-          referralId: data.referralId,
-        });
+          // Parse event to get eventId
+          const eventLog = receipt.logs.find((log: any) => {
+            try {
+              const parsedLog = this.contract.interface.parseLog(log);
+              return parsedLog?.name === "RewardRecorded";
+            } catch {
+              return false;
+            }
+          });
 
-        // Wait for confirmation
-        const receipt = await tx.wait(this.REQUIRED_CONFIRMATIONS);
-
-        if (!receipt || receipt.status !== 1) {
-          throw new Error('Transaction failed');
-        }
-
-        // Parse event to get eventId
-        const eventLog = receipt.logs.find((log: any) => {
-          try {
-            const parsedLog = this.contract.interface.parseLog(log);
-            return parsedLog?.name === 'RewardRecorded';
-          } catch {
-            return false;
+          let eventId = "";
+          if (eventLog) {
+            const parsed = this.contract.interface.parseLog(eventLog);
+            eventId = parsed?.args[0];
           }
-        });
 
-        let eventId = '';
-        if (eventLog) {
-          const parsed = this.contract.interface.parseLog(eventLog);
-          eventId = parsed?.args[0];
-        }
+          logger.info("Referral reward recorded successfully", {
+            txHash: receipt.hash,
+            eventId,
+            gasUsed: receipt.gasUsed.toString(),
+          });
 
-        logger.info('Referral reward recorded successfully', {
-          txHash: receipt.hash,
-          eventId,
-          gasUsed: receipt.gasUsed.toString(),
-        });
-
-        return {
-          success: true,
-          txHash: receipt.hash,
-          eventId: eventId || referralIdHash,
-          network: this.networkName,
-          timestamp: new Date(),
-        };
-      }));
+          return {
+            success: true,
+            txHash: receipt.hash,
+            eventId: eventId || referralIdHash,
+            network: this.networkName,
+            timestamp: new Date(),
+          };
+        }),
+      );
     } catch (error: any) {
       // P1-7 FIX: Return fallback result instead of throwing
-      await this.notifyBlockchainFailure('reward', data.referralId, error);
+      await this.notifyBlockchainFailure("reward", data.referralId, error);
 
-      logger.warn('Blockchain reward recording failed, returning fallback', {
+      logger.warn("Blockchain reward recording failed, returning fallback", {
         referralId: data.referralId,
         error: error.message,
       });
@@ -335,7 +356,8 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
         network: this.networkName,
         timestamp: new Date(),
         status: BLOCKCHAIN_STATUS.UNAVAILABLE,
-        error: 'Blockchain temporarily unavailable. Reward recorded, verification pending.',
+        error:
+          "Blockchain temporarily unavailable. Reward recorded, verification pending.",
       };
     }
   }
@@ -345,10 +367,13 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
    * @param referralId - The referral ID to verify
    * @returns Verification result with registration details
    */
-  async verifyReferral(referralId: string): Promise<ReferralVerificationResult> {
+  async verifyReferral(
+    referralId: string,
+  ): Promise<ReferralVerificationResult> {
     try {
       const referralIdHash = this.hashReferralId(referralId);
-      const isRegistered = await this.contract.isReferralRegistered(referralIdHash);
+      const isRegistered =
+        await this.contract.isReferralRegistered(referralIdHash);
 
       if (!isRegistered) {
         return {
@@ -370,7 +395,7 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
         network: this.networkName,
       };
     } catch (error: any) {
-      logger.error('Failed to verify referral on blockchain', {
+      logger.error("Failed to verify referral on blockchain", {
         error: error.message,
         referralId,
       });
@@ -407,13 +432,13 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
    */
   private async executeWithRetry<T>(
     fn: () => Promise<T>,
-    attempt = 1
+    attempt = 1,
   ): Promise<T> {
     try {
       return await fn();
     } catch (error: any) {
       if (attempt >= this.MAX_RETRIES) {
-        logger.error('Max retries reached for blockchain operation', {
+        logger.error("Max retries reached for blockchain operation", {
           attempt,
           error: error.message,
         });
@@ -421,7 +446,7 @@ export class EthersReferralBlockchainService implements IReferralBlockchainServi
       }
 
       const delay = this.RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-      logger.warn('Retrying blockchain operation', {
+      logger.warn("Retrying blockchain operation", {
         attempt,
         delay,
         error: error.message,

@@ -3,9 +3,12 @@
  * Use Case: Update a verification stage (status, notes, location)
  */
 
-import { UserRole } from '@prisma/client';
-import { VerificationStageService } from '../../../domain/services/VerificationStageService.js';
-import { VerificationStage, StageStatus } from '../../../domain/entities/VerificationStage.js';
+import { UserRole } from "@prisma/client";
+import { VerificationStageService } from "../../../domain/services/VerificationStageService.js";
+import {
+  VerificationStage,
+  StageStatus,
+} from "../../../domain/entities/VerificationStage.js";
 
 export interface UpdateBatchStageRequest {
   stageId: string;
@@ -26,7 +29,9 @@ export interface UpdateBatchStageResponse {
 export class UpdateBatchStageUseCase {
   constructor(private stageService: VerificationStageService) {}
 
-  async execute(request: UpdateBatchStageRequest): Promise<UpdateBatchStageResponse> {
+  async execute(
+    request: UpdateBatchStageRequest,
+  ): Promise<UpdateBatchStageResponse> {
     const context = {
       userId: request.userId,
       userRole: request.userRole,
@@ -42,7 +47,7 @@ export class UpdateBatchStageUseCase {
         longitude: request.longitude,
         evidenceUrl: request.evidenceUrl,
       },
-      context
+      context,
     );
 
     return { stage };

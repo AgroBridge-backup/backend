@@ -26,7 +26,7 @@ export interface IWhatsAppService {
     to: string,
     templateName: string,
     languageCode: string,
-    parameters?: TemplateParams
+    parameters?: TemplateParams,
   ): Promise<SendTextResult>;
 
   /**
@@ -37,7 +37,7 @@ export interface IWhatsAppService {
     body: string,
     buttons: Array<{ id: string; title: string }>,
     header?: string,
-    footer?: string
+    footer?: string,
   ): Promise<SendTextResult>;
 
   /**

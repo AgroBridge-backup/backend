@@ -5,14 +5,14 @@
  * @author AgroBridge Engineering Team
  */
 
-import DataLoader from 'dataloader';
-import { PrismaClient, TraceabilityEvent } from '@prisma/client';
+import DataLoader from "dataloader";
+import { PrismaClient, TraceabilityEvent } from "@prisma/client";
 
 /**
  * Create event loader
  */
 export function createEventLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, TraceabilityEvent | null> {
   return new DataLoader<string, TraceabilityEvent | null>(
     async (ids: readonly string[]) => {
@@ -31,7 +31,7 @@ export function createEventLoader(
 
       return ids.map((id) => eventMap.get(id) || null);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -39,7 +39,7 @@ export function createEventLoader(
  * Load events by batch ID
  */
 export function createEventsByBatchLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, TraceabilityEvent[]> {
   return new DataLoader<string, TraceabilityEvent[]>(
     async (batchIds: readonly string[]) => {
@@ -49,7 +49,7 @@ export function createEventsByBatchLoader(
             in: batchIds as string[],
           },
         },
-        orderBy: { timestamp: 'asc' },
+        orderBy: { timestamp: "asc" },
       });
 
       // Group events by batch ID
@@ -64,7 +64,7 @@ export function createEventsByBatchLoader(
 
       return batchIds.map((id) => eventsByBatch.get(id) || []);
     },
-    { cache: true, maxBatchSize: 50 }
+    { cache: true, maxBatchSize: 50 },
   );
 }
 
@@ -72,12 +72,12 @@ export function createEventsByBatchLoader(
  * Load event count per batch
  */
 export function createEventCountByBatchLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, number> {
   return new DataLoader<string, number>(
     async (batchIds: readonly string[]) => {
       const counts = await prisma.traceabilityEvent.groupBy({
-        by: ['batchId'],
+        by: ["batchId"],
         where: {
           batchId: {
             in: batchIds as string[],
@@ -93,7 +93,7 @@ export function createEventCountByBatchLoader(
 
       return batchIds.map((id) => countMap.get(id) || 0);
     },
-    { cache: true, maxBatchSize: 100 }
+    { cache: true, maxBatchSize: 100 },
   );
 }
 
@@ -101,12 +101,14 @@ export function createEventCountByBatchLoader(
  * Load latest event per batch
  */
 export function createLatestEventByBatchLoader(
-  prisma: PrismaClient
+  prisma: PrismaClient,
 ): DataLoader<string, TraceabilityEvent | null> {
   return new DataLoader<string, TraceabilityEvent | null>(
     async (batchIds: readonly string[]) => {
       // Get latest event for each batch using raw query for DISTINCT ON
-      const latestEvents = await prisma.$queryRaw<Array<{ batchId: string; id: string }>>`
+      const latestEvents = await prisma.$queryRaw<
+        Array<{ batchId: string; id: string }>
+      >`
         SELECT DISTINCT ON ("batchId") "batchId", "id"
         FROM "traceability_events"
         WHERE "batchId" = ANY(${batchIds as string[]}::text[])
@@ -130,11 +132,17 @@ export function createLatestEventByBatchLoader(
 
       return batchIds.map((id) => eventMap.get(id) || null);
     },
-    { cache: true, maxBatchSize: 50 }
+    { cache: true, maxBatchSize: 50 },
   );
 }
 
 export type EventLoaderType = ReturnType<typeof createEventLoader>;
-export type EventsByBatchLoaderType = ReturnType<typeof createEventsByBatchLoader>;
-export type EventCountByBatchLoaderType = ReturnType<typeof createEventCountByBatchLoader>;
-export type LatestEventByBatchLoaderType = ReturnType<typeof createLatestEventByBatchLoader>;
+export type EventsByBatchLoaderType = ReturnType<
+  typeof createEventsByBatchLoader
+>;
+export type EventCountByBatchLoaderType = ReturnType<
+  typeof createEventCountByBatchLoader
+>;
+export type LatestEventByBatchLoaderType = ReturnType<
+  typeof createLatestEventByBatchLoader
+>;

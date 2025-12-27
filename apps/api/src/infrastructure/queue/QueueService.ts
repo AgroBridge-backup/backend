@@ -19,8 +19,8 @@
  * @author AgroBridge Engineering Team
  */
 
-import Bull, { Queue, Job, JobOptions } from 'bull';
-import logger from '../../shared/utils/logger.js';
+import Bull, { Queue, Job, JobOptions } from "bull";
+import logger from "../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -56,7 +56,7 @@ export interface QRJobResult {
  */
 export interface BlockchainJobData {
   /** Type of blockchain operation */
-  type: 'batch-creation' | 'event-creation' | 'certification' | 'transfer';
+  type: "batch-creation" | "event-creation" | "certification" | "transfer";
   /** Batch ID (for batch-related transactions) */
   batchId?: string;
   /** Event ID (for event-related transactions) */
@@ -68,7 +68,7 @@ export interface BlockchainJobData {
   /** Transaction payload */
   payload?: Record<string, unknown>;
   /** Priority (affects gas price) */
-  priority?: 'low' | 'normal' | 'high';
+  priority?: "low" | "normal" | "high";
 }
 
 /**
@@ -92,18 +92,24 @@ export interface EmailJobData {
   /** Email subject */
   subject: string;
   /** Email template name or 'custom' */
-  template: 'welcome' | 'password-reset' | 'verification' | '2fa-code' | 'batch-created' | 'custom';
+  template:
+    | "welcome"
+    | "password-reset"
+    | "verification"
+    | "2fa-code"
+    | "batch-created"
+    | "custom";
   /** Template data */
   data: Record<string, unknown>;
   /** Email priority */
-  priority?: 'high' | 'normal' | 'low';
+  priority?: "high" | "normal" | "low";
   /** Custom HTML (when template is 'custom') */
   html?: string;
   /** Attachments */
   attachments?: Array<{
     filename: string;
     content: string;
-    encoding: 'base64' | 'utf-8';
+    encoding: "base64" | "utf-8";
   }>;
 }
 
@@ -123,9 +129,9 @@ export interface EmailJobResult {
  */
 export interface ReportJobData {
   /** Report type */
-  type: 'batch-traceability' | 'producer-summary' | 'audit-log' | 'export';
+  type: "batch-traceability" | "producer-summary" | "audit-log" | "export";
   /** Output format */
-  format: 'pdf' | 'csv' | 'xlsx';
+  format: "pdf" | "csv" | "xlsx";
   /** Report filters */
   filters: Record<string, unknown>;
   /** User who requested the report */
@@ -163,7 +169,7 @@ export interface QueueHealthStatus {
   redis: {
     host: string;
     port: number;
-    status: 'connected' | 'disconnected' | 'error';
+    status: "connected" | "disconnected" | "error";
   };
 }
 
@@ -218,10 +224,10 @@ export class QueueService {
 
   private constructor() {
     this.redisConfig = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      host: process.env.REDIS_HOST || "localhost",
+      port: parseInt(process.env.REDIS_PORT || "6379", 10),
       password: process.env.REDIS_PASSWORD || undefined,
-      db: parseInt(process.env.REDIS_QUEUE_DB || '1', 10), // Use different DB for queues
+      db: parseInt(process.env.REDIS_QUEUE_DB || "1", 10), // Use different DB for queues
     };
   }
 
@@ -246,29 +252,29 @@ export class QueueService {
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      logger.debug('[QueueService] Already initialized');
+      logger.debug("[QueueService] Already initialized");
       return;
     }
 
     try {
-      logger.info('[QueueService] Initializing queues...', {
+      logger.info("[QueueService] Initializing queues...", {
         redis: `${this.redisConfig.host}:${this.redisConfig.port}`,
         db: this.redisConfig.db,
       });
 
       // Default job options
       const defaultJobOptions: Bull.JobOptions = {
-        attempts: parseInt(process.env.QUEUE_MAX_RETRIES || '3', 10),
+        attempts: parseInt(process.env.QUEUE_MAX_RETRIES || "3", 10),
         backoff: {
-          type: 'exponential',
-          delay: parseInt(process.env.QUEUE_RETRY_DELAY || '2000', 10),
+          type: "exponential",
+          delay: parseInt(process.env.QUEUE_RETRY_DELAY || "2000", 10),
         },
         removeOnComplete: 100,
         removeOnFail: 200,
       };
 
       // Initialize QR Generation Queue
-      this._qrQueue = new Bull<QRJobData>('qr-generation', {
+      this._qrQueue = new Bull<QRJobData>("qr-generation", {
         redis: this.redisConfig,
         defaultJobOptions,
         settings: {
@@ -278,7 +284,7 @@ export class QueueService {
       });
 
       // Initialize Blockchain Transaction Queue (lower concurrency, higher timeout)
-      this._blockchainQueue = new Bull<BlockchainJobData>('blockchain-tx', {
+      this._blockchainQueue = new Bull<BlockchainJobData>("blockchain-tx", {
         redis: this.redisConfig,
         defaultJobOptions: {
           ...defaultJobOptions,
@@ -296,17 +302,17 @@ export class QueueService {
       });
 
       // Initialize Email Queue
-      this._emailQueue = new Bull<EmailJobData>('email', {
+      this._emailQueue = new Bull<EmailJobData>("email", {
         redis: this.redisConfig,
         defaultJobOptions,
         limiter: {
-          max: parseInt(process.env.EMAIL_RATE_LIMIT || '100', 10),
+          max: parseInt(process.env.EMAIL_RATE_LIMIT || "100", 10),
           duration: 60000, // 100 emails per minute
         },
       });
 
       // Initialize Report Generation Queue
-      this._reportQueue = new Bull<ReportJobData>('reports', {
+      this._reportQueue = new Bull<ReportJobData>("reports", {
         redis: this.redisConfig,
         defaultJobOptions: {
           ...defaultJobOptions,
@@ -323,12 +329,12 @@ export class QueueService {
 
       this.initialized = true;
 
-      logger.info('[QueueService] All queues initialized successfully', {
-        queues: ['qr-generation', 'blockchain-tx', 'email', 'reports'],
+      logger.info("[QueueService] All queues initialized successfully", {
+        queues: ["qr-generation", "blockchain-tx", "email", "reports"],
       });
     } catch (error) {
       const err = error as Error;
-      logger.error('[QueueService] Failed to initialize queues', {
+      logger.error("[QueueService] Failed to initialize queues", {
         error: err.message,
         stack: err.stack,
       });
@@ -341,19 +347,20 @@ export class QueueService {
    */
   private setupEventHandlers(): void {
     const queues = [
-      { name: 'qr-generation', queue: this._qrQueue },
-      { name: 'blockchain-tx', queue: this._blockchainQueue },
-      { name: 'email', queue: this._emailQueue },
-      { name: 'reports', queue: this._reportQueue },
+      { name: "qr-generation", queue: this._qrQueue },
+      { name: "blockchain-tx", queue: this._blockchainQueue },
+      { name: "email", queue: this._emailQueue },
+      { name: "reports", queue: this._reportQueue },
     ];
 
     for (const { name, queue } of queues) {
       if (!queue) continue;
 
-      queue.on('completed', (job: Job, result: unknown) => {
-        const duration = job.finishedOn && job.processedOn
-          ? job.finishedOn - job.processedOn
-          : 0;
+      queue.on("completed", (job: Job, result: unknown) => {
+        const duration =
+          job.finishedOn && job.processedOn
+            ? job.finishedOn - job.processedOn
+            : 0;
 
         logger.info(`[QueueService:${name}] Job completed`, {
           jobId: job.id,
@@ -361,7 +368,7 @@ export class QueueService {
         });
       });
 
-      queue.on('failed', (job: Job, error: Error) => {
+      queue.on("failed", (job: Job, error: Error) => {
         logger.error(`[QueueService:${name}] Job failed`, {
           jobId: job.id,
           error: error.message,
@@ -370,23 +377,23 @@ export class QueueService {
         });
       });
 
-      queue.on('stalled', (job: Job) => {
+      queue.on("stalled", (job: Job) => {
         logger.warn(`[QueueService:${name}] Job stalled`, {
           jobId: job.id,
         });
       });
 
-      queue.on('error', (error: Error) => {
+      queue.on("error", (error: Error) => {
         logger.error(`[QueueService:${name}] Queue error`, {
           error: error.message,
         });
       });
 
-      queue.on('waiting', (jobId: string) => {
+      queue.on("waiting", (jobId: string) => {
         logger.debug(`[QueueService:${name}] Job waiting`, { jobId });
       });
 
-      queue.on('active', (job: Job) => {
+      queue.on("active", (job: Job) => {
         logger.debug(`[QueueService:${name}] Job active`, {
           jobId: job.id,
         });
@@ -407,7 +414,7 @@ export class QueueService {
    */
   async addQRGenerationJob(
     data: QRJobData,
-    options?: Partial<JobOptions>
+    options?: Partial<JobOptions>,
   ): Promise<Job<QRJobData>> {
     this.ensureInitialized();
 
@@ -416,7 +423,7 @@ export class QueueService {
       ...options,
     });
 
-    logger.info('[QueueService] QR generation job added', {
+    logger.info("[QueueService] QR generation job added", {
       jobId: job.id,
       batchId: data.batchId,
     });
@@ -433,13 +440,13 @@ export class QueueService {
    */
   async addBlockchainJob(
     data: BlockchainJobData,
-    options?: Partial<JobOptions>
+    options?: Partial<JobOptions>,
   ): Promise<Job<BlockchainJobData>> {
     this.ensureInitialized();
 
     // Map priority to Bull priority (lower = higher priority)
     const priorityMap = { high: 1, normal: 5, low: 10 };
-    const priority = priorityMap[data.priority || 'normal'];
+    const priority = priorityMap[data.priority || "normal"];
 
     const job = await this._blockchainQueue!.add(data, {
       jobId: `bc-${data.type}-${data.batchId || data.eventId || data.producerId}-${Date.now()}`,
@@ -447,7 +454,7 @@ export class QueueService {
       ...options,
     });
 
-    logger.info('[QueueService] Blockchain job added', {
+    logger.info("[QueueService] Blockchain job added", {
       jobId: job.id,
       type: data.type,
       priority: data.priority,
@@ -465,20 +472,20 @@ export class QueueService {
    */
   async addEmailJob(
     data: EmailJobData,
-    options?: Partial<JobOptions>
+    options?: Partial<JobOptions>,
   ): Promise<Job<EmailJobData>> {
     this.ensureInitialized();
 
     // Map priority
     const priorityMap = { high: 1, normal: 5, low: 10 };
-    const priority = priorityMap[data.priority || 'normal'];
+    const priority = priorityMap[data.priority || "normal"];
 
     const job = await this._emailQueue!.add(data, {
       priority,
       ...options,
     });
 
-    logger.info('[QueueService] Email job added', {
+    logger.info("[QueueService] Email job added", {
       jobId: job.id,
       to: data.to,
       template: data.template,
@@ -497,7 +504,7 @@ export class QueueService {
    */
   async addReportJob(
     data: ReportJobData,
-    options?: Partial<JobOptions>
+    options?: Partial<JobOptions>,
   ): Promise<Job<ReportJobData>> {
     this.ensureInitialized();
 
@@ -506,7 +513,7 @@ export class QueueService {
       ...options,
     });
 
-    logger.info('[QueueService] Report job added', {
+    logger.info("[QueueService] Report job added", {
       jobId: job.id,
       type: data.type,
       format: data.format,
@@ -528,25 +535,25 @@ export class QueueService {
       return {
         connected: false,
         queues: {
-          qrGeneration: this.emptyStats('qr-generation'),
-          blockchain: this.emptyStats('blockchain-tx'),
-          email: this.emptyStats('email'),
-          reports: this.emptyStats('reports'),
+          qrGeneration: this.emptyStats("qr-generation"),
+          blockchain: this.emptyStats("blockchain-tx"),
+          email: this.emptyStats("email"),
+          reports: this.emptyStats("reports"),
         },
         redis: {
           host: this.redisConfig.host,
           port: this.redisConfig.port,
-          status: 'disconnected',
+          status: "disconnected",
         },
       };
     }
 
     try {
       const [qrStats, bcStats, emailStats, reportStats] = await Promise.all([
-        this.getQueueStats(this._qrQueue!, 'qr-generation'),
-        this.getQueueStats(this._blockchainQueue!, 'blockchain-tx'),
-        this.getQueueStats(this._emailQueue!, 'email'),
-        this.getQueueStats(this._reportQueue!, 'reports'),
+        this.getQueueStats(this._qrQueue!, "qr-generation"),
+        this.getQueueStats(this._blockchainQueue!, "blockchain-tx"),
+        this.getQueueStats(this._emailQueue!, "email"),
+        this.getQueueStats(this._reportQueue!, "reports"),
       ]);
 
       return {
@@ -560,27 +567,27 @@ export class QueueService {
         redis: {
           host: this.redisConfig.host,
           port: this.redisConfig.port,
-          status: 'connected',
+          status: "connected",
         },
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[QueueService] Health check failed', {
+      logger.error("[QueueService] Health check failed", {
         error: err.message,
       });
 
       return {
         connected: false,
         queues: {
-          qrGeneration: this.emptyStats('qr-generation'),
-          blockchain: this.emptyStats('blockchain-tx'),
-          email: this.emptyStats('email'),
-          reports: this.emptyStats('reports'),
+          qrGeneration: this.emptyStats("qr-generation"),
+          blockchain: this.emptyStats("blockchain-tx"),
+          email: this.emptyStats("email"),
+          reports: this.emptyStats("reports"),
         },
         redis: {
           host: this.redisConfig.host,
           port: this.redisConfig.port,
-          status: 'error',
+          status: "error",
         },
       };
     }
@@ -590,14 +597,15 @@ export class QueueService {
    * Get statistics for a specific queue
    */
   private async getQueueStats(queue: Queue, name: string): Promise<QueueStats> {
-    const [waiting, active, completed, failed, delayed, isPaused] = await Promise.all([
-      queue.getWaitingCount(),
-      queue.getActiveCount(),
-      queue.getCompletedCount(),
-      queue.getFailedCount(),
-      queue.getDelayedCount(),
-      queue.isPaused(),
-    ]);
+    const [waiting, active, completed, failed, delayed, isPaused] =
+      await Promise.all([
+        queue.getWaitingCount(),
+        queue.getActiveCount(),
+        queue.getCompletedCount(),
+        queue.getFailedCount(),
+        queue.getDelayedCount(),
+        queue.isPaused(),
+      ]);
 
     return {
       name,
@@ -678,8 +686,8 @@ export class QueueService {
    */
   async pauseAll(): Promise<void> {
     const queues = this.getAllQueues();
-    await Promise.all(queues.map(q => q.pause()));
-    logger.info('[QueueService] All queues paused');
+    await Promise.all(queues.map((q) => q.pause()));
+    logger.info("[QueueService] All queues paused");
   }
 
   /**
@@ -687,8 +695,8 @@ export class QueueService {
    */
   async resumeAll(): Promise<void> {
     const queues = this.getAllQueues();
-    await Promise.all(queues.map(q => q.resume()));
-    logger.info('[QueueService] All queues resumed');
+    await Promise.all(queues.map((q) => q.resume()));
+    logger.info("[QueueService] All queues resumed");
   }
 
   /**
@@ -701,13 +709,13 @@ export class QueueService {
     const timestamp = ageInHours * 60 * 60 * 1000;
 
     await Promise.all(
-      queues.flatMap(q => [
-        q.clean(timestamp, 'completed'),
-        q.clean(timestamp, 'failed'),
-      ])
+      queues.flatMap((q) => [
+        q.clean(timestamp, "completed"),
+        q.clean(timestamp, "failed"),
+      ]),
     );
 
-    logger.info('[QueueService] All queues cleaned', { ageInHours });
+    logger.info("[QueueService] All queues cleaned", { ageInHours });
   }
 
   /**
@@ -716,10 +724,10 @@ export class QueueService {
   async shutdown(): Promise<void> {
     if (!this.initialized) return;
 
-    logger.info('[QueueService] Shutting down queues...');
+    logger.info("[QueueService] Shutting down queues...");
 
     const queues = this.getAllQueues();
-    await Promise.all(queues.map(q => q.close()));
+    await Promise.all(queues.map((q) => q.close()));
 
     this._qrQueue = null;
     this._blockchainQueue = null;
@@ -727,7 +735,7 @@ export class QueueService {
     this._reportQueue = null;
     this.initialized = false;
 
-    logger.info('[QueueService] Queue shutdown complete');
+    logger.info("[QueueService] Queue shutdown complete");
   }
 
   /**
@@ -735,7 +743,7 @@ export class QueueService {
    */
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new Error('QueueService not initialized. Call initialize() first.');
+      throw new Error("QueueService not initialized. Call initialize() first.");
     }
   }
 

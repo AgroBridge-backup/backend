@@ -34,14 +34,14 @@ export interface FirebaseError extends Error {
  * Type guard for HttpError
  */
 export function isHttpError(error: unknown): error is HttpError {
-  return error instanceof Error && ('statusCode' in error || 'status' in error);
+  return error instanceof Error && ("statusCode" in error || "status" in error);
 }
 
 /**
  * Type guard for DatabaseError
  */
 export function isDatabaseError(error: unknown): error is DatabaseError {
-  return error instanceof Error && 'code' in error;
+  return error instanceof Error && "code" in error;
 }
 
 /**
@@ -57,8 +57,11 @@ export function getErrorStatusCode(error: unknown, defaultCode = 500): number {
 /**
  * Get error code string (with fallback)
  */
-export function getErrorCode(error: unknown, defaultCode = 'INTERNAL_ERROR'): string {
-  if (error instanceof Error && 'code' in error) {
+export function getErrorCode(
+  error: unknown,
+  defaultCode = "INTERNAL_ERROR",
+): string {
+  if (error instanceof Error && "code" in error) {
     return (error as DatabaseError).code || defaultCode;
   }
   return defaultCode;

@@ -4,7 +4,7 @@
  * Supports routine, pre-certification, audit, and complaint inspections
  */
 
-import { InspectionType } from './OrganicField.js';
+import { InspectionType } from "./OrganicField.js";
 
 export { InspectionType };
 
@@ -162,45 +162,45 @@ export interface FieldInspectionFilter {
 
 // Photo types for classification
 export const PHOTO_TYPES = [
-  'CROP',
-  'INPUT',
-  'PRACTICE',
-  'ISSUE',
-  'BOUNDARY',
-  'GENERAL',
+  "CROP",
+  "INPUT",
+  "PRACTICE",
+  "ISSUE",
+  "BOUNDARY",
+  "GENERAL",
 ] as const;
 
 // Input types for organic inputs
 export const INPUT_TYPES = [
-  'FERTILIZER',
-  'PESTICIDE',
-  'HERBICIDE',
-  'FUNGICIDE',
-  'SOIL_AMENDMENT',
-  'SEED',
-  'OTHER',
+  "FERTILIZER",
+  "PESTICIDE",
+  "HERBICIDE",
+  "FUNGICIDE",
+  "SOIL_AMENDMENT",
+  "SEED",
+  "OTHER",
 ] as const;
 
 // Activity types for field activities
 export const ACTIVITY_TYPES = [
-  'PLANTING',
-  'SPRAYING',
-  'HARVESTING',
-  'PRUNING',
-  'IRRIGATION',
-  'WEEDING',
-  'FERTILIZING',
-  'PEST_CONTROL',
-  'SOIL_PREPARATION',
-  'OTHER',
+  "PLANTING",
+  "SPRAYING",
+  "HARVESTING",
+  "PRUNING",
+  "IRRIGATION",
+  "WEEDING",
+  "FERTILIZING",
+  "PEST_CONTROL",
+  "SOIL_PREPARATION",
+  "OTHER",
 ] as const;
 
 // Weather conditions
 export const WEATHER_CONDITIONS = [
-  'SUNNY',
-  'CLOUDY',
-  'PARTLY_CLOUDY',
-  'RAINY',
-  'FOGGY',
-  'WINDY',
+  "SUNNY",
+  "CLOUDY",
+  "PARTLY_CLOUDY",
+  "RAINY",
+  "FOGGY",
+  "WINDY",
 ] as const;

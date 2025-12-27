@@ -15,11 +15,15 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { PrismaClient, ReferralStatus, ReferralRewardType } from '@prisma/client';
-import { ethers } from 'ethers';
-import crypto from 'crypto';
-import { logger } from '../../../infrastructure/logging/logger.js';
-import { blockchainNotificationService } from '../../whatsapp-bot/services/blockchain-notification.service.js';
+import {
+  PrismaClient,
+  ReferralStatus,
+  ReferralRewardType,
+} from "@prisma/client";
+import { ethers } from "ethers";
+import crypto from "crypto";
+import { logger } from "../../../infrastructure/logging/logger.js";
+import { blockchainNotificationService } from "../../whatsapp-bot/services/blockchain-notification.service.js";
 
 const prisma = new PrismaClient();
 
@@ -29,20 +33,20 @@ const prisma = new PrismaClient();
 
 const config = {
   blockchain: {
-    enabled: process.env.BLOCKCHAIN_ENABLED === 'true',
-    rpcUrl: process.env.BLOCKCHAIN_RPC_URL || 'https://polygon-rpc.com',
-    contractAddress: process.env.REFERRAL_CONTRACT_ADDRESS || '',
-    privateKey: process.env.BLOCKCHAIN_PRIVATE_KEY || '',
-    network: 'polygon',
+    enabled: process.env.BLOCKCHAIN_ENABLED === "true",
+    rpcUrl: process.env.BLOCKCHAIN_RPC_URL || "https://polygon-rpc.com",
+    contractAddress: process.env.REFERRAL_CONTRACT_ADDRESS || "",
+    privateKey: process.env.BLOCKCHAIN_PRIVATE_KEY || "",
+    network: "polygon",
   },
   rewards: {
-    referrerDays: 30,     // Premium days for referrer
-    referredDays: 30,     // Premium days for referred user
-    activationDays: 30,   // Days of activity required
+    referrerDays: 30, // Premium days for referrer
+    referredDays: 30, // Premium days for referred user
+    activationDays: 30, // Days of activity required
     minBatchesForActive: 5, // Minimum batches to be considered active
   },
   codeLength: 8,
-  codePrefix: 'AB',
+  codePrefix: "AB",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -88,11 +92,16 @@ export class ReferralService {
 
   private async initializeBlockchain(): Promise<void> {
     try {
-      this.provider = new ethers.providers.JsonRpcProvider(config.blockchain.rpcUrl);
-      this.wallet = new ethers.Wallet(config.blockchain.privateKey, this.provider);
-      logger.info('Referral blockchain service initialized');
+      this.provider = new ethers.providers.JsonRpcProvider(
+        config.blockchain.rpcUrl,
+      );
+      this.wallet = new ethers.Wallet(
+        config.blockchain.privateKey,
+        this.provider,
+      );
+      logger.info("Referral blockchain service initialized");
     } catch (error) {
-      logger.error('Failed to initialize blockchain for referrals', { error });
+      logger.error("Failed to initialize blockchain for referrals", { error });
     }
   }
 
@@ -131,7 +140,7 @@ export class ReferralService {
       },
     });
 
-    logger.info('Referral code created', { userId, code });
+    logger.info("Referral code created", { userId, code });
     return userCode.code;
   }
 
@@ -139,7 +148,7 @@ export class ReferralService {
    * Generate a unique referral code
    */
   private async generateUniqueCode(): Promise<string> {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude confusing chars
     let attempts = 0;
     const maxAttempts = 10;
 
@@ -176,7 +185,7 @@ export class ReferralService {
     newUserId: string,
     code: string,
     ipAddress?: string,
-    deviceFingerprint?: string
+    deviceFingerprint?: string,
   ): Promise<ApplyReferralResult> {
     try {
       // 1. Find the referrer by code
@@ -185,7 +194,7 @@ export class ReferralService {
       });
 
       if (!referrerCode) {
-        return { success: false, error: 'Código de referido inválido' };
+        return { success: false, error: "Código de referido inválido" };
       }
 
       // 2. Check if user already has a referral
@@ -194,17 +203,20 @@ export class ReferralService {
       });
 
       if (existingReferral) {
-        return { success: false, error: 'Ya tienes un código de referido aplicado' };
+        return {
+          success: false,
+          error: "Ya tienes un código de referido aplicado",
+        };
       }
 
       // 3. Prevent self-referral
       if (referrerCode.userId === newUserId) {
-        return { success: false, error: 'No puedes usar tu propio código' };
+        return { success: false, error: "No puedes usar tu propio código" };
       }
 
       // 4. Get current month-year for leaderboard grouping
       const now = new Date();
-      const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
       // 5. Create referral record
       const referral = await prisma.referral.create({
@@ -236,7 +248,7 @@ export class ReferralService {
         blockchainTx = await this.registerReferralOnBlockchain(
           referrerCode.userId,
           newUserId,
-          code.toUpperCase()
+          code.toUpperCase(),
         );
 
         if (blockchainTx) {
@@ -256,12 +268,15 @@ export class ReferralService {
       await this.grantPremiumDays(newUserId, config.rewards.referredDays);
 
       // 9. Grant immediate reward to referrer
-      await this.grantPremiumDays(referrerCode.userId, config.rewards.referrerDays);
+      await this.grantPremiumDays(
+        referrerCode.userId,
+        config.rewards.referrerDays,
+      );
 
       // 10. Send WhatsApp notification to referrer
       await this.notifyReferrer(referral.id);
 
-      logger.info('Referral applied successfully', {
+      logger.info("Referral applied successfully", {
         referralId: referral.id,
         referrerId: referrerCode.userId,
         referredId: newUserId,
@@ -278,10 +293,10 @@ export class ReferralService {
         },
       };
     } catch (error) {
-      logger.error('Failed to apply referral code', { error, newUserId, code });
+      logger.error("Failed to apply referral code", { error, newUserId, code });
       return {
         success: false,
-        error: 'Error al aplicar el código de referido',
+        error: "Error al aplicar el código de referido",
       };
     }
   }
@@ -295,7 +310,7 @@ export class ReferralService {
    */
   async recordActivity(
     userId: string,
-    activityType: 'LOGIN' | 'BATCH_CREATED' | 'ORDER_COMPLETED'
+    activityType: "LOGIN" | "BATCH_CREATED" | "ORDER_COMPLETED",
   ): Promise<void> {
     const referral = await prisma.referral.findFirst({
       where: {
@@ -320,8 +335,9 @@ export class ReferralService {
       data: {
         activityScore: { increment: points },
         lastActivityAt: new Date(),
-        loginCount: activityType === 'LOGIN' ? { increment: 1 } : undefined,
-        batchesCreated: activityType === 'BATCH_CREATED' ? { increment: 1 } : undefined,
+        loginCount: activityType === "LOGIN" ? { increment: 1 } : undefined,
+        batchesCreated:
+          activityType === "BATCH_CREATED" ? { increment: 1 } : undefined,
         status: ReferralStatus.ACTIVE,
       },
     });
@@ -336,7 +352,10 @@ export class ReferralService {
    * Process referral completion (daily job)
    * Checks if referred users have been active for 30 days
    */
-  async processReferralCompletions(): Promise<{ completed: number; errors: number }> {
+  async processReferralCompletions(): Promise<{
+    completed: number;
+    errors: number;
+  }> {
     let completed = 0;
     let errors = 0;
 
@@ -372,7 +391,11 @@ export class ReferralService {
         });
 
         // Activate on blockchain
-        if (config.blockchain.enabled && referral.blockchainEventId && this.wallet) {
+        if (
+          config.blockchain.enabled &&
+          referral.blockchainEventId &&
+          this.wallet
+        ) {
           await this.activateReferralOnBlockchain(referral.blockchainEventId);
         }
 
@@ -381,12 +404,15 @@ export class ReferralService {
 
         completed++;
       } catch (error) {
-        logger.error('Failed to complete referral', { error, referralId: referral.id });
+        logger.error("Failed to complete referral", {
+          error,
+          referralId: referral.id,
+        });
         errors++;
       }
     }
 
-    logger.info('Referral completion job finished', { completed, errors });
+    logger.info("Referral completion job finished", { completed, errors });
     return { completed, errors };
   }
 
@@ -400,17 +426,17 @@ export class ReferralService {
   async getLeaderboard(
     month?: number,
     year?: number,
-    limit: number = 20
+    limit: number = 20,
   ): Promise<LeaderboardEntry[]> {
     const now = new Date();
     const targetMonth = month || now.getMonth() + 1;
     const targetYear = year || now.getFullYear();
-    const monthYear = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+    const monthYear = `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
 
     // Try to get from cached leaderboard first
     const cached = await prisma.referralLeaderboard.findMany({
       where: { monthYear },
-      orderBy: { rank: 'asc' },
+      orderBy: { rank: "asc" },
       take: limit,
     });
 
@@ -437,13 +463,13 @@ export class ReferralService {
    */
   private async calculateLeaderboard(
     monthYear: string,
-    limit: number
+    limit: number,
   ): Promise<LeaderboardEntry[]> {
     const referralCodes = await prisma.userReferralCode.findMany({
       where: {
         activeReferrals: { gt: 0 },
       },
-      orderBy: { activeReferrals: 'desc' },
+      orderBy: { activeReferrals: "desc" },
       take: limit,
     });
 
@@ -459,7 +485,7 @@ export class ReferralService {
       entries.push({
         rank: i + 1,
         userId: code.userId,
-        userName: user ? `${user.firstName} ${user.lastName}` : 'Anonymous',
+        userName: user ? `${user.firstName} ${user.lastName}` : "Anonymous",
         activeReferrals: code.activeReferrals,
         completedReferrals: code.completedReferrals,
         totalPoints: code.activeReferrals * 100 + code.completedReferrals * 50,
@@ -481,7 +507,7 @@ export class ReferralService {
   private async registerReferralOnBlockchain(
     referrerId: string,
     referredId: string,
-    code: string
+    code: string,
   ): Promise<{ txHash: string; referralId: string } | null> {
     if (!this.wallet || !config.blockchain.contractAddress) {
       return null;
@@ -499,44 +525,46 @@ export class ReferralService {
       });
 
       if (!referrer?.walletAddress || !referred?.walletAddress) {
-        logger.info('Skipping blockchain registration - no wallet addresses');
+        logger.info("Skipping blockchain registration - no wallet addresses");
         return null;
       }
 
       const abi = [
-        'function createReferral(address referrer, address referred, string referralCode) returns (bytes32)',
-        'event ReferralCreated(bytes32 indexed referralId, address indexed referrer, address indexed referred, string referralCode, uint256 timestamp)',
+        "function createReferral(address referrer, address referred, string referralCode) returns (bytes32)",
+        "event ReferralCreated(bytes32 indexed referralId, address indexed referrer, address indexed referred, string referralCode, uint256 timestamp)",
       ];
 
       const contract = new ethers.Contract(
         config.blockchain.contractAddress,
         abi,
-        this.wallet
+        this.wallet,
       );
 
       const tx = await contract.createReferral(
         referrer.walletAddress,
         referred.walletAddress,
-        code
+        code,
       );
 
       const receipt = await tx.wait();
 
       // Parse referral ID from event
-      const event = receipt.events?.find((e: any) => e.event === 'ReferralCreated');
+      const event = receipt.events?.find(
+        (e: any) => e.event === "ReferralCreated",
+      );
       const referralId = event?.args?.referralId;
 
-      logger.info('Referral registered on blockchain', {
+      logger.info("Referral registered on blockchain", {
         txHash: receipt.transactionHash,
         referralId,
       });
 
       return {
         txHash: receipt.transactionHash,
-        referralId: referralId?.toString() || '',
+        referralId: referralId?.toString() || "",
       };
     } catch (error) {
-      logger.error('Failed to register referral on blockchain', { error });
+      logger.error("Failed to register referral on blockchain", { error });
       return null;
     }
   }
@@ -546,46 +574,48 @@ export class ReferralService {
    */
   private async recordActivityOnBlockchain(
     referralId: string,
-    points: number
+    points: number,
   ): Promise<void> {
     if (!this.wallet || !config.blockchain.contractAddress) return;
 
     try {
       const abi = [
-        'function recordActivity(bytes32 referralId, uint256 activityPoints)',
+        "function recordActivity(bytes32 referralId, uint256 activityPoints)",
       ];
 
       const contract = new ethers.Contract(
         config.blockchain.contractAddress,
         abi,
-        this.wallet
+        this.wallet,
       );
 
       await contract.recordActivity(referralId, points);
     } catch (error) {
-      logger.error('Failed to record activity on blockchain', { error });
+      logger.error("Failed to record activity on blockchain", { error });
     }
   }
 
   /**
    * Activate referral on blockchain (30-day milestone)
    */
-  private async activateReferralOnBlockchain(referralId: string): Promise<void> {
+  private async activateReferralOnBlockchain(
+    referralId: string,
+  ): Promise<void> {
     if (!this.wallet || !config.blockchain.contractAddress) return;
 
     try {
-      const abi = ['function activateReferral(bytes32 referralId)'];
+      const abi = ["function activateReferral(bytes32 referralId)"];
 
       const contract = new ethers.Contract(
         config.blockchain.contractAddress,
         abi,
-        this.wallet
+        this.wallet,
       );
 
       await contract.activateReferral(referralId);
-      logger.info('Referral activated on blockchain', { referralId });
+      logger.info("Referral activated on blockchain", { referralId });
     } catch (error) {
-      logger.error('Failed to activate referral on blockchain', { error });
+      logger.error("Failed to activate referral on blockchain", { error });
     }
   }
 
@@ -611,12 +641,12 @@ export class ReferralService {
         where: { userId },
         data: {
           currentPeriodEnd: newEnd,
-          tier: 'PREMIUM', // Upgrade to premium
+          tier: "PREMIUM", // Upgrade to premium
         },
       });
     }
 
-    logger.info('Premium days granted', { userId, days });
+    logger.info("Premium days granted", { userId, days });
   }
 
   /**
@@ -630,15 +660,15 @@ export class ReferralService {
     if (!referral) return;
 
     const phoneNumber = await blockchainNotificationService.getUserPhoneNumber(
-      referral.referrerId
+      referral.referrerId,
     );
 
     if (phoneNumber) {
       await blockchainNotificationService.sendReferralSuccessNotification(
         referralId,
-        'un nuevo agricultor',
+        "un nuevo agricultor",
         `${config.rewards.referrerDays} días de premium gratis`,
-        phoneNumber
+        phoneNumber,
       );
     }
   }
@@ -648,7 +678,7 @@ export class ReferralService {
    */
   private async notifyReferralActivated(referral: any): Promise<void> {
     const phoneNumber = await blockchainNotificationService.getUserPhoneNumber(
-      referral.referrerId
+      referral.referrerId,
     );
 
     if (!phoneNumber) return;
@@ -659,17 +689,18 @@ export class ReferralService {
     });
 
     // Get rank
-    const rank = await prisma.userReferralCode.count({
-      where: {
-        activeReferrals: { gt: stats?.activeReferrals || 0 },
-      },
-    }) + 1;
+    const rank =
+      (await prisma.userReferralCode.count({
+        where: {
+          activeReferrals: { gt: stats?.activeReferrals || 0 },
+        },
+      })) + 1;
 
     await blockchainNotificationService.sendReferralActivatedNotification(
-      'un agricultor',
+      "un agricultor",
       stats?.activeReferrals || 1,
       rank,
-      phoneNumber
+      phoneNumber,
     );
   }
 
@@ -705,12 +736,12 @@ export class ReferralService {
         where: { ipAddress: row.ipAddress },
         data: {
           isSuspicious: true,
-          suspicionReasons: ['MULTIPLE_REFERRALS_SAME_IP'],
+          suspicionReasons: ["MULTIPLE_REFERRALS_SAME_IP"],
         },
       });
     }
 
-    logger.info('Fraud detection completed', {
+    logger.info("Fraud detection completed", {
       suspiciousIps: (suspiciousByIp as any[]).length,
       suspiciousDevices: (suspiciousByDevice as any[]).length,
     });

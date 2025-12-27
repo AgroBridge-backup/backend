@@ -3,9 +3,12 @@
  * Use Case: Create the next verification stage for a batch
  */
 
-import { UserRole } from '@prisma/client';
-import { VerificationStageService } from '../../../domain/services/VerificationStageService.js';
-import { VerificationStage, StageType } from '../../../domain/entities/VerificationStage.js';
+import { UserRole } from "@prisma/client";
+import { VerificationStageService } from "../../../domain/services/VerificationStageService.js";
+import {
+  VerificationStage,
+  StageType,
+} from "../../../domain/entities/VerificationStage.js";
 
 export interface CreateBatchStageRequest {
   batchId: string;
@@ -27,7 +30,9 @@ export interface CreateBatchStageResponse {
 export class CreateBatchStageUseCase {
   constructor(private stageService: VerificationStageService) {}
 
-  async execute(request: CreateBatchStageRequest): Promise<CreateBatchStageResponse> {
+  async execute(
+    request: CreateBatchStageRequest,
+  ): Promise<CreateBatchStageResponse> {
     const context = {
       userId: request.userId,
       userRole: request.userRole,
@@ -46,7 +51,7 @@ export class CreateBatchStageUseCase {
           notes: request.notes,
           evidenceUrl: request.evidenceUrl,
         },
-        context
+        context,
       );
     } else {
       // Create the next stage in sequence
@@ -60,7 +65,7 @@ export class CreateBatchStageUseCase {
           notes: request.notes,
           evidenceUrl: request.evidenceUrl,
         },
-        context
+        context,
       );
     }
   }

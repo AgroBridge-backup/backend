@@ -10,9 +10,9 @@
  * - Company Settings (3)
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
 import {
   GetDashboardStatsUseCase,
   GetCertificateAnalyticsUseCase,
@@ -29,10 +29,10 @@ import {
   GetCompanyProfileUseCase,
   UpdateCompanyProfileUseCase,
   UpdateBrandingSettingsUseCase,
-} from '../../application/use-cases/export-company-dashboard/index.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../application/use-cases/export-company-dashboard/index.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // ════════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
@@ -51,22 +51,27 @@ const requiredDateRangeSchema = z.object({
 const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  sortBy: z.enum(['createdAt', 'farmerName', 'cropType']).default('createdAt'),
-  order: z.enum(['asc', 'desc']).default('desc'),
+  sortBy: z.enum(["createdAt", "farmerName", "cropType"]).default("createdAt"),
+  order: z.enum(["asc", "desc"]).default("desc"),
 });
 
 const farmerFilterSchema = z.object({
-  status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
   search: z.string().max(100).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 const bulkInviteFarmersSchema = z.object({
-  farmers: z.array(z.object({
-    email: z.string().email(),
-    name: z.string().min(2).max(100).optional(),
-  })).min(1).max(500),
+  farmers: z
+    .array(
+      z.object({
+        email: z.string().email(),
+        name: z.string().min(2).max(100).optional(),
+      }),
+    )
+    .min(1)
+    .max(500),
 });
 
 const bulkApproveSchema = z.object({
@@ -74,7 +79,7 @@ const bulkApproveSchema = z.object({
 });
 
 const reviewCertificateSchema = z.object({
-  action: z.enum(['approve', 'reject']),
+  action: z.enum(["approve", "reject"]),
   reason: z.string().min(10).max(500).optional(),
 });
 
@@ -94,7 +99,10 @@ const updateProfileSchema = z.object({
 
 const updateBrandingSchema = z.object({
   logoUrl: z.string().url().optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
 });
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -104,29 +112,37 @@ const updateBrandingSchema = z.object({
 function getCompanyId(req: Request): string {
   const user = req.user;
   if (!user?.exportCompanyId) {
-    throw new Error('Export company ID not found in token');
+    throw new Error("Export company ID not found in token");
   }
   return user.exportCompanyId;
 }
 
 function getUserId(req: Request): string {
   const user = req.user;
-  return user?.userId || user?.id || '';
+  return user?.userId || user?.id || "";
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
 // ROUTER FACTORY
 // ════════════════════════════════════════════════════════════════════════════════
 
-export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router {
+export function createExportCompanyDashboardRouter(
+  prisma: PrismaClient,
+): Router {
   const router = Router();
 
   // Initialize use cases
   const getDashboardStatsUseCase = new GetDashboardStatsUseCase(prisma);
-  const getCertificateAnalyticsUseCase = new GetCertificateAnalyticsUseCase(prisma);
-  const getPendingCertificatesUseCase = new GetPendingCertificatesUseCase(prisma);
+  const getCertificateAnalyticsUseCase = new GetCertificateAnalyticsUseCase(
+    prisma,
+  );
+  const getPendingCertificatesUseCase = new GetPendingCertificatesUseCase(
+    prisma,
+  );
   const reviewCertificateUseCase = new ReviewCertificateUseCase(prisma);
-  const bulkApproveCertificatesUseCase = new BulkApproveCertificatesUseCase(prisma);
+  const bulkApproveCertificatesUseCase = new BulkApproveCertificatesUseCase(
+    prisma,
+  );
   const listCompanyFarmersUseCase = new ListCompanyFarmersUseCase(prisma);
   const getFarmerDetailsUseCase = new GetFarmerDetailsUseCase(prisma);
   const inviteFarmersBulkUseCase = new InviteFarmersBulkUseCase(prisma);
@@ -136,10 +152,12 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
   const getInvoiceHistoryUseCase = new GetInvoiceHistoryUseCase(prisma);
   const getCompanyProfileUseCase = new GetCompanyProfileUseCase(prisma);
   const updateCompanyProfileUseCase = new UpdateCompanyProfileUseCase(prisma);
-  const updateBrandingSettingsUseCase = new UpdateBrandingSettingsUseCase(prisma);
+  const updateBrandingSettingsUseCase = new UpdateBrandingSettingsUseCase(
+    prisma,
+  );
 
   // All routes require EXPORT_COMPANY_ADMIN authentication
-  router.use(authenticate(['EXPORT_COMPANY_ADMIN', 'ADMIN']));
+  router.use(authenticate(["EXPORT_COMPANY_ADMIN", "ADMIN"]));
 
   // ════════════════════════════════════════════════════════════════════════════════
   // DASHBOARD ANALYTICS
@@ -150,7 +168,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get comprehensive dashboard statistics
    */
   router.get(
-    '/stats',
+    "/stats",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -160,17 +178,21 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
         const { startDate, endDate } = validation.data;
-        const dateRange = startDate && endDate
-          ? { start: new Date(startDate), end: new Date(endDate) }
-          : undefined;
+        const dateRange =
+          startDate && endDate
+            ? { start: new Date(startDate), end: new Date(endDate) }
+            : undefined;
 
-        const stats = await getDashboardStatsUseCase.execute(companyId, dateRange);
+        const stats = await getDashboardStatsUseCase.execute(
+          companyId,
+          dateRange,
+        );
 
         res.json({
           success: true,
@@ -179,7 +201,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -187,7 +209,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get detailed certificate analytics
    */
   router.get(
-    '/certificate-analytics',
+    "/certificate-analytics",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -197,16 +219,19 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
         const { startDate, endDate } = validation.data;
-        const analytics = await getCertificateAnalyticsUseCase.execute(companyId, {
-          start: new Date(startDate),
-          end: new Date(endDate),
-        });
+        const analytics = await getCertificateAnalyticsUseCase.execute(
+          companyId,
+          {
+            start: new Date(startDate),
+            end: new Date(endDate),
+          },
+        );
 
         res.json({
           success: true,
@@ -215,7 +240,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -227,7 +252,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get pending certificates for review
    */
   router.get(
-    '/certificates/pending',
+    "/certificates/pending",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -237,12 +262,15 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
-        const result = await getPendingCertificatesUseCase.execute(companyId, validation.data);
+        const result = await getPendingCertificatesUseCase.execute(
+          companyId,
+          validation.data,
+        );
 
         res.json({
           success: true,
@@ -251,7 +279,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -259,7 +287,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Review a single certificate (approve/reject)
    */
   router.post(
-    '/certificates/:id/review',
+    "/certificates/:id/review",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -271,26 +299,26 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
         const { action, reason } = validation.data;
 
-        if (action === 'reject' && !reason) {
+        if (action === "reject" && !reason) {
           return res.status(400).json({
             success: false,
-            error: 'Rejection reason is required',
+            error: "Rejection reason is required",
           });
         }
 
         const certificate = await reviewCertificateUseCase.execute(
           { certificateId: id, action, reviewerId, reason },
-          companyId
+          companyId,
         );
 
-        logger.info('Certificate reviewed via dashboard', {
+        logger.info("Certificate reviewed via dashboard", {
           certificateId: id,
           action,
           reviewerId,
@@ -299,12 +327,15 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         res.json({
           success: true,
           data: certificate,
-          message: action === 'approve' ? 'Certificate approved successfully' : 'Certificate rejected',
+          message:
+            action === "approve"
+              ? "Certificate approved successfully"
+              : "Certificate rejected",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -312,7 +343,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Bulk approve multiple certificates
    */
   router.post(
-    '/certificates/bulk-approve',
+    "/certificates/bulk-approve",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -323,7 +354,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -331,10 +362,10 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         const result = await bulkApproveCertificatesUseCase.execute(
           validation.data.certificateIds,
           reviewerId,
-          companyId
+          companyId,
         );
 
-        logger.info('Bulk certificate approval via dashboard', {
+        logger.info("Bulk certificate approval via dashboard", {
           companyId,
           total: result.total,
           success: result.success,
@@ -348,7 +379,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -360,7 +391,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * List company farmers with filtering and pagination
    */
   router.get(
-    '/farmers',
+    "/farmers",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -370,12 +401,15 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
-        const result = await listCompanyFarmersUseCase.execute(companyId, validation.data);
+        const result = await listCompanyFarmersUseCase.execute(
+          companyId,
+          validation.data,
+        );
 
         res.json({
           success: true,
@@ -384,7 +418,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -392,14 +426,17 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get farmer details with full statistics
    */
   router.get(
-    '/farmers/:farmerId',
+    "/farmers/:farmerId",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const companyId = getCompanyId(req);
         const { farmerId } = req.params;
 
-        const farmer = await getFarmerDetailsUseCase.execute(farmerId, companyId);
+        const farmer = await getFarmerDetailsUseCase.execute(
+          farmerId,
+          companyId,
+        );
 
         res.json({
           success: true,
@@ -408,7 +445,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -416,7 +453,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Bulk invite farmers (CSV upload)
    */
   router.post(
-    '/farmers/invite-bulk',
+    "/farmers/invite-bulk",
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -426,14 +463,17 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
-        const result = await inviteFarmersBulkUseCase.execute(companyId, validation.data.farmers);
+        const result = await inviteFarmersBulkUseCase.execute(
+          companyId,
+          validation.data.farmers,
+        );
 
-        logger.info('Bulk farmer invitation via dashboard', {
+        logger.info("Bulk farmer invitation via dashboard", {
           companyId,
           total: result.total,
           success: result.success,
@@ -443,12 +483,17 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         res.status(201).json({
           success: true,
           data: result,
-          message: 'Invitations processed: ' + result.success + ' sent, ' + result.failed + ' failed',
+          message:
+            "Invitations processed: " +
+            result.success +
+            " sent, " +
+            result.failed +
+            " failed",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -456,7 +501,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get invitation statistics
    */
   router.get(
-    '/invitations/status',
+    "/invitations/status",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -471,7 +516,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -479,7 +524,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Resend farmer invitation
    */
   router.post(
-    '/invitations/:invitationId/resend',
+    "/invitations/:invitationId/resend",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -494,7 +539,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
           where: {
             id: invitationId,
             exportCompanyId: companyId,
-            status: 'PENDING',
+            status: "PENDING",
           },
           data: {
             expiresAt: newExpiresAt,
@@ -505,20 +550,20 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (invitation.count === 0) {
           return res.status(404).json({
             success: false,
-            error: 'Invitation not found or already processed',
+            error: "Invitation not found or already processed",
           });
         }
 
-        logger.info('Invitation resent', { invitationId, companyId });
+        logger.info("Invitation resent", { invitationId, companyId });
 
         res.json({
           success: true,
-          message: 'Invitation resent successfully',
+          message: "Invitation resent successfully",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -530,7 +575,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get current billing period usage
    */
   router.get(
-    '/billing/usage',
+    "/billing/usage",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -545,7 +590,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -553,7 +598,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Generate invoice for specified period
    */
   router.post(
-    '/billing/generate-invoice',
+    "/billing/generate-invoice",
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -563,7 +608,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -573,10 +618,10 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         const invoice = await generateInvoiceUseCase.execute(
           companyId,
           new Date(periodStart),
-          new Date(periodEnd)
+          new Date(periodEnd),
         );
 
-        logger.info('Invoice generated via dashboard', {
+        logger.info("Invoice generated via dashboard", {
           companyId,
           invoiceNumber: invoice.invoiceNumber,
           total: invoice.total,
@@ -585,12 +630,12 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         res.status(201).json({
           success: true,
           data: invoice,
-          message: 'Invoice generated successfully',
+          message: "Invoice generated successfully",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -598,7 +643,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get invoice history
    */
   router.get(
-    '/billing/invoices',
+    "/billing/invoices",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -613,7 +658,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -621,7 +666,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Download invoice PDF
    */
   router.get(
-    '/billing/invoices/:invoiceId/download',
+    "/billing/invoices/:invoiceId/download",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -635,14 +680,14 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!invoice) {
           return res.status(404).json({
             success: false,
-            error: 'Invoice not found',
+            error: "Invoice not found",
           });
         }
 
         if (!invoice.pdfUrl) {
           return res.status(404).json({
             success: false,
-            error: 'Invoice PDF not yet generated',
+            error: "Invoice PDF not yet generated",
           });
         }
 
@@ -650,7 +695,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   // ════════════════════════════════════════════════════════════════════════════════
@@ -662,7 +707,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Get company profile
    */
   router.get(
-    '/settings/profile',
+    "/settings/profile",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -677,7 +722,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -685,7 +730,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Update company profile
    */
   router.put(
-    '/settings/profile',
+    "/settings/profile",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -695,24 +740,27 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
-        const updated = await updateCompanyProfileUseCase.execute(companyId, validation.data);
+        const updated = await updateCompanyProfileUseCase.execute(
+          companyId,
+          validation.data,
+        );
 
-        logger.info('Company profile updated via dashboard', { companyId });
+        logger.info("Company profile updated via dashboard", { companyId });
 
         res.json({
           success: true,
           data: updated,
-          message: 'Profile updated successfully',
+          message: "Profile updated successfully",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -720,7 +768,7 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
    * Update white-label branding settings
    */
   router.put(
-    '/settings/branding',
+    "/settings/branding",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -730,14 +778,17 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
-        const updated = await updateBrandingSettingsUseCase.execute(companyId, validation.data);
+        const updated = await updateBrandingSettingsUseCase.execute(
+          companyId,
+          validation.data,
+        );
 
-        logger.info('Company branding updated via dashboard', { companyId });
+        logger.info("Company branding updated via dashboard", { companyId });
 
         res.json({
           success: true,
@@ -745,12 +796,12 @@ export function createExportCompanyDashboardRouter(prisma: PrismaClient): Router
             logoUrl: updated.logoUrl,
             primaryColor: updated.primaryColor,
           },
-          message: 'Branding updated successfully',
+          message: "Branding updated successfully",
         });
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

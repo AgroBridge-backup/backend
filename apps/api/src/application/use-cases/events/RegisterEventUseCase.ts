@@ -4,6 +4,6 @@ import { IEventRepository } from "../../../domain/repositories/IEventRepository.
 export class RegisterEventUseCase {
   constructor(private readonly eventRepository: IEventRepository) {}
   async execute(dto: any): Promise<any> {
-    return { id: 'dummy-e2e-event-id-456', ...dto };
+    return { id: "dummy-e2e-event-id-456", ...dto };
   }
 }

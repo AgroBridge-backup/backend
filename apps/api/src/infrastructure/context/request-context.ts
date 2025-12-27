@@ -13,9 +13,9 @@
  * @author AgroBridge Engineering Team
  */
 
-import { AsyncLocalStorage } from 'async_hooks';
-import { Request, Response, NextFunction } from 'express';
-import { randomUUID } from 'crypto';
+import { AsyncLocalStorage } from "async_hooks";
+import { Request, Response, NextFunction } from "express";
+import { randomUUID } from "crypto";
 
 /**
  * Request context data structure
@@ -51,7 +51,7 @@ export function getRequestContext(): RequestContext | undefined {
  */
 export function getCorrelationId(): string {
   const context = asyncLocalStorage.getStore();
-  return context?.correlationId || 'no-context';
+  return context?.correlationId || "no-context";
 }
 
 /**
@@ -59,7 +59,7 @@ export function getCorrelationId(): string {
  */
 export function getRequestId(): string {
   const context = asyncLocalStorage.getStore();
-  return context?.requestId || 'no-context';
+  return context?.requestId || "no-context";
 }
 
 /**
@@ -97,7 +97,7 @@ export function setUserRole(role: string): void {
  */
 export function runWithContext<T>(
   context: Partial<RequestContext>,
-  fn: () => T
+  fn: () => T,
 ): T {
   const fullContext: RequestContext = {
     correlationId: context.correlationId || randomUUID(),
@@ -114,7 +114,7 @@ export function runWithContext<T>(
  */
 export async function runWithContextAsync<T>(
   context: Partial<RequestContext>,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
   const fullContext: RequestContext = {
     correlationId: context.correlationId || randomUUID(),
@@ -133,12 +133,12 @@ export async function runWithContextAsync<T>(
 export function requestContextMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   // Check for existing correlation ID from client or upstream service
   const existingCorrelationId =
-    (req.headers['x-correlation-id'] as string) ||
-    (req.headers['x-request-id'] as string);
+    (req.headers["x-correlation-id"] as string) ||
+    (req.headers["x-request-id"] as string);
 
   // Generate new ID if not provided
   const correlationId = existingCorrelationId || randomUUID();
@@ -152,7 +152,7 @@ export function requestContextMiddleware(
     path: req.path,
     method: req.method,
     ip: req.ip || req.socket?.remoteAddress,
-    userAgent: req.headers['user-agent']?.substring(0, 200),
+    userAgent: req.headers["user-agent"]?.substring(0, 200),
   };
 
   // Attach to request object for backwards compatibility
@@ -161,8 +161,8 @@ export function requestContextMiddleware(
   req.context = context;
 
   // Add to response headers so client can track their request
-  res.setHeader('X-Correlation-ID', correlationId);
-  res.setHeader('X-Request-ID', requestId);
+  res.setHeader("X-Correlation-ID", correlationId);
+  res.setHeader("X-Request-ID", requestId);
 
   // Run the rest of the request within the context
   asyncLocalStorage.run(context, () => {
@@ -207,7 +207,7 @@ export function getRequestDuration(): number {
 export function withContext(
   target: any,
   propertyKey: string,
-  descriptor: PropertyDescriptor
+  descriptor: PropertyDescriptor,
 ): PropertyDescriptor {
   const originalMethod = descriptor.value;
 

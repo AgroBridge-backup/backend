@@ -3,9 +3,9 @@
  * Public verification of referral authenticity via blockchain
  */
 
-import { IReferralRepository } from '../../../domain/repositories/IReferralRepository.js';
-import { ReferralStatus } from '../../../domain/entities/Referral.js';
-import { NotFoundError } from '../../../shared/errors/NotFoundError.js';
+import { IReferralRepository } from "../../../domain/repositories/IReferralRepository.js";
+import { ReferralStatus } from "../../../domain/entities/Referral.js";
+import { NotFoundError } from "../../../shared/errors/NotFoundError.js";
 
 export interface VerifyReferralRequest {
   referralId: string;
@@ -33,7 +33,7 @@ export interface VerifyReferralResponse {
   };
   verification: {
     isAuthentic: boolean;
-    status: 'VERIFIED' | 'PENDING' | 'NOT_REGISTERED';
+    status: "VERIFIED" | "PENDING" | "NOT_REGISTERED";
     message: string;
     verifiedAt: Date;
   };
@@ -42,31 +42,36 @@ export interface VerifyReferralResponse {
 export class VerifyReferralUseCase {
   constructor(private readonly referralRepository: IReferralRepository) {}
 
-  async execute(request: VerifyReferralRequest): Promise<VerifyReferralResponse> {
+  async execute(
+    request: VerifyReferralRequest,
+  ): Promise<VerifyReferralResponse> {
     const referral = await this.referralRepository.findById(request.referralId);
 
     if (!referral) {
-      throw new NotFoundError('Referral not found');
+      throw new NotFoundError("Referral not found");
     }
 
     // Get referrer's code stats
-    const referrerCode = await this.referralRepository.getOrCreateUserReferralCode(
-      referral.referrerId
-    );
+    const referrerCode =
+      await this.referralRepository.getOrCreateUserReferralCode(
+        referral.referrerId,
+      );
 
     // Determine verification status
-    let verificationStatus: 'VERIFIED' | 'PENDING' | 'NOT_REGISTERED' = 'NOT_REGISTERED';
-    let message = 'Este referido está pendiente de verificación en blockchain.';
+    let verificationStatus: "VERIFIED" | "PENDING" | "NOT_REGISTERED" =
+      "NOT_REGISTERED";
+    let message = "Este referido está pendiente de verificación en blockchain.";
 
     if (referral.blockchainVerified && referral.blockchainTxHash) {
-      verificationStatus = 'VERIFIED';
-      message = 'Este referido está registrado en blockchain y es verificable.';
+      verificationStatus = "VERIFIED";
+      message = "Este referido está registrado en blockchain y es verificable.";
     } else if (
       referral.status === ReferralStatus.ACTIVE ||
       referral.status === ReferralStatus.COMPLETED
     ) {
-      verificationStatus = 'PENDING';
-      message = 'Este referido está activo y pendiente de registro en blockchain.';
+      verificationStatus = "PENDING";
+      message =
+        "Este referido está activo y pendiente de registro en blockchain.";
     }
 
     return {

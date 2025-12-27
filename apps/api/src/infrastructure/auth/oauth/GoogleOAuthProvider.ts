@@ -11,7 +11,7 @@
  * @author AgroBridge Engineering Team
  */
 
-import logger from '../../../shared/utils/logger.js';
+import logger from "../../../shared/utils/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -75,9 +75,10 @@ export interface OAuthResult {
 export class GoogleOAuthProvider {
   private static instance: GoogleOAuthProvider | null = null;
   private config: GoogleOAuthConfig | null = null;
-  private readonly authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
-  private readonly tokenUrl = 'https://oauth2.googleapis.com/token';
-  private readonly userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+  private readonly authUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+  private readonly tokenUrl = "https://oauth2.googleapis.com/token";
+  private readonly userInfoUrl =
+    "https://www.googleapis.com/oauth2/v2/userinfo";
 
   private constructor() {
     this.initializeConfig();
@@ -108,11 +109,11 @@ export class GoogleOAuthProvider {
         redirectUri,
       };
 
-      logger.info('[GoogleOAuthProvider] Initialized', {
+      logger.info("[GoogleOAuthProvider] Initialized", {
         redirectUri,
       });
     } else {
-      logger.warn('[GoogleOAuthProvider] Not configured - missing credentials');
+      logger.warn("[GoogleOAuthProvider] Not configured - missing credentials");
     }
   }
 
@@ -132,20 +133,20 @@ export class GoogleOAuthProvider {
    */
   getAuthorizationUrl(
     state: string,
-    scopes: string[] = ['openid', 'email', 'profile']
+    scopes: string[] = ["openid", "email", "profile"],
   ): string {
     if (!this.config) {
-      throw new Error('Google OAuth not configured');
+      throw new Error("Google OAuth not configured");
     }
 
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
-      response_type: 'code',
-      scope: scopes.join(' '),
+      response_type: "code",
+      scope: scopes.join(" "),
       state,
-      access_type: 'offline', // Request refresh token
-      prompt: 'consent', // Force consent to get refresh token
+      access_type: "offline", // Request refresh token
+      prompt: "consent", // Force consent to get refresh token
     });
 
     return `${this.authUrl}?${params.toString()}`;
@@ -161,30 +162,30 @@ export class GoogleOAuthProvider {
     if (!this.config) {
       return {
         success: false,
-        error: 'Google OAuth not configured',
-        errorCode: 'NOT_CONFIGURED',
+        error: "Google OAuth not configured",
+        errorCode: "NOT_CONFIGURED",
       };
     }
 
     try {
       const response = await fetch(this.tokenUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
           code,
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
           redirect_uri: this.config.redirectUri,
-          grant_type: 'authorization_code',
+          grant_type: "authorization_code",
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        logger.error('[GoogleOAuthProvider] Token exchange failed', {
+        logger.error("[GoogleOAuthProvider] Token exchange failed", {
           status: response.status,
           error: data.error,
           description: data.error_description,
@@ -192,8 +193,8 @@ export class GoogleOAuthProvider {
 
         return {
           success: false,
-          error: data.error_description || 'Token exchange failed',
-          errorCode: data.error || 'TOKEN_ERROR',
+          error: data.error_description || "Token exchange failed",
+          errorCode: data.error || "TOKEN_ERROR",
         };
       }
 
@@ -212,12 +213,12 @@ export class GoogleOAuthProvider {
       if (!profile) {
         return {
           success: false,
-          error: 'Failed to retrieve user profile',
-          errorCode: 'PROFILE_ERROR',
+          error: "Failed to retrieve user profile",
+          errorCode: "PROFILE_ERROR",
         };
       }
 
-      logger.info('[GoogleOAuthProvider] Authentication successful', {
+      logger.info("[GoogleOAuthProvider] Authentication successful", {
         userId: profile.id,
         email: profile.email,
       });
@@ -229,14 +230,14 @@ export class GoogleOAuthProvider {
       };
     } catch (error) {
       const err = error as Error;
-      logger.error('[GoogleOAuthProvider] Exchange error', {
+      logger.error("[GoogleOAuthProvider] Exchange error", {
         error: err.message,
       });
 
       return {
         success: false,
         error: err.message,
-        errorCode: 'EXCHANGE_ERROR',
+        errorCode: "EXCHANGE_ERROR",
       };
     }
   }
@@ -256,7 +257,7 @@ export class GoogleOAuthProvider {
       });
 
       if (!response.ok) {
-        logger.error('[GoogleOAuthProvider] Profile fetch failed', {
+        logger.error("[GoogleOAuthProvider] Profile fetch failed", {
           status: response.status,
         });
         return null;
@@ -275,7 +276,7 @@ export class GoogleOAuthProvider {
         locale: data.locale,
       };
     } catch (error) {
-      logger.error('[GoogleOAuthProvider] Profile error', {
+      logger.error("[GoogleOAuthProvider] Profile error", {
         error: (error as Error).message,
       });
       return null;
@@ -292,22 +293,22 @@ export class GoogleOAuthProvider {
     if (!this.config) {
       return {
         success: false,
-        error: 'Google OAuth not configured',
-        errorCode: 'NOT_CONFIGURED',
+        error: "Google OAuth not configured",
+        errorCode: "NOT_CONFIGURED",
       };
     }
 
     try {
       const response = await fetch(this.tokenUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
           refresh_token: refreshToken,
-          grant_type: 'refresh_token',
+          grant_type: "refresh_token",
         }),
       });
 
@@ -316,8 +317,8 @@ export class GoogleOAuthProvider {
       if (!response.ok) {
         return {
           success: false,
-          error: data.error_description || 'Token refresh failed',
-          errorCode: data.error || 'REFRESH_ERROR',
+          error: data.error_description || "Token refresh failed",
+          errorCode: data.error || "REFRESH_ERROR",
         };
       }
 
@@ -335,7 +336,7 @@ export class GoogleOAuthProvider {
       return {
         success: false,
         error: (error as Error).message,
-        errorCode: 'REFRESH_ERROR',
+        errorCode: "REFRESH_ERROR",
       };
     }
   }
@@ -350,16 +351,16 @@ export class GoogleOAuthProvider {
       const response = await fetch(
         `https://oauth2.googleapis.com/revoke?token=${token}`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       return response.ok;
     } catch (error) {
-      logger.error('[GoogleOAuthProvider] Revoke error', {
+      logger.error("[GoogleOAuthProvider] Revoke error", {
         error: (error as Error).message,
       });
       return false;

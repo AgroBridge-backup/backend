@@ -4,12 +4,12 @@
  * Export companies invite farmers → farmers receive email → farmers register
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaFarmerInvitationRepository } from '../../infrastructure/database/prisma/repositories/PrismaFarmerInvitationRepository.js';
-import { PrismaExportCompanyRepository } from '../../infrastructure/database/prisma/repositories/PrismaExportCompanyRepository.js';
-import { FarmerInvitationService } from '../../domain/services/FarmerInvitationService.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaFarmerInvitationRepository } from "../../infrastructure/database/prisma/repositories/PrismaFarmerInvitationRepository.js";
+import { PrismaExportCompanyRepository } from "../../infrastructure/database/prisma/repositories/PrismaExportCompanyRepository.js";
+import { FarmerInvitationService } from "../../domain/services/FarmerInvitationService.js";
 import {
   SendInvitationUseCase,
   ValidateInvitationUseCase,
@@ -17,11 +17,11 @@ import {
   CancelInvitationUseCase,
   ResendInvitationUseCase,
   GetInvitationStatsUseCase,
-} from '../../application/use-cases/farmer-invitations/index.js';
-import { FarmerInvitationStatus } from '../../domain/entities/FarmerInvitation.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../application/use-cases/farmer-invitations/index.js";
+import { FarmerInvitationStatus } from "../../domain/entities/FarmerInvitation.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const sendInvitationSchema = z.object({
@@ -46,23 +46,34 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
   // Initialize repositories and services
   const invitationRepository = new PrismaFarmerInvitationRepository(prisma);
   const companyRepository = new PrismaExportCompanyRepository(prisma);
-  const invitationService = new FarmerInvitationService(invitationRepository, companyRepository);
+  const invitationService = new FarmerInvitationService(
+    invitationRepository,
+    companyRepository,
+  );
 
   // Initialize use cases
   const sendInvitationUseCase = new SendInvitationUseCase(invitationService);
-  const validateInvitationUseCase = new ValidateInvitationUseCase(invitationService);
+  const validateInvitationUseCase = new ValidateInvitationUseCase(
+    invitationService,
+  );
   const listInvitationsUseCase = new ListInvitationsUseCase(invitationService);
-  const cancelInvitationUseCase = new CancelInvitationUseCase(invitationService);
-  const resendInvitationUseCase = new ResendInvitationUseCase(invitationService);
-  const getInvitationStatsUseCase = new GetInvitationStatsUseCase(invitationService);
+  const cancelInvitationUseCase = new CancelInvitationUseCase(
+    invitationService,
+  );
+  const resendInvitationUseCase = new ResendInvitationUseCase(
+    invitationService,
+  );
+  const getInvitationStatsUseCase = new GetInvitationStatsUseCase(
+    invitationService,
+  );
 
   /**
    * POST /api/v1/export-companies/:companyId/invitations
    * Send a new invitation to a farmer
    */
   router.post(
-    '/:companyId/invitations',
-    authenticate(['ADMIN']),
+    "/:companyId/invitations",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -72,13 +83,13 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
 
         // Get base URL from request
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
 
         const result = await sendInvitationUseCase.execute({
           exportCompanyId: companyId,
@@ -88,7 +99,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
           baseUrl,
         });
 
-        logger.info('Farmer invitation sent via API', {
+        logger.info("Farmer invitation sent via API", {
           invitationId: result.invitation.id,
           companyId,
           email: validation.data.email,
@@ -105,7 +116,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -113,8 +124,8 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
    * List invitations for an export company
    */
   router.get(
-    '/:companyId/invitations',
-    authenticate(['ADMIN']),
+    "/:companyId/invitations",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -124,7 +135,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -146,7 +157,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -154,8 +165,8 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
    * Get invitation statistics for an export company
    */
   router.get(
-    '/:companyId/invitations/stats',
-    authenticate(['ADMIN']),
+    "/:companyId/invitations/stats",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -172,7 +183,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -180,13 +191,13 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
    * Resend an invitation with a new token
    */
   router.post(
-    '/:companyId/invitations/:id/resend',
-    authenticate(['ADMIN']),
+    "/:companyId/invitations/:id/resend",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { companyId, id } = req.params;
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
 
         const result = await resendInvitationUseCase.execute({
           invitationId: id,
@@ -194,7 +205,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
           baseUrl,
         });
 
-        logger.info('Farmer invitation resent via API', {
+        logger.info("Farmer invitation resent via API", {
           invitationId: id,
           companyId,
         });
@@ -210,7 +221,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -218,8 +229,8 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
    * Cancel a pending invitation
    */
   router.delete(
-    '/:companyId/invitations/:id',
-    authenticate(['ADMIN']),
+    "/:companyId/invitations/:id",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -230,7 +241,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
           exportCompanyId: companyId,
         });
 
-        logger.info('Farmer invitation cancelled via API', {
+        logger.info("Farmer invitation cancelled via API", {
           invitationId: id,
           companyId,
         });
@@ -243,7 +254,7 @@ export function createFarmerInvitationsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;
@@ -259,15 +270,20 @@ export function createPublicInvitationRouter(prisma: PrismaClient): Router {
   // Initialize repositories and services
   const invitationRepository = new PrismaFarmerInvitationRepository(prisma);
   const companyRepository = new PrismaExportCompanyRepository(prisma);
-  const invitationService = new FarmerInvitationService(invitationRepository, companyRepository);
-  const validateInvitationUseCase = new ValidateInvitationUseCase(invitationService);
+  const invitationService = new FarmerInvitationService(
+    invitationRepository,
+    companyRepository,
+  );
+  const validateInvitationUseCase = new ValidateInvitationUseCase(
+    invitationService,
+  );
 
   /**
    * GET /api/v1/invitations/validate/:token
    * Validate an invitation token (public endpoint for signup flow)
    */
   router.get(
-    '/validate/:token',
+    "/validate/:token",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -296,7 +312,7 @@ export function createPublicInvitationRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

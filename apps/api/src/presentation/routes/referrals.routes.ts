@@ -3,18 +3,18 @@
  * RESTful API endpoints for referral management
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { PrismaReferralRepository } from '../../infrastructure/database/prisma/repositories/PrismaReferralRepository.js';
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { PrismaReferralRepository } from "../../infrastructure/database/prisma/repositories/PrismaReferralRepository.js";
 import {
   RegisterReferralUseCase,
   GetReferralStatsUseCase,
   MarkReferralRewardedUseCase,
-} from '../../application/use-cases/referrals/index.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { RateLimiterConfig } from '../../infrastructure/http/middleware/rate-limiter.middleware.js';
-import { logger } from '../../infrastructure/logging/logger.js';
+} from "../../application/use-cases/referrals/index.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { RateLimiterConfig } from "../../infrastructure/http/middleware/rate-limiter.middleware.js";
+import { logger } from "../../infrastructure/logging/logger.js";
 
 // Validation schemas
 const registerReferralSchema = z.object({
@@ -34,9 +34,15 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
 
   // Initialize repository and use cases
   const referralRepository = new PrismaReferralRepository(prisma);
-  const registerReferralUseCase = new RegisterReferralUseCase(referralRepository);
-  const getReferralStatsUseCase = new GetReferralStatsUseCase(referralRepository);
-  const markReferralRewardedUseCase = new MarkReferralRewardedUseCase(referralRepository);
+  const registerReferralUseCase = new RegisterReferralUseCase(
+    referralRepository,
+  );
+  const getReferralStatsUseCase = new GetReferralStatsUseCase(
+    referralRepository,
+  );
+  const markReferralRewardedUseCase = new MarkReferralRewardedUseCase(
+    referralRepository,
+  );
 
   /**
    * POST /api/v1/referrals
@@ -44,7 +50,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * NOTE: Requires authentication - user can only register themselves as referred
    */
   router.post(
-    '/',
+    "/",
     authenticate(), // P1 FIX: Added authentication
     RateLimiterConfig.creation(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -53,7 +59,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -62,7 +68,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
@@ -71,7 +77,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (validation.data.referredUserId !== userId) {
           return res.status(403).json({
             success: false,
-            error: 'Cannot register referral for another user',
+            error: "Cannot register referral for another user",
           });
         }
 
@@ -79,10 +85,12 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
           referralCode: validation.data.referralCode,
           referredUserId: userId, // Use authenticated user ID
           ipAddress: req.ip,
-          deviceFingerprint: req.headers['x-device-fingerprint'] as string | undefined,
+          deviceFingerprint: req.headers["x-device-fingerprint"] as
+            | string
+            | undefined,
         });
 
-        logger.info('Referral registered via API', {
+        logger.info("Referral registered via API", {
           referralId: result.referral.id,
           userId,
         });
@@ -95,7 +103,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -103,7 +111,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * List referrals where the authenticated user is the referrer
    */
   router.get(
-    '/me',
+    "/me",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -112,7 +120,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
@@ -128,7 +136,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -136,7 +144,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * Get referral stats for the authenticated user
    */
   router.get(
-    '/me/stats',
+    "/me/stats",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -145,7 +153,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
@@ -161,7 +169,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -169,7 +177,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * Get or generate referral code for authenticated user
    */
   router.get(
-    '/me/code',
+    "/me/code",
     authenticate(),
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -178,17 +186,18 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: 'Authentication required',
+            error: "Authentication required",
           });
         }
 
-        const referralCode = await referralRepository.getOrCreateUserReferralCode(userId);
+        const referralCode =
+          await referralRepository.getOrCreateUserReferralCode(userId);
 
         res.json({
           success: true,
           data: {
             code: referralCode.code,
-            shareUrl: `${process.env.APP_BASE_URL || 'https://agrobridge.io'}/signup?ref=${referralCode.code}`,
+            shareUrl: `${process.env.APP_BASE_URL || "https://agrobridge.io"}/signup?ref=${referralCode.code}`,
             stats: {
               totalReferrals: referralCode.totalReferrals,
               activeReferrals: referralCode.activeReferrals,
@@ -200,7 +209,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -208,8 +217,8 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * Mark referral as rewarded (admin only)
    */
   router.post(
-    '/:id/reward',
-    authenticate(['ADMIN']),
+    "/:id/reward",
+    authenticate(["ADMIN"]),
     RateLimiterConfig.sensitive(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -219,7 +228,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!validation.success) {
           return res.status(400).json({
             success: false,
-            error: 'Validation error',
+            error: "Validation error",
             details: validation.error.errors,
           });
         }
@@ -229,7 +238,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
           rewardTxHash: validation.data.rewardTxHash,
         });
 
-        logger.info('Referral marked as rewarded via API', {
+        logger.info("Referral marked as rewarded via API", {
           referralId: id,
           adminUserId: req.user?.userId,
         });
@@ -242,7 +251,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -250,15 +259,18 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * Get current month leaderboard
    */
   router.get(
-    '/leaderboard',
+    "/leaderboard",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const now = new Date();
-        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
         const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
 
-        const leaderboard = await referralRepository.getLeaderboard(monthYear, limit);
+        const leaderboard = await referralRepository.getLeaderboard(
+          monthYear,
+          limit,
+        );
 
         res.json({
           success: true,
@@ -271,7 +283,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   /**
@@ -279,7 +291,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
    * Get leaderboard for a specific month
    */
   router.get(
-    '/leaderboard/:monthYear',
+    "/leaderboard/:monthYear",
     RateLimiterConfig.api(),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -289,13 +301,16 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
         if (!/^\d{4}-\d{2}$/.test(monthYear)) {
           return res.status(400).json({
             success: false,
-            error: 'Invalid monthYear format. Use YYYY-MM.',
+            error: "Invalid monthYear format. Use YYYY-MM.",
           });
         }
 
         const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
 
-        const leaderboard = await referralRepository.getLeaderboard(monthYear, limit);
+        const leaderboard = await referralRepository.getLeaderboard(
+          monthYear,
+          limit,
+        );
 
         res.json({
           success: true,
@@ -308,7 +323,7 @@ export default function createReferralsRouter(prisma: PrismaClient): Router {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;

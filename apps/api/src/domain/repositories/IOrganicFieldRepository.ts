@@ -8,7 +8,7 @@ import {
   OrganicFieldFilter,
   OrganicFieldStatus,
   OrganicFieldWithStats,
-} from '../entities/OrganicField.js';
+} from "../entities/OrganicField.js";
 
 export interface CreateOrganicFieldData {
   id: string;
@@ -85,7 +85,10 @@ export interface IOrganicFieldRepository {
   /**
    * List organic fields for a producer
    */
-  listByProducer(producerId: string, filter?: Omit<OrganicFieldFilter, 'producerId'>): Promise<OrganicFieldListResult>;
+  listByProducer(
+    producerId: string,
+    filter?: Omit<OrganicFieldFilter, "producerId">,
+  ): Promise<OrganicFieldListResult>;
 
   /**
    * Update organic field
@@ -100,7 +103,10 @@ export interface IOrganicFieldRepository {
   /**
    * Update certification status
    */
-  updateCertificationStatus(id: string, status: OrganicFieldStatus): Promise<OrganicField>;
+  updateCertificationStatus(
+    id: string,
+    status: OrganicFieldStatus,
+  ): Promise<OrganicField>;
 
   /**
    * Add certified standard to field
@@ -130,12 +136,18 @@ export interface IOrganicFieldRepository {
   /**
    * Get fields with expiring certifications
    */
-  getFieldsWithExpiringCertification(daysUntilExpiry: number): Promise<OrganicField[]>;
+  getFieldsWithExpiringCertification(
+    daysUntilExpiry: number,
+  ): Promise<OrganicField[]>;
 
   /**
    * Check if point is within field boundary
    */
-  isPointWithinBoundary(fieldId: string, lat: number, lng: number): Promise<boolean>;
+  isPointWithinBoundary(
+    fieldId: string,
+    lat: number,
+    lng: number,
+  ): Promise<boolean>;
 
   /**
    * Get total hectares by producer

@@ -9,15 +9,15 @@
  * @author AgroBridge Engineering Team
  */
 
-import { Socket } from 'net';
-import { Readable } from 'stream';
-import logger from '../../shared/utils/logger.js';
+import { Socket } from "net";
+import { Readable } from "stream";
+import logger from "../../shared/utils/logger.js";
 
 // ClamAV configuration
-const CLAMD_HOST = process.env.CLAMD_HOST || 'localhost';
-const CLAMD_PORT = parseInt(process.env.CLAMD_PORT || '3310', 10);
-const CLAMD_TIMEOUT = parseInt(process.env.CLAMD_TIMEOUT || '30000', 10); // 30 seconds
-const VIRUS_SCAN_ENABLED = process.env.VIRUS_SCAN_ENABLED !== 'false';
+const CLAMD_HOST = process.env.CLAMD_HOST || "localhost";
+const CLAMD_PORT = parseInt(process.env.CLAMD_PORT || "3310", 10);
+const CLAMD_TIMEOUT = parseInt(process.env.CLAMD_TIMEOUT || "30000", 10); // 30 seconds
+const VIRUS_SCAN_ENABLED = process.env.VIRUS_SCAN_ENABLED !== "false";
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB max for virus scanning
 
 /**
@@ -39,9 +39,16 @@ export interface ScanResult {
  */
 const MALICIOUS_SIGNATURES = [
   // EICAR test file (for testing AV software)
-  { signature: Buffer.from('X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR'), name: 'EICAR-Test-File' },
+  {
+    signature: Buffer.from("X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR"),
+    name: "EICAR-Test-File",
+  },
   // Common executable headers that shouldn't be in uploads
-  { signature: Buffer.from([0x4D, 0x5A]), name: 'Windows-Executable', offset: 0 }, // MZ header
+  {
+    signature: Buffer.from([0x4d, 0x5a]),
+    name: "Windows-Executable",
+    offset: 0,
+  }, // MZ header
 ];
 
 /**
@@ -73,31 +80,31 @@ export class VirusScanner {
    */
   async checkAvailability(): Promise<boolean> {
     if (!VIRUS_SCAN_ENABLED) {
-      logger.info('[VirusScanner] Virus scanning disabled by configuration');
+      logger.info("[VirusScanner] Virus scanning disabled by configuration");
       this.isAvailable = false;
       return false;
     }
 
     try {
-      const response = await this.sendCommand('PING');
-      this.isAvailable = response.trim() === 'PONG';
+      const response = await this.sendCommand("PING");
+      this.isAvailable = response.trim() === "PONG";
       this.lastHealthCheck = new Date();
 
       if (this.isAvailable) {
-        logger.info('[VirusScanner] ClamAV daemon is available', {
+        logger.info("[VirusScanner] ClamAV daemon is available", {
           host: CLAMD_HOST,
           port: CLAMD_PORT,
         });
       } else {
-        logger.warn('[VirusScanner] ClamAV daemon responded but not ready');
+        logger.warn("[VirusScanner] ClamAV daemon responded but not ready");
       }
 
       return this.isAvailable;
     } catch (error) {
-      logger.warn('[VirusScanner] ClamAV daemon not available', {
+      logger.warn("[VirusScanner] ClamAV daemon not available", {
         host: CLAMD_HOST,
         port: CLAMD_PORT,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       });
       this.isAvailable = false;
       return false;
@@ -107,7 +114,11 @@ export class VirusScanner {
   /**
    * Get scanner status
    */
-  getStatus(): { available: boolean; lastCheck: Date | null; enabled: boolean } {
+  getStatus(): {
+    available: boolean;
+    lastCheck: Date | null;
+    enabled: boolean;
+  } {
     return {
       available: this.isAvailable,
       lastCheck: this.lastHealthCheck,
@@ -118,10 +129,7 @@ export class VirusScanner {
   /**
    * Scan a file buffer for viruses
    */
-  async scanBuffer(
-    buffer: Buffer,
-    fileName?: string
-  ): Promise<ScanResult> {
+  async scanBuffer(buffer: Buffer, fileName?: string): Promise<ScanResult> {
     const startTime = Date.now();
     const result: ScanResult = {
       clean: true,
@@ -146,7 +154,7 @@ export class VirusScanner {
         result.clean = false;
         result.virus = signatureResult;
         result.scanDurationMs = Date.now() - startTime;
-        logger.warn('[VirusScanner] Malicious signature detected', {
+        logger.warn("[VirusScanner] Malicious signature detected", {
           fileName,
           virus: signatureResult,
         });
@@ -160,7 +168,7 @@ export class VirusScanner {
         await this.checkAvailability();
 
         if (!this.isAvailable) {
-          logger.warn('[VirusScanner] ClamAV unavailable, skipping deep scan', {
+          logger.warn("[VirusScanner] ClamAV unavailable, skipping deep scan", {
             fileName,
             fileSize: buffer.length,
           });
@@ -177,24 +185,24 @@ export class VirusScanner {
 
       // Parse ClamAV response
       // Format: "stream: OK" or "stream: VirusName FOUND"
-      if (scanResponse.includes('FOUND')) {
+      if (scanResponse.includes("FOUND")) {
         const match = scanResponse.match(/stream:\s*(.+)\s+FOUND/);
         result.clean = false;
-        result.virus = match ? match[1].trim() : 'Unknown';
-        logger.warn('[VirusScanner] Virus detected', {
+        result.virus = match ? match[1].trim() : "Unknown";
+        logger.warn("[VirusScanner] Virus detected", {
           fileName,
           virus: result.virus,
           scanDurationMs: result.scanDurationMs,
         });
-      } else if (scanResponse.includes('OK')) {
+      } else if (scanResponse.includes("OK")) {
         result.clean = true;
-        logger.debug('[VirusScanner] File clean', {
+        logger.debug("[VirusScanner] File clean", {
           fileName,
           scanDurationMs: result.scanDurationMs,
         });
-      } else if (scanResponse.includes('ERROR')) {
+      } else if (scanResponse.includes("ERROR")) {
         result.error = scanResponse;
-        logger.error('[VirusScanner] Scan error', {
+        logger.error("[VirusScanner] Scan error", {
           fileName,
           response: scanResponse,
         });
@@ -203,8 +211,8 @@ export class VirusScanner {
       return result;
     } catch (error) {
       result.scanDurationMs = Date.now() - startTime;
-      result.error = error instanceof Error ? error.message : 'Scan failed';
-      logger.error('[VirusScanner] Scan failed', {
+      result.error = error instanceof Error ? error.message : "Scan failed";
+      logger.error("[VirusScanner] Scan failed", {
         fileName,
         error: result.error,
       });
@@ -215,16 +223,13 @@ export class VirusScanner {
   /**
    * Scan a file stream
    */
-  async scanStream(
-    stream: Readable,
-    fileName?: string
-  ): Promise<ScanResult> {
+  async scanStream(stream: Readable, fileName?: string): Promise<ScanResult> {
     // Convert stream to buffer for scanning
     const chunks: Buffer[] = [];
     let totalSize = 0;
 
     return new Promise((resolve, reject) => {
-      stream.on('data', (chunk: Buffer) => {
+      stream.on("data", (chunk: Buffer) => {
         totalSize += chunk.length;
         if (totalSize > MAX_FILE_SIZE) {
           stream.destroy();
@@ -241,13 +246,13 @@ export class VirusScanner {
         chunks.push(chunk);
       });
 
-      stream.on('end', async () => {
+      stream.on("end", async () => {
         const buffer = Buffer.concat(chunks);
         const result = await this.scanBuffer(buffer, fileName);
         resolve(result);
       });
 
-      stream.on('error', (error) => {
+      stream.on("error", (error) => {
         reject(error);
       });
     });
@@ -275,29 +280,29 @@ export class VirusScanner {
   private sendCommand(command: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const socket = new Socket();
-      let response = '';
+      let response = "";
 
       socket.setTimeout(CLAMD_TIMEOUT);
 
-      socket.on('connect', () => {
+      socket.on("connect", () => {
         socket.write(`n${command}\n`);
       });
 
-      socket.on('data', (data) => {
+      socket.on("data", (data) => {
         response += data.toString();
       });
 
-      socket.on('end', () => {
+      socket.on("end", () => {
         resolve(response);
       });
 
-      socket.on('error', (error) => {
+      socket.on("error", (error) => {
         reject(error);
       });
 
-      socket.on('timeout', () => {
+      socket.on("timeout", () => {
         socket.destroy();
-        reject(new Error('ClamAV connection timeout'));
+        reject(new Error("ClamAV connection timeout"));
       });
 
       socket.connect(CLAMD_PORT, CLAMD_HOST);
@@ -310,19 +315,22 @@ export class VirusScanner {
   private streamScan(buffer: Buffer): Promise<string> {
     return new Promise((resolve, reject) => {
       const socket = new Socket();
-      let response = '';
+      let response = "";
 
       socket.setTimeout(CLAMD_TIMEOUT);
 
-      socket.on('connect', () => {
+      socket.on("connect", () => {
         // Send INSTREAM command
-        socket.write('nINSTREAM\n');
+        socket.write("nINSTREAM\n");
 
         // Send file data in chunks
         // Format: 4-byte big-endian length + data
         const chunkSize = 8192;
         for (let i = 0; i < buffer.length; i += chunkSize) {
-          const chunk = buffer.subarray(i, Math.min(i + chunkSize, buffer.length));
+          const chunk = buffer.subarray(
+            i,
+            Math.min(i + chunkSize, buffer.length),
+          );
           const lengthBuffer = Buffer.alloc(4);
           lengthBuffer.writeUInt32BE(chunk.length, 0);
           socket.write(lengthBuffer);
@@ -335,21 +343,21 @@ export class VirusScanner {
         socket.write(endBuffer);
       });
 
-      socket.on('data', (data) => {
+      socket.on("data", (data) => {
         response += data.toString();
       });
 
-      socket.on('end', () => {
+      socket.on("end", () => {
         resolve(response);
       });
 
-      socket.on('error', (error) => {
+      socket.on("error", (error) => {
         reject(error);
       });
 
-      socket.on('timeout', () => {
+      socket.on("timeout", () => {
         socket.destroy();
-        reject(new Error('ClamAV scan timeout'));
+        reject(new Error("ClamAV scan timeout"));
       });
 
       socket.connect(CLAMD_PORT, CLAMD_HOST);
@@ -361,7 +369,7 @@ export class VirusScanner {
    */
   async getVersion(): Promise<string | null> {
     try {
-      const response = await this.sendCommand('VERSION');
+      const response = await this.sendCommand("VERSION");
       return response.trim();
     } catch {
       return null;
@@ -373,8 +381,8 @@ export class VirusScanner {
    */
   async reloadDefinitions(): Promise<boolean> {
     try {
-      const response = await this.sendCommand('RELOAD');
-      return response.includes('RELOADING');
+      const response = await this.sendCommand("RELOAD");
+      return response.includes("RELOADING");
     } catch {
       return false;
     }
@@ -387,11 +395,13 @@ export const virusScanner = VirusScanner.getInstance();
 /**
  * Express middleware for scanning uploaded files
  */
-export function virusScanMiddleware(options: {
-  rejectOnVirus?: boolean;
-  rejectOnError?: boolean;
-  skipIfUnavailable?: boolean;
-} = {}) {
+export function virusScanMiddleware(
+  options: {
+    rejectOnVirus?: boolean;
+    rejectOnError?: boolean;
+    skipIfUnavailable?: boolean;
+  } = {},
+) {
   const {
     rejectOnVirus = true,
     rejectOnError = false,
@@ -409,24 +419,28 @@ export function virusScanMiddleware(options: {
 
     // Check if scanning is available
     if (!status.enabled || (!status.available && skipIfUnavailable)) {
-      logger.debug('[VirusScanMiddleware] Skipping scan - scanner unavailable');
+      logger.debug("[VirusScanMiddleware] Skipping scan - scanner unavailable");
       return next();
     }
 
     try {
       // Handle single file upload
       if (req.file) {
-        const result = await scanner.scanBuffer(req.file.buffer, req.file.originalname);
+        const result = await scanner.scanBuffer(
+          req.file.buffer,
+          req.file.originalname,
+        );
 
         if (!result.clean && rejectOnVirus) {
-          logger.warn('[VirusScanMiddleware] Rejecting infected file', {
+          logger.warn("[VirusScanMiddleware] Rejecting infected file", {
             fileName: req.file.originalname,
             virus: result.virus,
           });
           return res.status(400).json({
             error: {
-              code: 'VIRUS_DETECTED',
-              message: 'The uploaded file contains malware and has been rejected',
+              code: "VIRUS_DETECTED",
+              message:
+                "The uploaded file contains malware and has been rejected",
               virus: result.virus,
             },
           });
@@ -435,8 +449,8 @@ export function virusScanMiddleware(options: {
         if (result.error && rejectOnError) {
           return res.status(500).json({
             error: {
-              code: 'SCAN_ERROR',
-              message: 'Failed to scan uploaded file',
+              code: "SCAN_ERROR",
+              message: "Failed to scan uploaded file",
             },
           });
         }
@@ -447,19 +461,24 @@ export function virusScanMiddleware(options: {
 
       // Handle multiple file uploads
       if (req.files) {
-        const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+        const files = Array.isArray(req.files)
+          ? req.files
+          : Object.values(req.files).flat();
 
         for (const file of files as Express.Multer.File[]) {
-          const result = await scanner.scanBuffer(file.buffer, file.originalname);
+          const result = await scanner.scanBuffer(
+            file.buffer,
+            file.originalname,
+          );
 
           if (!result.clean && rejectOnVirus) {
-            logger.warn('[VirusScanMiddleware] Rejecting infected file', {
+            logger.warn("[VirusScanMiddleware] Rejecting infected file", {
               fileName: file.originalname,
               virus: result.virus,
             });
             return res.status(400).json({
               error: {
-                code: 'VIRUS_DETECTED',
+                code: "VIRUS_DETECTED",
                 message: `The uploaded file "${file.originalname}" contains malware and has been rejected`,
                 virus: result.virus,
               },
@@ -473,15 +492,15 @@ export function virusScanMiddleware(options: {
 
       next();
     } catch (error) {
-      logger.error('[VirusScanMiddleware] Scan error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+      logger.error("[VirusScanMiddleware] Scan error", {
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       if (rejectOnError) {
         return res.status(500).json({
           error: {
-            code: 'SCAN_ERROR',
-            message: 'Failed to scan uploaded files',
+            code: "SCAN_ERROR",
+            message: "Failed to scan uploaded files",
           },
         });
       }

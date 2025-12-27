@@ -3,9 +3,9 @@
  * Gets aggregated statistics for a producer's organic fields
  */
 
-import { OrganicFieldService } from '../../../domain/services/OrganicFieldService.js';
-import { OrganicFieldStatus } from '../../../domain/entities/OrganicField.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
+import { OrganicFieldService } from "../../../domain/services/OrganicFieldService.js";
+import { OrganicFieldStatus } from "../../../domain/entities/OrganicField.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
 
 export interface GetProducerFieldStatsRequest {
   producerId: string;
@@ -21,9 +21,11 @@ export interface GetProducerFieldStatsResponse {
 export class GetProducerFieldStatsUseCase {
   constructor(private readonly fieldService: OrganicFieldService) {}
 
-  async execute(request: GetProducerFieldStatsRequest): Promise<GetProducerFieldStatsResponse> {
+  async execute(
+    request: GetProducerFieldStatsRequest,
+  ): Promise<GetProducerFieldStatsResponse> {
     if (!request.producerId) {
-      throw new ValidationError('Producer ID is required');
+      throw new ValidationError("Producer ID is required");
     }
 
     return this.fieldService.getProducerFieldStats(request.producerId);

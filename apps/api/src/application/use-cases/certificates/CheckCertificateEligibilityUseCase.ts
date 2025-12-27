@@ -3,8 +3,8 @@
  * Use Case: Check if a batch is eligible for a specific certificate grade
  */
 
-import { QualityCertificateService } from '../../../domain/services/QualityCertificateService.js';
-import { CertificateGrade } from '../../../domain/entities/QualityCertificate.js';
+import { QualityCertificateService } from "../../../domain/services/QualityCertificateService.js";
+import { CertificateGrade } from "../../../domain/entities/QualityCertificate.js";
 
 export interface CheckCertificateEligibilityRequest {
   batchId: string;
@@ -20,7 +20,12 @@ export interface CheckCertificateEligibilityResponse {
 export class CheckCertificateEligibilityUseCase {
   constructor(private certificateService: QualityCertificateService) {}
 
-  async execute(request: CheckCertificateEligibilityRequest): Promise<CheckCertificateEligibilityResponse> {
-    return this.certificateService.canIssueCertificate(request.batchId, request.grade);
+  async execute(
+    request: CheckCertificateEligibilityRequest,
+  ): Promise<CheckCertificateEligibilityResponse> {
+    return this.certificateService.canIssueCertificate(
+      request.batchId,
+      request.grade,
+    );
   }
 }

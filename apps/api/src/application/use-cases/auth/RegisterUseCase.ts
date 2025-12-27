@@ -1,9 +1,12 @@
-import { IUserRepository } from '../../../domain/repositories/IUserRepository.js';
-import { RegisterRequestDto, RegisterResponseDto } from '../../dtos/auth.dtos.js';
-import { ValidationError } from '../../../shared/errors/ValidationError.js';
-import logger from '../../../shared/utils/logger.js';
-import bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
+import { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
+import {
+  RegisterRequestDto,
+  RegisterResponseDto,
+} from "../../dtos/auth.dtos.js";
+import { ValidationError } from "../../../shared/errors/ValidationError.js";
+import logger from "../../../shared/utils/logger.js";
+import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -18,19 +21,30 @@ const BCRYPT_SALT_ROUNDS = 12;
  * @author AgroBridge Engineering Team
  */
 export class RegisterUseCase {
-  constructor(
-    private readonly userRepository: IUserRepository
-  ) {}
+  constructor(private readonly userRepository: IUserRepository) {}
 
   async execute(dto: RegisterRequestDto): Promise<RegisterResponseDto> {
-    const { email, password, firstName, lastName, businessName, rfc, state, municipality } = dto;
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      businessName,
+      rfc,
+      state,
+      municipality,
+    } = dto;
     logger.debug(`[RegisterUseCase] Attempting to register user: ${email}`);
 
     // 1. Check if email already exists
-    const existingUser = await this.userRepository.findByEmail(email.toLowerCase().trim());
+    const existingUser = await this.userRepository.findByEmail(
+      email.toLowerCase().trim(),
+    );
     if (existingUser) {
-      logger.warn(`[RegisterUseCase] Registration failed - email already exists: ${email}`);
-      throw new ValidationError('Este correo electrónico ya está registrado');
+      logger.warn(
+        `[RegisterUseCase] Registration failed - email already exists: ${email}`,
+      );
+      throw new ValidationError("Este correo electrónico ya está registrado");
     }
 
     // 2. Hash password
@@ -46,7 +60,7 @@ export class RegisterUseCase {
       passwordHash,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      role: 'PRODUCER', // Default role for new registrations
+      role: "PRODUCER", // Default role for new registrations
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -57,7 +71,8 @@ export class RegisterUseCase {
     return {
       userId: user.id,
       email: user.email,
-      message: 'Cuenta creada exitosamente. Por favor verifica tu correo electr\u00f3nico.',
+      message:
+        "Cuenta creada exitosamente. Por favor verifica tu correo electr\u00f3nico.",
     };
   }
 }

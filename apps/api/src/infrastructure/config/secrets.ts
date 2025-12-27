@@ -10,8 +10,11 @@
  * - NODE_ENV: When 'production', fails loudly if secrets can't be loaded
  */
 
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import logger from '../../shared/utils/logger.js';
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
+import logger from "../../shared/utils/logger.js";
 
 export interface SecretsConfig {
   secretName: string;
@@ -23,9 +26,9 @@ export interface SecretsConfig {
  * Default configuration for secrets loading
  */
 const defaultConfig: SecretsConfig = {
-  secretName: process.env.AWS_SECRET_NAME || 'agrobridge/production',
-  region: process.env.AWS_REGION || 'us-east-1',
-  failOnError: process.env.NODE_ENV === 'production',
+  secretName: process.env.AWS_SECRET_NAME || "agrobridge/production",
+  region: process.env.AWS_REGION || "us-east-1",
+  failOnError: process.env.NODE_ENV === "production",
 };
 
 /**
@@ -34,26 +37,32 @@ const defaultConfig: SecretsConfig = {
  * @param config - Optional configuration overrides
  * @throws Error in production if secrets cannot be loaded
  */
-export async function loadSecrets(config: Partial<SecretsConfig> = {}): Promise<void> {
+export async function loadSecrets(
+  config: Partial<SecretsConfig> = {},
+): Promise<void> {
   const { secretName, region, failOnError } = { ...defaultConfig, ...config };
 
   // Skip if no secret name configured
-  if (!process.env.AWS_SECRET_NAME && process.env.NODE_ENV !== 'production') {
-    logger.info('[Secrets] AWS_SECRET_NAME not set, skipping AWS Secrets Manager');
+  if (!process.env.AWS_SECRET_NAME && process.env.NODE_ENV !== "production") {
+    logger.info(
+      "[Secrets] AWS_SECRET_NAME not set, skipping AWS Secrets Manager",
+    );
     return;
   }
 
   const client = new SecretsManagerClient({ region });
 
   try {
-    logger.info(`[Secrets] Loading secrets from AWS Secrets Manager: ${secretName}`);
+    logger.info(
+      `[Secrets] Loading secrets from AWS Secrets Manager: ${secretName}`,
+    );
 
     const response = await client.send(
-      new GetSecretValueCommand({ SecretId: secretName })
+      new GetSecretValueCommand({ SecretId: secretName }),
     );
 
     if (!response.SecretString) {
-      throw new Error('Secret value is empty');
+      throw new Error("Secret value is empty");
     }
 
     const secrets = JSON.parse(response.SecretString);
@@ -67,17 +76,25 @@ export async function loadSecrets(config: Partial<SecretsConfig> = {}): Promise<
       }
     });
 
-    logger.info(`[Secrets] Successfully loaded ${loadedCount} secrets from AWS`);
-
+    logger.info(
+      `[Secrets] Successfully loaded ${loadedCount} secrets from AWS`,
+    );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
 
     if (failOnError) {
-      logger.error(`[Secrets] FATAL: Failed to load secrets in production: ${errorMessage}`);
-      throw new Error(`Failed to load secrets from AWS Secrets Manager: ${errorMessage}`);
+      logger.error(
+        `[Secrets] FATAL: Failed to load secrets in production: ${errorMessage}`,
+      );
+      throw new Error(
+        `Failed to load secrets from AWS Secrets Manager: ${errorMessage}`,
+      );
     }
 
-    logger.warn(`[Secrets] AWS Secrets Manager unavailable, using .env file: ${errorMessage}`);
+    logger.warn(
+      `[Secrets] AWS Secrets Manager unavailable, using .env file: ${errorMessage}`,
+    );
   }
 }
 
@@ -95,8 +112,8 @@ export function validateRequiredSecrets(requiredKeys: string[]): void {
   }
 
   if (missing.length > 0) {
-    const message = `Missing required secrets: ${missing.join(', ')}`;
-    if (process.env.NODE_ENV === 'production') {
+    const message = `Missing required secrets: ${missing.join(", ")}`;
+    if (process.env.NODE_ENV === "production") {
       throw new Error(message);
     }
     logger.warn(`[Secrets] ${message}`);
@@ -107,9 +124,13 @@ export function validateRequiredSecrets(requiredKeys: string[]): void {
  * Required secrets for production deployment
  */
 export const REQUIRED_PRODUCTION_SECRETS = [
-  'DATABASE_URL',
-  'JWT_SECRET',
-  'REDIS_URL',
+  "DATABASE_URL",
+  "JWT_SECRET",
+  "REDIS_URL",
 ];
 
-export default { loadSecrets, validateRequiredSecrets, REQUIRED_PRODUCTION_SECRETS };
+export default {
+  loadSecrets,
+  validateRequiredSecrets,
+  REQUIRED_PRODUCTION_SECRETS,
+};
