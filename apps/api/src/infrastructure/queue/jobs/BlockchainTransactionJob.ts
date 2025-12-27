@@ -351,9 +351,7 @@ export class BlockchainTransactionJob extends BaseJobProcessor<
   /**
    * Wait for transaction confirmation
    */
-  private async waitForConfirmation(
-    _txHash: string,
-  ): Promise<{
+  private async waitForConfirmation(_txHash: string): Promise<{
     transactionHash: string;
     blockNumber: number;
     gasUsed: number;

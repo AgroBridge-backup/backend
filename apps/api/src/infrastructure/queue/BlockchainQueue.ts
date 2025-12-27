@@ -111,9 +111,7 @@ export class BlockchainQueue extends EventEmitter {
    * Process pending jobs
    */
   async processJobs(
-    processor: (
-      job: BlockchainJob,
-    ) => Promise<{
+    processor: (job: BlockchainJob) => Promise<{
       success: boolean;
       transactionHash?: string;
       error?: string;
@@ -142,9 +140,7 @@ export class BlockchainQueue extends EventEmitter {
    */
   private async processJob(
     job: BlockchainJob,
-    processor: (
-      job: BlockchainJob,
-    ) => Promise<{
+    processor: (job: BlockchainJob) => Promise<{
       success: boolean;
       transactionHash?: string;
       error?: string;

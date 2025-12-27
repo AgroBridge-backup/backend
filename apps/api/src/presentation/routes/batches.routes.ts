@@ -100,11 +100,9 @@ export function createBatchesRouter(useCases: BatchUseCases) {
         const producerId = req.user?.producerId;
         if (!producerId) {
           // This check is correct, if token is valid but has no producerId, it's a client error
-          return res
-            .status(403)
-            .json({
-              message: "User is not a producer or producer ID is missing.",
-            });
+          return res.status(403).json({
+            message: "User is not a producer or producer ID is missing.",
+          });
         }
         const result = await useCases.createBatchUseCase.execute({
           ...req.body,
@@ -112,11 +110,9 @@ export function createBatchesRouter(useCases: BatchUseCases) {
         });
 
         if (!result || !result.id) {
-          return res
-            .status(400)
-            .json({
-              error: "Batch creation failed, use case returned invalid data.",
-            });
+          return res.status(400).json({
+            error: "Batch creation failed, use case returned invalid data.",
+          });
         }
 
         res.status(201).json(result);

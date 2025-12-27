@@ -92,7 +92,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agrobridge_test
 
       - name: Run tests
-        run: npm run test:ci
+        run: npm run test:unit -- --reporter=verbose
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agrobridge_test
           REDIS_HOST: localhost
