@@ -1,0 +1,88 @@
+# ============================================================================
+# AgroBridge - Dependabot Configuration
+# Automated dependency updates and security patches
+# ============================================================================
+
+version: 2
+
+updates:
+  # ─────────────────────────────────────────────────────────────────────────
+  # NPM Dependencies (apps/api)
+  # ─────────────────────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "alejandro-agrobridge"  # Update with your GitHub username
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Group security updates for faster patching
+    groups:
+      security-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+      production-deps:
+        patterns:
+          - "@prisma/*"
+          - "express*"
+          - "stripe"
+          - "ethers"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-deps:
+        patterns:
+          - "@types/*"
+          - "vitest*"
+          - "typescript"
+          - "eslint*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignore major version bumps for critical packages (review manually)
+    ignore:
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ethers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # GitHub Actions
+  # ─────────────────────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+    labels:
+      - "github-actions"
+      - "dependencies"
+    commit-message:
+      prefix: "ci(deps)"
+    open-pull-requests-limit: 3
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Docker (if Dockerfiles exist)
+  # ─────────────────────────────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "docker"
+      - "dependencies"
+    commit-message:
+      prefix: "chore(docker)"

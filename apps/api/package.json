@@ -32,6 +32,8 @@
     "test:load:stress": "k6 run tests/load/k6/scenarios/stress.test.js",
     "test:load:spike": "k6 run tests/load/k6/scenarios/spike.test.js",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:benchmarks",
+    "test:blockchain": "RUN_TESTNET_TESTS=true vitest run tests/integration/blockchain/testnet-validation.test.ts --reporter=verbose",
+    "test:db:reset": "prisma migrate reset --force --skip-seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",

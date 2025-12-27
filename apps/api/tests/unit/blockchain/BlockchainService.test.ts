@@ -87,6 +87,18 @@ vi.mock('../../../src/infrastructure/monitoring/sentry.js', () => ({
 // MOCK DATA FACTORIES
 // ════════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Create a BigNumber-like mock object that works with Number() conversion
+ * ethers.js BigNumber has valueOf() which allows Number() to work correctly
+ */
+const createBigNumberMock = (value: number) => ({
+  toNumber: () => value,
+  valueOf: () => value,
+  toString: () => value.toString(),
+  // Allow direct number conversion via Number()
+  [Symbol.toPrimitive]: () => value,
+});
+
 const createBlockchainConfig = () => ({
   rpcUrl: 'https://polygon-rpc.com',
   chainId: 137,
@@ -167,10 +179,19 @@ describe('BlockchainService', () => {
 
   describe('registerEventOnChain', () => {
     beforeEach(() => {
-      // Reset mocks
+      // Reset provider mock with getFeeData
+      (ethers.providers.JsonRpcProvider as unknown as Mock).mockImplementation(() => ({
+        getBlockNumber: vi.fn().mockResolvedValue(1000),
+        getFeeData: vi.fn().mockResolvedValue({
+          maxFeePerGas: { toString: () => '100000000000' },
+          maxPriorityFeePerGas: { toString: () => '2000000000' },
+        }),
+      }));
+
+      // Reset mocks - use createBigNumberMock for estimateGas return value
       mockContract = {
         registerEvent: Object.assign(vi.fn(), {
-          estimateGas: vi.fn().mockResolvedValue({ toNumber: () => 100000 }),
+          estimateGas: vi.fn().mockResolvedValue(createBigNumberMock(100000)),
         }),
         interface: {
           parseLog: vi.fn().mockReturnValue({
@@ -196,7 +217,7 @@ describe('BlockchainService', () => {
       );
 
       mockContract.registerEvent.mockResolvedValue(mockTx);
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
 
       const result = await service.registerEventOnChain(params);
 
@@ -213,7 +234,7 @@ describe('BlockchainService', () => {
 
       const mockTx = createMockTransaction();
       mockContract.registerEvent.mockResolvedValue(mockTx);
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
 
       await service.registerEventOnChain(params);
 
@@ -232,7 +253,7 @@ describe('BlockchainService', () => {
       const mockTx = createMockTransaction();
 
       mockContract.registerEvent.mockResolvedValue(mockTx);
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
 
       await service.registerEventOnChain(params);
 
@@ -263,7 +284,7 @@ describe('BlockchainService', () => {
         }),
       );
       mockContract.registerEvent.mockResolvedValue(mockTx);
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
 
       const result = await service.registerEventOnChain(params);
 
@@ -277,7 +298,7 @@ describe('BlockchainService', () => {
       const mockTx = createMockTransaction(failedReceipt);
 
       mockContract.registerEvent.mockResolvedValue(mockTx);
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
 
       await expect(service.registerEventOnChain(params)).rejects.toThrow('Transaction failed');
     });
@@ -341,10 +362,10 @@ describe('BlockchainService', () => {
           eventType: 'HARVEST',
           producer: '0x' + 'b'.repeat(40),
           batchId: 'batch_123',
-          timestamp: { toNumber: () => 1700000000 },
+          timestamp: createBigNumberMock(1700000000),
           location: {
-            latitude: { toNumber: () => 19432600 },
-            longitude: { toNumber: () => -99133200 },
+            latitude: createBigNumberMock(19432600),
+            longitude: createBigNumberMock(-99133200),
           },
           ipfsHash: 'QmTest123',
           previousEventHash: '0x0',
@@ -369,10 +390,10 @@ describe('BlockchainService', () => {
           eventType: 'PROCESSING',
           producer: '0x' + 'b'.repeat(40),
           batchId: 'batch_123',
-          timestamp: { toNumber: () => 1700000000 },
+          timestamp: createBigNumberMock(1700000000),
           location: {
-            latitude: { toNumber: () => 40712776 }, // NYC
-            longitude: { toNumber: () => -74005974 },
+            latitude: createBigNumberMock(40712776), // NYC
+            longitude: createBigNumberMock(-74005974),
           },
           ipfsHash: 'QmTest456',
           previousEventHash: '0x0',
@@ -396,10 +417,10 @@ describe('BlockchainService', () => {
           eventType: 'HARVEST',
           producer: '0x' + 'b'.repeat(40),
           batchId: 'batch_123',
-          timestamp: { toNumber: () => timestamp },
+          timestamp: createBigNumberMock(timestamp),
           location: {
-            latitude: { toNumber: () => 0 },
-            longitude: { toNumber: () => 0 },
+            latitude: createBigNumberMock(0),
+            longitude: createBigNumberMock(0),
           },
           ipfsHash: 'QmTest',
           previousEventHash: '0x0',
@@ -621,7 +642,7 @@ describe('BlockchainService', () => {
       const params = createRegisterEventParams();
       let attempts = 0;
 
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
       mockContract.registerEvent.mockImplementation(() => {
         attempts++;
         if (attempts < 2) {
@@ -646,7 +667,7 @@ describe('BlockchainService', () => {
     it.skip('should fail after max retries', async () => {
       const params = createRegisterEventParams();
 
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
       mockContract.registerEvent.mockRejectedValue(new Error('Persistent failure'));
 
       const resultPromise = service.registerEventOnChain(params);
@@ -662,7 +683,7 @@ describe('BlockchainService', () => {
       const delays: number[] = [];
       let lastTime = Date.now();
 
-      mockContract.registerEvent.estimateGas.mockResolvedValue({ toNumber: () => 100000 });
+      mockContract.registerEvent.estimateGas.mockResolvedValue(createBigNumberMock(100000));
       mockContract.registerEvent.mockImplementation(() => {
         const currentTime = Date.now();
         if (lastTime > 0) {
@@ -781,6 +802,21 @@ describe('BlockchainService', () => {
   // ════════════════════════════════════════════════════════════════════════════════
 
   describe('Health Check', () => {
+    beforeEach(() => {
+      // Reset provider mock to healthy state for health check tests
+      (ethers.providers.JsonRpcProvider as unknown as Mock).mockImplementation(() => ({
+        getBlockNumber: vi.fn().mockResolvedValue(1000),
+        getFeeData: vi.fn().mockResolvedValue({
+          maxFeePerGas: { toString: () => '100000000000' },
+          maxPriorityFeePerGas: { toString: () => '2000000000' },
+        }),
+      }));
+
+      mockContract = {};
+      (ethers.Contract as unknown as Mock).mockImplementation(() => mockContract);
+      service = new BlockchainService(createBlockchainConfig());
+    });
+
     it('should return true when provider is healthy', async () => {
       const result = await service.isHealthy();
 

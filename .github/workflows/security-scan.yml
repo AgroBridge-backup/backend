@@ -1,0 +1,242 @@
+# ============================================================================
+# AgroBridge - Security Scanning Workflow
+# Enforces secret detection in CI/CD to prevent leaked secrets even if
+# developer bypasses pre-commit hook with --no-verify
+# ============================================================================
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop, staging]
+  pull_request:
+    branches: [main, develop]
+  # Daily scan of the entire repository
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # GITLEAKS - Secret Detection
+  # ─────────────────────────────────────────────────────────────────────────
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history to detect secrets in old commits
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+      - name: Upload Gitleaks SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: gitleaks
+        continue-on-error: true
+
+      - name: Comment PR with results
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## :x: **Security Alert: Secrets Detected!**\n\nGitleaks has detected potential secrets in this PR.\n\n**Required Actions:**\n1. Remove all sensitive data from committed files\n2. Rotate any exposed credentials immediately\n3. Force-push cleaned commits (after removing from git history)\n\n:warning: **Do NOT merge this PR until secrets are removed.**\n\nSee the [Security tab](/${{ github.repository }}/security/code-scanning) for details.'
+            })
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # DEPENDENCY VULNERABILITY SCAN
+  # ─────────────────────────────────────────────────────────────────────────
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=high --json > npm-audit.json || true
+
+          # Parse results and fail if critical/high vulnerabilities
+          CRITICAL=$(cat npm-audit.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat npm-audit.json | jq '.metadata.vulnerabilities.high // 0')
+
+          echo "Critical vulnerabilities: $CRITICAL"
+          echo "High vulnerabilities: $HIGH"
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Found $CRITICAL critical vulnerabilities - failing build"
+            exit 1
+          fi
+
+          if [ "$HIGH" -gt 5 ]; then
+            echo "::warning::Found $HIGH high vulnerabilities - please review"
+          fi
+
+      - name: Upload npm audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: apps/api/npm-audit.json
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # TYPESCRIPT TYPE SAFETY CHECK
+  # ─────────────────────────────────────────────────────────────────────────
+  typescript-check:
+    name: TypeScript Type Safety
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: TypeScript compilation check
+        run: npx tsc --noEmit
+
+      - name: Check for 'any' types
+        run: |
+          ANY_COUNT=$(grep -r ": any" src/ --include="*.ts" | wc -l || echo "0")
+          echo "Found $ANY_COUNT uses of 'any' type"
+
+          # Warning if > 50
+          if [ "$ANY_COUNT" -gt 50 ]; then
+            echo "::warning::Found $ANY_COUNT uses of 'any' type. Consider reducing for better type safety."
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SECURITY HEADERS CHECK
+  # ─────────────────────────────────────────────────────────────────────────
+  security-headers:
+    name: Check Security Configuration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify Helmet middleware
+        run: |
+          if ! grep -r "helmet" src/ --include="*.ts" | grep -q "import\|require"; then
+            echo "::error::Helmet security middleware not found"
+            exit 1
+          fi
+          echo "Helmet security middleware configured"
+
+      - name: Verify rate limiting
+        run: |
+          if ! grep -r "rate" src/ --include="*.ts" | grep -qi "limit"; then
+            echo "::warning::Rate limiting may not be configured"
+          else
+            echo "Rate limiting configured"
+          fi
+
+      - name: Verify CORS configuration
+        run: |
+          if ! grep -r "cors" src/ --include="*.ts" | grep -q "import\|require"; then
+            echo "::warning::CORS middleware may not be configured"
+          else
+            echo "CORS middleware configured"
+          fi
+
+      - name: Check for hardcoded secrets patterns
+        run: |
+          # Check for potential hardcoded secrets in source code
+          ISSUES=0
+
+          # Check for hardcoded JWT secrets
+          if grep -rE "jwt.*secret.*=.*['\"][^'\"]{20,}" src/ --include="*.ts" 2>/dev/null | grep -v "process.env" | grep -v "test" | grep -v ".example"; then
+            echo "::warning::Potential hardcoded JWT secret found"
+            ISSUES=$((ISSUES + 1))
+          fi
+
+          # Check for hardcoded API keys
+          if grep -rE "(api[_-]?key|apikey).*=.*['\"][a-zA-Z0-9]{20,}" src/ --include="*.ts" 2>/dev/null | grep -v "process.env" | grep -v "test"; then
+            echo "::warning::Potential hardcoded API key found"
+            ISSUES=$((ISSUES + 1))
+          fi
+
+          if [ "$ISSUES" -gt 0 ]; then
+            echo "::warning::Found $ISSUES potential security issues - please review"
+          else
+            echo "No hardcoded secrets detected in source code"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SUMMARY - Aggregate results
+  # ─────────────────────────────────────────────────────────────────────────
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [gitleaks, dependency-scan, typescript-check, security-headers]
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          echo "## Security Scan Summary"
+          echo ""
+          echo "| Check | Status |"
+          echo "|-------|--------|"
+          echo "| Gitleaks (Secrets) | ${{ needs.gitleaks.result == 'success' && 'PASS' || 'FAIL' }} |"
+          echo "| Dependencies | ${{ needs.dependency-scan.result == 'success' && 'PASS' || 'FAIL' }} |"
+          echo "| TypeScript | ${{ needs.typescript-check.result == 'success' && 'PASS' || 'FAIL' }} |"
+          echo "| Security Config | ${{ needs.security-headers.result == 'success' && 'PASS' || 'FAIL' }} |"
+
+          # Fail if gitleaks found secrets (critical)
+          if [ "${{ needs.gitleaks.result }}" != "success" ]; then
+            echo ""
+            echo "::error::CRITICAL: Gitleaks detected secrets - this must be resolved before merge"
+            exit 1
+          fi
