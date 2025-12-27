@@ -275,6 +275,143 @@ services:
     networks:
       - agrobridge-prod-network
 
+  # ════════════════════════════════════════════════════════════════════════════════
+  # BACKUP SERVICES
+  # RTO: < 1 hour | RPO: < 24 hours
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # PostgreSQL Automated Backup Service
+  # Schedule: Daily at 3 AM CST (9 AM UTC)
+  # Retention: 30 days local, 6 months S3
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local:16
+    container_name: agrobridge-postgres-backup
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database connection
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-agrobridge_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-agrobridge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Backup schedule: 3 AM CST = 9 AM UTC (cron format)
+      SCHEDULE: '0 9 * * *'
+
+      # Retention policy
+      BACKUP_KEEP_DAYS: 30
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+
+      # Backup settings
+      BACKUP_DIR: /backups
+      BACKUP_SUFFIX: .sql.gz
+      POSTGRES_EXTRA_OPTS: '--schema=public --blobs --verbose --no-owner --no-privileges'
+
+      # Healthcheck port
+      HEALTHCHECK_PORT: 8080
+    volumes:
+      - postgres_backups:/backups
+    networks:
+      - agrobridge-prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # S3 Backup Sync Service
+  # Runs daily at 4 AM CST (10 AM UTC) - 1 hour after backup
+  backup-sync:
+    image: amazon/aws-cli:latest
+    container_name: agrobridge-backup-sync
+    restart: 'no'
+    depends_on:
+      - postgres-backup
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET: ${BACKUP_S3_BUCKET}
+      S3_PREFIX: ${BACKUP_S3_PREFIX:-agrobridge/backups}
+    volumes:
+      - postgres_backups:/backups:ro
+      - ./scripts:/scripts:ro
+    entrypoint: ['/bin/sh']
+    command: ['/scripts/upload-to-s3.sh']
+    networks:
+      - agrobridge-prod-network
+    profiles:
+      - backup-sync
+
+  # Backup Verification Service
+  # Validates backup integrity by test restoration
+  backup-verify:
+    image: postgres:16-alpine
+    container_name: agrobridge-backup-verify
+    restart: 'no'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agrobridge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: agrobridge_verify
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_backups:/backups:ro
+      - ./scripts:/scripts:ro
+    entrypoint: ['/bin/sh']
+    command: ['/scripts/verify-backup.sh']
+    networks:
+      - agrobridge-prod-network
+    profiles:
+      - backup-verify
+
+  # Backup Health Monitor
+  # Runs hourly to check backup freshness and alert if stale
+  backup-monitor:
+    image: alpine:latest
+    container_name: agrobridge-backup-monitor
+    restart: always
+    environment:
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+      MAX_BACKUP_AGE_HOURS: ${MAX_BACKUP_AGE_HOURS:-26}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - postgres_backups:/backups:ro
+      - ./scripts:/scripts:ro
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        apk add --no-cache curl aws-cli
+        echo "Starting backup health monitor..."
+        while true; do
+          /scripts/check-backup-health.sh
+          sleep 3600
+        done
+    networks:
+      - agrobridge-prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+    profiles:
+      - monitoring
+
 # ══════════════════════════════════════════════════════════════════════════════
 # VOLUMES
 # ══════════════════════════════════════════════════════════════════════════════
@@ -286,6 +423,8 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  postgres_backups:
     driver: local
 
 # ══════════════════════════════════════════════════════════════════════════════

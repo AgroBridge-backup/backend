@@ -345,7 +345,36 @@ export async function timedQuery<T>(
 }
 
 /**
+ * Valid Prisma model names - whitelist for SQL injection prevention
+ * SECURITY: Only allow known model names to prevent SQL injection
+ */
+const VALID_PRISMA_MODELS = new Set([
+  'User',
+  'Batch',
+  'Producer',
+  'Order',
+  'Subscription',
+  'Payment',
+  'Invoice',
+  'LiquidityPool',
+  'PoolTransaction',
+  'Investor',
+  'AdvanceContract',
+  'Repayment',
+  'CreditScore',
+  'QualityCertificate',
+  'TransitSession',
+  'BlockchainEvent',
+  'AuditLog',
+  'PublicTraceabilityLink',
+  'QrScanEvent',
+] as const);
+
+/**
  * Optimized count query
+ *
+ * SECURITY: Uses Prisma ORM methods instead of raw SQL to prevent SQL injection.
+ * The model name is validated against a whitelist before use.
  */
 export async function optimizedCount(
   model: string,
@@ -355,17 +384,28 @@ export async function optimizedCount(
     throw new Error('Prisma client not initialized');
   }
 
+  // SECURITY: Validate model name against whitelist to prevent SQL injection
+  if (!VALID_PRISMA_MODELS.has(model as any)) {
+    logger.error('Invalid model name attempted in optimizedCount', { model });
+    throw new Error(`Invalid model name: ${model}. Model must be one of the allowed Prisma models.`);
+  }
+
   const cacheKey = generateCacheKey(model, 'count', where);
   const prismaClient = prisma; // Local variable for closure
 
   return cachedQuery(
     cacheKey,
     async () => {
-      // Use raw query for better performance on large tables
-      const result = await prismaClient.$queryRawUnsafe<[{ count: bigint }]>(
-        `SELECT COUNT(*) as count FROM "${model}" WHERE 1=1`
-      );
-      return Number(result[0].count);
+      // SECURITY: Use Prisma ORM methods instead of raw SQL
+      // This is SQL-injection-safe because Prisma handles parameterization internally
+      const modelDelegate = (prismaClient as any)[model.charAt(0).toLowerCase() + model.slice(1)];
+
+      if (!modelDelegate || typeof modelDelegate.count !== 'function') {
+        // Fallback: model might use different casing
+        throw new Error(`Model ${model} does not support count operation`);
+      }
+
+      return modelDelegate.count({ where });
     },
     30 // Cache for 30 seconds
   );
