@@ -2,7 +2,8 @@
 
 Agricultural traceability platform enabling transparent, secure tracking from farm to consumer.
 
-[![CI/CD](https://github.com/agrobridge/agrobridge-backend/workflows/CI/badge.svg)](https://github.com/agrobridge/agrobridge-backend/actions)
+[![CI/CD](https://github.com/AgroBridge-backup/backend/actions/workflows/ci.yml/badge.svg)](https://github.com/AgroBridge-backup/backend/actions)
+![Security Scan](https://github.com/AgroBridge-backup/backend/actions/workflows/security-scan.yml/badge.svg)
 [![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/agrobridge/agrobridge-backend/releases)
 [![License](https://img.shields.io/badge/license-Proprietary-blue.svg)](LICENSE)
 
