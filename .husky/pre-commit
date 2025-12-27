@@ -1,0 +1,108 @@
+#!/usr/bin/env sh
+# ═══════════════════════════════════════════════════════════════════════════════
+# AgroBridge - Pre-commit Hook
+# Prevents committing secrets and ensures code quality
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Exit on first error
+set -e
+
+echo "🔒 Running pre-commit checks..."
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# 1. GITLEAKS - Secret Detection
+# ─────────────────────────────────────────────────────────────────────────────────
+if command -v gitleaks >/dev/null 2>&1; then
+    echo "🔍 Scanning for secrets with gitleaks..."
+
+    # Scan staged changes only
+    if ! gitleaks protect --staged --config .gitleaks.toml --verbose; then
+        echo ""
+        echo "❌ COMMIT BLOCKED: Secrets detected in staged files!"
+        echo ""
+        echo "Please remove the secrets before committing."
+        echo "If this is a false positive, you can:"
+        echo "  1. Add the pattern to .gitleaks.toml allowlist"
+        echo "  2. Use 'git commit --no-verify' (NOT recommended)"
+        echo ""
+        exit 1
+    fi
+
+    echo "✅ No secrets detected"
+else
+    echo "⚠️  gitleaks not installed. Skipping secret scan."
+    echo "   Install with: brew install gitleaks"
+    echo "   Or: https://github.com/gitleaks/gitleaks#installing"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# 2. PREVENT COMMITTING .env FILES
+# ─────────────────────────────────────────────────────────────────────────────────
+echo "🔍 Checking for .env files in staged changes..."
+
+# Get list of staged files
+STAGED_ENV_FILES=$(git diff --cached --name-only | grep -E '^\.env$|^\.env\.(local|development|production|staging)$' || true)
+
+if [ -n "$STAGED_ENV_FILES" ]; then
+    echo ""
+    echo "❌ COMMIT BLOCKED: Attempting to commit .env files!"
+    echo ""
+    echo "The following files should NOT be committed:"
+    echo "$STAGED_ENV_FILES"
+    echo ""
+    echo "Please unstage them with: git reset HEAD <file>"
+    echo ""
+    exit 1
+fi
+
+echo "✅ No .env files in staged changes"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# 3. CHECK FOR HARDCODED SECRETS PATTERNS
+# ─────────────────────────────────────────────────────────────────────────────────
+echo "🔍 Checking for hardcoded secret patterns..."
+
+# Patterns that should never be in code
+DANGEROUS_PATTERNS=(
+    "sk_live_"           # Stripe live key
+    "sk_test_[a-zA-Z0-9]{20,}"  # Stripe test key (real one)
+    "whsec_"             # Stripe webhook secret
+    "SG\."               # SendGrid API key
+    "AKIA[A-Z0-9]{16}"   # AWS Access Key
+    "mongodb\+srv://[^:]+:[^@]+@"  # MongoDB with password
+)
+
+for pattern in "${DANGEROUS_PATTERNS[@]}"; do
+    if git diff --cached | grep -qE "$pattern"; then
+        echo ""
+        echo "❌ COMMIT BLOCKED: Potential secret pattern detected: $pattern"
+        echo ""
+        echo "Please review your changes and remove any secrets."
+        echo ""
+        exit 1
+    fi
+done
+
+echo "✅ No dangerous patterns detected"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# 4. LINT STAGED FILES (Optional)
+# ─────────────────────────────────────────────────────────────────────────────────
+# Uncomment to enable lint-staged
+# if command -v npx >/dev/null 2>&1; then
+#     echo "🔍 Running lint-staged..."
+#     npx lint-staged
+# fi
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# 5. TYPE CHECK (Optional - can be slow)
+# ─────────────────────────────────────────────────────────────────────────────────
+# Uncomment to enable TypeScript check
+# if [ -f "tsconfig.json" ]; then
+#     echo "🔍 Running TypeScript check..."
+#     npx tsc --noEmit
+# fi
+
+echo ""
+echo "✅ All pre-commit checks passed!"
+echo ""

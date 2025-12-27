@@ -1,0 +1,171 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# AgroBridge - Gitleaks Configuration
+# Secret Detection and Prevention
+# ═══════════════════════════════════════════════════════════════════════════════
+# Documentation: https://github.com/gitleaks/gitleaks
+
+title = "AgroBridge Secret Detection Rules"
+
+[extend]
+# Use the default gitleaks rules as a base
+useDefault = true
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# ALLOW LIST - Files and patterns to ignore
+# ─────────────────────────────────────────────────────────────────────────────────
+[allowlist]
+description = "Global allowlist for non-sensitive patterns"
+
+# Files that are explicitly allowed (example configs, tests)
+paths = [
+    '''^\.env\.example$''',
+    '''^\.env\.test$''',
+    '''\.test\.ts$''',
+    '''\.spec\.ts$''',
+    '''__tests__''',
+    '''__mocks__''',
+    '''fixtures''',
+    '''testdata''',
+    '''^docs/''',
+    '''^\.husky/''',
+    '''^node_modules/''',
+    '''^dist/''',
+    '''^build/''',
+    '''^coverage/''',
+    '''package-lock\.json$''',
+    '''pnpm-lock\.yaml$''',
+    '''yarn\.lock$''',
+]
+
+# Regex patterns for allowed strings (false positives)
+regexes = [
+    '''example\.com''',
+    '''localhost''',
+    '''127\.0\.0\.1''',
+    '''test[-_]?secret''',
+    '''dummy[-_]?key''',
+    '''placeholder''',
+    '''your[-_]?.*[-_]?here''',
+    '''xxxx+''',
+    '''fake[-_]?''',
+    '''mock[-_]?''',
+]
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# CUSTOM RULES - Project-specific secret patterns
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Stripe Keys
+[[rules]]
+id = "stripe-secret-key"
+description = "Stripe Secret Key"
+regex = '''sk_(live|test)_[0-9a-zA-Z]{24,}'''
+tags = ["stripe", "payment", "critical"]
+keywords = ["sk_live", "sk_test"]
+
+[[rules]]
+id = "stripe-webhook-secret"
+description = "Stripe Webhook Secret"
+regex = '''whsec_[0-9a-zA-Z]{24,}'''
+tags = ["stripe", "webhook", "critical"]
+keywords = ["whsec_"]
+
+# JWT Secrets (high entropy strings assigned to JWT vars)
+[[rules]]
+id = "jwt-secret-assignment"
+description = "JWT Secret Assignment"
+regex = '''(?i)(jwt[_-]?secret|jwt[_-]?refresh[_-]?secret)\s*[:=]\s*['""]?[a-zA-Z0-9+/]{32,}['""]?'''
+tags = ["jwt", "auth", "critical"]
+keywords = ["jwt_secret", "JWT_SECRET", "jwt-secret"]
+
+# Database URLs with credentials
+[[rules]]
+id = "database-url-with-password"
+description = "Database URL with embedded password"
+regex = '''(?i)(postgres(?:ql)?|mysql|mongodb|redis):\/\/[^:]+:[^@]+@[^\/]+'''
+tags = ["database", "critical"]
+keywords = ["postgresql://", "postgres://", "mysql://", "mongodb://", "redis://"]
+
+# AWS Credentials
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+tags = ["aws", "critical"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)aws[_-]?secret[_-]?access[_-]?key\s*[:=]\s*['""]?[A-Za-z0-9/+=]{40}['""]?'''
+tags = ["aws", "critical"]
+keywords = ["aws_secret", "AWS_SECRET"]
+
+# Twilio
+[[rules]]
+id = "twilio-auth-token"
+description = "Twilio Auth Token"
+regex = '''(?i)twilio[_-]?auth[_-]?token\s*[:=]\s*['""]?[a-f0-9]{32}['""]?'''
+tags = ["twilio", "critical"]
+keywords = ["twilio_auth_token", "TWILIO_AUTH_TOKEN"]
+
+# SendGrid
+[[rules]]
+id = "sendgrid-api-key"
+description = "SendGrid API Key"
+regex = '''SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}'''
+tags = ["sendgrid", "email", "critical"]
+keywords = ["SG."]
+
+# Pinata
+[[rules]]
+id = "pinata-api-secret"
+description = "Pinata API Secret"
+regex = '''(?i)pinata[_-]?api[_-]?secret\s*[:=]\s*['""]?[a-f0-9]{64}['""]?'''
+tags = ["pinata", "ipfs", "critical"]
+keywords = ["pinata_api_secret", "PINATA_API_SECRET"]
+
+# Blockchain Private Keys
+[[rules]]
+id = "blockchain-private-key"
+description = "Ethereum/Polygon Private Key (64 hex chars)"
+regex = '''(?i)(wallet[_-]?private[_-]?key|blockchain[_-]?private[_-]?key|private[_-]?key)\s*[:=]\s*['""]?[a-fA-F0-9]{64}['""]?'''
+tags = ["blockchain", "wallet", "critical"]
+keywords = ["private_key", "PRIVATE_KEY", "wallet_private"]
+
+# Meta/Facebook Tokens
+[[rules]]
+id = "meta-whatsapp-token"
+description = "Meta WhatsApp Token"
+regex = '''(?i)meta[_-]?whatsapp[_-]?token\s*[:=]\s*['""]?EA[A-Za-z0-9]{50,}['""]?'''
+tags = ["meta", "whatsapp", "critical"]
+keywords = ["META_WHATSAPP_TOKEN", "meta_whatsapp_token"]
+
+# Generic High Entropy Secrets
+[[rules]]
+id = "generic-api-key-assignment"
+description = "Generic API Key Assignment"
+regex = '''(?i)(api[_-]?key|apikey|api[_-]?secret|secret[_-]?key)\s*[:=]\s*['""]?[a-zA-Z0-9_-]{32,}['""]?'''
+tags = ["generic", "api-key"]
+keywords = ["api_key", "API_KEY", "api_secret", "secret_key"]
+
+# Sentry DSN
+[[rules]]
+id = "sentry-dsn"
+description = "Sentry DSN with credentials"
+regex = '''https://[a-f0-9]{32}@[a-z0-9]+\.ingest\.sentry\.io/[0-9]+'''
+tags = ["sentry", "monitoring"]
+keywords = ["sentry.io"]
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# FILE SPECIFIC ALLOWLISTS
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Allow example values in documentation
+[[rules.allowlists]]
+paths = ['''README\.md''', '''CONTRIBUTING\.md''', '''docs/''']
+regexes = ['''example''', '''placeholder''', '''your-.*-here''']
+
+# Allow test fixtures
+[[rules.allowlists]]
+paths = ['''tests/''', '''__tests__/''', '''fixtures/''']
+regexes = ['''test[-_]secret''', '''mock[-_]''', '''fake[-_]''']
